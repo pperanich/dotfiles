@@ -647,7 +647,7 @@ Put your configuration code here, except for variables that should be set
 before packages are loaded."
   (add-to-list 'load-path (expand-file-name "~/.dotfiles/"))
   (require 'preston-utils)
-  ;; (require 'preston-private)
+  (require 'preston-private nil 'noerror)
 )
 
 

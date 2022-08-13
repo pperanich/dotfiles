@@ -6,6 +6,7 @@ import ezmsg as ez
 
 class ${1:Example}Settings(ez.Settings):
       ...
+      $0
 
 class $1State(ez.State):
       ...

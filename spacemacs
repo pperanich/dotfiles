@@ -33,6 +33,10 @@ This function should only modify configuration layer settings."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
+     (auto-completion
+      :variables
+      auto-completion-tab-key-behavior 'cycle
+      auto-completion-private-snippets-directory (expand-file-name "~/.dotfiles/snippets/"))
      ;; Search-related
      helm
      ;; org-mode
@@ -648,6 +652,7 @@ before packages are loaded."
   (add-to-list 'load-path (expand-file-name "~/.dotfiles/"))
   (require 'preston-utils)
   (require 'preston-private nil 'noerror)
+  (require 'calc)
 )
 
 

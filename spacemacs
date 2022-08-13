@@ -63,7 +63,7 @@ This function should only modify configuration layer settings."
             shell-default-shell 'vterm)
      ;; Typing-related
      lsp
-     auto-completion
+     dap
      (spell-checking :variables spell-checking-enable-by-default nil)
      syntax-checking
      ;; Language support
@@ -320,7 +320,7 @@ It should only modify the values of Spacemacs settings."
    ;; refer to the DOCUMENTATION.org for more info on how to create your own
    ;; spaceline theme. Value can be a symbol or list with additional properties.
    ;; (default '(spacemacs :separator wave :separator-scale 1.5))
-   dotspacemacs-mode-line-theme '(spacemacs :separator wave :separator-scale 1.5)
+   dotspacemacs-mode-line-theme '(all-the-icons)
 
    ;; If non-nil the cursor color matches the state color in GUI Emacs.
    ;; (default t)

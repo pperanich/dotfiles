@@ -25,6 +25,7 @@ in
     ffmpeg
     cups
     tmux
+    libcxx
   ];
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";

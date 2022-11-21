@@ -1,4 +1,8 @@
 { inputs, pkgs, config, lib, ... }:
+let
+  inherit (config.home) homeDirectory;
+  inherit (config.lib.file) mkOutOfStoreSymlink;
+in
 {
   home.packages = with pkgs; [
     feh
@@ -11,14 +15,17 @@
     gimp
     octave
     inkscape
+    alacritty
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+      spotify
+      spotify-tui
+      firefox
+      brave
+      bitwarden
+      vlc
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+    m-cli # useful macOS CLI commands
   ];
-  # ++ lib.mkIf pkgs.stdenv.hostPlatform.isLinux
-  #   [
-  #     spotify
-  #     spotify-tui
-  #     firefox
-  #     brave
-  #     bitwarden
-  #     vlc
-  #   ];
+
+  xdg.configFile."alacritty".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/alacritty";
 }

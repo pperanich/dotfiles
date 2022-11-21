@@ -12,25 +12,16 @@
 (require 'org)
 (setq org-confirm-babel-evaluate nil)
 
-;;; Improve icons for org mode check boxes
-(add-hook 'org-mode-hook (lambda ()
-                            "Beautify Org Checkbox Symbol"
-                            (push '("[ ]" . "☐") prettify-symbols-alist)
-                            (push '("[X]" . "☑" ) prettify-symbols-alist)
-                            (push '("[-]" . "❍" ) prettify-symbols-alist)
-                            (prettify-symbols-mode)))
-(defface org-checkbox-done-text
-  '((t (:foreground "#71696A")))
-  "Face for the text part of a checked org-mode checkbox.")
-
-;;; Latex configuration
-(setq exec-path (append exec-path '("/Library/TeX/texbin")))
-(setq exec-path (append exec-path '("/opt/local/bin")))
-(setq org-latex-create-formula-image-program 'dvipng)
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
-
-;;; Paradox GitHub token
-(setq paradox-github-token "ghp_REDACTED_GITHUB_TOKEN_XXX")
+;; ;;; Improve icons for org mode check boxes
+;; (add-hook 'org-mode-hook (lambda ()
+;;                             "Beautify Org Checkbox Symbol"
+;;                             (push '("[ ]" . "☐") prettify-symbols-alist)
+;;                             (push '("[X]" . "☑" ) prettify-symbols-alist)
+;;                             (push '("[-]" . "❍" ) prettify-symbols-alist)
+;;                             (prettify-symbols-mode)))
+;; (defface org-checkbox-done-text
+;;   '((t (:foreground "#71696A")))
+;;   "Face for the text part of a checked org-mode checkbox.")
 
 ;;; Org TODO keywords
 (with-eval-after-load 'org
@@ -44,6 +35,68 @@
           ("REVIEW" . "Teal")
           ("DONE" . "ForestGreen")
           ("ARCHIVED" .  "SlateBlue"))))
+
+;;; org-modern configuration
+;; (menu-bar-mode -1)
+;; (tool-bar-mode -1)
+;; (scroll-bar-mode -1)
+;; (modus-themes-load-operandi)
+
+;; Choose some fonts
+;; (set-face-attribute 'default nil :family "Iosevka")
+;; (set-face-attribute 'variable-pitch nil :family "Iosevka Aile")
+;; (set-face-attribute 'org-modern-symbol nil :family "Iosevka")
+
+;; Add frame borders and window dividers
+;; (modify-all-frames-parameters
+;;  '((right-divider-width . 40)
+;;    (internal-border-width . 40)))
+;; (dolist (face '(window-divider
+;;                 window-divider-first-pixel
+;;                 window-divider-last-pixel))
+;;   (face-spec-reset-face face)
+;;   (set-face-foreground face (face-attribute 'default :background)))
+;; (set-face-background 'fringe (face-attribute 'default :background))
+
+(setq
+ ;; Edit settings
+ org-auto-align-tags nil
+ org-tags-column 0
+ org-catch-invisible-edits 'show-and-error
+ org-special-ctrl-a/e t
+ org-insert-heading-respect-content t
+
+ ;; Org styling, hide markup etc.
+ org-hide-emphasis-markers t
+ org-pretty-entities t
+ org-ellipsis "…"
+
+ ;; Agenda styling
+ org-agenda-tags-column 0
+ org-agenda-block-separator ?─
+ org-agenda-time-grid
+ '((daily today require-timed)
+   (800 1000 1200 1400 1600 1800 2000)
+   " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+ org-agenda-current-time-string
+ "⭠ now ─────────────────────────────────────────────────")
+
+;; Option 1: Per buffer
+(add-hook 'org-mode-hook #'org-modern-mode)
+(add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
+
+;; ;; Option 2: Globally
+;; (global-org-modern-mode)
+
+;;; Latex configuration
+(setq exec-path (append exec-path '("/Library/TeX/texbin")))
+(setq exec-path (append exec-path '("/opt/local/bin")))
+(setq org-latex-create-formula-image-program 'dvipng)
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+
+;;; Paradox GitHub token
+(setq paradox-github-token "ghp_REDACTED_GITHUB_TOKEN_XXX")
+
 
 ;;; Add PlantUML to Org Babel src langs
 (add-to-list
@@ -121,20 +174,60 @@
   (orb-preformat-keywords '("citekey" "title" "url" "author-or-editor" "keywords" "file"))
   (orb-file-field-extensions '("pdf" "epub" "html")))
 
-(use-package org-pdftools
-  :hook (org-load . org-pdftools-setup-link))
+;; (use-package org-pdftools
+;;   :hook (org-load . org-pdftools-setup-link))
 
+;; (use-package org-noter
+;;   :after (:any org pdf-view)
+;;   :custom
+;;   (org-noter-always-create-frame nil)
+;;   (org-noter-separate-notes-from-heading t)
+;;   (org-noter-default-notes-file-names '("notes.org"))
+;;   (org-noter-notes-search-path (list org-roam-directory)))
+
+;; (use-package org-noter-pdftools
+;;   :after org-noter
+;;   :config
+;;   (with-eval-after-load 'pdf-annot
+;;     (add-hook 'pdf-annot-activate-handler-functions #'org-noter-pdftools-jump-to-note)))
 (use-package org-noter
-  :after (:any org pdf-view)
-  :custom
-  (org-noter-always-create-frame nil)
-  (org-noter-separate-notes-from-heading t)
-  (org-noter-default-notes-file-names '("notes.org"))
-  (org-noter-notes-search-path (list org-roam-directory)))
+  :config
+  ;; Your org-noter config ........
+  (require 'org-noter-pdftools))
+
+(use-package org-pdftools
+  :hook (org-mode . org-pdftools-setup-link))
 
 (use-package org-noter-pdftools
   :after org-noter
   :config
+  ;; Add a function to ensure precise note is inserted
+  (defun org-noter-pdftools-insert-precise-note (&optional toggle-no-questions)
+    (interactive "P")
+    (org-noter--with-valid-session
+     (let ((org-noter-insert-note-no-questions (if toggle-no-questions
+                                                   (not org-noter-insert-note-no-questions)
+                                                 org-noter-insert-note-no-questions))
+           (org-pdftools-use-isearch-link t)
+           (org-pdftools-use-freepointer-annot t))
+       (org-noter-insert-note (org-noter--get-precise-info)))))
+
+  ;; fix https://github.com/weirdNox/org-noter/pull/93/commits/f8349ae7575e599f375de1be6be2d0d5de4e6cbf
+  (defun org-noter-set-start-location (&optional arg)
+    "When opening a session with this document, go to the current location.
+With a prefix ARG, remove start location."
+    (interactive "P")
+    (org-noter--with-valid-session
+     (let ((inhibit-read-only t)
+           (ast (org-noter--parse-root))
+           (location (org-noter--doc-approx-location (when (called-interactively-p 'any) 'interactive))))
+       (with-current-buffer (org-noter--session-notes-buffer session)
+         (org-with-wide-buffer
+          (goto-char (org-element-property :begin ast))
+          (if arg
+              (org-entry-delete nil org-noter-property-note-location)
+            (org-entry-put nil org-noter-property-note-location
+                           (org-noter--pretty-print-location location))))))))
   (with-eval-after-load 'pdf-annot
     (add-hook 'pdf-annot-activate-handler-functions #'org-noter-pdftools-jump-to-note)))
 
@@ -172,13 +265,21 @@
     file-notify-descriptors))
 
 ;;; Setup org pandoc latex export.
-(setq org-src-fontify-natively t)
-(add-to-list 'org-latex-packages-alist '("" "minted"))
-(setq org-latex-listings 'minted)
-(setq org-pandoc-options-for-latex-pdf '((pdf-engine . "pdflatex")
-                                          (pdf-engine-opt . "-shell-escape:-output-directory=/tmp")
-                                          (lua-filter . "minted.lua")
-                                          (no-highlight)))
+;; (setq org-src-fontify-natively t)
+;; (add-to-list 'org-latex-packages-alist '("" "minted"))
+;; (setq org-latex-listings 'minted)
+;; (setq org-pandoc-options-for-latex-pdf '((pdf-engine . "pdflatex")
+;;                                           (pdf-engine-opt . "-shell-escape:-output-directory=/tmp")
+;;                                           (lua-filter . "minted.lua")
+;;                                           (no-highlight)))
+;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
+(setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
+(setq org-latex-src-block-backend 'engraved)
+(use-package engrave-faces-latex
+              :after ox-latex)
+;; (add-to-list 'org-latex-packages-alist '("" "engraved"))
+(setq org-latex-listings 'engraved)
+;; (setq engrave-faces-preset-styles (engrave-faces-generate-preset))
 
 ;;; Key-bindings for multi-vterm
 (use-package multi-vterm
@@ -224,13 +325,58 @@
 (setq pixel-scroll-precision-large-scroll-height 40.0)
 (setq pixel-scroll-precision-interpolation-factor 30)
 ;; scroll one line at a time (less "jumpy" than defaults)
-
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-
 (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
-
 (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
-
 (setq scroll-step 1) ;; keyboard scroll one line at a time'))
+
+(use-package qpdf.el)
+(defun qpdf-delete-current-page ()
+  "Delete the current page of pdf file."
+  (interactive)
+  (unless (or (equal major-mode 'doc-view-mode)
+	            (equal major-mode 'pdf-view-mode))
+    (error "Buffer should visit a pdf file in doc-view-mode or pdf-view-mode."))
+  (qpdf-run (list
+	           (concat "--pages="
+		                 (qpdf--read-pages-with-presets nil nil nil
+                                                    'except-current))
+	           (concat "--infile="
+		                 (buffer-file-name))
+	           "--replace-input")))
+
+(defun qpdf-rotate-current-page ()
+  "Delete the current page of pdf file."
+  (interactive)
+  (unless (or (equal major-mode 'doc-view-mode)
+              (equal major-mode 'pdf-view-mode))
+    (error "Buffer should visit a pdf file in doc-view-mode or pdf-view-mode."))
+  (qpdf-run (list
+             (concat "--infile="
+                     (buffer-file-name))
+             "--replace-input"
+             (concat "--rotate=+90:"
+                     (number-to-string (image-mode-window-get 'page)))
+             )))
+
+(setq org-file-apps
+      '(("\\.pdf\\'" . emacs)))
+
+;;; keycast mode
+(use-package keycast
+  :commands keycast-mode
+  :config
+  (define-minor-mode keycast-mode
+    "Show current command and its key binding in the mode line."
+    :global t
+    (if keycast-mode
+        (progn
+          (add-hook 'pre-command-hook 'keycast--update t)
+          (add-to-list 'global-mode-string '("" keycast-mode-line " ")))
+      (remove-hook 'pre-command-hook 'keycast--update)
+      (setq global-mode-string (remove '("" keycast-mode-line " ") global-mode-string)))))
+
+;;; info-variable-pitch
+(add-hook 'Info-mode-hook #'info-variable-pitch-mode)
 
 (provide 'preston-utils)

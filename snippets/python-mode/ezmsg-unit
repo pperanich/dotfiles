@@ -2,29 +2,29 @@
 # name: ezmsg-unit
 # key: unit
 # --
-import ezmsg as ez
+import ezmsg.core as ez
 
 class ${1:Example}Settings(ez.Settings):
-      ...
-      $0
+    ...
+    $0
 
 class $1State(ez.State):
-      ...
+    ...
 
 class $1(ez.Unit):
-      SETTINGS: $1Settings
-      STATE: $1State
+    SETTINGS: $1Settings
+    STATE: $1State
 
-      INPUT = ez.InputStream(${2:ez.Message})
-      OUTPUT = ez.OutputStream(${3:ez.Message})
+    INPUT = ez.InputStream(${2:ez.Message})
+    OUTPUT = ez.OutputStream(${3:ez.Message})
 
-      def initialize(self):
-          ...
+    def initialize(self):
+        ...
 
-      @ez.subscriber(INPUT)
-      @ez.publisher(OUTPUT)
-      async def on_message(self, message: $2) -> $3:
-            yield self.OUTPUT, message
+    @ez.subscriber(INPUT)
+    @ez.publisher(OUTPUT)
+    async def on_message(self, message: $2) -> $3:
+        yield self.OUTPUT, message
 
-      def shutdown(self):
-          ...
+    def shutdown(self):
+        ...

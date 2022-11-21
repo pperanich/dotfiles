@@ -112,6 +112,13 @@
             ./home-manager/redd-holobrain.nix
           ];
         };
+        "holobrain@redd-holobrain-jr" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/redd-holobrain-jr.nix
+          ];
+        };
         "holo@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };

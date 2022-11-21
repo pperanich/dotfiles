@@ -1,0 +1,26 @@
+{ pkgs, ... }:
+{
+  home.packages = with pkgs; [
+    comma # Install and run programs by sticking a , before them
+
+    bc # Calculator
+    bottom # System viewer
+    ncdu # TUI disk usage
+    exa # Better ls
+    ripgrep # Better grep
+    fd # Better find
+    httpie # Better curl
+    jq # JSON pretty printer and manipulator
+    azure-cli
+    gnutls
+    graphviz
+    libvterm
+    node
+    qpdf
+    wget
+    cmake
+    ffmpeg
+
+    agenix # secrets tool
+  ];
+}

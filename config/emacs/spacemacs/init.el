@@ -56,7 +56,7 @@ This function should only modify configuration layer settings."
      ;; Language support
      major-modes
      c-c++
-     (plantuml :variables plantuml-jar-path "~/.emacs.d/private/plantuml-1.2022.6.jar" org-plantuml-jar-path "~/.emacs.d/private/plantuml-1.2022.6.jar")
+     (plantuml :variables plantuml-jar-path "~/spacemacs/private/plantuml-1.2022.6.jar" org-plantuml-jar-path "~/spacemacs/private/plantuml-1.2022.6.jar")
      (python :variables python-backend 'lsp python-lsp-server 'pyright python-formatter 'black python-format-on-save t)
      (csharp :variables csharp-backend 'lsp)
      (conda :variables conda-anaconda-home "~/opt/anaconda3")
@@ -75,7 +75,7 @@ This function should only modify configuration layer settings."
      pandoc
      (bibtex
       :variables
-      bibtex-completion-bibliography (expand-file-name "~/Documents/org/zotero.bib")
+      ;; bibtex-completion-bibliography (expand-file-name "~/Documents/org/zotero.bib")
       bibtex-completion-pdf-field "file"
       ;; org-ref stuff (but used by bibtex layer)
       org-ref-default-bibliography (list bibtex-completion-bibliography)
@@ -658,7 +658,9 @@ configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
   (add-to-list 'load-path (expand-file-name "~/.dotfiles/"))
+  (add-to-list 'load-path (file-name-directory (buffer-file-name)))
   (require 'preston-utils)
+  ;; (load-file "./preston-utils.el")
   (require 'preston-private nil 'noerror)
 )
 

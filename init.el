@@ -32,7 +32,9 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(sql
+   '(typescript
+     csv
+     sql
      javascript
      (auto-completion
       :variables
@@ -41,23 +43,7 @@ This function should only modify configuration layer settings."
      ;; Search-related
      helm
      ;; org-mode
-     (org
-      :variables
-      org-enable-valign t
-      org-directory (expand-file-name "~/Documents/org")
-      org-default-notes-file (concat org-directory "/inbox.org")
-      ;; org-roam
-      org-enable-roam-support t
-      org-roam-v2-ack t
-      org-roam-directory (concat org-directory "/roam")
-      org-roam-db-location (concat org-roam-directory "/db/org-roam.db")
-      org-roam-dailies-capture-templates
-      '(("d" "default" entry "* %?"
-         :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d (%A)>
-* tasks for today [/]
-- [ ]
-* journal
-"))))
+     org
      (shell :variables
             shell-default-height 30
             shell-default-position 'bottom
@@ -78,6 +64,7 @@ This function should only modify configuration layer settings."
       :variables
       markdown-asymmetric-header t
       markdown-italic-underscore t)
+     (nixos :variables nix-backend 'lsp)
      haskell
      html
      rust
@@ -95,6 +82,7 @@ This function should only modify configuration layer settings."
       org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
      pdf
      ;; Other
+     unicode-fonts
      ibuffer
      (treemacs :variables treemacs-use-scope-type 'Perspectives)
      version-control
@@ -142,9 +130,16 @@ This function should only modify configuration layer settings."
      numpydoc
      multi-vterm
      clipetty
+     fontaine
+     org-ql
+     tree-sitter
+     tree-sitter-langs
      (qpdf :location (recipe
                      :fetcher github
                      :repo "orgtre/qpdf.el"))
+     (elgantt :location (recipe
+                      :fetcher github
+                      :repo "legalnonsense/elgantt"))
      (info-variable-pitch :location (recipe
                       :fetcher github
                       :repo "kisaragi-hiu/info-variable-pitch"))
@@ -322,10 +317,6 @@ It should only modify the values of Spacemacs settings."
    ;; with 2 themes variants, one dark and one light)
    dotspacemacs-themes '(modus-vivendi
                          modus-operandi)
-                         ;; doom-palenight
-                         ;; spacemacs-dark
-                         ;; doom-wilmersdorf
-                         ;; spacemacs-light)
 
    ;; Set the theme for the Spaceline. Supported themes are `spacemacs',
    ;; `all-the-icons', `custom', `doom', `vim-powerline' and `vanilla'. The
@@ -343,7 +334,7 @@ It should only modify the values of Spacemacs settings."
    ;; Default font or prioritized list of fonts. The `:size' can be specified as
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
-   dotspacemacs-default-font '("Source Code Pro"
+   dotspacemacs-default-font '("Iosevka"
                                :size 18.0
                                :weight normal
                                :width normal)
@@ -502,7 +493,7 @@ It should only modify the values of Spacemacs settings."
    ;;   :size-limit-kb 1000)
    ;; When used in a plist, `visual' takes precedence over `relative'.
    ;; (default nil)
-   dotspacemacs-line-numbers '(:relative nil
+   dotspacemacs-line-numbers '(:relative t
                                          :disabled-for-modes dired-mode
                                          doc-view-mode
                                          markdown-mode
@@ -686,7 +677,7 @@ This function is called at the very end of Spacemacs initialization."
  ;; If there is more than one, they won't work right.
  '(org-pandoc-options nil)
  '(package-selected-packages
-   '(info-variable-pitch keycast engrave-faces qpdf sql-indent sqlup-mode import-js grizzl js-doc js2-refactor multiple-cursors livid-mode nodejs-repl npm-mode skewer-mode js2-mode tern clipetty multi-vterm arduino-mode ebuild-mode hoon-mode logcat matlab-mode pkgbuild-mode qml-mode scad-mode stan-mode thrift vala-mode vala-snippets wolfram-mode csharp-mode attrap cmm-mode company-cabal dante lcr flycheck-haskell haskell-mode haskell-snippets helm-hoogle hindent hlint-refactor lsp-haskell numpydoc pandoc-mode org-noter-pdftools org-pdftools org-roam-bibtex org-roam yaml-mode writegood-mode org-starter org-reverse-datetree org-ref ox-pandoc citeproc org-noter org-kanban org-bullets olivetti langtool helm-bibtex bibtex-completion parsebib doom-themes dash-functional biblio biblio-core plantuml-mode web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css company-web web-completion-data add-node-modules-path valign org-journal org-tree-slide hide-mode-line lsp-latex evil-tex company-reftex company-math math-symbol-lists company-auctex auctex org-re-reveal ein polymode anaphora websocket ibuffer-projectile centaur-tabs helm-rtags google-c-style gendoxy flycheck-ycmd flycheck-rtags disaster cpp-auto-include company-ycmd ycmd request-deferred company-rtags rtags company-c-headers ccls spotify helm-spotify-plus multi reveal-in-osx-finder osx-trash osx-dictionary osx-clipboard launchctl toml-mode ron-mode racer rust-mode flycheck-rust cargo yapfify stickyfunc-enhance sphinx-doc pytest pylookup pyenv-mode pydoc py-isort poetry transient pippel pipenv load-env-vars pyvenv pip-requirements nose lsp-python-ms lsp-pyright live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gtags helm-cscope xcscope ggtags dap-mode lsp-treemacs bui lsp-mode markdown-mode cython-mode counsel-gtags counsel swiper ivy company-anaconda company code-cells blacken anaconda-mode pythonic ws-butler writeroom-mode winum which-key volatile-highlights vim-powerline vi-tilde-fringe uuidgen use-package undo-tree treemacs-projectile treemacs-persp treemacs-icons-dired treemacs-evil toc-org symon symbol-overlay string-inflection string-edit spacemacs-whitespace-cleanup spacemacs-purpose-popwin spaceline-all-the-icons space-doc restart-emacs request rainbow-delimiters quickrun popwin pcre2el password-generator paradox overseer org-superstar open-junk-file nameless multi-line macrostep lorem-ipsum link-hint inspector info+ indent-guide hybrid-mode hungry-delete holy-mode hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-terminal-cursor-changer evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-evilified-state evil-escape evil-ediff evil-easymotion evil-collection evil-cleverparens evil-args evil-anzu eval-sexp-fu emr elisp-slime-nav elisp-def editorconfig dumb-jump drag-stuff dotenv-mode dired-quick-sort diminish devdocs define-word column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
+   '(typescript-mode tree-sitter-langs tree-sitter tsc company-nixos-options helm-nixos-options nix-mode nixos-options csv-mode org-ql peg ov org-super-agenda ts elgantt ligature fontaine info-variable-pitch keycast engrave-faces qpdf sql-indent sqlup-mode import-js grizzl js-doc js2-refactor multiple-cursors livid-mode nodejs-repl npm-mode skewer-mode js2-mode tern clipetty multi-vterm arduino-mode ebuild-mode hoon-mode logcat matlab-mode pkgbuild-mode qml-mode scad-mode stan-mode thrift vala-mode vala-snippets wolfram-mode csharp-mode attrap cmm-mode company-cabal dante lcr flycheck-haskell haskell-mode haskell-snippets helm-hoogle hindent hlint-refactor lsp-haskell numpydoc pandoc-mode org-noter-pdftools org-pdftools org-roam-bibtex org-roam yaml-mode writegood-mode org-starter org-reverse-datetree org-ref ox-pandoc citeproc org-noter org-kanban org-bullets olivetti langtool helm-bibtex bibtex-completion parsebib doom-themes dash-functional biblio biblio-core plantuml-mode web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css company-web web-completion-data add-node-modules-path valign org-journal org-tree-slide hide-mode-line lsp-latex evil-tex company-reftex company-math math-symbol-lists company-auctex auctex org-re-reveal ein polymode anaphora websocket ibuffer-projectile centaur-tabs helm-rtags google-c-style gendoxy flycheck-ycmd flycheck-rtags disaster cpp-auto-include company-ycmd ycmd request-deferred company-rtags rtags company-c-headers ccls spotify helm-spotify-plus multi reveal-in-osx-finder osx-trash osx-dictionary osx-clipboard launchctl toml-mode ron-mode racer rust-mode flycheck-rust cargo yapfify stickyfunc-enhance sphinx-doc pytest pylookup pyenv-mode pydoc py-isort poetry transient pippel pipenv load-env-vars pyvenv pip-requirements nose lsp-python-ms lsp-pyright live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gtags helm-cscope xcscope ggtags dap-mode lsp-treemacs bui lsp-mode markdown-mode cython-mode counsel-gtags counsel swiper ivy company-anaconda company code-cells blacken anaconda-mode pythonic ws-butler writeroom-mode winum which-key volatile-highlights vim-powerline vi-tilde-fringe uuidgen use-package undo-tree treemacs-projectile treemacs-persp treemacs-icons-dired treemacs-evil toc-org symon symbol-overlay string-inflection string-edit spacemacs-whitespace-cleanup spacemacs-purpose-popwin spaceline-all-the-icons space-doc restart-emacs request rainbow-delimiters quickrun popwin pcre2el password-generator paradox overseer org-superstar open-junk-file nameless multi-line macrostep lorem-ipsum link-hint inspector info+ indent-guide hybrid-mode hungry-delete holy-mode hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-terminal-cursor-changer evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-evilified-state evil-escape evil-ediff evil-easymotion evil-collection evil-cleverparens evil-args evil-anzu eval-sexp-fu emr elisp-slime-nav elisp-def editorconfig dumb-jump drag-stuff dotenv-mode dired-quick-sort diminish devdocs define-word column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

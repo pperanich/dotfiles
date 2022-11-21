@@ -5,6 +5,7 @@
   # You can import other home-manager modules here
   imports = [
     ./global
+    ./features/darwin.nix
     # If you want to use modules your own flake exports (from modules/home-manager):
     # outputs.homeManagerModules.example
 
@@ -18,8 +19,11 @@
   # TODO: Set your username
   home = {
     username = "peranpl1";
-    homeDirectory = "/Users/peranpl-ml1";
+    homeDirectory = "/Users/peranpl1/";
   };
+
+  programs.direnv.enable = true;
+  programs.direnv.nix-direnv.enable = true;
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
   home.stateVersion = "22.05";

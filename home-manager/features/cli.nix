@@ -19,6 +19,7 @@
     wget
     cmake
     ffmpeg
+    cups
   ];
     #libvterm
 }

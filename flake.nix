@@ -57,23 +57,23 @@
       # These are usually stuff you would upstream into home-manager
       homeManagerModules = import ./modules/home-manager;
 
-      # nixosConfigurations = {
-      #   pperanich-ld1 = nixpkgs.lib.nixosSystem {
-      #     specialArgs = { inherit inputs outputs; };
-      #     modules = [
-      #       ./nixos/configuration.nix
-      #     ];
-      #   };
-      # };
+      nixosConfigurations = {
+        pperanich-ld1 = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            ./nixos/configuration.nix
+          ];
+        };
+      };
 
       homeConfigurations = {
-        # "pperanich@pperanich-ld1" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = legacyPackages.x86_64-linux;
-        #   extraSpecialArgs = { inherit inputs outputs; };
-        #   modules = [
-        #     ./home/pperanich-ld1.nix
-        #   ];
-        # };
+        "pperanich@pperanich-ld1" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/pperanich-ld1.nix
+          ];
+        };
         "peranpl1@peranpl1-ml1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-darwin;
           extraSpecialArgs = { inherit inputs outputs; };
@@ -81,41 +81,41 @@
             ./home-manager/peranpl1-ml1.nix
           ];
         };
-        # "omni@omnimed-ld1" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = legacyPackages.x86_64-linux;
-        #   extraSpecialArgs = { inherit inputs outputs; };
-        #   modules = [
-        #     ./home/omnimed-ld1.nix
-        #   ];
-        # };
-        # "omni@omnimed-ld2" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = legacyPackages.x86_64-linux;
-        #   extraSpecialArgs = { inherit inputs outputs; };
-        #   modules = [
-        #     ./home/omnimed-ld2.nix
-        #   ];
-        # };
-        # "omni@omnimed-ld3" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = legacyPackages.x86_64-linux;
-        #   extraSpecialArgs = { inherit inputs outputs; };
-        #   modules = [
-        #     ./home/omnimed-ld3.nix
-        #   ];
-        # };
-        # "peranpl1@redd-holobrain" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = legacyPackages.x86_64-linux;
-        #   extraSpecialArgs = { inherit inputs outputs; };
-        #   modules = [
-        #     ./home/redd-holobrain.nix
-        #   ];
-        # };
-        # "holo@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = legacyPackages.x86_64-linux;
-        #   extraSpecialArgs = { inherit inputs outputs; };
-        #   modules = [
-        #     ./home/holobrain-ld1.nix
-        #   ];
-        # };
+        "omni@omnimed-ld1" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/omnimed-ld1.nix
+          ];
+        };
+        "omni@omnimed-ld2" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/omnimed-ld2.nix
+          ];
+        };
+        "omni@omnimed-ld3" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/omnimed-ld3.nix
+          ];
+        };
+        "peranpl1@redd-holobrain" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/redd-holobrain.nix
+          ];
+        };
+        "holo@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/holobrain-ld1.nix
+          ];
+        };
       };
     };
 }

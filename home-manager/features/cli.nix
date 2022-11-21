@@ -1,4 +1,8 @@
-{ pkgs, ... }:
+{ config, pkgs, lib, inputs, ... }:
+let
+  inherit (config.home) homeDirectory;
+  inherit (config.lib.file) mkOutOfStoreSymlink;
+in
 {
   home.packages = with pkgs; [
     comma # Install and run programs by sticking a , before them
@@ -20,6 +24,8 @@
     cmake
     ffmpeg
     cups
+    tmux
   ];
-    #libvterm
+
+  xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
 }

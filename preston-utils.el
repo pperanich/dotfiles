@@ -217,4 +217,7 @@
   :ensure t
   :hook (after-init . global-clipetty-mode))
 
+;;; Set DAP-python debugger to pydebug
+(setq dap-python-debugger 'debugpy)
+
 (provide 'preston-utils)

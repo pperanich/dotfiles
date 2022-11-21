@@ -653,7 +653,6 @@ before packages are loaded."
   (add-to-list 'load-path (expand-file-name "~/.dotfiles/"))
   (require 'preston-utils)
   (require 'preston-private nil 'noerror)
-  (require 'calc)
 )
 
 

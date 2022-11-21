@@ -14,13 +14,11 @@
     azure-cli
     gnutls
     graphviz
-    libvterm
-    node
+    nodejs
     qpdf
     wget
     cmake
     ffmpeg
-
-    agenix # secrets tool
   ];
+    #libvterm
 }

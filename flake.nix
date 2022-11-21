@@ -10,6 +10,9 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     hardware.url = "github:nixos/nixos-hardware";
+
+    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    emacs-overlay.url = "github:nix-community/emacs-overlay";
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs:
@@ -24,16 +27,24 @@
       ];
     in
     rec {
+
+      legacyPackages = forAllSystems (system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        }
+      );
+
       # Your custom packages
       # Acessible through 'nix build', 'nix shell', etc
       packages = forAllSystems (system:
-        let pkgs = nixpkgs.legacyPackages.${system};
-        in import ./pkgs { inherit pkgs; }
+        let pkgs = legacyPackages.${system};
+        in import ./pkgs {inherit pkgs; }
       );
       # Devshell for bootstrapping
       # Acessible through 'nix develop' or 'nix-shell' (legacy)
       devShells = forAllSystems (system:
-        let pkgs = nixpkgs.legacyPackages.${system};
+        let pkgs = legacyPackages.${system};
         in import ./shell.nix { inherit pkgs; }
       );
 
@@ -57,49 +68,49 @@
 
       homeConfigurations = {
         # "pperanich@pperanich-ld1" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        #   pkgs = legacyPackages.x86_64-linux;
         #   extraSpecialArgs = { inherit inputs outputs; };
         #   modules = [
         #     ./home/pperanich-ld1.nix
         #   ];
         # };
         "peranpl1@peranpl1-ml1" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.x86_64-darwin;
+          pkgs = legacyPackages.x86_64-darwin;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
             ./home-manager/peranpl1-ml1.nix
           ];
         };
         # "omni@omnimed-ld1" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        #   pkgs = legacyPackages.x86_64-linux;
         #   extraSpecialArgs = { inherit inputs outputs; };
         #   modules = [
         #     ./home/omnimed-ld1.nix
         #   ];
         # };
         # "omni@omnimed-ld2" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        #   pkgs = legacyPackages.x86_64-linux;
         #   extraSpecialArgs = { inherit inputs outputs; };
         #   modules = [
         #     ./home/omnimed-ld2.nix
         #   ];
         # };
         # "omni@omnimed-ld3" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        #   pkgs = legacyPackages.x86_64-linux;
         #   extraSpecialArgs = { inherit inputs outputs; };
         #   modules = [
         #     ./home/omnimed-ld3.nix
         #   ];
         # };
         # "peranpl1@redd-holobrain" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        #   pkgs = legacyPackages.x86_64-linux;
         #   extraSpecialArgs = { inherit inputs outputs; };
         #   modules = [
         #     ./home/redd-holobrain.nix
         #   ];
         # };
         # "holo@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        #   pkgs = legacyPackages.x86_64-linux;
         #   extraSpecialArgs = { inherit inputs outputs; };
         #   modules = [
         #     ./home/holobrain-ld1.nix

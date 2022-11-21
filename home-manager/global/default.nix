@@ -1,21 +1,21 @@
 { inputs, lib, pkgs, config, outputs, ... }:
 {
   imports = [
-    ../features/cli
-    ../features/nvim
-    ../features/desktop
-    ..features/tex
-    ..features/zotero
+    ../features/cli.nix
+    ../features/nvim.nix
+    ../features/desktop.nix
+    ../features/tex.nix
+    ../features/zotero.nix
   ] ++ (builtins.attrValues outputs.homeManagerModules);
 
   programs = {
     home-manager.enable = true;
     git.enable = true;
-    xdg.enable = true;
     pandoc.enable = true;
     zsh.enable = true;
-
   };
+
+  xdg.enable = true;
 
   nix = {
     package = pkgs.nix;
@@ -28,7 +28,7 @@
   home = {
     username = lib.mkDefault "peranpl1";
     homeDirectory = lib.mkDefault "/home/${config.home.username}";
-    activation = mkIf pkgs.stdenv.isDarwin {
+    activation = lib.mkIf pkgs.stdenv.isDarwin {
       copyApplications = let
         apps = pkgs.buildEnv {
           name = "home-manager-applications";

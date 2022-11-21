@@ -6,6 +6,6 @@
 }: let
 in {
   home.packages = with pkgs; [
-    zotero
+    (lib.mkIf pkgs.stdenv.hostPlatform.isLinux zotero)
   ];
 }

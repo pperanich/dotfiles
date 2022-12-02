@@ -26,6 +26,7 @@ in
     cups
     tmux
     libcxx
+    clang
   ];
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";

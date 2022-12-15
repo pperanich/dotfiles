@@ -18,7 +18,7 @@ in
     azure-cli
     gnutls
     graphviz
-    nodejs
+    # nodejs
     qpdf
     wget
     cmake

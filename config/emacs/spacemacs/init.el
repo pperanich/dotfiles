@@ -74,13 +74,13 @@ This function should only modify configuration layer settings."
      yaml
      ;; For papers and PDFs
      pandoc
-     (bibtex
-      :variables
-      ;; bibtex-completion-bibliography (expand-file-name "~/Documents/org/zotero.bib")
-      bibtex-completion-pdf-field "file"
-      ;; org-ref stuff (but used by bibtex layer)
-      org-ref-default-bibliography (list bibtex-completion-bibliography)
-      org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
+     ;; (bibtex
+     ;;  :variables
+     ;;  ;; bibtex-completion-bibliography (expand-file-name "~/Documents/org/zotero.bib")
+     ;;  bibtex-completion-pdf-field "file"
+     ;;  ;; org-ref stuff (but used by bibtex layer)
+     ;;  org-ref-default-bibliography (list bibtex-completion-bibliography)
+     ;;  org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
      pdf
      ;; Other
      unicode-fonts
@@ -658,11 +658,8 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
-  (add-to-list 'load-path (expand-file-name "~/.dotfiles/"))
-  (add-to-list 'load-path (file-name-directory (buffer-file-name)))
+  (add-to-list 'load-path (expand-file-name "~/dotfiles/config/emacs/spacemacs/"))
   (require 'preston-utils)
-  ;; (load-file "./preston-utils.el")
-  (require 'preston-private nil 'noerror)
 )
 
 

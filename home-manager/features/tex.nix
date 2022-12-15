@@ -14,7 +14,7 @@
         businesscard-qrcode capt-of caption carlisle catchfile cite cm cmap
         cmarrows collection-basic collection-latex collection-latexrecommended
         collection-metapost collection-xetex colorprofiles colortbl cqubeamer
-        crop ctable ctablestack dehyph drv dviincl dvipdfmx dvips dvipng ec emp enctex
+        crop ctable ctablestack dehyph drv dviincl dvipdfmx dvips ec emp enctex
         environ epsincl epstopdf-pkg eso-pic etex etex-pkg etexcmds etoolbox
         euenc euler eurosym everysel everyshi expressg exteps extsizes fancybox
         fancyhdr fancyref fancyvrb featpost feynmf feynmp-auto filehook firstaid

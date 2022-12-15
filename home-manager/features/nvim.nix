@@ -12,16 +12,17 @@ in
   programs.neovim = {
     enable = true;
     package = neovim-overlay.neovim;
-    extraConfig = ''
-      lua <<EOF
-        require("kickstart")
-      EOF
-    '';
+    # extraConfig = ''
+    #   lua <<EOF
+    #     require("kickstart")
+    #   EOF
+    # '';
 
-    plugins = with pkgs.vimPlugins; [
-      nvim-treesitter.withAllGrammars
-    ];
+    # plugins = with pkgs.vimPlugins; [
+    #   nvim-treesitter.withAllGrammars
+    # ];
   };
 
+  xdg.configFile."nvim/init.lua".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/nvim/init.lua";
   xdg.configFile."nvim/lua/".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/nvim/lua/";
 }

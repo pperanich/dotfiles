@@ -638,6 +638,13 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+       (setq comp-async-env-modifier-form
+             '((setenv "LIBRARY_PATH"
+                       (concat
+                        (shell-command-to-string "nix eval --raw '(let pkgs = import <nixpkgs> {}; in with pkgs; stdenv.lib.makeLibraryPath [stdenv.cc.cc stdenv.glibc])'")
+                        ":"
+                        (shell-command-to-string "nix eval --raw '(let pkgs = import <nixpkgs> {}; in with pkgs; lib.getLib libgccjit + /lib/gcc/x86_64-unknown-linux-gnu/9.3.0 )'"))
+                       )))
   ;;; Use local org-mode installation
   (add-to-list 'load-path "~/tools/org-mode/lisp")
   (require 'org-loaddefs)

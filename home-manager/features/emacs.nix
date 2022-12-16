@@ -1,17 +1,17 @@
 { config, pkgs, lib, inputs, ... }:
 let
   emacs-overlay = inputs.emacs-overlay.packages.${pkgs.system};
-  parserDir = pkgs.tree-sitter.withPlugins (tree-sitter-grammars-fn);
   inherit (config.home) homeDirectory;
   inherit (config.lib.file) mkOutOfStoreSymlink;
+  inherit (pkgs) fetchFromGitHub;
 in
 {
   programs.emacs = {
     enable = true;
-    package = emacs-overlay.emacs;
+    package = pkgs.emacs-mac;
   };
 
-  xdg.configFile."emacs".source = fetchFromGithub 
+  xdg.configFile."emacs".source = fetchFromGitHub 
   {
     owner = "plexus";
     repo = "chemacs2";
@@ -20,7 +20,7 @@ in
   };
   xdg.configFile."chemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/chemacs/";
 
-  xdg.configFile."emacs-spacemacs".source = fetchFromGithub 
+  xdg.configFile."emacs-spacemacs".source = fetchFromGitHub 
   {
     owner = "syl20bnr";
     repo = "spacemacs";
@@ -29,7 +29,7 @@ in
   };
   xdg.configFile."spacemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/spacemacs/";
 
-  xdg.configFile."emacs-doom".source = fetchFromGithub 
+  xdg.configFile."emacs-doom".source = fetchFromGitHub 
   {
     owner = "doomemacs";
     repo = "doomemacs";

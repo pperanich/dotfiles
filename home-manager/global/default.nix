@@ -3,6 +3,7 @@
   imports = [
     ../features/cli.nix
     ../features/nvim.nix
+    ../features/emacs.nix
     ../features/desktop.nix
     ../features/tex.nix
     ../features/zotero.nix

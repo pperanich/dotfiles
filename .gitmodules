@@ -1,0 +1,6 @@
+[submodule "config/emacs-spacemacs"]
+	path = config/emacs-spacemacs
+	url = https://github.com/syl20bnr/spacemacs.git
+[submodule "config/emacs-doom"]
+	path = config/emacs-doom
+	url = https://github.com/doomemacs/doomemacs.git

@@ -1,3 +1,7 @@
+;;; Create XDG_CACHE_HOME dir for spaceemacs if it does not exist
+(unless (file-exists-p (substitute-in-file-name "$XDG_CACHE_HOME/spacemacs"))
+  (make-directory (substitute-in-file-name "$XDG_CACHE_HOME/spacemacs") t))
+
 ;;; org
 ; inspired by protesilaos
 (setq org-directory (convert-standard-filename "~/Documents/org"))
@@ -425,7 +429,7 @@ With a prefix ARG, remove start location."
 ;; And this is for Emacs28.
 (setq-default text-scale-remap-header-line t)
 
-(setq fontaine-latest-state-file (substitute-in-file-name "$XDG_CACHE_HOME/emacs/fontaine-latest-state.eld"))
+(setq fontaine-latest-state-file (substitute-in-file-name "$XDG_CACHE_HOME/spacemacs/fontaine-latest-state.eld"))
 (setq fontaine-presets
       '((tiny
           :default-family "Iosevka Fixed Extended"
@@ -617,12 +621,11 @@ manual."
     (_ (error "No Modus theme is loaded; evaluate `modus-themes-load-themes' first"))))
 (define-key global-map (kbd "<f5>") #'modus-themes-toggle)
 
-(defun my-modus-themes-custom-faces ()
-  (message "In custom hook"))
+;; (defun my-modus-themes-custom-faces ()
+  ;; (message "In custom hook"))
   ;; (set-face-attribute 'default nil :color (modus-themes-color 'blue))
   ;; (set-face-attribute 'font-lock-type-face nil :foreground (modus-themes-color 'magenta-alt)))
-
-(add-hook 'modus-themes-after-load-theme-hook #'my-modus-themes-custom-faces)
+;; (add-hook 'modus-themes-after-load-theme-hook #'my-modus-themes-custom-faces)
 
 ;;; Latex configuration
 (setq exec-path (append exec-path '("/Library/TeX/texbin")))

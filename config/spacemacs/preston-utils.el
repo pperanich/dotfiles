@@ -425,7 +425,7 @@ With a prefix ARG, remove start location."
 ;; And this is for Emacs28.
 (setq-default text-scale-remap-header-line t)
 
-(setq fontaine-latest-state-file (locate-user-emacs-file "fontaine-latest-state.eld"))
+(setq fontaine-latest-state-file (substitute-in-file-name "$XDG_CACHE_HOME/emacs/fontaine-latest-state.eld"))
 (setq fontaine-presets
       '((tiny
           :default-family "Iosevka Fixed Extended"

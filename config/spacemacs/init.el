@@ -40,7 +40,7 @@ This function should only modify configuration layer settings."
      (auto-completion
       :variables
       auto-completion-tab-key-behavior 'cycle
-      auto-completion-private-snippets-directory (expand-file-name "~/.dotfiles/snippets/"))
+      auto-completion-private-snippets-directory (substitute-in-file-name "$XDG_CONFIG_HOME/yasnippet/"))
      ;; Search-related
      helm
      ;; org-mode
@@ -639,16 +639,16 @@ See the header of this file for more information."
   It is mostly for variables that should be set before packages are loaded.
   If you are unsure, try setting them in `dotspacemacs/user-config' first."
 
-  (setq comp-async-env-modifier-form
-        '((setenv "LIBRARY_PATH"
-                  (concat
-                    (shell-command-to-string "nix eval --raw '(let pkgs = import <nixpkgs> {}; in with pkgs; stdenv.lib.makeLibraryPath [stdenv.cc.cc stdenv.glibc])'")
-                    ":"
-                    (shell-command-to-string "nix eval --raw '(let pkgs = import <nixpkgs> {}; in with pkgs; lib.getLib libgccjit + /lib/gcc/x86_64-unknown-linux-gnu/9.3.0 )'"))
-                  )))
+  ;; (setq comp-async-env-modifier-form
+  ;;       '((setenv "LIBRARY_PATH"
+  ;;                 (concat
+  ;;                   (shell-command-to-string "nix eval --raw '(let pkgs = import <nixpkgs> {}; in with pkgs; stdenv.lib.makeLibraryPath [stdenv.cc.cc stdenv.glibc])'")
+  ;;                   ":"
+  ;;                   (shell-command-to-string "nix eval --raw '(let pkgs = import <nixpkgs> {}; in with pkgs; lib.getLib libgccjit + /lib/gcc/x86_64-unknown-linux-gnu/9.3.0 )'"))
+  ;;                 )))
   ;;; Use local org-mode installation
-  (add-to-list 'load-path "~/tools/org-mode/lisp")
-  (require 'org-loaddefs)
+  ;; (add-to-list 'load-path "~/tools/org-mode/lisp")
+  ;; (require 'org-loaddefs)
   )
 
 
@@ -666,7 +666,7 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
-  (add-to-list 'load-path (expand-file-name "~/dotfiles/config/emacs/spacemacs/"))
+  (add-to-list 'load-path (substitute-in-file-name "$XDG_CONFIG_HOME/spacemacs/"))
   (require 'preston-utils)
 )
 

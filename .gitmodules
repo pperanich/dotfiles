@@ -4,3 +4,6 @@
 [submodule "config/emacs-doom"]
 	path = config/emacs-doom
 	url = https://github.com/doomemacs/doomemacs.git
+[submodule "config/emacs-chemacs"]
+	path = config/emacs-chemacs
+	url = https://github.com/plexus/chemacs2.git

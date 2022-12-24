@@ -1,15 +1,30 @@
 # First install nix.
-sh <(curl -L https://nixos.org/nix/install) --daemon
-# Next, trigger login and call nix.
-su $USER
+if ! command -v nix &> /dev/null
+then
+    curl -L https://nixos.org/nix/install -o /tmp/nix-install.sh
+    sh /tmp/nix-install.sh --daemon
+    /etc/profile.d/nix.sh
+fi
+
 # Add appropriate nix.conf extras
-sed -i '1s/^/experimental-features = nix-command flakes/' file
+if ! grep -q experimental-features /etc/nix/nix.conf; then
+    sudo sed -i '1s/^/experimental-features = nix-command flakes/' /etc/nix/nix.conf
+fi
+
 # Now, add nix and home-manager channels.
-nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
-nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+if ! grep -q nixpkgs $(nix-channel --list); then
+    nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+fi
+if ! grep -q home-manager $(nix-channel --list); then
+    nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+fi
 nix-channel --update
+
 # Install home-manager
-export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}
-nix-shell '<home-manager>' -A install
+if ! command -v home-manager &> /dev/null
+    export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}
+    nix-shell '<home-manager>' -A install
+then
+
 # Finally, build generate for host
-home-manager switch --flake .#$USER@$HOSTNAME
+home-manager switch --flake .#$USER@$(hostname)

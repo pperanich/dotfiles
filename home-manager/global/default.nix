@@ -12,7 +12,7 @@
   programs = {
     home-manager.enable = true;
     pandoc.enable = true;
-    # git.enable = true;
+    git.enable = true;
     # zsh.enable = true;
   };
 

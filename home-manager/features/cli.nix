@@ -28,6 +28,10 @@ in
     libcxx
     clang
     sshfs
+    xsel
+    xclip
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+    reattach-to-user-namespace
   ];
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";

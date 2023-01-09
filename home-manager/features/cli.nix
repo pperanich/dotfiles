@@ -35,4 +35,5 @@ in
   ];
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
+  # xdg.configFile."npm".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npm";
 }

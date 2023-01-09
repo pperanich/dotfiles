@@ -1,11 +1,11 @@
 (
  ("spacemacs" . (
-                 (user-emacs-directory . "~/.config/emacs-spacemacs/")
-                 (env . (("SPACEMACSDIR" . "~/.config/spacemacs/")))
+                 (user-emacs-directory . "$XDG_CONFIG_HOME/emacs-spacemacs/")
+                 (env . (("SPACEMACSDIR" . "$XDG_CONFIG_HOME/spacemacs/")))
                  )
   )
  ("doom" . (
-            (user-emacs-directory . "~/.config/emacs-doom")
+            (user-emacs-directory . "$XDG_CONFIG_HOME/emacs-doom")
             )
   )
  )

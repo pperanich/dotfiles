@@ -5,13 +5,13 @@ let
 
   emacs = if pkgs.stdenv.hostPlatform.isDarwin then
     pkgs.emacsMacport.override { withMacport = true; withSQLite3 = true; withWebP = true; withImageMagick = true; }
-    else
-    inputs.emacs-overlay.packages.${pkgs.system}.emacsPgtk.override { withImageMagick = true; };
+          else
+            inputs.emacs-overlay.packages.${pkgs.system}.emacsGit.override { withImageMagick = true; };
 in
 {
   programs.emacs = {
-  enable = true;
-  package = emacs;
+    enable = true;
+    package = emacs;
   };
 
   xdg.configFile."emacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-chemacs/";

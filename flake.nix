@@ -132,6 +132,13 @@
             ./home-manager/holobrain-ld1.nix
           ];
         };
+        "pi@om-apl-st2-raspi1" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages."aarch64-linux";
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/om-apl-st2-raspi1.nix
+          ];
+        };
       };
     };
 }

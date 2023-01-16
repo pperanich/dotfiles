@@ -12,7 +12,13 @@
   programs = {
     home-manager.enable = true;
     pandoc.enable = true;
-    git.enable = true;
+    git = {
+      enable = true;
+      extraConfig = {
+        protocol.file = { allow = "always"; };
+      };
+    };
+
     # zsh.enable = true;
   };
 

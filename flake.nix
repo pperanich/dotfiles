@@ -139,6 +139,13 @@
             ./home-manager/om-apl-st2-raspi1.nix
           ];
         };
+        "nvidia@om-apl-st2-agx1" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages."aarch64-linux";
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager/om-apl-st2-agx1.nix
+          ];
+        };
       };
     };
 }

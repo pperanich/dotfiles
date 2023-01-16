@@ -6,6 +6,7 @@ then
     curl -L https://nixos.org/nix/install -o /tmp/nix-install.sh
     sh /tmp/nix-install.sh --daemon
     sh /etc/profile
+    source  ~/.$(ps -p $$ -ocomm=)rc
 fi
 
 # Add appropriate nix.conf extras

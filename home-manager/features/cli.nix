@@ -15,7 +15,7 @@ in
     fd # Better find
     httpie # Better curl
     jq # JSON pretty printer and manipulator
-    azure-cli
+    #azure-cli
     gnutls
     graphviz
     # nodejs

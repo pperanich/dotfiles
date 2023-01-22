@@ -3,7 +3,6 @@
 
   inputs = {
     # Nixpkgs
-    # nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
     # Home manager
@@ -15,7 +14,7 @@
 
     hardware.url = "github:nixos/nixos-hardware";
 
-    # neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    #neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     neovim-nightly-overlay = {
       url = "github:nix-community/neovim-nightly-overlay";
       # Pin to a nixpkgs revision that doesn't have NixOS/nixpkgs#208103 yet
@@ -44,26 +43,17 @@
         }
       );
 
-      # Your custom packages
-      # Acessible through 'nix build', 'nix shell', etc
       packages = forAllSystems (system:
         let pkgs = legacyPackages.${system};
         in import ./pkgs {inherit pkgs; }
       );
-      # Devshell for bootstrapping
-      # Acessible through 'nix develop' or 'nix-shell' (legacy)
       devShells = forAllSystems (system:
         let pkgs = legacyPackages.${system};
         in import ./shell.nix { inherit pkgs; }
       );
 
-      # Your custom packages and modifications, exported as overlays
       overlays = import ./overlays;
-      # Reusable nixos modules you might want to export
-      # These are usually stuff you would upstream into nixpkgs
       nixosModules = import ./modules/nixos;
-      # Reusable home-manager modules you might want to export
-      # These are usually stuff you would upstream into home-manager
       homeManagerModules = import ./modules/home-manager;
 
       nixosConfigurations = {
@@ -80,76 +70,140 @@
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/pperanich-ld1.nix
+            ./home-manager
+            {
+              home.username = "pperanich";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+                ./home-manager/features/tex.nix
+                ./home-manager/features/zotero.nix
+                ./home-manager/features/darwin.nix
+                ./home-manager/features/fonts.nix
+              ];
+            }
           ];
         };
         "peranpl1@peranpl1-ml1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-darwin;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/peranpl1-ml1.nix
-          ];
-        };
-        "omni@omnimed-ld1" = home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages.x86_64-linux;
-          extraSpecialArgs = { inherit inputs outputs; };
-          modules = [
-            ./home-manager/omnimed-ld1.nix
-          ];
-        };
-        "omni@om-apl-st1-ws2" = home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages.x86_64-linux;
-          extraSpecialArgs = { inherit inputs outputs; };
-          modules = [
-            ./home-manager/default.nix
-	    {
-		    home.username = "omni";
-		    imports = [
-			./home-manager/features/emacs.nix
-		    ];
-	    }
-          ];
-        };
-        "omni@omnimed-ld3" = home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages.x86_64-linux;
-          extraSpecialArgs = { inherit inputs outputs; };
-          modules = [
-            ./home-manager/omnimed-ld3.nix
+            ./home-manager
+            {
+              home.username = "peranpl1";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+                ./home-manager/features/tex.nix
+                ./home-manager/features/zotero.nix
+                ./home-manager/features/darwin.nix
+                ./home-manager/features/fonts.nix
+              ];
+            }
           ];
         };
         "peranpl1@redd-holobrain" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/redd-holobrain.nix
+            ./home-manager
+            {
+              home.username = "peranpl1";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+              ];
+            }
           ];
         };
         "holobrain@redd-holobrain-jr" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/redd-holobrain-jr.nix
+            ./home-manager
+            {
+              home.username = "holobrain";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+              ];
+            }
           ];
         };
         "holo@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/holobrain-ld1.nix
+            ./home-manager
+            {
+              home.username = "holo";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+              ];
+            }
+          ];
+        };
+        "omni@om-apl-st1-ws1" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "omni";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+              ];
+            }
+          ];
+        };
+        "omni@om-apl-st1-ws2" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "omni";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+              ];
+            }
+          ];
+        };
+        "omni@om-apl-st1-ws3" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "omni";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+              ];
+            }
           ];
         };
         "pi@om-apl-st2-raspi1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages."aarch64-linux";
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/om-apl-st2-raspi1.nix
+            ./home-manager
+            {
+              home.username = "pi";
+            }
           ];
         };
         "nvidia@om-apl-st2-agx1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages."aarch64-linux";
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/om-apl-st2-agx1.nix
+            ./home-manager
+            {
+              home.username = "pi";
+            }
           ];
         };
       };

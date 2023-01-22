@@ -97,11 +97,17 @@
             ./home-manager/omnimed-ld1.nix
           ];
         };
-        "omni@omnimed-ld2" = home-manager.lib.homeManagerConfiguration {
+        "omni@om-apl-st1-ws2" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
-            ./home-manager/omnimed-ld2.nix
+            ./home-manager/default.nix
+	    {
+		    home.username = "omni";
+		    imports = [
+			./home-manager/features/emacs.nix
+		    ];
+	    }
           ];
         };
         "omni@omnimed-ld3" = home-manager.lib.homeManagerConfiguration {

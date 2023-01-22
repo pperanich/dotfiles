@@ -1,9 +1,14 @@
 # This is your home-manager configuration file
 # Use this to configure your home environment (it replaces ~/.config/nixpkgs/home.nix)
 
-{ inputs, outputs, lib, config, pkgs, ... }: {
+{ inputs, outputs, lib, config, pkgs, ... }:
+let
+  homePrefix = (if pkgs.stdenv.hostPlatform.isDarwin then "/Users" else "/home");
+in
+{
   # You can import other home-manager modules here
   imports = [
+    ./global
     # If you want to use modules your own flake exports (from modules/home-manager):
     # outputs.homeManagerModules.example
 
@@ -38,10 +43,9 @@
     };
   };
 
-  # TODO: Set your username
   home = {
-    username = "your-username";
-    homeDirectory = "/home/your-username";
+    homeDirectory = "/${homePrefix}/${config.home.username}";
+
   };
 
   # Add stuff for your user as you see fit:

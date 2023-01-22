@@ -40,10 +40,6 @@
   };
 
   # TODO: Set your username
-  home = {
-    username = "omni";
-    homeDirectory = "/home/omni";
-  };
 
   # Add stuff for your user as you see fit:
   # programs.neovim.enable = true;

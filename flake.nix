@@ -44,6 +44,9 @@
         import nixpkgs {
           inherit system;
           config.allowUnfree = true;
+          config.allowBroken = true;
+          config.allowUnfreePredicate = (_: true);
+          config.overlays = builtins.attrValues outputs.overlays;
         }
       );
 

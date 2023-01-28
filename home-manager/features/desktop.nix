@@ -13,11 +13,11 @@ in
     zoom-us
     glib
     gimp
-    octave
     inkscape
     alacritty
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
       spotify
+      octave
       spotify-tui
       firefox
       brave

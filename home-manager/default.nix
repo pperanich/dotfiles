@@ -16,24 +16,10 @@ in
   };
 
   nixpkgs = {
-    overlays = [
-      # If you want to use overlays your own flake exports (from overlays dir):
-      # outputs.overlays.modifications
-      # outputs.overlays.additions
-
-      # Or overlays exported from other flakes:
-      # neovim-nightly-overlay.overlays.default
-
-      # Or define it inline, for example:
-      # (final: prev: {
-      #   hi = final.hello.overrideAttrs (oldAttrs: {
-      #     patches = [ ./change-hello-to-hi.patch ];
-      #   });
-      # })
-    ];
-    # Configure your nixpkgs instance
+    overlays = builtins.attrValues outputs.overlays;
     config = {
       allowUnfree = true;
+      allowUnfreePredicate = (_: true);
     };
   };
 

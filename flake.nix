@@ -9,6 +9,7 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Darwin
     darwin.url = "github:LnL7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -35,6 +36,9 @@
       ];
     in
     rec {
+      overlays = import ./overlays { inherit inputs; };
+      nixosModules = import ./modules/nixos;
+      homeManagerModules = import ./modules/home-manager;
 
       legacyPackages = forAllSystems (system:
         import nixpkgs {
@@ -47,14 +51,11 @@
         let pkgs = legacyPackages.${system};
         in import ./pkgs {inherit pkgs; }
       );
+
       devShells = forAllSystems (system:
         let pkgs = legacyPackages.${system};
         in import ./shell.nix { inherit pkgs; }
       );
-
-      overlays = import ./overlays;
-      nixosModules = import ./modules/nixos;
-      homeManagerModules = import ./modules/home-manager;
 
       nixosConfigurations = {
         pperanich-ld1 = nixpkgs.lib.nixosSystem {
@@ -110,6 +111,7 @@
             {
               home.username = "peranpl1";
               imports = [
+                ./home-manager/features/aplnis.nix
                 ./home-manager/features/emacs.nix
                 ./home-manager/features/desktop.nix
               ];

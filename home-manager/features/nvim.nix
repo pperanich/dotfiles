@@ -1,6 +1,5 @@
 { config, pkgs, lib, inputs, ... }:
 let
-  neovim-overlay = inputs.neovim-nightly-overlay.packages.${pkgs.system};
   inherit (config.home) homeDirectory;
   inherit (config.lib.file) mkOutOfStoreSymlink;
 in
@@ -9,7 +8,7 @@ in
 
   programs.neovim = {
     enable = true;
-    package = neovim-overlay.neovim;
+    package = pkgs.neovim-nightly;
     extraConfig = ''
       lua <<EOF
         require("kickstart")

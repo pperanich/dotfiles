@@ -37,9 +37,10 @@
       ];
     in
     rec {
-      overlays = import ./overlays { inherit inputs; };
       nixosModules = import ./modules/nixos;
       homeManagerModules = import ./modules/home-manager;
+
+      overlays = import ./overlays { inherit inputs; };
 
       legacyPackages = forAllSystems (system:
         import nixpkgs {
@@ -52,9 +53,9 @@
       );
 
       packages = forAllSystems (system:
-        let pkgs = legacyPackages.${system};
-        in import ./pkgs {inherit pkgs; }
-      );
+          let pkgs = legacyPackages.${system};
+          in import ./pkgs {inherit pkgs; }
+          );
 
       devShells = forAllSystems (system:
         let pkgs = legacyPackages.${system};

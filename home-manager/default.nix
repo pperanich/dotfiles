@@ -16,11 +16,6 @@ in
   };
 
   nixpkgs = {
-    overlays = builtins.attrValues outputs.overlays;
-    config = {
-      allowUnfree = true;
-      allowUnfreePredicate = (_: true);
-    };
   };
 
   home = {
@@ -30,15 +25,13 @@ in
   xdg.enable = true;
 
   # Enable home-manager and git
+  programs.zsh.enable = true;
   programs.home-manager.enable = true;
   programs.git.enable = true;
   programs.git.extraConfig = {
     protocol.file = { allow = "always"; };
   };
 
-  # Nicely reload system units when changing configs
-  systemd.user.startServices = "sd-switch";
-
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
-  home.stateVersion = "22.05";
+  home.stateVersion = "23.05";
 }

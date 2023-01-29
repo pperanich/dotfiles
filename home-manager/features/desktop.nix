@@ -23,6 +23,7 @@ in
       brave
       bitwarden
       vlc
+      nixgl.auto.nixGLDefault
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     m-cli # useful macOS CLI commands
   ];

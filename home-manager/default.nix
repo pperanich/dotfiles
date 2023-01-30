@@ -1,6 +1,7 @@
 { inputs, outputs, lib, config, pkgs, ... }:
 let
-  homePrefix = (if pkgs.stdenv.hostPlatform.isDarwin then "/Users" else "/home");
+  homePrefix = (if pkgs.stdenv.hostPlatform.isDarwin then "Users" else "home");
+  inherit (config.lib.file) mkOutOfStoreSymlink;
 in
 {
   imports = [
@@ -30,7 +31,59 @@ in
   xdg.enable = true;
 
   # Enable home-manager and git
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+    shellAliases = {
+      ll = "ls -l";
+    };
+    history = {
+      size = 10000;
+      path = "${config.xdg.dataHome}/zsh/history";
+    };
+    plugins = with pkgs; [
+    {
+      name = "powerlevel10k-config";
+      file = "p10k.zsh";
+      src = ../config/zsh/powerlevel10k-config;
+    }
+    {
+      name = "powerlevel10k";
+      file = "powerlevel10k.zsh-theme";
+      src = "${zsh-powerlevel10k}/share/zsh-powerlevel10k";
+    }
+    ];
+    historySubstringSearch.enable = true;
+    enableAutosuggestions = true;
+    enableSyntaxHighlighting = true;
+    sessionVariables = {
+      CLICOLOR = 1;
+    };
+    initExtra = ''
+      # >>> conda initialize >>>
+      # !! Contents within this block are managed by 'conda init' !!
+      __conda_setup="$('/Users/peranpl1/opt/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+      if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
+      else
+        if [ -f "/Users/peranpl1/opt/anaconda3/etc/profile.d/conda.sh" ]; then
+          . "/Users/peranpl1/opt/anaconda3/etc/profile.d/conda.sh"
+        else
+          export PATH="/Users/peranpl1/opt/anaconda3/bin:$PATH"
+            fi
+            fi
+            unset __conda_setup
+      # <<< conda initialize <<<
+
+      # Temporary patch until I figure out why hm session vars are not being set correctly.
+      unset __HM_SESS_VARS_SOURCED
+      . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+      '';
+  };
+  programs.dircolors = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
   programs.home-manager.enable = true;
   programs.git.enable = true;
   programs.git.extraConfig = {

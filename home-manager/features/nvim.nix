@@ -4,7 +4,7 @@ let
   inherit (config.lib.file) mkOutOfStoreSymlink;
 in
 {
-  home.sessionVariables.EDITOR = "nvim";
+  home.sessionVariables = { EDITOR = "nvim"; };
 
   programs.neovim = {
     enable = true;

@@ -73,10 +73,6 @@ in
             fi
             unset __conda_setup
       # <<< conda initialize <<<
-
-      # Temporary patch until I figure out why hm session vars are not being set correctly.
-      unset __HM_SESS_VARS_SOURCED
-      . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
       '';
   };
   programs.dircolors = {

@@ -73,6 +73,24 @@ in
             fi
             unset __conda_setup
       # <<< conda initialize <<<
+
+      # if lsof -Pi :10000 -sTCP:LISTEN -t >/dev/null ; then
+      #   echo "Port already bound!" >/dev/null
+      # else
+      #   ssh -N -f -L 10000:localhost:10000 peranpl1@peranpl1-dev1 >/dev/null
+      # fi
+      
+      # if lsof -Pi :11009 -sTCP:LISTEN -t >/dev/null ; then
+      #   echo "Port already bound!" >/dev/null
+      # else
+      #   ssh -N -f -L 11009:localhost:11009 peranpl1@redd-holobrain >/dev/null
+      # fi
+      
+      # if lsof -Pi :61000 -sTCP:LISTEN -t >/dev/null ; then
+      #   echo "Port already bound!" >/dev/null
+      # else
+      #   ssh -N -f -L 61000:localhost:5901 peranpl1@redd-holobrain >/dev/null
+      # fi
       '';
   };
   programs.dircolors = {

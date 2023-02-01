@@ -25,7 +25,7 @@
     nixgl.url = "github:guibou/nixGL";
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, darwin, ... }@inputs:
     let
       inherit (self) outputs;
       forAllSystems = nixpkgs.lib.genAttrs [
@@ -68,6 +68,14 @@
           modules = [
             ./nixos/configuration.nix
           ];
+        };
+      };
+
+      darwinConfigurations = {
+        "peranpl1-ml1" = darwin.lib.darwinSystem {
+          system = "x86_64-darwin";
+          specialArgs = { inherit inputs outputs; };
+          modules = [ ./darwin/configuration.nix ];
         };
       };
 

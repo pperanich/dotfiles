@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env
 source ~/.nix-profile/etc/profile.d/hm-session-vars.sh
 unset __HM_SESS_VARS_SOURCED
 for i in $(export); do

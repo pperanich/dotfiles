@@ -18,8 +18,8 @@ in
   };
   home.sessionVariables = {
     EDITOR = "nvim";
-    PIP_CERT=/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer;
-    REQUESTS_CA_BUNDLE=/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer;
-    SSL_CERT_FILE=/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer;
+    PIP_CERT="/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer";
+    REQUESTS_CA_BUNDLE="/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer";
+    SSL_CERT_FILE="/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer";
   };
 }

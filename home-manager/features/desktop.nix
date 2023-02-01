@@ -4,6 +4,7 @@ let
   inherit (config.lib.file) mkOutOfStoreSymlink;
 in
 {
+  home.sessionVariables = { TERMINFO_DIRS = "${pkgs.alacritty.terminfo.outPath}/share/terminfo"; };
   home.packages = with pkgs; [
     feh
     libsecret

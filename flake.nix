@@ -75,7 +75,31 @@
         "peranpl1-ml1" = darwin.lib.darwinSystem {
           system = "x86_64-darwin";
           specialArgs = { inherit inputs outputs; };
-          modules = [ ./darwin/configuration.nix ];
+          modules = [
+            ./darwin/configuration.nix
+            ./darwin/features/yabai.nix
+            ./darwin/features/spacebar.nix
+            ./darwin/features/skhd.nix
+            home-manager.darwinModules.home-manager
+            {
+              home-manager.extraSpecialArgs = { inherit inputs outputs; };
+              # home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.users.peranpl1 = 
+              {
+                imports = [
+                  ./home-manager
+                  ./home-manager/features/emacs.nix
+                  ./home-manager/features/desktop.nix
+                  ./home-manager/features/tex.nix
+                  ./home-manager/features/zotero.nix
+                  ./home-manager/features/darwin.nix
+                  ./home-manager/features/fonts.nix
+                  ./home-manager/features/aplnis.nix
+                ];
+              };
+            }
+          ];
         };
       };
 

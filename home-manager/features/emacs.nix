@@ -9,6 +9,10 @@ let
   pkgs.emacsGit.override { withImageMagick = true; };
 in
 {
+  home.packages = with pkgs; [
+    nodePackages.pyright
+  ];
+
   programs.emacs = {
     enable = true;
     package = emacs;

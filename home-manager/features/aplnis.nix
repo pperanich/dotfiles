@@ -12,6 +12,7 @@ in
     config = {
       packageOverrides = pkgs: {
         emacsGit = pkgs.emacsGit.overrideAttrs (attrs: { src = emacsSrc; });
+        # git = pkgs.git.overrideAttrs(attrs: { openssl = pkgs.openssl_1_1; });
       };
     };
   };

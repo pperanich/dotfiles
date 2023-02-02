@@ -69,7 +69,7 @@
   fonts = {
     fontDir.enable = true;
     fonts = with pkgs; [
-      (nerdfonts.override { fonts = [ "Iosevka" ]; })
+      (nerdfonts.override { fonts = [ "Iosevka" "JetBrainsMono" ]; })
     ];
   };
 }

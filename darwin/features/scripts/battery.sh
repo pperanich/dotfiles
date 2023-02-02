@@ -1,26 +1,28 @@
-#!/bin/bash
+#!/bin/sh
 
-get_battery() {
-  local battery status
-  battery="$(pmset -g batt)"
-  BATTERY_LABEL="${battery%\%*}"
-  BATTERY_LABEL="${BATTERY_LABEL##*	}"
-  read -r _ _ _ status _ <<< "$battery"
-  BATTERY_HIGHLIGHT="off"
-  if [ "$status" = "'AC" ]
-  then
-    BATTERY_ICON="􀢋"
-  else
-    if [ "$BATTERY_LABEL" -le 25 ]
-    then
-      BATTERY_ICON="􀛩"
-      BATTERY_HIGHLIGHT="on"
-    else
-      BATTERY_ICON="􀛨"
-    fi
-  fi
-}
+PERCENTAGE=$(pmset -g batt | grep -Eo "\d+%" | cut -d% -f1)
+CHARGING=$(pmset -g batt | grep 'AC Power')
 
-get_battery
+if [ $PERCENTAGE = "" ]; then
+  exit 0
+fi
 
-sketchybar -m --set battery icon="$BATTERY_ICON" icon.highlight="$BATTERY_HIGHLIGHT" label="${BATTERY_LABEL}%"
+case ${PERCENTAGE} in
+  9[0-9]|100) ICON=""
+  ;;
+  [6-8][0-9]) ICON=""
+  ;;
+  [3-5][0-9]) ICON=""
+  ;;
+  [1-2][0-9]) ICON=""
+  ;;
+  *) ICON=""
+esac
+
+if [[ $CHARGING != "" ]]; then
+  ICON=""
+fi
+
+# The item invoking this script (name $NAME) will get its icon and label
+# updated with the current battery status
+sketchybar --set $NAME icon="$ICON" label="${PERCENTAGE}%"

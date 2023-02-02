@@ -3,7 +3,7 @@
   services = {
     yabai = {
       enable = true;
-      enableScriptingAddition = true;
+      enableScriptingAddition = false;
       package = pkgs.yabai;
       config = {
         mouse_follows_focus = "off";
@@ -30,7 +30,7 @@
         right_padding = 0;
         window_gap = 0;
         # spacebar padding on top screen
-        external_bar = "all:26:0";
+        # external_bar = "all:26:0";
       };
       extraConfig = ''
         # float system preferences

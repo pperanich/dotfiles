@@ -20,6 +20,26 @@
         "type": "github"
       }
     },
+    "darwin-alt": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1672753581,
+        "narHash": "sha256-EIi2tqHoje5cE9WqH23ZghW28NOOWSUM7tcxKE1U9KI=",
+        "owner": "azuwis",
+        "repo": "nix-darwin",
+        "rev": "3db1d870b04b13411f56ab1a50cd32b001f56433",
+        "type": "github"
+      },
+      "original": {
+        "owner": "azuwis",
+        "repo": "nix-darwin",
+        "type": "github"
+      }
+    },
     "emacs-overlay": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -265,6 +285,7 @@
     "root": {
       "inputs": {
         "darwin": "darwin",
+        "darwin-alt": "darwin-alt",
         "emacs-overlay": "emacs-overlay",
         "hardware": "hardware",
         "home-manager": "home-manager",

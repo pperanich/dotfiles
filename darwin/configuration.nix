@@ -1,5 +1,8 @@
 { pkgs, lib, inputs, outputs, config, ...}:
 {
+  imports = [
+    ../modules/darwin/sketchybar
+  ];
   system.stateVersion = 4;
 
   nix = {
@@ -21,16 +24,6 @@
   services = {
     nix-daemon.enable = true;
   };
-
-  # For spacebar debugging
-  launchd.user.agents.spacebar.serviceConfig.StandardErrorPath = "/tmp/spacebar.err.log";
-  launchd.user.agents.spacebar.serviceConfig.StandardOutPath = "/tmp/spacebar.out.log";
-  # For yabai debugging
-  launchd.user.agents.yabai.serviceConfig.StandardErrorPath = "/tmp/yabai.err.log";
-  launchd.user.agents.yabai.serviceConfig.StandardOutPath = "/tmp/yabai.out.log";
-  # For skhd debugging
-  launchd.user.agents.skhd.serviceConfig.StandardErrorPath = "/tmp/skhd.err.log";
-  launchd.user.agents.skhd.serviceConfig.StandardOutPath = "/tmp/skhd.out.log";
 
   system.defaults = {
     dock = {
@@ -68,8 +61,15 @@
     };
   };
 
-  launchd.user.envVariables = outputs.homeConfigurations."peranpl1@peranpl1-ml1".config.home.sessionVariables;
+  launchd.user.envVariables = config.home-manager.users.peranpl1.home.sessionVariables;
 
   # Add ability to used TouchID for sudo authentication
   security.pam.enableSudoTouchIdAuth = true;
+
+  fonts = {
+    fontDir.enable = true;
+    fonts = with pkgs; [
+      (nerdfonts.override { fonts = [ "Iosevka" ]; })
+    ];
+  };
 }

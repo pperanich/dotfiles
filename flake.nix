@@ -13,6 +13,9 @@
     darwin.url = "github:LnL7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs";
 
+    darwin-alt.url = "github:azuwis/nix-darwin";
+    darwin-alt.inputs.nixpkgs.follows = "nixpkgs";
+
     hardware.url = "github:nixos/nixos-hardware";
 
     #neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
@@ -35,9 +38,11 @@
         "aarch64-darwin"
         "x86_64-darwin"
       ];
+      inherit (inputs.nixpkgs.lib) attrValues;
     in
     rec {
       nixosModules = import ./modules/nixos;
+      darwinModules = import ./modules/darwin;
       homeManagerModules = import ./modules/home-manager;
 
       overlays = import ./overlays { inherit inputs; };
@@ -75,18 +80,17 @@
         "peranpl1-ml1" = darwin.lib.darwinSystem {
           system = "x86_64-darwin";
           specialArgs = { inherit inputs outputs; };
-          modules = [
+          modules = attrValues self.darwinModules ++ [
             ./darwin/configuration.nix
             ./darwin/features/yabai.nix
-            ./darwin/features/spacebar.nix
+            # ./darwin/features/spacebar.nix
+            ./darwin/features/sketchybar.nix
             ./darwin/features/skhd.nix
             home-manager.darwinModules.home-manager
             {
               home-manager.extraSpecialArgs = { inherit inputs outputs; };
-              # home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
-              home-manager.users.peranpl1 = 
-              {
+              home-manager.users.peranpl1 = {
                 imports = [
                   ./home-manager
                   ./home-manager/features/emacs.nix
@@ -94,7 +98,7 @@
                   ./home-manager/features/tex.nix
                   ./home-manager/features/zotero.nix
                   ./home-manager/features/darwin.nix
-                  ./home-manager/features/fonts.nix
+                  # ./home-manager/features/fonts.nix
                   ./home-manager/features/aplnis.nix
                 ];
               };
@@ -118,25 +122,6 @@
                 ./home-manager/features/zotero.nix
                 ./home-manager/features/darwin.nix
                 ./home-manager/features/fonts.nix
-              ];
-            }
-          ];
-        };
-        "peranpl1@peranpl1-ml1" = home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages.x86_64-darwin;
-          extraSpecialArgs = { inherit inputs outputs; };
-          modules = [
-            ./home-manager
-            {
-              home.username = "peranpl1";
-              imports = [
-                ./home-manager/features/emacs.nix
-                ./home-manager/features/desktop.nix
-                ./home-manager/features/tex.nix
-                ./home-manager/features/zotero.nix
-                ./home-manager/features/darwin.nix
-                ./home-manager/features/fonts.nix
-                ./home-manager/features/aplnis.nix
               ];
             }
           ];

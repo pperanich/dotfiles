@@ -11,6 +11,7 @@ in
 {
   home.packages = with pkgs; [
     nodePackages.pyright
+    epdfview
   ];
 
   programs.emacs = {

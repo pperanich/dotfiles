@@ -16,9 +16,11 @@ in
     httpie # Better curl
     jq # JSON pretty printer and manipulator
     #azure-cli
+    plantuml
+    micromamba
     gnutls
     graphviz
-    # nodejs
+    nodejs
     qpdf
     wget
     cmake

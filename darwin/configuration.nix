@@ -11,13 +11,22 @@
     settings = {
       trusted-users = [ "root" "peranpl1" ];
       # Enable flakes and new 'nix' command
-      experimental-features = "nix-command flakes";
+      experimental-features = [ "nix-command" "flakes" "repl-flake" ];
+      warn-dirty = false;
       # Deduplicate and optimize nix store
       auto-optimise-store = true;
     };
     gc = {
       automatic = true;
       interval = { Day = 7; };
+    };
+  };
+
+  nixpkgs = {
+    overlays = builtins.attrValues outputs.overlays;
+    config = {
+      allowUnfree = true;
+      allowUnfreePredicate = (_: true);
     };
   };
 
@@ -44,11 +53,11 @@
       InitialKeyRepeat = 10;
       KeyRepeat = 1;
       "com.apple.mouse.tapBehavior" = 1;
-      "com.apple.swipescrolldirection" = true;
+      "com.apple.swipescrolldirection" = false;
     };
     trackpad = {
       Clicking = true;
-      TrackpadThreeFingerDrag = true;
+      TrackpadThreeFingerDrag = false;
     };
   };
 

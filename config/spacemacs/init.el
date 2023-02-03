@@ -57,10 +57,10 @@ This function should only modify configuration layer settings."
      ;; Language support
      major-modes
      c-c++
-     (plantuml :variables plantuml-jar-path "~/spacemacs/private/plantuml-1.2022.6.jar" org-plantuml-jar-path "~/spacemacs/private/plantuml-1.2022.6.jar")
+     (plantuml :variables plantuml-jar-path (find-nix-path "plantuml" "/lib/plantuml.jar") org-plantuml-jar-path (find-nix-path "plantuml" "/lib/plantuml.jar"))
      (python :variables python-backend 'lsp python-lsp-server 'pyright python-formatter 'black python-format-on-save t)
      (csharp :variables csharp-backend 'lsp)
-     (conda :variables conda-anaconda-home "~/opt/anaconda3")
+     (conda :variables conda-anaconda-home "~/micromamba/")
      (markdown
       :variables
       markdown-asymmetric-header t
@@ -638,10 +638,13 @@ See the header of this file for more information."
   configuration.
   It is mostly for variables that should be set before packages are loaded.
   If you are unsure, try setting them in `dotspacemacs/user-config' first."
-
-  ;;; Use local org-mode installation
-  ;; (add-to-list 'load-path "~/tools/org-mode/lisp")
-  ;; (require 'org-loaddefs)
+  (defun find-nix-path (name relative)
+    ;; Poll nix path-info to find dir of command installed
+    (setq path (shell-command-to-string (concat "nix path-info nixpkgs#" name)))
+    ;; Remove newline character at end of output
+    (setq path (replace-regexp-in-string "\n$" "" path))
+    (setq path (concat path relative))
+    )
   )
 
 

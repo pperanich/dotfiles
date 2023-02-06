@@ -9,7 +9,7 @@ in
 
     bc # Calculator
     bottom # System viewer
-    ncdu # TUI disk usage
+    # ncdu # TUI disk usage
     exa # Better ls
     ripgrep # Better grep
     fd # Better find

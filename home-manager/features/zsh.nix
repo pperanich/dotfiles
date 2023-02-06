@@ -30,7 +30,7 @@
       # >>> mamba initialize >>>
       # !! Contents within this block are managed by 'mamba init' !!
       export MAMBA_EXE="${pkgs.micromamba}/bin/micromamba";
-      export MAMBA_ROOT_PREFIX="/home/peranpl1/micromamba";
+      export MAMBA_ROOT_PREFIX="${config.home.homeDirectory}/micromamba";
       __mamba_setup="$('${pkgs.micromamba}/bin/micromamba' shell hook --shell zsh --prefix '${config.home.homeDirectory}/micromamba' 2> /dev/null)"
       if [ $? -eq 0 ]; then
           eval "$__mamba_setup"

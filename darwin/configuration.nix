@@ -57,7 +57,7 @@
     };
     trackpad = {
       Clicking = true;
-      TrackpadThreeFingerDrag = false;
+      TrackpadThreeFingerDrag = true;
     };
   };
 

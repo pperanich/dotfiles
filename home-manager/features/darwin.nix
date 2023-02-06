@@ -9,5 +9,5 @@ in
   xdg.configFile."spacebar".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/spacebar";
   xdg.configFile."sketchybar".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/sketchybar";
   xdg.configFile."yabai".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/yabai";
-  xdg.configFile."skhd".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/skhd";
+  # xdg.configFile."skhd".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/skhd";
 }

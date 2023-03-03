@@ -4,6 +4,7 @@ let
   inherit (config.lib.file) mkOutOfStoreSymlink;
 in
 {
+  home.sessionVariables = { TERMINFO_DIRS = "${pkgs.alacritty.terminfo.outPath}/share/terminfo"; };
   home.packages = with pkgs; [
     feh
     libsecret
@@ -13,16 +14,17 @@ in
     zoom-us
     glib
     gimp
-    octave
     inkscape
     alacritty
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
       spotify
+      octave
       spotify-tui
       firefox
       brave
       bitwarden
       vlc
+      nixgl.auto.nixGLDefault
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     m-cli # useful macOS CLI commands
   ];

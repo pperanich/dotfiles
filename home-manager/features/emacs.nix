@@ -4,11 +4,15 @@ let
   inherit (config.lib.file) mkOutOfStoreSymlink;
 
   emacs = if pkgs.stdenv.hostPlatform.isDarwin then
-    pkgs.emacsMacport.override { withMacport = true; withSQLite3 = true; withWebP = true; withImageMagick = true; }
-          else
-            inputs.emacs-overlay.packages.${pkgs.system}.emacsGit.override { withImageMagick = true; };
+  pkgs.emacsMacport.override { withMacport = true; withSQLite3 = true; withWebP = true; withImageMagick = true; }
+  else
+  pkgs.emacsGit.override { withImageMagick = true; };
 in
 {
+  home.packages = with pkgs; [
+    nodePackages.pyright
+  ];
+
   programs.emacs = {
     enable = true;
     package = emacs;

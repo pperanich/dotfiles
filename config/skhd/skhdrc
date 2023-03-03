@@ -1,10 +1,11 @@
 ####### Shortcut Hotkeys #############
 # open terminal
-alt - return : open -n /Applications/Alacritty.app
+alt - return : open -n /Users/peranpl1/Applications/Home\ Manager\ Apps/Alacritty.app
 
 # restart Yabi, SpaceBar, and SKHD
 alt + shift - r : \
-    launchctl kickstart -k "gui/${UID}/homebrew.mxcl.yabai"; \
+    launchctl kickstart -k "gui/org.nixos.spacebar"; \
+    launchctl kickstart -k "gui/org.nixos.yabai"; \
     skhd --reload
 
 

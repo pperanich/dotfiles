@@ -171,6 +171,21 @@
             }
           ];
         };
+        "peranpl1@holobrain-ld2" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "peranpl1";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+                ./home-manager/features/standalone.nix
+              ];
+            }
+          ];
+        };
         "omni@om-apl-st1-ws1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };

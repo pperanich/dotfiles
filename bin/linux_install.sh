@@ -7,6 +7,7 @@ then
     sh /tmp/nix-install.sh --daemon
     sh /etc/profile
     source  ~/.$(ps -p $$ -ocomm=)rc
+    source $HOME/.nix-profile/etc/profile.d/nix.sh
 fi
 
 # Add appropriate nix.conf extras

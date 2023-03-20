@@ -13,5 +13,15 @@
     # example = prev.example.overrideAttrs (oldAttrs: rec {
     # ...
     # });
+    # micromamba = prev.micromamba.overrideAttrs(oldAttrs: rec {
+    #   postInstall = ''
+    #     export HOME=$out
+    #     mkdir -p $out/.conda/
+    #     touch $out/.conda/environments.txt
+    #     mkdir -p $out/opt/
+    #     $out/bin/micromamba env create -n conda conda -c conda-forge --root-prefix $out/opt --ssl-verify false -y
+    #     rm -rf $out/.conda/
+    #     '';
+    # });
   };
 }

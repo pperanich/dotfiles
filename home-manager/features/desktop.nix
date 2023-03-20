@@ -16,6 +16,7 @@ in
     gimp
     inkscape
     alacritty
+    hdfview
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
       spotify
       octave

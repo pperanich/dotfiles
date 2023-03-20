@@ -7,7 +7,46 @@
 
 
 ;; To install SOME-PACKAGE from MELPA, ELPA or emacsmirror:
-;(package! some-package)
+                                        ;(package! some-package)
+;; Aesthetics
+(package! doom-themes)
+(package! org-bullets)
+(package! olivetti)
+(package! engrave-faces)
+;; (package! engrave-faces-latex)
+;; For writing
+(package! writegood-mode)
+(package! langtool)
+;; For defining nice org-capture templates
+(package! org-starter)
+(package! dash)
+(package! dash-functional)
+(package! org-reverse-datetree)
+;; For annotating PDFs
+;; (package! org-noter)
+;; (package! org-pdftools)
+;; ;; (package! org-noter-pdftools)
+(package! org-roam-bibtex)
+(package! org-modern)
+;; For making a kanban from TODO entries
+(package! keycast)
+(package! org-kanban)
+(package! hide-mode-line)
+(package! numpydoc)
+(package! multi-vterm)
+(package! clipetty)
+(package! fontaine)
+(package! org-ql)
+(package! tree-sitter)
+(package! tree-sitter-langs)
+(package! qpdf
+  :recipe (:host github :repo "orgtre/qpdf.el"))
+(package! elgantt
+  :recipe (:host github :repo "legalnonsense/elgantt"))
+(package! info-variable-pitch
+  :recipe (:host github :repo "kisaragi-hiu/info-variable-pitch"))
+;; (package! org-habit)
+;; (package! org-faces)
 
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:

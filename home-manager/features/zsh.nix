@@ -5,7 +5,7 @@
     shellAliases = {
       ls="ls --color=auto";
       ll = "ls -la";
-      conda = "micromamba";
+      # conda = "micromamba";
     };
     history = {
       size = 10000;

@@ -1,4 +1,7 @@
 { pkgs, lib, inputs, outputs, config, ...}:
+let
+  inherit (config.users.users.peranpl1) home;
+in
 {
   
   environment.systemPackages = [ pkgs.skhd ];
@@ -10,8 +13,8 @@
       skhdConfig = ''
         ####### Shortcut Hotkeys #############
         # open terminal
-        alt - a : open -n ${pkgs.alacritty}/Applications/Alacritty.app
-        alt - e : open -n ${pkgs.emacs}/Applications/Emacs.app
+        alt - a : open -a ${home}/Applications/Home\ Manager\ Apps/Alacritty.app
+        alt - e : open -a ${home}/Applications/Home\ Manager\ Apps/Emacs.app
 
         alt + shift - r : \
             launchctl kickstart -k "gui/$(id -u)/org.nixos.sketchybar"; \

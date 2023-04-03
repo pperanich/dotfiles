@@ -99,6 +99,7 @@
                   ./home-manager/features/zotero.nix
                   ./home-manager/features/darwin.nix
                   ./home-manager/features/aplnis.nix
+                  ./home-manager/features/vscode.nix
                 ];
               };
             }

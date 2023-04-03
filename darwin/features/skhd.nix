@@ -15,6 +15,9 @@ in
         # open terminal
         alt - a : open -a ${home}/Applications/Home\ Manager\ Apps/Alacritty.app
         alt - e : open -a ${home}/Applications/Home\ Manager\ Apps/Emacs.app
+        alt - c : open -a ${home}/Applications/Home\ Manager\ Apps/Visual\ Studio\ Code.app
+        alt - s : open -a ${home}/Applications/Home\ Manager\ Apps/Slack.app
+        alt - b : open -a /Applications/Brave\ Browser.app
 
         alt + shift - r : \
             launchctl kickstart -k "gui/$(id -u)/org.nixos.sketchybar"; \
@@ -63,7 +66,7 @@ in
         alt + ctrl - right : yabai -m window --insert east
         
         # go back to previous workspace (kind of like back_and_forth in i3)
-        alt - b : yabai -m space --focus recent
+        # alt - b : yabai -m space --focus recent
         
         # move focused window to previous workspace
         alt + shift - b : yabai -m window --space recent; \
@@ -108,7 +111,7 @@ in
         
         # change layout of desktop
         alt - t : yabai -m space --layout bsp
-        alt - s : yabai -m space --layout float
+        alt - r : yabai -m space --layout float
         
         # float / unfloat window and center on screen
         #alt - t : yabai -m window --toggle float;\

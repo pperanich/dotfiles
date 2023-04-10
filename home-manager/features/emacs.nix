@@ -29,7 +29,7 @@ let
             sha256 = "sha256-oM6fXdXCWVcBnNrzXmF0ZMdp8j0pzkLE66WteeCutv8=";
           })
         ];
-    })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; }
+    })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; }
   else
   pkgs.emacsGit.override { withImageMagick = true; };
 in

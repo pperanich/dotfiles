@@ -19,6 +19,8 @@
     hardware.url = "github:nixos/nixos-hardware";
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    #neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay?rev=7070f17bb65146f9f6cff012c0321cbc9c8c8def";
+    #neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay?rev=d56f32281f4d6d74ce925a99946713dc6b5a0e30";
     #neovim-nightly-overlay = {
     #  url = "github:nix-community/neovim-nightly-overlay";
     #  # Pin to a nixpkgs revision that doesn't have NixOS/nixpkgs#208103 yet

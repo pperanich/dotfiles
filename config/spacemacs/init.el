@@ -135,8 +135,24 @@ This function should only modify configuration layer settings."
      clipetty
      fontaine
      org-ql
-     tree-sitter
-     tree-sitter-langs
+     ;; chatgpt-shell
+     (chatgpt-shell :location (recipe
+                              :fetcher github
+                              :repo "xenodium/chatgpt-shell"))
+     (dall-e-shell :location (recipe
+                              :fetcher github
+                              :repo "xenodium/chatgpt-shell"))
+     (ob-chatgpt-shell :location (recipe
+                                  :fetcher github
+                                  :repo "xenodium/chatgpt-shell"))
+     (ob-dall-e-shell :location (recipe
+                                 :fetcher github
+                                 :repo "xenodium/chatgpt-shell"))
+     (ox-chameleon :location (recipe
+                      :fetcher github
+                      :repo "tecosaur/ox-chameleon"))
+     ;; tree-sitter
+     ;; tree-sitter-langs
      (qpdf :location (recipe
                      :fetcher github
                      :repo "orgtre/qpdf.el"))
@@ -681,9 +697,94 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(connection-local-criteria-alist
+   '(((:application eshell)
+      eshell-connection-default-profile)
+     ((:application tramp :machine "localhost")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp :machine "peranpl1-ml1")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp)
+      tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)))
+ '(connection-local-profile-alist
+   '((eshell-connection-default-profile
+      (eshell-path-env-list))
+     (tramp-connection-local-darwin-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . tramp-ps-time)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-busybox-ps-profile
+      (tramp-process-attributes-ps-args "-o" "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "stat=abcde" "-o" "ppid,pgid,tty,time,nice,etime,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (user . string)
+       (group . string)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (ttname . string)
+       (time . tramp-ps-time)
+       (nice . number)
+       (etime . tramp-ps-time)
+       (args)))
+     (tramp-connection-local-bsd-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (group . string)
+       (comm . 52)
+       (state . string)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . number)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-default-shell-profile
+      (shell-file-name . "/bin/sh")
+      (shell-command-switch . "-c"))
+     (tramp-connection-local-default-system-profile
+      (path-separator . ":")
+      (null-device . "/dev/null"))))
  '(org-pandoc-options nil)
+ '(org-safe-remote-resources '("\\`https://gitlab\\.com\\(?:/\\|\\'\\)"))
  '(package-selected-packages
-   '(graphviz-dot-mode company-lua lua-mode typescript-mode tree-sitter-langs tree-sitter tsc company-nixos-options helm-nixos-options nix-mode nixos-options csv-mode org-ql peg ov org-super-agenda ts elgantt ligature fontaine info-variable-pitch keycast engrave-faces qpdf sql-indent sqlup-mode import-js grizzl js-doc js2-refactor multiple-cursors livid-mode nodejs-repl npm-mode skewer-mode js2-mode tern clipetty multi-vterm arduino-mode ebuild-mode hoon-mode logcat matlab-mode pkgbuild-mode qml-mode scad-mode stan-mode thrift vala-mode vala-snippets wolfram-mode csharp-mode attrap cmm-mode company-cabal dante lcr flycheck-haskell haskell-mode haskell-snippets helm-hoogle hindent hlint-refactor lsp-haskell numpydoc pandoc-mode org-noter-pdftools org-pdftools org-roam-bibtex org-roam yaml-mode writegood-mode org-starter org-reverse-datetree org-ref ox-pandoc citeproc org-noter org-kanban org-bullets olivetti langtool helm-bibtex bibtex-completion parsebib doom-themes dash-functional biblio biblio-core plantuml-mode web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css company-web web-completion-data add-node-modules-path valign org-journal org-tree-slide hide-mode-line lsp-latex evil-tex company-reftex company-math math-symbol-lists company-auctex auctex org-re-reveal ein polymode anaphora websocket ibuffer-projectile centaur-tabs helm-rtags google-c-style gendoxy flycheck-ycmd flycheck-rtags disaster cpp-auto-include company-ycmd ycmd request-deferred company-rtags rtags company-c-headers ccls spotify helm-spotify-plus multi reveal-in-osx-finder osx-trash osx-dictionary osx-clipboard launchctl toml-mode ron-mode racer rust-mode flycheck-rust cargo yapfify stickyfunc-enhance sphinx-doc pytest pylookup pyenv-mode pydoc py-isort poetry transient pippel pipenv load-env-vars pyvenv pip-requirements nose lsp-python-ms lsp-pyright live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gtags helm-cscope xcscope ggtags dap-mode lsp-treemacs bui lsp-mode markdown-mode cython-mode counsel-gtags counsel swiper ivy company-anaconda company code-cells blacken anaconda-mode pythonic ws-butler writeroom-mode winum which-key volatile-highlights vim-powerline vi-tilde-fringe uuidgen use-package undo-tree treemacs-projectile treemacs-persp treemacs-icons-dired treemacs-evil toc-org symon symbol-overlay string-inflection string-edit spacemacs-whitespace-cleanup spacemacs-purpose-popwin spaceline-all-the-icons space-doc restart-emacs request rainbow-delimiters quickrun popwin pcre2el password-generator paradox overseer org-superstar open-junk-file nameless multi-line macrostep lorem-ipsum link-hint inspector info+ indent-guide hybrid-mode hungry-delete holy-mode hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-terminal-cursor-changer evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-evilified-state evil-escape evil-ediff evil-easymotion evil-collection evil-cleverparens evil-args evil-anzu eval-sexp-fu emr elisp-slime-nav elisp-def editorconfig dumb-jump drag-stuff dotenv-mode dired-quick-sort diminish devdocs define-word column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
+   '(djvu modus-themes ox-chameleon ob-dall-e-shell org-modern graphviz-dot-mode company-lua lua-mode typescript-mode tree-sitter-langs tree-sitter tsc company-nixos-options helm-nixos-options nix-mode nixos-options csv-mode org-ql peg ov org-super-agenda ts elgantt ligature fontaine info-variable-pitch keycast engrave-faces qpdf sql-indent sqlup-mode import-js grizzl js-doc js2-refactor multiple-cursors livid-mode nodejs-repl npm-mode skewer-mode js2-mode tern clipetty multi-vterm arduino-mode ebuild-mode hoon-mode logcat matlab-mode pkgbuild-mode qml-mode scad-mode stan-mode thrift vala-mode vala-snippets wolfram-mode csharp-mode attrap cmm-mode company-cabal dante lcr flycheck-haskell haskell-mode haskell-snippets helm-hoogle hindent hlint-refactor lsp-haskell numpydoc pandoc-mode org-noter-pdftools org-pdftools org-roam-bibtex org-roam yaml-mode writegood-mode org-starter org-reverse-datetree org-ref ox-pandoc citeproc org-noter org-kanban org-bullets olivetti langtool helm-bibtex bibtex-completion parsebib doom-themes dash-functional biblio biblio-core plantuml-mode web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css company-web web-completion-data add-node-modules-path valign org-journal org-tree-slide hide-mode-line lsp-latex evil-tex company-reftex company-math math-symbol-lists company-auctex auctex org-re-reveal ein polymode anaphora websocket ibuffer-projectile centaur-tabs helm-rtags google-c-style gendoxy flycheck-ycmd flycheck-rtags disaster cpp-auto-include company-ycmd ycmd request-deferred company-rtags rtags company-c-headers ccls spotify helm-spotify-plus multi reveal-in-osx-finder osx-trash osx-dictionary osx-clipboard launchctl toml-mode ron-mode racer rust-mode flycheck-rust cargo yapfify stickyfunc-enhance sphinx-doc pytest pylookup pyenv-mode pydoc py-isort poetry transient pippel pipenv load-env-vars pyvenv pip-requirements nose lsp-python-ms lsp-pyright live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gtags helm-cscope xcscope ggtags dap-mode lsp-treemacs bui lsp-mode markdown-mode cython-mode counsel-gtags counsel swiper ivy company-anaconda company code-cells blacken anaconda-mode pythonic ws-butler writeroom-mode winum which-key volatile-highlights vim-powerline vi-tilde-fringe uuidgen use-package undo-tree treemacs-projectile treemacs-persp treemacs-icons-dired treemacs-evil toc-org symon symbol-overlay string-inflection string-edit spacemacs-whitespace-cleanup spacemacs-purpose-popwin spaceline-all-the-icons space-doc restart-emacs request rainbow-delimiters quickrun popwin pcre2el password-generator paradox overseer org-superstar open-junk-file nameless multi-line macrostep lorem-ipsum link-hint inspector info+ indent-guide hybrid-mode hungry-delete holy-mode hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-terminal-cursor-changer evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-evilified-state evil-escape evil-ediff evil-easymotion evil-collection evil-cleverparens evil-args evil-anzu eval-sexp-fu emr elisp-slime-nav elisp-def editorconfig dumb-jump drag-stuff dotenv-mode dired-quick-sort diminish devdocs define-word column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

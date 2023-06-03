@@ -4,7 +4,7 @@ let
   inherit (config.lib.file) mkOutOfStoreSymlink;
 
   emacs = if pkgs.stdenv.hostPlatform.isDarwin then
-  (pkgs.emacsGit.overrideAttrs (old: {
+  (pkgs.emacs-git.overrideAttrs (old: {
       patches =
         (old.patches or [])
         ++ [
@@ -20,8 +20,8 @@ let
           })
           # Enable rounded window with no decoration
           (pkgs.fetchpatch {
-            url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-29/round-undecorated-frame.patch";
-            sha256 = "sha256-qPenMhtRGtL9a0BvGnPF4G1+2AJ1Qylgn/lUM8J2CVI=";
+            url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-30/round-undecorated-frame.patch";
+            sha256 = "sha256-uYIxNTyfbprx5mCqMNFVrBcLeo+8e21qmBE3lpcnd+4=";
           })
           # Make Emacs aware of OS-level light/dark mode
           (pkgs.fetchpatch {
@@ -31,7 +31,7 @@ let
         ];
     })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; }
   else
-  pkgs.emacsGit.override { withImageMagick = true; };
+  pkgs.emacs-git.override { withImageMagick = true; };
 in
 {
   home.packages = with pkgs; [

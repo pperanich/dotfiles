@@ -14,12 +14,12 @@
       experimental-features = [ "nix-command" "flakes" "repl-flake" ];
       warn-dirty = false;
       # Deduplicate and optimize nix store
-      auto-optimise-store = true;
+      # auto-optimise-store = true;
     };
-    gc = {
-      automatic = true;
-      interval = { Day = 7; };
-    };
+    # gc = {
+    #   automatic = true;
+    #   interval = { Day = 7; };
+    # };
   };
 
   nixpkgs = {

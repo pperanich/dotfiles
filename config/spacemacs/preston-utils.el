@@ -289,6 +289,7 @@
 (spacemacs/set-leader-keys "od" 'org-roam-dailies-goto-today)
 
 ;; org-modern
+(require 'org-modern)
 (setq org-modern-label-border 1)
 (setq org-modern-variable-pitch nil)
 (setq org-modern-timestamp t)
@@ -335,6 +336,7 @@
 (use-package engrave-faces-latex
   :after ox-latex)
 (setq org-latex-listings 'engraved)
+
 
 ;; org-file-apps
 (setq org-file-apps
@@ -485,141 +487,119 @@ With a prefix ARG, remove start location."
 (define-key global-map (kbd "C-c f") #'fontaine-set-preset)
 (define-key global-map (kbd "C-c F") #'fontaine-set-face-font)
 
-;;; modus-theme configurations
-(setq modus-themes-italic-constructs nil
-      modus-themes-bold-constructs nil
-      modus-themes-mixed-fonts t
-      modus-themes-subtle-line-numbers t
-      modus-themes-intense-mouseovers nil
-      modus-themes-deuteranopia nil
-      modus-themes-tabs-accented nil
-      modus-themes-variable-pitch-ui t
-      modus-themes-inhibit-reload t ; only applies to `customize-set-variable' and related
+;; ;;; modus-theme configurations
+;; (require 'modus-themes)
+;; (setq modus-themes-italic-constructs nil
+;;       modus-themes-bold-constructs nil
+;;       modus-themes-mixed-fonts t
+;;       modus-themes-subtle-line-numbers t
+;;       modus-themes-intense-mouseovers nil
+;;       modus-themes-deuteranopia nil
+;;       modus-themes-tabs-accented nil
+;;       modus-themes-variable-pitch-ui t
+;;       modus-themes-i `modus-themes-syntax' are either nil (the default),
+;;       ;; or a list of properties that may include any of those symbols:
+;;       ;; `faint', `yellow-comments', `green-strings', `alt-syntax'
+;;       modus-themes-syntax '(yellow-comments green-strings)
 
-      modus-themes-fringes nil ; {nil,'subtle,'intense}
+;;       ;; Options for `modus-themes-hl-line' are either nil (the default),
+;;       ;; or a list of properties that may include any of those symbols:
+;;       ;; `accented', `underline', `intense'
+;;       modus-themes-hl-line nil
 
-      ;; Options for `modus-themes-lang-checkers' are either nil (the
-      ;; default), or a list of properties that may include any of those
-      ;; symbols: `straight-underline', `text-also', `background',
-      ;; `intense' OR `faint'.
-      modus-themes-lang-checkers nil
+;;       ;; Options for `modus-themes-paren-match' are either nil (the
+;;       ;; default), or a list of properties that may include any of those
+;;       ;; symbols: `bold', `intense', `underline'
+;;       modus-themes-paren-match '(bold)
 
-      ;; Options for `modus-themes-mode-line' are either nil, or a list
-      ;; that can combine any of `3d' OR `moody', `borderless',
-      ;; `accented', a natural number for extra padding (or a cons cell
-      ;; of padding and NATNUM), and a floating point for the height of
-      ;; the text relative to the base font size (or a cons cell of
-      ;; height and FLOAT)
-      modus-themes-mode-line '(borderless (height 0.9) (padding 3))
+;;       ;; Options for `modus-themes-links' are either nil (the default),
+;;       ;; or a list of properties that may include any of those symbols:
+;;       ;; `neutral-underline' OR `no-underline', `faint' OR `no-color',
+;;       ;; `bold', `italic', `background'
+;;       modus-themes-links '(neutral-underline)
 
-      ;; Options for `modus-themes-markup' are either nil, or a list
-      ;; that can combine any of `bold', `italic', `background',
-      ;; `intense'.
-      modus-themes-markup nil
+;;       ;; Options for `modus-themes-box-buttons' are either nil (the
+;;       ;; default), or a list that can combine any of `flat',
+;;       ;; `accented', `faint', `variable-pitch', `underline',
+;;       ;; `all-buttons', the symbol of any font weight as listed in
+;;       ;; `modus-themes-weights', and a floating point number
+;;       ;; (e.g. 0.9) for the height of the button's text.
+;;       modus-themes-box-buttons nil
 
-      ;; Options for `modus-themes-syntax' are either nil (the default),
-      ;; or a list of properties that may include any of those symbols:
-      ;; `faint', `yellow-comments', `green-strings', `alt-syntax'
-      modus-themes-syntax '(yellow-comments green-strings)
+;;       ;; Options for `modus-themes-prompts' are either nil (the
+;;       ;; default), or a list of properties that may include any of those
+;;       ;; symbols: `background', `bold', `gray', `intense', `italic'
+;;       modus-themes-prompts '(background intense)
 
-      ;; Options for `modus-themes-hl-line' are either nil (the default),
-      ;; or a list of properties that may include any of those symbols:
-      ;; `accented', `underline', `intense'
-      modus-themes-hl-line nil
+;;       ;; The `modus-themes-completions' is an alist that reads three
+;;       ;; keys: `matches', `selection', `popup'.  Each accepts a nil
+;;       ;; value (or empty list) or a list of properties that can include
+;;       ;; any of the following (for WEIGHT read further below):
+;;       ;;
+;;       ;; `matches' - `background', `intense', `underline', `italic', WEIGHT
+;;       ;; `selection' - `accented', `intense', `underline', `italic', `text-also', WEIGHT
+;;       ;; `popup' - same as `selected'
+;;       ;; `t' - applies to any key not explicitly referenced (check docs)
+;;       ;;
+;;       ;; WEIGHT is a symbol such as `semibold', `light', or anything
+;;       ;; covered in `modus-themes-weights'.  Bold is used in the absence
+;;       ;; of an explicit WEIGHT.
+;;       modus-themes-completions
+;;       '((matches . (semibold))
+;;         (selection . (extrabold accented))
+;;         (popup . (extrabold accented)))
 
-      ;; Options for `modus-themes-paren-match' are either nil (the
-      ;; default), or a list of properties that may include any of those
-      ;; symbols: `bold', `intense', `underline'
-      modus-themes-paren-match '(bold)
+;;       modus-themes-mail-citations nil ; {nil,'intense,'faint,'monochrome}
 
-      ;; Options for `modus-themes-links' are either nil (the default),
-      ;; or a list of properties that may include any of those symbols:
-      ;; `neutral-underline' OR `no-underline', `faint' OR `no-color',
-      ;; `bold', `italic', `background'
-      modus-themes-links '(neutral-underline)
+;;       ;; Options for `modus-themes-region' are either nil (the default),
+;;       ;; or a list of properties that may include any of those symbols:
+;;       ;; `no-extend', `bg-only', `accented'
+;;       modus-themes-region '(no-extend)
 
-      ;; Options for `modus-themes-box-buttons' are either nil (the
-      ;; default), or a list that can combine any of `flat',
-      ;; `accented', `faint', `variable-pitch', `underline',
-      ;; `all-buttons', the symbol of any font weight as listed in
-      ;; `modus-themes-weights', and a floating point number
-      ;; (e.g. 0.9) for the height of the button's text.
-      modus-themes-box-buttons nil
+;;       ;; Options for `modus-themes-diffs': nil, 'desaturated, 'bg-only
+;;       modus-themes-diffs 'desaturated
 
-      ;; Options for `modus-themes-prompts' are either nil (the
-      ;; default), or a list of properties that may include any of those
-      ;; symbols: `background', `bold', `gray', `intense', `italic'
-      modus-themes-prompts '(background intense)
+;;       modus-themes-org-blocks 'gray-background ; {nil,'gray-background,'tinted-background}
 
-      ;; The `modus-themes-completions' is an alist that reads three
-      ;; keys: `matches', `selection', `popup'.  Each accepts a nil
-      ;; value (or empty list) or a list of properties that can include
-      ;; any of the following (for WEIGHT read further below):
-      ;;
-      ;; `matches' - `background', `intense', `underline', `italic', WEIGHT
-      ;; `selection' - `accented', `intense', `underline', `italic', `text-also', WEIGHT
-      ;; `popup' - same as `selected'
-      ;; `t' - applies to any key not explicitly referenced (check docs)
-      ;;
-      ;; WEIGHT is a symbol such as `semibold', `light', or anything
-      ;; covered in `modus-themes-weights'.  Bold is used in the absence
-      ;; of an explicit WEIGHT.
-      modus-themes-completions
-      '((matches . (semibold))
-        (selection . (extrabold accented))
-        (popup . (extrabold accented)))
+;;       modus-themes-org-agenda ; this is an alist: read the manual or its doc string
+;;       '((header-block . (variable-pitch light 1.6))
+;;         (header-date . (underline-today grayscale workaholic 1.2))
+;;         (event . (accented italic varied))
+;;         (scheduled . rainbow)
+;;         (habit . simplified))
 
-      modus-themes-mail-citations nil ; {nil,'intense,'faint,'monochrome}
+;;       ;; The `modus-themes-headings' is an alist with lots of possible
+;;       ;; combinations, including per-heading-level tweaks: read the
+;;       ;; manual or its doc string.
+;;       modus-themes-headings
+;;       '((0 . (variable-pitch light (height 2.2)))
+;;         (1 . (rainbow variable-pitch light (height 1.6)))
+;;         (2 . (rainbow variable-pitch light (height 1.4)))
+;;         (3 . (rainbow variable-pitch regular (height 1.3)))
+;;         (4 . (rainbow regular (height 1.2)))
+;;         (5 . (rainbow (height 1.1)))
+;;         (t . (variable-pitch extrabold))))
+;; ;; Add a hook to set font on theme reload
+;; ;; Load the theme files before enabling a theme (else you get an error).
+;; ;; (modus-themes-load-themes)
+;; ;; Set theme based on what is set in .spacemacs
+;; (let ((theme (nth 0 dotspacemacs-themes)))
+;;   (cond ((eq theme 'modus-vivendi) (modus-themes-load-vivendi))
+;;         ((eq theme 'modus-operandi) (modus-themes-load-operandi))))
 
-      ;; Options for `modus-themes-region' are either nil (the default),
-      ;; or a list of properties that may include any of those symbols:
-      ;; `no-extend', `bg-only', `accented'
-      modus-themes-region '(no-extend)
-
-      ;; Options for `modus-themes-diffs': nil, 'desaturated, 'bg-only
-      modus-themes-diffs 'desaturated
-
-      modus-themes-org-blocks 'gray-background ; {nil,'gray-background,'tinted-background}
-
-      modus-themes-org-agenda ; this is an alist: read the manual or its doc string
-      '((header-block . (variable-pitch light 1.6))
-        (header-date . (underline-today grayscale workaholic 1.2))
-        (event . (accented italic varied))
-        (scheduled . rainbow)
-        (habit . simplified))
-
-      ;; The `modus-themes-headings' is an alist with lots of possible
-      ;; combinations, including per-heading-level tweaks: read the
-      ;; manual or its doc string.
-      modus-themes-headings
-      '((0 . (variable-pitch light (height 2.2)))
-        (1 . (rainbow variable-pitch light (height 1.6)))
-        (2 . (rainbow variable-pitch light (height 1.4)))
-        (3 . (rainbow variable-pitch regular (height 1.3)))
-        (4 . (rainbow regular (height 1.2)))
-        (5 . (rainbow (height 1.1)))
-        (t . (variable-pitch extrabold))))
-;; Add a hook to set font on theme reload
-;; Load the theme files before enabling a theme (else you get an error).
-(modus-themes-load-themes)
-;; Set theme based on what is set in .spacemacs
-(let ((theme (nth 0 dotspacemacs-themes)))
-  (cond ((eq theme 'modus-vivendi) (modus-themes-load-vivendi))
-        ((eq theme 'modus-operandi) (modus-themes-load-operandi))))
-
-(defun my-modus-themes-toggle ()
-  "Toggle between `modus-operandi' and `modus-vivendi' themes.
-This uses `enable-theme' instead of the standard method of
-`load-theme'.  The technicalities are covered in the Modus themes
-manual."
-  (interactive)
-  (pcase (modus-themes--current-theme)
-    ('modus-operandi (progn (enable-theme 'modus-vivendi)
-                            (disable-theme 'modus-operandi)))
-    ('modus-vivendi (progn (enable-theme 'modus-operandi)
-                           (disable-theme 'modus-vivendi)))
-    (_ (error "No Modus theme is loaded; evaluate `modus-themes-load-themes' first"))))
-(define-key global-map (kbd "<f5>") #'modus-themes-toggle)
+;; (defun my-modus-themes-toggle ()
+;;   "Toggle between `modus-operandi' and `modus-vivendi' themes.
+;; This uses `enable-theme' instead of the standard method of
+;; `load-theme'.  The technicalities are covered in the Modus themes
+;; manual."
+;;   (interactive)
+;;   (pcase (modus-themes--current-theme)
+;;     ('modus-operandi (progn (enable-theme 'modus-vivendi)
+;;                             (disable-theme 'modus-operandi)))
+;;     ('modus-vivendi (progn (enable-theme 'modus-operandi)
+;;                            (disable-theme 'modus-vivendi)))
+;;     (_ (error "No Modus theme is loaded; evaluate `modus-themes-load-themes' first"))))
+;; (define-key global-map (kbd "<f5>") #'modus-themes-toggle)
 
 ;; (defun my-modus-themes-custom-faces ()
   ;; (message "In custom hook"))
@@ -783,10 +763,35 @@ manual."
 ;;   (setq elgantt-agenda-files (buffer-file-name))
 ;;   (elgantt-open))
 
-(require 'tree-sitter)
-(require 'tree-sitter-hl)
-(require 'tree-sitter-langs)
-(require 'tree-sitter-debug)
-(require 'tree-sitter-query)
+;; (require 'tree-sitter)
+;; (require 'tree-sitter-hl)
+;; (require 'tree-sitter-langs)
+;; (require 'tree-sitter-debug)
+;; (require 'tree-sitter-query)
+
+(setq chatgpt-shell-openai-key "sk-REDACTED_OPENAI_API_KEY_XXX")
+(setq chatgpt-shell-request-timeout 900)
+;; (ob-chatgpt-shell)
+(require 'ob-chatgpt-shell)
+(ob-chatgpt-shell-setup)
+
+
+(setq dall-e-shell-openai-key "sk-REDACTED_OPENAI_API_KEY_XXX")
+(require 'ob-dall-e-shell)
+(ob-dall-e-shell-setup)
+
+(defun my/md-to-org-region (start end)
+  "Convert region from markdown to org"
+  (interactive "r")
+  (shell-command-on-region start end "pandoc -f markdown -t org" t t))
+
+(defun my/org-wraplines (start end)
+  "Convert region from markdown to org"
+  (interactive "r")
+  (shell-command-on-region start end "pandoc -f org -t org" t t))
+
+(setq org-html-htmlize-output-type 'inline-css)
+;; (setq org-html-htmlize-output-type nil)
+(require 'ox-chameleon)
 
 (provide 'preston-utils)

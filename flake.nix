@@ -13,19 +13,9 @@
     darwin.url = "github:LnL7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs";
 
-    darwin-alt.url = "github:azuwis/nix-darwin";
-    darwin-alt.inputs.nixpkgs.follows = "nixpkgs";
-
     hardware.url = "github:nixos/nixos-hardware";
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
-    #neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay?rev=7070f17bb65146f9f6cff012c0321cbc9c8c8def";
-    #neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay?rev=d56f32281f4d6d74ce925a99946713dc6b5a0e30";
-    #neovim-nightly-overlay = {
-    #  url = "github:nix-community/neovim-nightly-overlay";
-    #  # Pin to a nixpkgs revision that doesn't have NixOS/nixpkgs#208103 yet
-    #  inputs.nixpkgs.url = "github:nixos/nixpkgs?rev=fad51abd42ca17a60fc1d4cb9382e2d79ae31836";
-    #};
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixgl.url = "github:guibou/nixGL";
   };
@@ -85,7 +75,6 @@
           modules = attrValues self.darwinModules ++ [
             ./darwin/configuration.nix
             ./darwin/features/yabai.nix
-            # ./darwin/features/spacebar.nix
             ./darwin/features/sketchybar.nix
             ./darwin/features/skhd.nix
             home-manager.darwinModules.home-manager

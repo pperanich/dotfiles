@@ -200,6 +200,23 @@
             }
           ];
         };
+        "holo@holobrain-ld2" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "holo";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+                ./home-manager/features/standalone.nix
+                ./home-manager/features/fonts.nix
+                ./home-manager/features/aplnis.nix
+              ];
+            }
+          ];
+        };
         "omni@om-apl-st1-ws1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };

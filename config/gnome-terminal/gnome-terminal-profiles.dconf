@@ -1,0 +1,13 @@
+[:b1dcc9dd-5262-4d8d-a863-c897e6d979b9]
+background-color='#000000'
+bold-color-same-as-fg=true
+cursor-background-color='#FFFFFF'
+cursor-colors-set=true
+cursor-foreground-color='#000000'
+font='Iosevka Nerd Font 12'
+foreground-color='#FFFFFF'
+highlight-colors-set=false
+palette=['#000000', '#FF8059', '#44BC44', '#D0BC00', '#2FAFFF', '#FEACD0', '#00D3D0', '#FFFFFF', '#5C6370', '#FF8059', '#44BC44', '#D0BC00', '#2FAFFF', '#FEACD0', '#00D3D0', '#FFFFFF']
+use-system-font=false
+use-theme-colors=false
+visible-name='Modus'

@@ -3,4 +3,5 @@
 
 { pkgs ? (import ../nixpkgs.nix) { } }: {
   # example = pkgs.callPackage ./example { };
+  aplnis-env = pkgs.callPackage ./aplnis-env { };
 }

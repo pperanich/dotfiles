@@ -25,7 +25,7 @@
     ];
     historySubstringSearch.enable = true;
     enableAutosuggestions = true;
-    enableSyntaxHighlighting = true;
+    syntaxHighlighting.enable = true;
     initExtra=''
       # >>> mamba initialize >>>
       # !! Contents within this block are managed by 'mamba init' !!

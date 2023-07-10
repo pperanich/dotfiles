@@ -289,7 +289,7 @@
 (spacemacs/set-leader-keys "od" 'org-roam-dailies-goto-today)
 
 ;; org-modern
-(require 'org-modern)
+(use-package org-modern)
 (setq org-modern-label-border 1)
 (setq org-modern-variable-pitch nil)
 (setq org-modern-timestamp t)
@@ -754,7 +754,7 @@ With a prefix ARG, remove start location."
 (add-hook 'Info-mode-hook #'info-variable-pitch-mode)
 
 ;;; unicode-fonts
-(setq unicode-fonts-enable-ligatures t)
+(setq unicode-fonts-enable-ligatures nil)
 (setq unicode-fonts-force-multi-color-on-mac t)
 
 ;;; elgantt

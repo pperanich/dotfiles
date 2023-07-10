@@ -4,6 +4,7 @@
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   # neovim-overlay = inputs.neovim-nightly-overlay.overlay;
   nixgl = inputs.nixgl.overlay;
+  rust-overlay = inputs.rust-overlay.overlays.default;
 
   additions = final: _prev: import ../pkgs { pkgs = final; };
   # This one contains whatever you want to overlay

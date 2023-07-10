@@ -36,7 +36,7 @@ in
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     reattach-to-user-namespace
     pam-reattach
-    xquartz
+    # xquartz
   ];
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";

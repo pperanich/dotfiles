@@ -30,7 +30,7 @@ let
             sha256 = "sha256-oM6fXdXCWVcBnNrzXmF0ZMdp8j0pzkLE66WteeCutv8=";
           })
         ];
-    })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; withTreeSitter = true; }
+    })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withTreeSitter = true; }
   else
   pkgs.emacs-git.override { withImageMagick = true; withTreeSitter = true; };
 
@@ -40,9 +40,8 @@ let
   #     rev = "99186e71bff84a2fb217ef381437683d396cb811";
   #     hash = "sha256-M3i9ftk4e3HWGLT5uEG9gynTA5uUJwPSddGlZF0VmQs=";
   #   }; }).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; withTreeSitter = true; };
-  emacs-with-pkgs = with pkgs; ((emacsPackagesFor emacs).emacsWithPackages (epkgs: [
-    epkgs.tree-sitter
-    epkgs.tree-sitter-langs
+  emacs-with-pkgs = with pkgs; ((emacsPackagesFor emacs).emacsWithPackages (epkgs: with epkgs; [
+    treesit-grammars.with-all-grammars
   ]));
 in
 {

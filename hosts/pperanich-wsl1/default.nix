@@ -1,5 +1,6 @@
-{ pkgs, inputs, ... }: {
+{ pkgs, inputs, outputs, ... }: {
   imports = [
+    ./hardware-configuration.nix
     ../common/global
     ../common/users/pperanich
     ../common/features/wsl.nix
@@ -8,12 +9,12 @@
         home-manager.useUserPackages = true;
         home-manager.users.pperanich = {
         imports = [
-            ./home-manager
-            ./home-manager/features/emacs.nix
-            ./home-manager/features/desktop.nix
-            ./home-manager/features/tex.nix
-            ./home-manager/features/zotero.nix
-            ./home-manager/features/vscode.nix
+            ../../home-manager
+            ../../home-manager/features/emacs.nix
+            ../../home-manager/features/desktop.nix
+            ../../home-manager/features/tex.nix
+            ../../home-manager/features/zotero.nix
+            ../../home-manager/features/vscode.nix
         ];
         };
     }
@@ -35,7 +36,6 @@
 
   programs = {
     dconf.enable = true;
-    vim.enable = true;
   };
 
   xdg.portal = {
@@ -43,5 +43,5 @@
     wlr.enable = true;
   };
 
-  system.stateVersion = "22.05";
+  system.stateVersion = "23.05";
 }

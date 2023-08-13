@@ -4,8 +4,9 @@ in
 {
   users.mutableUsers = false;
   users.users.pperanich = {
+    initialPassword = "test";
     isNormalUser = true;
-    shell = pkgs.fish;
+    shell = pkgs.zsh;
     extraGroups = [
       "wheel"
       "video"
@@ -21,6 +22,7 @@ in
     ];
     packages = [ pkgs.home-manager ];
   };
+  programs.zsh.enable = true;
 
   services.geoclue2.enable = true;
   security.pam.services = { swaylock = { }; };

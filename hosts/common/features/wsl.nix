@@ -1,4 +1,4 @@
-{ lib, pkgs, config, modulesPath, ... }:
+{ inputs, lib, pkgs, config, modulesPath, ... }:
 {
   imports = [
     inputs.NixOS-WSL.nixosModules.wsl
@@ -7,8 +7,8 @@
 
   wsl = {
     enable = true;
-    automountPath = "/mnt";
-    defaultUser = config.home.username;
+    wslConf.automount.root = "/mnt";
+    defaultUser = "pperanich";
     startMenuLaunchers = true;
     nativeSystemd = true;
 
@@ -17,5 +17,7 @@
 
     # Enable integration with Docker Desktop (needs to be installed)
     docker-desktop.enable = true;
+
+    # interop.register = false;
   };
 }

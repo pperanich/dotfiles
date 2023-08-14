@@ -13,6 +13,10 @@
     darwin.url = "github:LnL7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs";
 
+    # WSL
+    NixOS-WSL.url = "github:nix-community/NixOS-WSL";
+    NixOS-WSL.inputs.nixpkgs.follows = "nixpkgs";
+
     hardware.url = "github:nixos/nixos-hardware";
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
@@ -61,10 +65,16 @@
       );
 
       nixosConfigurations = {
-        pperanich-ld1 = nixpkgs.lib.nixosSystem {
+        "pperanich-ld1" = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs outputs; };
           modules = [
             ./nixos/configuration.nix
+          ];
+        };
+        "pperanich-wsl1" = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            ./hosts/pperanich-wsl1
           ];
         };
       };

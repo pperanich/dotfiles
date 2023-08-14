@@ -11,7 +11,9 @@ in
     package = pkgs.neovim-nightly;
     extraConfig = ''
       lua <<EOF
-        require("kickstart")
+        -- require("kickstart")
+        -- bootstrap lazy.nvim, LazyVim and your plugins
+        require("config.lazy")
       EOF
     '';
 

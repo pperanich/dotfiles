@@ -501,7 +501,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; Show the scroll bar while scrolling. The auto hide time can be configured
    ;; by setting this variable to a number. (default t)
-   dotspacemacs-scroll-bar-while-scrolling t
+   dotspacemacs-scroll-bar-while-scrolling nil
 
    ;; Control line numbers activation.
    ;; If set to `t', `relative' or `visual' then line numbers are enabled in all
@@ -672,6 +672,10 @@ See the header of this file for more information."
     (setq path (replace-regexp-in-string "\n$" "" path))
     (or relative (setq path (concat path relative)))
     )
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (setq frame-resize-pixelwise t)
   )
 
 

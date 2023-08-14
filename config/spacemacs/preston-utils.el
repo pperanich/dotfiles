@@ -794,4 +794,9 @@ With a prefix ARG, remove start location."
 ;; (setq org-html-htmlize-output-type nil)
 (require 'ox-chameleon)
 
+(defun my/resize-to-sketchy
+    "Resize current frame to maximize - height at bottom for sketchybar"
+  (toggle-frame-maximized)
+  (set-frame-height (selected-frame) (- (frame-outer-height) 32)))
+
 (provide 'preston-utils)

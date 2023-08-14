@@ -35,6 +35,8 @@ in
     NODE_EXTRA_CA_CERTS=ssl-cert-path;
     CURL_CA_BUNDLE=ssl-cert-path;
     GIT_SSL_CAINFO=ssl-cert-path;
+    POETRY_REQUEST_TIMEOUT="30";
+    PIP_DEFAULT_TIMEOUT="30";
   };
   programs.git.package = git-openssl-v1;
   home.packages = with pkgs; [

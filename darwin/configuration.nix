@@ -20,6 +20,7 @@
     #   automatic = true;
     #   interval = { Day = 7; };
     # };
+    envVars = { NIX_SSL_CERT_FILE = "/etc/ssl/certs/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"; };
   };
 
   nixpkgs = {

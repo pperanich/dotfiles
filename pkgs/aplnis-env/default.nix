@@ -2,9 +2,11 @@
 { lib, writeShellApplication, stdenv }:
 let
 ssl-cert-path = if stdenv.hostPlatform.isDarwin then
-  "/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer"
+  "/etc/ssl/certs/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
 else
   "/etc/ssl/certs/ca-certificates.crt";
+
+darwin = if stdenv.hostPlatform.isDarwin then "true" else "false";
 in
 (writeShellApplication {
   name = "aplnis-env";
@@ -26,6 +28,12 @@ in
       export NODE_EXTRA_CA_CERTS=${ssl-cert-path}
       export CURL_CA_BUNDLE=${ssl-cert-path}
       export GIT_SSL_CAINFO=${ssl-cert-path}
+      if ${darwin};
+      then
+        sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>${ssl-cert-path}</string>' /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+        sudo launchctl unload /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+        sudo launchctl load /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+      fi
     elif [ "$arg" = "off" ]; then
       unset PIP_CERT
       unset SSL_CERT_FILE
@@ -34,6 +42,12 @@ in
       unset NODE_EXTRA_CA_CERTS
       unset CURL_CA_BUNDLE
       unset GIT_SSL_CAINFO
+      if ${darwin};
+      then
+        sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>/etc/ssl/certs/ca-certificates.crt</string>' /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+        sudo launchctl unload /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+        sudo launchctl load /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+      fi
     else
       echo "Invalid argument. Must be either 'on' or 'off'."
     fi

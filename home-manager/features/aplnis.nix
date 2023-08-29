@@ -23,7 +23,7 @@ in
         emacsGit = pkgs.emacsGit.overrideAttrs (attrs: { src = emacsSrc; });
       };
       permittedInsecurePackages = [
-        "openssl-1.1.1u"
+        "openssl-1.1.1v"
       ];
     };
   };

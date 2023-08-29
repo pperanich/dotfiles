@@ -22,6 +22,7 @@ in
     arg=$1
     if [ "$arg" = "on" ]; then
       export PIP_CERT=${ssl-cert-path}
+      export NIX_SSL_CERT_FILE=${ssl-cert-path}
       export SSL_CERT_FILE=${ssl-cert-path}
       export NIX_GIT_SSL_CAINFO=${ssl-cert-path}
       export REQUESTS_CA_BUNDLE=${ssl-cert-path}
@@ -36,6 +37,7 @@ in
       fi
     elif [ "$arg" = "off" ]; then
       unset PIP_CERT
+      unset NIX_SSL_CERT_FILE
       unset SSL_CERT_FILE
       unset NIX_GIT_SSL_CAINFO
       unset REQUESTS_CA_BUNDLE

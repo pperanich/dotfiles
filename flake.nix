@@ -20,6 +20,10 @@
     hardware.url = "github:nixos/nixos-hardware";
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    neovim-nightly-overlay.inputs.nixpkgs.follows = "nixpkgs";
+    # Pin neovim right before breaking change. Temporary
+    neovim-nightly-overlay.inputs.neovim-flake.url = "github:neovim/neovim?dir=contrib&rev=5bb17958c5694a28bd6b97f97adb4064bc79b984";
+
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixgl.url = "github:guibou/nixGL";
     rust-overlay.url = "github:oxalica/rust-overlay";

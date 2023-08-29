@@ -1,8 +1,8 @@
 { pkgs, lib, inputs, outputs, config, ...}:
 {
-  imports = [
-    ../modules/darwin/sketchybar
-  ];
+  #imports = [
+  #  ../modules/darwin/sketchybar
+  #];
   system.stateVersion = 4;
 
   nix = {

@@ -14,7 +14,8 @@ I've been using emacs for about ~1 year now and figured I would dip my toe into 
 ** Config Template
 Let's create the header for our config.el which many of the following blocks will tangle into.
 
-#+begin_src emacs-lisp :tangle config.el
+#+name: config.el
+#+begin_src emacs-lisp :tangle "config.el"
 ;;; config.el -*- lexical-binding: t; -*-
 #+end_src
 
@@ -309,7 +310,7 @@ grammar                      ; tasing grammar mistake every you make
 ansible                      ; a crucible for infrastructure as code
 biblio                       ; Writes a PhD for you (citation needed)
 ;;debugger                   ; FIXME stepping through code, to help you add bugs
-;;direnv                     ; be direct about your environment
+direnv                     ; be direct about your environment
 docker                       ; port everything to containers
 ;;editorconfig               ; let someone else argue about tabs vs spaces
 ein                          ; tame Jupyter notebooks with emacs
@@ -402,14 +403,17 @@ ocaml                        ; an objective camel
 ;;php                        ; perl's insecure younger brother
 plantuml                     ; diagrams for confusing people more
 ;;purescript                 ; javascript, but functional
-(python +lsp +pyright)       ; beautiful is better than ugly
+(python                      ; beautiful is better than ugly
+ +lsp
+ +pyright
+ +tree-sitter)
 qt                           ; the 'cutest' gui framework ever
 ;;racket                     ; a DSL for DSLs
 ;;raku                       ; the artist formerly known as perl6
 rest                         ; Emacs as a REST client
 ;;rst                        ; ReST in peace
 ;;(ruby +rails)              ; 1.step {|i| p "Ruby is #{i.even? ? 'love' : 'life'}"}
-(rust +lsp)                  ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
+(rust +lsp +tree-sitter)     ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
 ;;scala                      ; java, but good
 scheme                       ; a fully conniving family of lisps
 sh                           ; she sells {ba,z,fi}sh shells on the C xor
@@ -465,9 +469,9 @@ aspects are nice, but on others I prefer Fira.
 #+begin_src emacs-lisp :tangle config.el
 (setq doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 24)
       doom-big-font (font-spec :family "Iosevka Nerd Font Mono" :size 36)
-      doom-variable-pitch-font (font-spec :family "Overpass" :size 26)
-      doom-unicode-font (font-spec :family "JuliaMono")
-      doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
+      doom-variable-pitch-font (font-spec :family "Overpass Nerd font" :size 26)
+      doom-unicode-font (font-spec :family "Iosevka Nerd Font Mono")
+      doom-serif-font (font-spec :family "BlexMono Nerd Font" :size 22 :weight 'light))
 #+end_src
 
 In addition to these fonts, Merriweather is used with =nov.el=, and Alegreya as a
@@ -479,7 +483,7 @@ if the system doesn't have any of those fonts.
 
 #+name: detect-missing-fonts
 #+begin_src emacs-lisp :tangle no
-(defvar required-fonts '("JetBrainsMono.*" "Overpass" "JuliaMono" "IBM Plex Mono" "Merriweather" "Alegreya"))
+(defvar required-fonts '("Overpass.*" "JuliaMono" "BlexMono.*" "Merriweather" "Alegreya"))
 
 (defvar available-fonts
   (delete-dups (or (font-family-list)
@@ -612,13 +616,63 @@ htmlize package doesn't.
   (engrave-faces-html-file file))
 #+end_src
 
+** Other Things
+*** Grabbing source block content as a string
+
+In a few places in this configuration, it is desirable to grab a source block's
+content as a string. We can use a noweb =<<replacement>>= form, however that
+doesn't work with string escaping.
+
+We can get around this by using noweb execution and write an name (unexported)
+babel block that will grab the content of another named source block as a
+string. Note that this does not currently expand nested noweb references.
+
+#+name: grab
+#+begin_src emacs-lisp :var name="" :noweb-ref none
+(if-let ((block-pos (org-babel-find-named-block name))
+         (block (org-element-at-point block-pos)))
+    (format "%S" (string-trim (org-element-property :value block)))
+  ;; look for :noweb-ref matches
+  (let (block-contents)
+    (org-element-cache-map
+     (lambda (src)
+       (when (and (not (org-in-commented-heading-p nil src))
+                  (not (org-in-archived-heading-p nil src))
+                  (let* ((lang (org-element-property :language src))
+                         (params
+                          (apply
+                           #'org-babel-merge-params
+                           (append
+                            (org-with-point-at (org-element-property :begin src)
+                              (org-babel-params-from-properties lang t))
+                            (mapcar
+                             (lambda (h)
+                               (org-babel-parse-header-arguments h t))
+                             (cons (org-element-property :parameters src)
+                                   (org-element-property :header src))))))
+                         (ref (alist-get :noweb-ref params)))
+                    (equal ref name)))
+         (push (org-babel--normalize-body src)
+               block-contents)))
+     :granularity 'element
+     :restrict-elements '(src-block))
+    (and block-contents
+         (format "%S"
+                 (mapconcat
+                  #'identity
+                  (nreverse block-contents)
+                  "\n\n")))))
+#+end_src
+
+There we go, that's all it takes! This can be used via the form =<<grab("block-name")>>=.
+
 * Packages
 ** Loading instructions
 
 This is where you install packages, by declaring them with the ~package!~ macro in
 =packages.el=, then running ~doom refresh~ on the command line.
 This file shouldn't be byte compiled.
-#+begin_src emacs-lisp :tangle "packages.el" :comments no
+#+begin_src emacs-lisp :tangle packages.el :comments no
 ;; -*- no-byte-compile: t; -*-
 #+end_src
 
@@ -695,7 +749,7 @@ as I develop this I want the unpinned version I have as a submodule.
 Additionally, I'm going to make some personal choices that aren't made in the
 Doom module.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle config.el
 (use-package! emacs-everywhere
   :if (daemonp)
   :config
@@ -747,7 +801,7 @@ let's change that, and do a few other similar tweaks while we're at it.
 Thanks to [[https://emacs.stackexchange.com/questions/45462/use-a-single-abbrev-table-for-multiple-modes/45476#45476][use a single abbrev-table for multiple modes? - Emacs Stack Exchange]] I
 have the following.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle config.el
 (add-hook 'doom-first-buffer-hook
           (defun +abbrev-file-name ()
             (setq-default abbrev-mode t)
@@ -766,7 +820,7 @@ ridiculously large files.
 
 To make VLF available without delaying startup, we'll just load it in quiet moments.
 
-#+begin_src emacs-lisp :noweb no-export :noweb-prefix no
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-prefix no
 (use-package! vlf-setup
   :defer-incrementally vlf-tune vlf-base vlf-write
   vlf-search vlf-occur vlf-follow vlf-ediff vlf
@@ -939,7 +993,7 @@ Magit is great as-is, thanks for making such a lovely package [[https://github.c
 
 There's still a room for a little tweaking though...
 
-#+begin_src emacs-lisp :noweb no-export :noweb-prefix no
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-prefix no
 <<magit-toplevel>>
 (after! magit
   <<magit-tweaks>>)
@@ -952,12 +1006,12 @@ There's still a room for a little tweaking though...
 
 One little thing I want to add is some per-project commit message templates.
 
-#+begin_src emacs-lisp :tangle config.el :noweb-ref magit-toplevel
+#+begin_src emacs-lisp :noweb-ref magit-toplevel
 (defvar +magit-project-commit-templates-alist nil
   "Alist of toplevel dirs and template hf strings/functions.")
 #+end_src
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +magit-fill-in-commit-template ()
   "Insert template from `+magit-fill-in-commit-template' if applicable."
   (when-let ((template (and (save-excursion (goto-char (point-min)) (string-match-p "\\`\\s-*$" (thing-at-point 'line)))
@@ -972,7 +1026,7 @@ One little thing I want to add is some per-project commit message templates.
 
 This is particularly useful when creating commits for Org, as they need to
 follow [[https://orgmode.org/worg/org-contribute.html#commit-messages][a certain format]] and sometimes I forget elements (oops!).
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +org-commit-message-template ()
   "Create a skeleton for an Org commit message based on the staged diff."
   (let (change-data last-file file-changes temp-point)
@@ -1855,19 +1909,19 @@ well somehow, so let's switch to 'P22 Underground Book'; it looks much nicer.
 ;; (setq x-underline-at-descent-line t)
 #+end_src
 
-*** All the icons
+*** Nerd Icons
 
 #+begin_quote
 From the =:core packages= module.
 #+end_quote
 
-=all-the-icons= does a generally great job giving file names icons. One minor
+=nerd-icons= does a generally great job giving file names icons. One minor
 niggle I have is that when /I/ open a =.m= file, it's much more likely to be Matlab
 than Objective-C. As such, it'll be switching the icon associated with =.m=.
 #+begin_src emacs-lisp :tangle config.el
-(after! all-the-icons
-  (setcdr (assoc "m" all-the-icons-extension-icon-alist)
-          (cdr (assoc "matlab" all-the-icons-extension-icon-alist))))
+(after! nerd-icons
+  (setcdr (assoc "m" nerd-icons-extension-icon-alist)
+          (cdr (assoc "matlab" nerd-icons-extension-icon-alist))))
 #+end_src
 
 *** Prettier page breaks
@@ -2737,7 +2791,7 @@ up.
 
 Now we're ready to go, let's actually wire-up Circe, with one or two
 configuration tweaks.
-#+begin_src emacs-lisp :noweb no-export
+#+begin_src emacs-lisp :tangle config.el :noweb no-export
 (after! circe
   (setq-default circe-use-tls t)
   (setq circe-notifications-alert-icon "/usr/share/icons/breeze/actions/24/network-connect.svg"
@@ -2763,9 +2817,10 @@ configuration tweaks.
              "")))
   (add-hook 'circe-chat-mode-hook #'named-circe-prompt)
 
-  (appendq! all-the-icons-mode-icon-alist
-            '((circe-channel-mode all-the-icons-material "message" :face all-the-icons-lblue)
-              (circe-server-mode all-the-icons-material "chat_bubble_outline" :face all-the-icons-purple))))
+
+  (appendq! nerd-icons-mode-icon-alist
+            '((circe-channel-mode nerd-icons-mdicon "nf-md-message" :face nerd-icons-lblue)
+              (circe-server-mode nerd-icons-mdicon "nf-md-chat_outline" :face nerd-icons-purple))))
 
 <<irc-authinfo-reader>>
 
@@ -2776,7 +2831,7 @@ configuration tweaks.
 
 Let's do our *bold*, /italic/, and _underline_ in org-syntax, using IRC control characters.
 #+name: org-emph-to-irc
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp :tangle no
 (defun lui-org-to-irc ()
   "Examine a buffer with simple org-mode formatting, and converts the empasis:
 ,*bold*, /italic/, and _underline_ to IRC semi-standard escape codes.
@@ -3442,7 +3497,7 @@ has a chance of loading. Alternatively, I may need to add the =/usr/share/= path
 #+end_src
 
 Let's also just shove all the Elisp code here in an src_elisp{(after! ...)} block.
-#+begin_src emacs-lisp :noweb no-export :noweb-prefix no
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-prefix no
 <<mu4e-conf>>
 #+end_src
 
@@ -3455,12 +3510,12 @@ There seem to be some advantages with using Gnus' article view (such as inline
 images), and judging from [[https://github.com/djcb/mu/pull/1442#issuecomment-591695814][djcb/mu!1442 (comment)]] this seems to be the 'way of
 the future' for mu4e.
 
-There are some all-the-icons font related issues, so we need to redefine the
+There are some nerd-icons font related issues, so we need to redefine the
 fancy chars, and make sure they get the correct width.
 
 To account for the increase width of each flag character, and make perform a
 few more visual tweaks, we'll tweak the headers a bit
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq mu4e-headers-fields
       '((:flags . 6)
         (:account-stripe . 2)
@@ -3479,7 +3534,7 @@ few more visual tweaks, we'll tweak the headers a bit
 #+end_src
 
 We'll also use a nicer alert icon
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq mu4e-alert-icon "/usr/share/icons/Papirus/64x64/apps/evolution.svg")
 #+end_src
 
@@ -3489,7 +3544,7 @@ We'll also use a nicer alert icon
 :END:
 
 Let's send emails too.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq sendmail-program "/usr/bin/msmtp"
       send-mail-function #'smtpmail-send-it
       message-sendmail-f-is-evil t
@@ -3509,7 +3564,7 @@ Instead let's package the =emacslient= behaviour in a little executable
 Now we can just call that in a desktop file.
 
 We also want to define ~mu4e-compose-from-mailto~.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun mu4e-compose-from-mailto (mailto-string &optional quit-frame-after)
   (require 'mu4e)
   (unless mu4e--server-props (mu4e t) (sleep-for 0.1))
@@ -3544,7 +3599,7 @@ We also want to define ~mu4e-compose-from-mailto~.
 #+end_src
 
 It would also be nice to change the name pre-filled in =From:= when drafting.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defvar mu4e-from-name "Preston"
   "Name used in \"From:\" template.")
 (defadvice! mu4e~draft-from-construct-renamed (orig-fn)
@@ -3555,13 +3610,13 @@ It would also be nice to change the name pre-filled in =From:= when drafting.
 #+end_src
 
 We can also use this a signature,
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq message-signature mu4e-from-name)
 #+end_src
 
 I've got a few extra addresses I'd like ~+mu4e-set-from-address-h~ to be aware of.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +mu4e-update-personal-addresses ()
   (let ((primary-address
          (car (cl-remove-if-not
@@ -3588,7 +3643,7 @@ I've got a few extra addresses I'd like ~+mu4e-set-from-address-h~ to be aware o
 Speaking of, it would be good to put emails sent from =@tecosaur.net= in the
 account-specific sent directory, not the catch-all.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +mu4e-account-sent-folder (&optional msg)
   (let ((from (if msg
                   (plist-get (car (plist-get msg :from)) :email)
@@ -3604,7 +3659,7 @@ account-specific sent directory, not the catch-all.
 When composing an email, I think it would make more sense to start off in =insert=
 mode than =normal= mode, which can be accomplished via a compose hook.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +mu4e-evil-enter-insert-mode ()
   (when (eq (bound-and-true-p evil-state) 'normal)
     (call-interactively #'evil-append)))
@@ -3754,7 +3809,6 @@ numbers in text mode.
 :END:
 
 *** Packages
-
 **** Org itself
 
 #+begin_src emacs-lisp :tangle packages.el :noweb no-export
@@ -4021,12 +4075,20 @@ It's nice to be able to link to music
 #+end_src
 
 *** Behaviour
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-behaviour-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! org
+  <<org-behaviour-conf>>)
+#+end_src
 
 [[xkcd:1319]]
 
 **** Tweaking defaults
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-directory (substitute-in-file-name "$XDG_DATA_HOME/org") ; Let's put files here.
       org-agenda-files (list org-directory)                  ; Seems like the obvious place.
       org-use-property-inheritance t                         ; It's convenient to have properties inherited.
@@ -4039,7 +4101,7 @@ It's nice to be able to link to music
 #+end_src
 I also like the src_elisp{:comments} header-argument, so let's make that a
 default.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-babel-default-header-args
       '((:session . "none")
         (:results . "replace")
@@ -4055,13 +4117,13 @@ By default, ~visual-line-mode~ is turned =on=, and ~auto-fill-mode~ =off= by a h
 However this messes with tables in Org-mode, and other plaintext files (e.g.
 markdown, \LaTeX) so I'll turn it off for this, and manually enable it for more
 specific modes as desired.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (remove-hook 'text-mode-hook #'visual-line-mode)
 (add-hook 'text-mode-hook #'auto-fill-mode)
 #+end_src
 
 There also seem to be a few keybindings which use =hjkl=, but miss arrow key equivalents.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (map! :map evil-org-mode-map
       :after evil-org
       :n "g <up>" #'org-backward-heading-same-level
@@ -4079,14 +4141,14 @@ or put a currency symbol immediately before an inline source block.
 There is a solution to this, it just sounds slightly hacky --- zero width spaces.
 Because this is Emacs, we can make this feel much less hacky by making a minor
 addition to the Org key map 🙂.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (map! :map org-mode-map
       :nie "M-SPC M-SPC" (cmd! (insert "\u200B")))
 #+end_src
 
 We then want to stop the space from being included in exports, which can be done
 with a little filter.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +org-export-remove-zero-width-space (text _backend _info)
   "Remove zero width spaces from TEXT."
   (unless (org-export-derived-backend-p 'org)
@@ -4099,7 +4161,7 @@ with a little filter.
 ***** List bullet sequence
 
 I think it makes sense to have list bullets change with depth
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
 #+end_src
 
@@ -4112,7 +4174,7 @@ see that the ="file"= link type uses the completion function
 ~org-link-complete-file~, so let's use that to make a little file-link inserting
 function.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +org-insert-file-link ()
   "Insert a file link.  At the prompt, enter the filename."
   (interactive)
@@ -4121,7 +4183,7 @@ function.
 
 Now we'll just add that under the Org mode link localleader for convenience.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (map! :after org
       :map org-mode-map
       :localleader
@@ -4129,6 +4191,13 @@ Now we'll just add that under the Org mode link localleader for convenience.
 #+end_src
 
 ***** Citation
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-citation-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+<<org-citation-conf>>
+#+end_src
 
 #+begin_quote
 Extending the =:tools biblio= module.
@@ -4139,7 +4208,7 @@ module gives a fairly decent basic setup, but it would be nice to take it a bit
 further. This mostly consists of tweaking settings, but there is one extra
 package I'll grab for prettier in-buffer citations.
 
-#+begin_src emacs-lisp :tangle packages.el
+#+begin_src emacs-lisp :noweb-ref none :tangle packages.el
 (package! org-cite-csl-activate :recipe (:host github :repo "andras-simonyi/org-cite-csl-activate") :pin "9e68d9204469c674f49a20bdf7ea85da4f4bf720")
 #+end_src
 
@@ -4150,7 +4219,7 @@ Unfortunately, there's currently a potential for undesirable buffer
 modifications, so we'll put all the activation code behind a function we can
 call when we want it.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (use-package! oc-csl-activate
   :after oc
   :config
@@ -4175,7 +4244,7 @@ Now that =oc-csl-activate= is set up, let's go ahead and customise some of the
 packages already loaded. For starters, we can make use of the my Zotero files
 with =citar=, and make the symbols a bit prettier.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (after! citar
   (setq org-cite-global-bibliography
         (let ((libfile-search-names '("library.json" "Library.json" "library.bib" "Library.bib"))
@@ -4188,14 +4257,14 @@ with =citar=, and make the symbols a bit prettier.
           paths)
         citar-bibliography org-cite-global-bibliography
         citar-symbols
-        `((file ,(all-the-icons-faicon "file-o" :face 'all-the-icons-green :v-adjust -0.1) . " ")
-          (note ,(all-the-icons-material "speaker_notes" :face 'all-the-icons-blue :v-adjust -0.3) . " ")
-          (link ,(all-the-icons-octicon "link" :face 'all-the-icons-orange :v-adjust 0.01) . " "))))
+        `((file ,(nerd-icons-faicon "file-o" :face 'nerd-icons-green :v-adjust -0.1) . " ")
+          (note ,(nerd-icons-octicon "speaker_notes" :face 'nerd-icons-blue :v-adjust -0.3) . " ")
+          (link ,(nerd-icons-octicon "link" :face 'nerd-icons-orange :v-adjust 0.01) . " "))))
 #+end_src
 
 We can also make the Zotero CSL styles available to use.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (after! oc-csl
   (setq org-cite-csl-styles-dir "~/Zotero/styles"))
 #+end_src
@@ -4203,7 +4272,7 @@ We can also make the Zotero CSL styles available to use.
 Since CSL works so nicely everywhere, we might as well use it as the default
 citation export processor for everything.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (after! oc
   (setq org-cite-export-processors '((t csl))))
 #+end_src
@@ -4211,7 +4280,7 @@ citation export processor for everything.
 Then, for convenience we'll cap things off by putting the citation command under
 Org's localleader.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (map! :after org
       :map org-mode-map
       :localleader
@@ -4221,7 +4290,7 @@ Org's localleader.
 Lastly, just in case I come across any old citations of mine, I think it would
 be nice to have a function to convert =org-ref= citations to =org-cite= forms.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (after! oc
   (defun org-ref-to-org-cite ()
     "Attempt to convert org-ref citations to org-cite syntax."
@@ -4253,13 +4322,13 @@ be nice to have a function to convert =org-ref= citations to =org-cite= forms.
 ***** cdlatex
 
 It's also nice to be able to use ~cdlatex~.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
 #+end_src
 
 It's handy to be able to quickly insert environments with =C-c }=. I almost always
 want to edit them afterwards though, so let's make that happen by default.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! org-edit-latex-emv-after-insert ()
   :after #'org-cdlatex-environment-indent
   (org-edit-latex-environment))
@@ -4271,7 +4340,7 @@ Likewise [[https://archive.casouri.cat/note/2020/insert-math-symbol-in-emacs/][t
 ***** LSP support in ~src~ blocks
 
 Now, by default, LSPs don't really function at all in ~src~ blocks.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (cl-defmacro lsp-org-babel-enable (lang)
   "Support LANG in org source code block."
   (setq centaur-lsp 'lsp-mode)
@@ -4306,7 +4375,7 @@ Now, by default, LSPs don't really function at all in ~src~ blocks.
 
 ='localeader v= has no pre-existing binding, so I may as well use it with the same
 functionality as in LaTeX. Let's try viewing possible output files with this.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (map! :map org-mode-map
       :localleader
       :desc "View exported file" "v" #'org-view-output-file)
@@ -4337,18 +4406,25 @@ functionality as in LaTeX. Let's try viewing possible output files with this.
 #+end_src
 
 **** Super agenda
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-super-agenda-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+<<org-super-agenda-conf>>
+#+end_src
 
 The agenda is nice, but a souped up version is nicer.
-#+begin_src emacs-lisp :tangle packages.el
+#+begin_src emacs-lisp :noweb-ref none :tangle packages.el
 (package! org-super-agenda :pin "f4f528985397c833c870967884b013cf91a1da4a")
 #+end_src
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (use-package! org-super-agenda
   :commands org-super-agenda-mode)
 #+end_src
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (after! org-agenda
   (let ((inhibit-message t))
     (org-super-agenda-mode)))
@@ -4433,7 +4509,7 @@ set up org-capture.
   :pin "8464809754f3316d5a2fdcf3c01ce1e8736b323b")
 #+end_src
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (use-package! doct
   :commands doct)
 #+end_src
@@ -4445,8 +4521,8 @@ set up org-capture.
   (defun +doct-icon-declaration-to-icon (declaration)
     "Convert :icon declaration to icon"
     (let ((name (pop declaration))
-          (set  (intern (concat "all-the-icons-" (plist-get declaration :set))))
-          (face (intern (concat "all-the-icons-" (plist-get declaration :color))))
+          (set  (intern (concat "nerd-icons-" (plist-get declaration :set))))
+          (face (intern (concat "nerd-icons-" (plist-get declaration :color))))
           (v-adjust (or (plist-get declaration :v-adjust) 0.01)))
       (apply set `(,name :face ,face :v-adjust ,v-adjust))))
 
@@ -4464,12 +4540,12 @@ set up org-capture.
 
   (setq doct-after-conversion-functions '(+doct-iconify-capture-templates))
 
-  (defvar +org-capture-recipies  "~/Documents/org/recipies.org")
+  (defvar +org-capture-recipies  "~/Desktop/TEC/Organisation/recipies.org")
 
   (defun set-org-capture-templates ()
     (setq org-capture-templates
           (doct `(("Personal todo" :keys "t"
-                   :icon ("checklist" :set "octicon" :color "green")
+                   :icon ("nf-oct-checklist" :set "octicon" :color "green")
                    :file +org-capture-todo-file
                    :prepend t
                    :headline "Inbox"
@@ -4477,7 +4553,7 @@ set up org-capture.
                    :template ("* TODO %?"
                               "%i %a"))
                   ("Personal note" :keys "n"
-                   :icon ("sticky-note-o" :set "faicon" :color "green")
+                   :icon ("nf-fa-sticky_note_o" :set "faicon" :color "green")
                    :file +org-capture-todo-file
                    :prepend t
                    :headline "Inbox"
@@ -4485,7 +4561,7 @@ set up org-capture.
                    :template ("* %?"
                               "%i %a"))
                   ("Email" :keys "e"
-                   :icon ("envelope" :set "faicon" :color "blue")
+                   :icon ("nf-fa-envelope" :set "faicon" :color "blue")
                    :file +org-capture-todo-file
                    :prepend t
                    :headline "Inbox"
@@ -4495,7 +4571,7 @@ set up org-capture.
                               "about %^{topic}"
                               "%U %i %a"))
                   ("Interesting" :keys "i"
-                   :icon ("eye" :set "faicon" :color "lcyan")
+                   :icon ("nf-fa-eye" :set "faicon" :color "lcyan")
                    :file +org-capture-todo-file
                    :prepend t
                    :headline "Interesting"
@@ -4503,28 +4579,28 @@ set up org-capture.
                    :template ("* [ ] %{desc}%? :%{i-type}:"
                               "%i %a")
                    :children (("Webpage" :keys "w"
-                               :icon ("globe" :set "faicon" :color "green")
+                               :icon ("nf-fa-globe" :set "faicon" :color "green")
                                :desc "%(org-cliplink-capture) "
                                :i-type "read:web")
                               ("Article" :keys "a"
-                               :icon ("file-text" :set "octicon" :color "yellow")
+                               :icon ("nf-fa-file_text_o" :set "faicon" :color "yellow")
                                :desc ""
                                :i-type "read:reaserch")
                               ("\tRecipie" :keys "r"
-                               :icon ("spoon" :set "faicon" :color "dorange")
+                               :icon ("nf-fa-spoon" :set "faicon" :color "dorange")
                                :file +org-capture-recipies
                                :headline "Unsorted"
                                :template "%(org-chef-get-recipe-from-url)")
                               ("Information" :keys "i"
-                               :icon ("info-circle" :set "faicon" :color "blue")
+                               :icon ("nf-fa-info_circle" :set "faicon" :color "blue")
                                :desc ""
                                :i-type "read:info")
                               ("Idea" :keys "I"
-                               :icon ("bubble_chart" :set "material" :color "silver")
+                               :icon ("nf-md-chart_bubble" :set "mdicon" :color "silver")
                                :desc ""
                                :i-type "idea")))
                   ("Tasks" :keys "k"
-                   :icon ("inbox" :set "octicon" :color "yellow")
+                   :icon ("nf-oct-inbox" :set "octicon" :color "yellow")
                    :file +org-capture-todo-file
                    :prepend t
                    :headline "Tasks"
@@ -4532,16 +4608,16 @@ set up org-capture.
                    :template ("* TODO %? %^G%{extra}"
                               "%i %a")
                    :children (("General Task" :keys "k"
-                               :icon ("inbox" :set "octicon" :color "yellow")
+                               :icon ("nf-oct-inbox" :set "octicon" :color "yellow")
                                :extra "")
                               ("Task with deadline" :keys "d"
-                               :icon ("timer" :set "material" :color "orange" :v-adjust -0.1)
+                               :icon ("nf-md-timer" :set "mdicon" :color "orange" :v-adjust -0.1)
                                :extra "\nDEADLINE: %^{Deadline:}t")
                               ("Scheduled Task" :keys "s"
-                               :icon ("calendar" :set "octicon" :color "orange")
+                               :icon ("nf-oct-calendar" :set "octicon" :color "orange")
                                :extra "\nSCHEDULED: %^{Start time:}t")))
                   ("Project" :keys "p"
-                   :icon ("repo" :set "octicon" :color "silver")
+                   :icon ("nf-oct-repo" :set "octicon" :color "silver")
                    :prepend t
                    :type entry
                    :headline "Inbox"
@@ -4551,15 +4627,15 @@ set up org-capture.
                    :file ""
                    :custom (:time-or-todo "")
                    :children (("Project-local todo" :keys "t"
-                               :icon ("checklist" :set "octicon" :color "green")
+                               :icon ("nf-oct-checklist" :set "octicon" :color "green")
                                :time-or-todo "TODO"
                                :file +org-capture-project-todo-file)
                               ("Project-local note" :keys "n"
-                               :icon ("sticky-note" :set "faicon" :color "yellow")
+                               :icon ("nf-fa-sticky_note" :set "faicon" :color "yellow")
                                :time-or-todo "%U"
                                :file +org-capture-project-notes-file)
                               ("Project-local changelog" :keys "c"
-                               :icon ("list" :set "faicon" :color "blue")
+                               :icon ("nf-fa-list" :set "faicon" :color "blue")
                                :time-or-todo "%U"
                                :heading "Unreleased"
                                :file +org-capture-project-changelog-file)))
@@ -4614,7 +4690,7 @@ Lisp programs can force the template by setting KEYS to a string."
       (org-mks org-capture-templates
                "Select a capture template\n━━━━━━━━━━━━━━━━━━━━━━━━━"
                "Template key: "
-               `(("q" ,(concat (all-the-icons-octicon "stop" :face 'all-the-icons-red :v-adjust 0.01) "\tAbort")))))))
+               `(("q" ,(concat (nerd-icons-octicon "nf-oct-stop" :face 'nerd-icons-red :v-adjust 0.01) "\tAbort")))))))
 (advice-add 'org-capture-select-template :override #'org-capture-select-template-prettier)
 
 (defun org-mks-pretty (table title &optional prompt specials)
@@ -4683,7 +4759,7 @@ is selected, only the bare key is returned."
                 (when specials
                   (insert "─────────────────────────\n")
                   (pcase-dolist (`(,key ,description) specials)
-                    (insert (format "%s   %s\n" (propertize key 'face '(bold all-the-icons-red)) description))
+                    (insert (format "%s   %s\n" (propertize key 'face '(bold nerd-icons-red)) description))
                     (push key allowed-keys)))
                 ;; Display UI and let user select an entry or
                 ;; a sub-level prefix.
@@ -4710,7 +4786,7 @@ is selected, only the bare key is returned."
 #+end_src
 The [[file:~/.config/emacs/bin/org-capture][org-capture bin]] is rather nice, but I'd be nicer with a smaller frame, and
 no modeline.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq +org-capture-fn
       (lambda ()
         (interactive)
@@ -4719,12 +4795,21 @@ no modeline.
 #+end_src
 
 **** Roam
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-roam-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! org-roam
+  <<org-roam-conf>>)
+#+end_src
+
 ***** Basic settings
 
 I'll just set this to be within =Organisation= folder for now, in the future it
 could be worth seeing if I could hook this up to a [[https://nextcloud.com/][Nextcloud]] instance.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-roam-directory "~/Documents/org/roam/")
 #+end_src
 
@@ -4741,7 +4826,7 @@ to initialise), let's not load roam.
 All those numbers! It's messy. Let's adjust this in a similar way that I have in
 the [[*Window title][Window title]].
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
   :around #'doom-modeline-buffer-file-name ; takes no args
   (if (s-contains-p org-roam-directory (or buffer-file-name ""))
@@ -4753,6 +4838,13 @@ the [[*Window title][Window title]].
 #+end_src
 
 ***** Graph view
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-roam-ui-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+<<org-roam-ui-conf>>
+#+end_src
 
 Org-roam is nice by itself, but there are so /extra/ nice packages which integrate
 with it.
@@ -4762,7 +4854,7 @@ with it.
 (package! websocket :pin "82b370602fa0158670b1c6c769f223159affce9b") ; dependency of `org-roam-ui'
 #+end_src
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (use-package! websocket
   :after org-roam)
 
@@ -4798,7 +4890,7 @@ some issues. Replacing that in ~a53899~ resolved this for me. To go one step
 further, I create a function for producing nice short links, like an inferior
 version of ~reftex-label~.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defvar org-reference-contraction-max-words 3
   "Maximum number of words in a reference reference.")
 (defvar org-reference-contraction-max-length 35
@@ -4874,7 +4966,7 @@ truncated to fit within the limit using `org-reference-contraction-truncate-word
 #+end_src
 
 Now here's alphapapa's subtly tweaked mode.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (define-minor-mode unpackaged/org-export-html-with-useful-ids-mode
   "Attempt to export Org as HTML with useful link IDs.
 Instead of random IDs like \"#orga1b2c3\", use heading titles,
@@ -4999,7 +5091,7 @@ as returned by `org-export-new-reference'."
 **** Nicer ~org-return~
 
 Once again, from [[https://github.com/alphapapa/unpackaged.el#org-return-dwim][unpackaged.el]]
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun unpackaged/org-element-descendant-of (type element)
   "Return non-nil if ELEMENT is a descendant of TYPE.
 TYPE should be an element type, like `item' or `paragraph'.
@@ -5121,7 +5213,7 @@ For header args, the keys I'll use are
 + =s= for =:session=
 + =d= for =:dir=
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +yas/org-src-header-p ()
   "Determine whether `point' is within a src-block header or header-args."
   (pcase (org-element-type (org-element-context))
@@ -5139,7 +5231,7 @@ For header args, the keys I'll use are
 Now let's write a function we can reference in yasnippets to produce a nice
 interactive way to specify header args.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +yas/org-prompt-header-arg (arg question values)
   "Prompt the user to set ARG header property to one of VALUES with QUESTION.
 The default value is identified and indicated. If either default is selected,
@@ -5178,7 +5270,7 @@ Since we're getting this info, we might as well go a step further and also
 provide the ability to determine the most popular language in the buffer that
 doesn't have any =header-args= set for it (with =#+properties=).
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +yas/org-src-lang ()
   "Try to find the current language of the src/header at `point'.
 Return nil otherwise."
@@ -5233,7 +5325,7 @@ To avoid sometimes having to choose between the hassle out of updating old
 documents and using mixed syntax, I'll whip up a basic transcode-y function.
 It likely misses some edge cases, but should mostly work.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun org-syntax-convert-keyword-case-to-lower ()
   "Convert all #+KEYWORDS to #+keywords."
   (interactive)
@@ -5323,13 +5415,21 @@ When one of the src_elisp{org-mode-hook} functions errors, it halts the hook
 execution. This is problematic, and there are two hooks in particular which
 cause issues. Let's make their failure less eventful.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! shut-up-org-problematic-hooks (orig-fn &rest args)
   :around #'org-fancy-priorities-mode
   (ignore-errors (apply orig-fn args)))
 #+end_src
 
 **** Flycheck with org-lint
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-lint-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+;; (after! org
+;;   <<org-lint-conf>>)
+#+end_src
 
 Org may be simple, but that doesn't mean there's no such thing as malformed Org.
 Thankfully, malformed Org is a much less annoying affair than malformed zipped
@@ -5343,7 +5443,7 @@ Flycheck doesn't currently support Org, and there's aren't any packages to do so
 Surely this is what the clipboard was invented for? With that said, let's
 regurgitate the code, cross our fingers, and hope it works.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defconst flycheck-org-lint-form
   (flycheck-prepare-emacs-lisp-form
     (require 'org)
@@ -5406,7 +5506,7 @@ Try adding these syntax checkers to `flycheck-checkers'.
 #+end_example
 
 Well that's very nice and helpful. We'll just do that 🙂.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (add-to-list 'flycheck-checkers 'org-lint)
 #+end_src
 
@@ -5419,7 +5519,7 @@ load my whole config. Code duplication isn't great, but at least this isn't
 much.
 
 #+name: org-syntax-modifications
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 (defun flycheck-org-lint-customisations-form ()
   `(progn
      (require 'ox)
@@ -5430,6 +5530,14 @@ much.
 #+end_src
 
 *** Visuals
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-visuals-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! org
+  <<org-visuals-conf>>)
+#+end_src
 
 Here I try to do two things: improve the styling of the various documents, via
 font changes etc, and also propagate colours from the current theme.
@@ -5439,12 +5547,12 @@ font changes etc, and also propagate colours from the current theme.
 **** Font Display
 
 Mixed pitch is great. As is ~+org-pretty-mode~, let's use them.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (add-hook 'org-mode-hook #'+org-pretty-mode)
 #+end_src
 
 Let's make headings a bit bigger
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (custom-set-faces!
   '(outline-1 :weight extra-bold :height 1.25)
   '(outline-2 :weight bold :height 1.15)
@@ -5457,13 +5565,13 @@ Let's make headings a bit bigger
 #+end_src
 
 And the same with the title.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (custom-set-faces!
   '(org-document-title :height 1.2))
 #+end_src
 
 It seems reasonable to have deadlines in the error face when they're passed.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-agenda-deadline-faces
       '((1.001 . error)
         (1.0 . org-warning)
@@ -5472,7 +5580,7 @@ It seems reasonable to have deadlines in the error face when they're passed.
 #+end_src
 
 We can then have quote blocks stand out a bit more by making them /italic/.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-fontify-quote-and-verse-blocks t)
 #+end_src
 
@@ -5481,7 +5589,7 @@ customisations here. This comes at a cost however, expensive font-lock.
 Feeling like you're typing through molasses in large files is no fun, but there
 is a way I can defer font-locking when typing to make the experience more
 responsive.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun locally-defer-font-lock ()
   "Set jit-lock defer and stealth, when buffer is over a certain size."
   (when (> (buffer-size) 50000)
@@ -5507,7 +5615,7 @@ look very good. We can also solve this problem by modifying the generated text
 prefixes to but a fixed-pitch zero width space at the start of 0-indent lines
 instead of nothing.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! +org-indent--reduced-text-prefixes ()
   :after #'org-indent--compute-prefixes
   (setq org-indent--text-line-prefixes
@@ -5548,12 +5656,12 @@ I have no idea why it stops, but I'd rather it didn't.
 If you have any idea what's going on or how to fix this /please/ get in touch.
 #+end_warning
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-inline-src-prettify-results '("⟨" . "⟩"))
 #+end_src
 
 Doom theme's extra fontification is more problematic than helpful.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq doom-themes-org-fontify-special-tags nil)
 #+end_src
 
@@ -5563,24 +5671,24 @@ It's also nice to change the character used for collapsed items (by default ~…
 I think ~▾~ is better for indicating 'collapsed section'.
 and add an extra ~org-bullet~ to the default list of four.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-ellipsis " ▾ "
       org-hide-leading-stars t
       org-priority-highest ?A
       org-priority-lowest ?E
       org-priority-faces
-      '((?A . 'all-the-icons-red)
-        (?B . 'all-the-icons-orange)
-        (?C . 'all-the-icons-yellow)
-        (?D . 'all-the-icons-green)
-        (?E . 'all-the-icons-blue)))
+      '((?A . 'nerd-icons-red)
+        (?B . 'nerd-icons-orange)
+        (?C . 'nerd-icons-yellow)
+        (?D . 'nerd-icons-green)
+        (?E . 'nerd-icons-blue)))
 #+end_src
 
 It's also nice to make use of the =prettify-symbols-mode= for a few Org syntactic
 tokens which we'd like to prettify that aren't covered by =org-modern= or any
 other settings.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (appendq! +ligatures-extra-symbols
           (list :list_property "∷"
                 :em_dash       "—"
@@ -5590,11 +5698,11 @@ other settings.
                 :arrow_lr      "↔"
                 :properties    "⚙"
                 :end           "∎"
-                :priority_a    #("⚑" 0 1 (face all-the-icons-red))
-                :priority_b    #("⬆" 0 1 (face all-the-icons-orange))
-                :priority_c    #("■" 0 1 (face all-the-icons-yellow))
-                :priority_d    #("⬇" 0 1 (face all-the-icons-green))
-                :priority_e    #("❓" 0 1 (face all-the-icons-blue))))
+                :priority_a    #("⚑" 0 1 (face nerd-icons-red))
+                :priority_b    #("⬆" 0 1 (face nerd-icons-orange))
+                :priority_c    #("■" 0 1 (face nerd-icons-yellow))
+                :priority_d    #("⬇" 0 1 (face nerd-icons-green))
+                :priority_e    #("❓" 0 1 (face nerd-icons-blue))))
 
 (defadvice! +org-init-appearance-h--no-ligatures-a ()
   :after #'+org-init-appearance-h
@@ -5646,7 +5754,7 @@ and out of the LaTeX fragments.
 Thankfully, all we need to do to make this happen is use ~org-latex-preview-auto-mode~.
 
 #+begin_src emacs-lisp :tangle config.el
-(add-hook 'org-mode-hook #'org-latex-preview-auto-mode)
+;; (add-hook 'org-mode-hook #'org-latex-preview-auto-mode)
 #+end_src
 
 ***** Prettier rendering
@@ -5659,7 +5767,7 @@ templates to be filled in by ~org-latex-default-packages-alist~ and
 =#+latex_header:= entries (but not =#+latex_header_extra:=).
 
 #+name: latex-default-snippet-preamble
-#+begin_src LaTeX
+#+begin_src latex
 \documentclass{article}
 [DEFAULT-PACKAGES]
 [PACKAGES]
@@ -5670,7 +5778,7 @@ To this, we make two additions:
 + Selection of a maths font that fits better with displayed text.
 + My collection [[*Maths notation conveniences][mathematical notation conveniences]].
 
-#+begin_src emacs-lisp :noweb no-export :noweb-prefix no
+#+begin_src emacs-lisp :noweb no :noweb-prefix no
 ;; (setq org-latex-preview-header
 ;;       (concat
 ;;        <<grab("latex-default-snippet-preamble")>>
@@ -5734,7 +5842,7 @@ Unfortunately, it seems that SVG sizing is annoying ATM, so let's actually not d
 
 We can use some of the variables in =org-plot= to use the current doom theme
 colours.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defvar +org-plot-term-size '(1050 . 650)
   "The size of the GNUPlot terminal, in the form (WIDTH . HEIGHT).")
 
@@ -5817,6 +5925,14 @@ set palette defined ( 0 '%s',\
 #+end_src
 
 *** Exporting
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref org-export-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! ox
+  <<org-export-conf>>)
+#+end_src
 
 **** General settings
 
@@ -5831,7 +5947,7 @@ get exported as =<h2>= elements --- leaving /five/ usable levels.
 As such, it would seem to make sense to recognise the first /five/ levels of Org
 headings when exporting.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-export-headline-levels 5) ; I like nesting
 #+end_src
 
@@ -5840,14 +5956,14 @@ tag to headings for the content to be kept, but the heading itself ignored
 (unlike =:noexport:= which ignored both heading and content). This is useful when
 I want to use headings to provide a structure for writing that doesn't appear in
 the final documents.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (require 'ox-extra)
 (ox-extras-activate '(ignore-headlines))
 #+end_src
 
 Since I (roughly) track Org ~HEAD~, it makes sense to include the git version in
 the creator string.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-export-creator-string
       (format "Emacs %s (Org mode %s–%s)" emacs-version (org-release) (org-git-version)))
 #+end_src
@@ -5861,7 +5977,7 @@ be unaffected let's use ~;~ as a prefix to prevent the transformation --- i.e.
 This has to be implemented on a per-format basis, currently HTML and LaTeX
 exports are supported.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun org-export-filter-text-acronym (text backend _info)
   "Wrap suspected acronyms in acronyms-specific formatting.
 Treat sequences of 2+ capital letters (optionally succeeded by \"s\") as an acronym.
@@ -5918,7 +6034,7 @@ With all our Org config and hooks, exporting an Org code block when using
 a font-lock based method can produce undesirable results. To address this, we
 can tweak ~+org-babel-mode-alist~ when exporting.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +org-mode--fontlock-only-mode ()
   "Just apply org-mode's font-lock once."
   (let (org-mode-hook
@@ -5938,13 +6054,21 @@ can tweak ~+org-babel-mode-alist~ when exporting.
 #+end_src
 
 *** HTML Export
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref ox-html-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! ox-html
+  <<ox-html-conf>>)
+#+end_src
 
 I want to tweak a whole bunch of things. While I'll want my tweaks almost all
 the time, occasionally I may want to test how something turns out using a more
 default config. With that in mind, a global minor mode seems like the most
 appropriate architecture to use.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (define-minor-mode org-fancy-html-export-mode
   "Toggle my fabulous org export tweaks. While this mode itself does a little bit,
 the vast majority of the change in behaviour comes from switch statements in:
@@ -5976,7 +6100,7 @@ relevant function.
 This is done to allow me to add the date and author to the page header,
 implement a CSS-only light/dark theme toggle, and a sprinkle of [[https://ogp.me/][Open Graph]]
 metadata.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! org-html-template-fancier (orig-fn contents info)
   "Return complete document string after HTML conversion.
 CONTENTS is the transcoded contents string.  INFO is a plist
@@ -6074,7 +6198,7 @@ compared to the default implementation."
 
 I think it would be nice if "Table of Contents" brought you back to the top of
 the page. Well, since we've done this much advising already...
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! org-html-toc-linked (depth info &optional scope)
   "Build a table of contents.
 
@@ -6109,7 +6233,7 @@ of contents as a string, or nil if it is empty."
 #+end_src
 
 Lastly, let's pile on some metadata. This gives my pages nice embeds.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defvar org-html-meta-tags-opengraph-image
   '(:image "https://tecosaur.com/resources/org/nib.png"
     :type "image/png"
@@ -6183,7 +6307,7 @@ of code, it would be nice if you could set it with =#+attr_html: :collapsed t=.
 It would be nice to also have a corresponding global / session-local way of
 setting this, but I haven't quite been able to get that working (yet).
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defvar org-html-export-collapsed nil)
 (eval '(cl-pushnew '(:collapsed "COLLAPSED" "collapsed" org-html-export-collapsed t)
                    (org-export-backend-options (org-export-get-backend 'html))))
@@ -6195,7 +6319,7 @@ side of the src block containing both an anchor referencing the current block,
 and a button to copy the content of the block.
 
 #+name: Src blocks
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! org-html-src-block-collapsable (orig-fn src-block contents info)
   "Wrap the usual <pre> block in a <details>"
   :around #'org-html-src-block
@@ -6316,7 +6440,7 @@ and a button to copy the content of the block.
 #+end_src
 
 #+name: Example, fixed width, and property blocks
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun org-html-block-collapsable (orig-fn block contents info)
   "Wrap the usual block in a <details>"
   (if (or (not org-fancy-html-export-mode) (bound-and-true-p org-msg-export-in-progress))
@@ -6361,7 +6485,7 @@ font-locking are /not/ loaded, and so do not impact the result.
 
 By enabling these modes in ~htmlize-before-hook~ we can correct this behaviour.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (autoload #'highlight-numbers--turn-on "highlight-numbers")
 (add-hook 'htmlize-before-hook #'highlight-numbers--turn-on)
 #+end_src
@@ -6375,7 +6499,7 @@ directly to the ~table~ element, so we have to wrap it in a ~div~.
 While we're at it, we can a link gutter, as we did with src blocks, and show the
 ~#+name~, if one is given.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! org-html-table-wrapped (orig-fn table contents info)
   "Wrap the usual <table> in a <div>"
   :around #'org-html-table
@@ -6408,7 +6532,7 @@ To add this, we need to change one line in [[file:lisp/org/lisp/ox-html.el::(for
 Since we can actually accomplish the desired effect by adding advice /around/ the
 function, without overriding it --- let's do that to reduce the bug surface of
 this config a tad.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! org-html--format-toc-headline-colapseable (orig-fn headline info)
   "Add a label and checkbox to `org-html--format-toc-headline's usual output,
 to allow the TOC to be a collapseable tree."
@@ -6426,7 +6550,7 @@ obvious way to achieve this is by including some /if no children.../ logic in
 ~org-html--format-toc-headline-colapseable~. Unfortunately, I can't my elisp isn't
 up to par to extract the number of child headings from the mountain of info that
 org provides.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defadvice! org-html--toc-text-stripped-leaves (orig-fn toc-entries)
   "Remove label"
   :around #'org-html--toc-text
@@ -6448,7 +6572,7 @@ or file names: "I keep my configuration in =~/.config/doom/=", among other thing
 
 Then, styling these two cases differently can help improve clarity in a document.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-html-text-markup-alist
       '((bold . "<b>%s</b>")
         (code . "<code>%s</code>")
@@ -6461,7 +6585,7 @@ Then, styling these two cases differently can help improve clarity in a document
 **** Change checkbox type
 
 We also want to use HTML checkboxes, however we want to get a bit fancier than default
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (appendq! org-html-checkbox-types
           '((html-span
              (on . "<span class='checkbox'></span>")
@@ -6488,7 +6612,7 @@ advice in this config, I'm not above messing with things I'm not 'supposed' to.
 The only minor complication is that =<= and =>= are converted to =&lt;= and =&gt;=
 before this stage of output processing.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (pushnew! org-html-special-string-regexps
           '("-&gt;" . "&#8594;")
           '("&lt;-" . "&#8592;"))
@@ -6497,7 +6621,7 @@ before this stage of output processing.
 **** Header anchors
 
 I want to add GitHub-style links on hover for headings.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun org-export-html-headline-anchor (text backend info)
   (when (and (org-export-derived-backend-p backend 'html)
              (not (org-export-derived-backend-p backend 're-reveal))
@@ -6520,7 +6644,7 @@ Twitter does would be nice I think.
 We can do this without too much trouble by adding a new link type ever so
 slightly different from =https= --- =Https=.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (org-link-set-parameters "Https"
                          :follow (lambda (url arg) (browse-url (concat "https:" url) arg))
                          :export #'org-url-fancy-export)
@@ -6530,7 +6654,7 @@ Then, if we can fetch a plist of the form src_elisp{(:title "..." :description
 "..." :image "...")} for such links via a function ~org-url-unfurl-metadata~, we
 can make a fancy export.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun org-url-fancy-export (url _desc backend)
   (let ((metadata (org-url-unfurl-metadata (concat "https:" url))))
     (cond
@@ -6552,7 +6676,7 @@ can make a fancy export.
 #+end_src
 
 Now we just need to actually implement that metadata extraction function.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-url-unfurl-metadata--cache nil)
 (defun org-url-unfurl-metadata (url)
   (cdr (or (assoc url org-url-unfurl-metadata--cache)
@@ -6605,7 +6729,7 @@ Now we just need to actually implement that metadata extraction function.
 
 I consider ~dvisvgm~ to be a rather compelling option. However this isn't scaled
 very well at the moment.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 ;; (setq-default org-html-with-latex `dvisvgm)
 #+end_src
 
@@ -6616,7 +6740,7 @@ Looking at a [[https://www.intmath.com/cg5/katex-mathjax-comparison.php][compari
 single file instead of multiple, but seems to be a bit bigger unfortunately.
 Thankfully this can be mitigated my adding the ~async~ attribute to defer loading.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-html-mathjax-options
       '((path "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" )
         (scale "1")
@@ -6648,6 +6772,14 @@ MathJax = {
 #+end_src
 
 *** LaTeX Export
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref ox-latex-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! ox-latex
+  <<ox-latex-conf>>)
+#+end_src
 
 **** Compiling
 
@@ -6655,7 +6787,7 @@ By default Org uses ~pdflatex~ \times 3 + ~bibtex~. This simply won't do in our
 modern world. ~latexmk~ + ~biber~ (which is used automatically with ~latexmk~) is a
 simply superior combination.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 ;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
 (setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
 #+end_src
@@ -6677,7 +6809,7 @@ it should still work.
 We'll assume that thanks to the clever preamble the various custom =\checkbox...=
 commands below are defined.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun +org-export-latex-fancy-item-checkboxes (text backend info)
   (when (org-export-derived-backend-p backend 'latex)
     (replace-regexp-in-string
@@ -6701,7 +6833,7 @@ styling which is both easy to use, and quite comprehensive.
 For example, I rather like section numbers in the margin, which can be
 accomplished with
 #+name: latex-hanging-secnum
-#+begin_src LaTeX
+#+begin_src latex
 \renewcommand\sectionformat{\llap{\thesection\autodot\enskip}}
 \renewcommand\subsectionformat{\llap{\thesubsection\autodot\enskip}}
 \renewcommand\subsubsectionformat{\llap{\thesubsubsection\autodot\enskip}}
@@ -6709,7 +6841,7 @@ accomplished with
 
 It can also be nice to have big =\chapter=​s.
 #+name: latex-big-chapter
-#+begin_src LaTeX
+#+begin_src latex
 \RedeclareSectionCommand[afterindent=false, beforeskip=0pt, afterskip=0pt, innerskip=0pt]{chapter}
 \setkomafont{chapter}{\normalfont\Huge}
 \renewcommand*{\chapterheadstartvskip}{\vspace*{0\baselineskip}}
@@ -6764,7 +6896,7 @@ Now let's just sprinkle some KOMA all over the Org LaTeX classes.
 
 The =hyperref= setup needs to be handled separately however.
 #+name: latex-fancy-hyperref
-#+begin_src LaTeX
+#+begin_src latex
 \providecolor{url}{HTML}{0077bb}
 \providecolor{link}{HTML}{882255}
 \providecolor{cite}{HTML}{999933}
@@ -6795,7 +6927,7 @@ It's a pain to have to work out / remember them every time.
 For example, I almost always want to include the snippet below.
 
 #+name: org-latex-embed-files-preamble
-#+begin_src LaTeX
+#+begin_src latex
 \usepackage[main,include]{embedall}
 \IfFileExists{./\jobname.org}{\embedfile[desc=The original file]{\jobname.org}}{}
 #+end_src
@@ -6821,7 +6953,7 @@ Captions could do with a bit of tweaking such that
   one line
 
 #+name: org-latex-caption-preamble
-#+begin_src LaTeX
+#+begin_src latex
 \usepackage{subcaption}
 \usepackage[hypcap=true]{caption}
 \setkomafont{caption}{\sffamily\small}
@@ -6833,7 +6965,7 @@ Captions could do with a bit of tweaking such that
 The default checkboxes look rather ugly, so let's provide some prettier alternatives.
 
 #+name: org-latex-checkbox-preamble
-#+begin_src LaTeX
+#+begin_src latex
 \newcommand{\checkboxUnchecked}{$\square$}
 \newcommand{\checkboxTransitive}{\rlap{\raisebox{-0.1ex}{\hspace{0.35ex}\Large\textbf -}}$\square$}
 \newcommand{\checkboxChecked}{\rlap{\raisebox{0.2ex}{\hspace{0.35ex}\scriptsize \ding{52}}}$\square$}
@@ -6843,7 +6975,7 @@ We set up a maths typesetting preamble [[*Maths notation conveniences][later on]
 to a variable here:
 
 #+begin_src emacs-lisp :noweb no-export :noweb-prefix no
-    (defvar org-latex-maths-preambl e
+    (defvar org-latex-maths-preamble
   <<grab("latex-maths-conveniences")>>
   "Preamble that sets up a bunch of mathematical conveniences.")
 #+end_src
@@ -6852,7 +6984,7 @@ It's nice to have "message blocks", things like info/warning/error/success.
 A LaTeX macro should make them trivial to create.
 
 #+name: org-latex-box-preamble
-#+begin_src LaTeX
+#+begin_src latex
 \ExplSyntaxOn
 \NewCoffin\Content
 \NewCoffin\SideRule
@@ -6909,7 +7041,7 @@ mapping each tangled file to a form which embeds the file if it exists.
 Considering we're going this far, why not add a dedicated =#+emded= keyword, so we
 can embed whatever we want.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defun org-latex-embed-extra-files ()
   "Return a string that uses embedfile to embed all tangled files."
   (mapconcat
@@ -7050,9 +7182,9 @@ tests should be very versatile.
 (defvar org-latex-par-sep t
   "Vertically seperate paragraphs, and remove indentation.")
 
-(org-export-update-features 'latex
-  ((image caption)
-   :condition "\\[\\[xkcd:"))
+;; (org-export-update-features 'latex
+;;   ((image caption)
+;;    :condition "\\[\\[xkcd:"))
 #+end_src
 
 Then we provide a way to generate the preamble that provides those features. In
@@ -7082,94 +7214,94 @@ introduce an =:order= keyword. Using this I'll arrange snippets as follows.
 + =4= Fancy boxes
 
 #+begin_src emacs-lisp
-(org-export-update-features 'latex
-  (maths
-   :snippet org-latex-maths-preamble
-   :order 0.2)
-  (cleveref
-   :condition "cref:\\|\\cref{\\|\\[\\[[^\\]+\n?[^\\]\\]\\]"
-   :snippet "\\usepackage[capitalize]{cleveref}"
-   :order 1)
-  (caption
-   :snippet org-latex-caption-preamble
-   :order 2.1)
-  (microtype
-   :condition org-latex-use-microtype
-   :snippet "\\usepackage[activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=2000]{microtype}\n"
-   :order 0.1)
-  (embed-files
-   :condition org-latex-embed-files
-   :snippet org-latex-embed-files-preamble
-   :order -2)
-  (embed-tangled
-   :condition (and org-latex-embed-files
-                   "^[ \t]*#\\+embed\\|^[ \t]*#\\+begin_src\\|^[ \t]*#\\+BEGIN_SRC")
-   :requires embed-files
-   :snippet org-latex-embed-extra-files
-   :order -1)
-  (acronym
-   :condition "[;\\\\]?\\b[A-Z][A-Z]+s?[^A-Za-z]"
-   :snippet "\\newcommand{\\acr}[1]{\\protect\\textls*[110]{\\scshape #1}}\n\\newcommand{\\acrs}{\\protect\\scalebox{.91}[.84]{\\hspace{0.15ex}s}}"
-   :order 0.4)
-  (box-drawing
-   :condition "[\u2500-\u259F]"
-   :snippet "\\usepackage{pmboxdraw}"
-   :order 0.05)
-  (italic-quotes
-   :condition (and org-latex-italic-quotes "^[ \t]*#\\+begin_quote\\|\\\\begin{quote}")
-   :snippet "\\renewcommand{\\quote}{\\list{}{\\rightmargin\\leftmargin}\\item\\relax\\em}\n"
-   :order 0.5)
-  (par-sep
-   :condition org-latex-par-sep
-   :snippet "\\setlength{\\parskip}{\\baselineskip}\n\\setlength{\\parindent}{0pt}\n"
-   :order 0.5)
-  (.pifont
-   :snippet "\\usepackage{pifont}")
-  (.xcoffins
-   :snippet "\\usepackage{xcoffins}")
-  (checkbox
-   :condition "^[ \t]*\\(?:[-+*]\\|[0-9]+[.)]\\|[A-Za-z]+[.)]\\) \\[[ -X]\\]"
-   :requires .pifont
-   :snippet (concat (unless (memq 'maths features)
-                      "\\usepackage{amssymb} % provides \\square")
-                    org-latex-checkbox-preamble)
-   :order 3)
-  (.fancy-box
-   :requires (.pifont .xcoffins)
-   :snippet org-latex-box-preamble
-   :order 3.9)
-  (box-warning
-   :condition "^[ \t]*#\\+begin_warning\\|\\\\begin{warning}"
-   :requires .fancy-box
-   :snippet "\\defsimplebox{warning}{e66100}{Warning}"
-   :order 4)
-  (box-info
-   :condition "^[ \t]*#\\+begin_info\\|\\\\begin{info}"
-   :requires .fancy-box
-   :snippet "\\defsimplebox{info}{3584e4}{Information}"
-   :order 4)
-  (box-notes
-   :condition "^[ \t]*#\\+begin_notes\\|\\\\begin{notes}"
-   :requires .fancy-box
-   :snippet "\\defsimplebox{notes}{26a269}{Notes}"
-   :order 4)
-  (box-success
-   :condition "^[ \t]*#\\+begin_success\\|\\\\begin{success}"
-   :requires .fancy-box
-   :snippet "\\defsimplebox{success}{26a269}{\\vspace{-\\baselineskip}}"
-   :order 4)
-  (box-error
-   :condition "^[ \t]*#\\+begin_error\\|\\\\begin{error}"
-   :requires .fancy-box
-   :snippet "\\defsimplebox{error}{c01c28}{Important}"
-   :order 4))
+;; (org-export-update-features 'latex
+;;   (maths
+;;    :snippet org-latex-maths-preamble
+;;    :order 0.2)
+;;   (cleveref
+;;    :condition "cref:\\|\\cref{\\|\\[\\[[^\\]+\n?[^\\]\\]\\]"
+;;    :snippet "\\usepackage[capitalize]{cleveref}"
+;;    :order 1)
+;;   (caption
+;;    :snippet org-latex-caption-preamble
+;;    :order 2.1)
+;;   (microtype
+;;    :condition org-latex-use-microtype
+;;    :snippet "\\usepackage[activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=2000]{microtype}\n"
+;;    :order 0.1)
+;;   (embed-files
+;;    :condition org-latex-embed-files
+;;    :snippet org-latex-embed-files-preamble
+;;    :order -2)
+;;   (embed-tangled
+;;    :condition (and org-latex-embed-files
+;;                    "^[ \t]*#\\+embed\\|^[ \t]*#\\+begin_src\\|^[ \t]*#\\+BEGIN_SRC")
+;;    :requires embed-files
+;;    :snippet org-latex-embed-extra-files
+;;    :order -1)
+;;   (acronym
+;;    :condition "[;\\\\]?\\b[A-Z][A-Z]+s?[^A-Za-z]"
+;;    :snippet "\\newcommand{\\acr}[1]{\\protect\\textls*[110]{\\scshape #1}}\n\\newcommand{\\acrs}{\\protect\\scalebox{.91}[.84]{\\hspace{0.15ex}s}}"
+;;    :order 0.4)
+;;   (box-drawing
+;;    :condition "[\u2500-\u259F]"
+;;    :snippet "\\usepackage{pmboxdraw}"
+;;    :order 0.05)
+;;   (italic-quotes
+;;    :condition (and org-latex-italic-quotes "^[ \t]*#\\+begin_quote\\|\\\\begin{quote}")
+;;    :snippet "\\renewcommand{\\quote}{\\list{}{\\rightmargin\\leftmargin}\\item\\relax\\em}\n"
+;;    :order 0.5)
+;;   (par-sep
+;;    :condition org-latex-par-sep
+;;    :snippet "\\setlength{\\parskip}{\\baselineskip}\n\\setlength{\\parindent}{0pt}\n"
+;;    :order 0.5)
+;;   (.pifont
+;;    :snippet "\\usepackage{pifont}")
+;;   (.xcoffins
+;;    :snippet "\\usepackage{xcoffins}")
+;;   (checkbox
+;;    :condition "^[ \t]*\\(?:[-+*]\\|[0-9]+[.)]\\|[A-Za-z]+[.)]\\) \\[[ -X]\\]"
+;;    :requires .pifont
+;;    :snippet (concat (unless (memq 'maths features)
+;;                       "\\usepackage{amssymb} % provides \\square")
+;;                     org-latex-checkbox-preamble)
+;;    :order 3)
+;;   (.fancy-box
+;;    :requires (.pifont .xcoffins)
+;;    :snippet org-latex-box-preamble
+;;    :order 3.9)
+;;   (box-warning
+;;    :condition "^[ \t]*#\\+begin_warning\\|\\\\begin{warning}"
+;;    :requires .fancy-box
+;;    :snippet "\\defsimplebox{warning}{e66100}{Warning}"
+;;    :order 4)
+;;   (box-info
+;;    :condition "^[ \t]*#\\+begin_info\\|\\\\begin{info}"
+;;    :requires .fancy-box
+;;    :snippet "\\defsimplebox{info}{3584e4}{Information}"
+;;    :order 4)
+;;   (box-notes
+;;    :condition "^[ \t]*#\\+begin_notes\\|\\\\begin{notes}"
+;;    :requires .fancy-box
+;;    :snippet "\\defsimplebox{notes}{26a269}{Notes}"
+;;    :order 4)
+;;   (box-success
+;;    :condition "^[ \t]*#\\+begin_success\\|\\\\begin{success}"
+;;    :requires .fancy-box
+;;    :snippet "\\defsimplebox{success}{26a269}{\\vspace{-\\baselineskip}}"
+;;    :order 4)
+;;   (box-error
+;;    :condition "^[ \t]*#\\+begin_error\\|\\\\begin{error}"
+;;    :requires .fancy-box
+;;    :snippet "\\defsimplebox{error}{c01c28}{Important}"
+;;    :order 4))
 #+end_src
 
 ***** Adding xcolor as an unconditional package
 
 =xcolor= is just convenient to have.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-latex-packages-alist
       '(("" "xcolor" t)))
 #+end_src
@@ -7246,16 +7378,16 @@ Now that all the functionality has been implemented, we should hook it into our
 preamble generation.
 
 #+begin_src emacs-lisp
-(org-export-update-features 'latex
-  (custom-font
-   :condition org-latex-default-fontset
-   :snippet (org-latex-fontset :serif :sans :mono)
-   :order 0)
-  (custom-maths-font
-   :condition t
-   :when (custom-font maths)
-   :snippet (org-latex-fontset :maths)
-   :order 0.3))
+;; (org-export-update-features 'latex
+;;   (custom-font
+;;    :condition org-latex-default-fontset
+;;    :snippet (org-latex-fontset :serif :sans :mono)
+;;    :order 0)
+;;   (custom-maths-font
+;;    :condition t
+;;    :when (custom-font maths)
+;;    :snippet (org-latex-fontset :maths)
+;;    :order 0.3))
 #+end_src
 
 Finally, we just need to add some fonts.
@@ -7314,49 +7446,49 @@ When we're using Alegreya we can apply a lovely little tweak to =tabular= which
 (locally) changes the figures used to lining fixed-width.
 
 #+begin_src emacs-lisp
-(org-export-update-features 'latex
-  (alegreya-typeface
-   :condition (string= (car (org-latex-fontset-entry)) "alegreya")
-   :snippet nil)
-  (alegreya-tabular-figures
-   :condition t
-   :when (alegreya-typeface table)
-   :snippet "\
-\\makeatletter
-% tabular lining figures in tables
-\\renewcommand{\\tabular}{\\AlegreyaTLF\\let\\@halignto\\@empty\\@tabular}
-\\makeatother"
-   :order 0.5))
+;; (org-export-update-features 'latex
+;;   (alegreya-typeface
+;;    :condition (string= (car (org-latex-fontset-entry)) "alegreya")
+;;    :snippet nil)
+;;   (alegreya-tabular-figures
+;;    :condition t
+;;    :when (alegreya-typeface table)
+;;    :snippet "\
+;; \\makeatletter
+;; % tabular lining figures in tables
+;; \\renewcommand{\\tabular}{\\AlegreyaTLF\\let\\@halignto\\@empty\\@tabular}
+;; \\makeatother"
+;;    :order 0.5))
 #+end_src
 
 Due to Alegreya's metrics, the =\LaTeX= symbol doesn't quite look right. We
 can correct for this by redefining it with subtlety shifted kerning.
 
 #+begin_src emacs-lisp
-(org-export-update-features 'latex
-  (alegreya-latex-symbol
-    :condition "LaTeX"
-    :when alegreya-typeface
-    :snippet "\
-\\makeatletter
-% Kerning around the A needs adjusting
-\\DeclareRobustCommand{\\LaTeX}{L\\kern-.24em%
-        {\\sbox\\z@ T%
-         \\vbox to\\ht\\z@{\\hbox{\\check@mathfonts
-                              \\fontsize\\sf@size\\z@
-                              \\math@fontsfalse\\selectfont
-                              A}%
-                        \\vss}%
-        }%
-        \\kern-.10em%
-        \\TeX}
-\\makeatother"
-    :order 0.5))
+;; (org-export-update-features 'latex
+;;   (alegreya-latex-symbol
+;;     :condition "LaTeX"
+;;     :when alegreya-typeface
+;;     :snippet "\
+;; \\makeatletter
+;; % Kerning around the A needs adjusting
+;; \\DeclareRobustCommand{\\LaTeX}{L\\kern-.24em%
+;;         {\\sbox\\z@ T%
+;;          \\vbox to\\ht\\z@{\\hbox{\\check@mathfonts
+;;                               \\fontsize\\sf@size\\z@
+;;                               \\math@fontsfalse\\selectfont
+;;                               A}%
+;;                         \\vss}%
+;;         }%
+;;         \\kern-.10em%
+;;         \\TeX}
+;; \\makeatother"
+;;     :order 0.5))
 #+end_src
 
 **** Maths notation conveniences
 :PROPERTIES:
-:header-args:LaTeX: :noweb-ref latex-maths-conveniences
+:header-args:latex: :noweb-ref latex-maths-conveniences
 :END:
 
 Maths has a way of popping up relentlessly. I think this says something both
@@ -7367,7 +7499,7 @@ reasonable, we can make a few common bits of notation a tad more convenient.
 
 First, there are a few useful packages we want to use.
 
-#+begin_src LaTeX
+#+begin_src latex
 %% Maths-related packages
 % More maths environments, commands, and symbols.
 \usepackage{amsmath, amssymb}
@@ -7384,7 +7516,7 @@ First, there are a few useful packages we want to use.
 Next up we want to make the various types of rounding-related and absolute value
 delimitors accessible as commands.
 
-#+begin_src LaTeX
+#+begin_src latex
 % Deliminators
 \DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
 \DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
@@ -7400,7 +7532,7 @@ Then we have the various common number sets, it would be nice to have a
 convenient way of typing them and optionally giving them powers. It's fairly
 easy to support both =\XX= and =\XX[n]=.
 
-#+begin_src LaTeX
+#+begin_src latex
 \newcommand{\RR}[1][]{\ensuremath{\ifstrempty{#1}{\mathbb{R}}{\mathbb{R}^{#1}}}} % Real numbers
 \newcommand{\NN}[1][]{\ensuremath{\ifstrempty{#1}{\mathbb{N}}{\mathbb{N}^{#1}}}} % Natural numbers
 \newcommand{\ZZ}[1][]{\ensuremath{\ifstrempty{#1}{\mathbb{Z}}{\mathbb{Z}^{#1}}}} % Integer numbers
@@ -7420,7 +7552,7 @@ Similarly, it would be nice to have a partial derivate counterpart =\pdv= which
 behaves in a similar way, but with the possibility of providing multiple
 comma-delimited variables --- e.g. =\pdv{f}{x,y,z}=.
 
-#+begin_src LaTeX
+#+begin_src latex
 % Easy derivatives
 \ProvideDocumentCommand\dv{o m g}{%
   \IfNoValueTF{#3}{%
@@ -7446,7 +7578,7 @@ comma-delimited variables --- e.g. =\pdv{f}{x,y,z}=.
 
 The default set of operators could benefit from a bit of expansion.
 
-#+begin_src LaTeX
+#+begin_src latex
 % Laplacian
 \DeclareMathOperator{\Lap}{\mathcal{L}}
 
@@ -7462,7 +7594,7 @@ The default set of operators could benefit from a bit of expansion.
 As a matter of personal taste, I prefer the slanted less/greater than or equal
 to operators, and would like to use them by default.
 
-#+begin_src LaTeX
+#+begin_src latex
 % I prefer the slanted \leq/\geq
 \let\barleq\leq % Save them in case they're every wanted
 \let\bargeq\geq
@@ -7476,7 +7608,7 @@ By default, everything in a matrix is centred, which I actually find often
 undesirable. It would be much nicer to take the alignment as an optional
 argument of the environment, and default to right-alignment.
 
-#+begin_src LaTeX
+#+begin_src latex
 % Redefine the matrix environment to allow for alignment
 % via an optional argument, and use r as the default.
 \makeatletter
@@ -7503,7 +7635,7 @@ roman "d"/. This stylistically works for me, while being just distinct enough
 from other faces. As long as we are creating a PDF, we can apply a transform
 that slants a "d".
 
-#+begin_src LaTeX
+#+begin_src latex
 % Slanted roman "d" for derivatives
 \ifcsname pdfoutput\endcsname
   \ifnum\pdfoutput>0 % PDF
@@ -7529,7 +7661,7 @@ that slants a "d".
 Now there's the matter of /placing/ the "d", or rather adjusting the space around
 it. After much fiddling, I've ended up with the following.
 
-#+begin_src LaTeX
+#+begin_src latex
 % Derivative d^n, nicely spaced
 \makeatletter
 \newcommand{\dd}[1][]{\mathop{}\!%
@@ -7548,7 +7680,7 @@ defined with src_LaTeX{\@dec@text@cmd\newcommand} instead of
 src_LaTeX{\DeclareRobustCommand} we can redefine the command to mean =\dd= in
 math-mode.
 
-#+begin_src LaTeX
+#+begin_src latex
 \NewCommandCopy{\daccent}{\d}
 \renewcommand{\d}{\ifmmode\dd\else\daccent\fi}
 #+end_src
@@ -7568,7 +7700,7 @@ This will accomplish the following:
 + Start a new page after the table of contents by redefining =\tableofcontents=
 
 #+name: latex-cover-page
-#+begin_src LaTeX
+#+begin_src latex
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric}
 \usetikzlibrary{calc}
@@ -7625,7 +7757,7 @@ or not a cover page should be used based on the word count --- I'll have this be
 the global default. Then we just want to insert a LaTeX snippet tweak the
 subtitle format to use the cover page.
 
-#+begin_src emacs-lisp :noweb no-export :noweb-prefix no
+#+begin_src emacs-lisp :noweb no-export
 (defvar org-latex-cover-page 'auto
   "When t, use a cover page by default.
 When auto, use a cover page when the document's wordcount exceeds
@@ -7663,11 +7795,11 @@ This condition is applied when cover page option is set to auto.")
   (when (org-latex-cover-page-p)
     (setf info (plist-put info :latex-subtitle-format org-latex-subtitle-coverpage-format))))
 
-(org-export-update-features 'latex
-  (cover-page
-   :condition (org-latex-cover-page-p)
-   :snippet org-latex-cover-page-maketitle
-   :order 9))
+;; (org-export-update-features 'latex
+;;   (cover-page
+;;    :condition (org-latex-cover-page-p)
+;;    :snippet org-latex-cover-page-maketitle
+;;    :order 9))
 #+end_src
 
 **** Condensed lists
@@ -7677,7 +7809,7 @@ much space it puts between list items by default. I'm generally not a fan.
 
 Thankfully this is easy to correct with a small snippet:
 #+name: latex-condense-lists
-#+begin_src LaTeX
+#+begin_src latex
 \newcommand{\setuplistspacing}{\setlength{\itemsep}{-0.5ex}\setlength{\parskip}{1.5ex}\setlength{\parsep}{0pt}}
 \let\olditem\itemize\renewcommand{\itemize}{\olditem\setuplistspacing}
 \let\oldenum\enumerate\renewcommand{\enumerate}{\oldenum\setuplistspacing}
@@ -7686,18 +7818,18 @@ Thankfully this is easy to correct with a small snippet:
 
 Then we can just hook this in with our clever preamble.
 
-#+begin_src emacs-lisp :noweb no-export :noweb-prefix no
+#+begin_src emacs-lisp :noweb no-export
 (defvar org-latex-condense-lists t
   "Reduce the space between list items.")
 (defvar org-latex-condensed-lists
   <<grab("latex-condense-lists")>>
   "LaTeX preamble snippet that reduces the space between list items.")
 
-(org-export-update-features 'latex
-  (condensed-lists
-   :condition (and org-latex-condense-lists "^[ \t]*[-+]\\|^[ \t]*[1Aa][.)] ")
-   :snippet org-latex-condensed-lists
-   :order 0.7))
+;; (org-export-update-features 'latex
+;;   (condensed-lists
+;;    :condition (and org-latex-condense-lists "^[ \t]*[-+]\\|^[ \t]*[1Aa][.)] ")
+;;    :snippet org-latex-condensed-lists
+;;    :order 0.7))
 #+end_src
 
 **** Pretty code blocks
@@ -7710,14 +7842,14 @@ exporting that as LaTeX commands.
 (package! engrave-faces :recipe (:host github :repo "tecosaur/engrave-faces"))
 #+end_src
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (use-package! engrave-faces-latex
   :after ox-latex)
 #+end_src
 
 Using this as in LaTeX exports is now as easy as
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-latex-listings 'engraved)
 #+end_src
 
@@ -7726,12 +7858,12 @@ environments. Protrusion is not desirable here. Thankfully, we can patch the
 =Verbatim= environment to turn off protrusion locally.
 
 #+begin_src emacs-lisp
-(org-export-update-features 'latex
-  (no-protrusion-in-code
-   :condition t
-   :when microtype
-   :snippet "\\ifcsname Code\\endcsname\n  \\let\\oldcode\\Code\\renewcommand{\\Code}{\\microtypesetup{protrusion=false}\\oldcode}\n\\fi"
-   :order 98.5))
+;; (org-export-update-features 'latex
+;;   (no-protrusion-in-code
+;;    :condition t
+;;    :when microtype
+;;    :snippet "\\ifcsname Code\\endcsname\n  \\let\\oldcode\\Code\\renewcommand{\\Code}{\\microtypesetup{protrusion=false}\\oldcode}\n\\fi"
+;;    :order 98.5))
 #+end_src
 
 At some point it would be nice to make the box colours easily customisable. At
@@ -7775,6 +7907,14 @@ rudimentary test suggest that =engrave-faces= is around eight times faster than
 =pygments=, and takes three times as long as no syntax highlighting (verbatim).
 
 **** Emojis
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref ox-latex-emoji-conf :noweb-prefix none
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! ox-latex
+  <<ox-latex-emoji-conf>>)
+#+end_src
 
 It would be nice to actually include emojis where used.
 Thanks to =emojify=, we have a folder of emoji images just sitting and waiting to
@@ -7784,7 +7924,7 @@ First up, we want to detect when emojis are actually present. Manually
 constructing a regex for this would be a huge pain with the way the codepoints
 are scattered around, but thanks to ~char-script-table~ we don't have to!
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (defvar org-latex-emoji--rx
   (let (emojis)
     (map-char-table
@@ -7811,7 +7951,7 @@ non-surrogate form required by =\DeclareUnicodeCharacter=, and another for the
 surrogate form required by =\BeginAccSupp=.
 
 #+name: latex-emoji-preamble
-#+begin_src LaTeX
+#+begin_src latex
 \usepackage{accsupp}
 \usepackage{transparent}
 \newsavebox\emojibox
@@ -7964,14 +8104,14 @@ If SVG-P is set \"includegraphics\" will be replaced with \"includesvg\"."
       "\n")
      "\n")))
 
-(org-export-update-features 'latex
-  (emoji
-   :condition (save-excursion
-                (goto-char (point-min))
-                (re-search-forward org-latex-emoji--rx nil t))
-   :requires image
-   :snippet org-latex-emoji-setup
-   :order 3))
+;; (org-export-update-features 'latex
+;;   (emoji
+;;    :condition (save-excursion
+;;                 (goto-char (point-min))
+;;                 (re-search-forward org-latex-emoji--rx nil t))
+;;    :requires image
+;;    :snippet org-latex-emoji-setup
+;;    :order 3))
 #+end_src
 
 Unfortunately this isn't a global solution, as LuaLaTeX doesn't have
@@ -7979,16 +8119,16 @@ Unfortunately this isn't a global solution, as LuaLaTeX doesn't have
 when we know it will be used.
 
 #+begin_src emacs-lisp
-(org-export-update-features 'latex
-  (emoji-lualatex-hack
-   :condition t
-   :when (emoji julia-code) ; LuaLaTeX is used with julia-code.
-   :snippet
-   "\\usepackage{newunicodechar}
-\\newcommand{\\DeclareUnicodeCharacter}[2]{%
-    \\begingroup\\lccode`|=\\string\"#1\\relax
-    \\lowercase{\\endgroup\\newunicodechar{|}}{#2}}"
-   :order 2.9))
+;; (org-export-update-features 'latex
+;;   (emoji-lualatex-hack
+;;    :condition t
+;;    :when (emoji julia-code) ; LuaLaTeX is used with julia-code.
+;;    :snippet
+;;    "\\usepackage{newunicodechar}
+;; \\newcommand{\\DeclareUnicodeCharacter}[2]{%
+;;     \\begingroup\\lccode`|=\\string\"#1\\relax
+;;     \\lowercase{\\endgroup\\newunicodechar{|}}{#2}}"
+;;    :order 2.9))
 #+end_src
 
 This works fairly nicely, there's just one little QOL upgrade that we can
@@ -8292,11 +8432,11 @@ Once I had the idea of having the look of the LaTeX document produced match the
 current Emacs theme, I was enraptured. The result is the pseudo-class ~chameleon~,
 which I have implemented in the package =ox-chameleon=.
 
-#+begin_src emacs-lisp :tangle packages.el
+#+begin_src emacs-lisp :noweb-ref none :tangle packages.el
 (package! ox-chameleon :recipe (:host github :repo "tecosaur/ox-chameleon"))
 #+end_src
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp :noweb-ref none :tangle config.el
 (use-package! ox-chameleon
   :after ox)
 #+end_src
@@ -8308,7 +8448,7 @@ Since have just gone to so much effort above let's make the most of it by making
 
 This gives the same advantages as mentioned in the [[*Make verbatim different to code][HTML export section]].
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-latex-text-markup-alist
       '((bold . "\\textbf{%s}")
         (code . protectedtexttt)
@@ -8436,15 +8576,23 @@ export to a PDF.
 #+end_src
 
 *** Beamer Export
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref ox-beamer-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! ox-beamer
+  <<ox-beamer-conf>>)
+#+end_src
 
 It's nice to use a different theme
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-beamer-theme "[progressbar=foot]metropolis")
 #+end_src
 
 When using metropolis though, we want to make a few tweaks:
 #+name: beamer-metropolis-tweaks
-#+begin_src LaTeX
+#+begin_src latex
 \NewCommandCopy{\moldusetheme}{\usetheme}
 \renewcommand*{\usetheme}[2][]{\moldusetheme[#1]{#2}
   \setbeamertemplate{items}{$\bullet$}
@@ -8466,50 +8614,66 @@ Now let's just apply this along with some extra beamer tweaks.
   (eq 'beamer (and (plist-get info :back-end)
                    (org-export-backend-name (plist-get info :back-end)))))
 
-(org-export-update-features 'beamer
-  (beamer-setup
-   :condition t
-   :requires .missing-koma
-   :prevents (italic-quotes condensed-lists cover-page)))
+;; (org-export-update-features 'beamer
+;;   (beamer-setup
+;;    :condition t
+;;    :requires .missing-koma
+;;    :prevents (italic-quotes condensed-lists cover-page)))
 
-(org-export-update-features 'latex
-  (.missing-koma
-   :snippet "\\usepackage{scrextend}"
-   :order 2))
+;; (org-export-update-features 'latex
+;;   (.missing-koma
+;;    :snippet "\\usepackage{scrextend}"
+;;    :order 2))
 
 (defvar org-beamer-metropolis-tweaks
   <<grab("beamer-metropolis-tweaks")>>
   "LaTeX preamble snippet that tweaks the Beamer metropolis theme styling.")
 
-(org-export-update-features 'beamer
-  (beamer-metropolis
-   :condition (string-match-p "metropolis$" (plist-get info :beamer-theme))
-   :snippet org-beamer-metropolis-tweaks
-   :order 3))
+;; (org-export-update-features 'beamer
+;;   (beamer-metropolis
+;;    :condition (string-match-p "metropolis$" (plist-get info :beamer-theme))
+;;    :snippet org-beamer-metropolis-tweaks
+;;    :order 3))
 #+end_src
 
 And I think that it's natural to divide a presentation into sections, e.g.
 Introduction, Overview... so let's set bump up the headline level that becomes a
 frame from ~1~ to ~2~.
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-beamer-frame-level 2)
 #+end_src
 
 *** Reveal export
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref ox-re-reveal-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! ox-re-reveal
+  <<ox-re-reveal-conf>>)
+#+end_src
 
 By default reveal is rather nice, there are just a few tweaks that I consider a
 good idea.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-re-reveal-theme "white"
       org-re-reveal-transition "slide"
       org-re-reveal-plugins '(markdown notes math search zoom))
 #+end_src
 
 *** ASCII export
+:PROPERTIES:
+:header-args:emacs-lisp: :noweb-ref ox-ascii-conf
+:END:
+
+#+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
+(after! ox-ascii
+  <<ox-ascii-conf>>)
+#+end_src
 
 To start with, why settle for ASCII when UTF-8 exists?
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (setq org-ascii-charset 'utf-8)
 #+end_src
 
@@ -8524,7 +8688,7 @@ src_elisp{(org-ascii-latex-environment)} functions, which are conveniently very
 slim --- just extracting the content, and indenting. We'll only do something
 different when =utf-8= is set.
 
-#+begin_src emacs-lisp :tangle config.el
+#+begin_src emacs-lisp
 (when (executable-find "latex2text")
   (after! ox-ascii
     (defvar org-ascii-convert-latex t
@@ -8570,7 +8734,7 @@ such a thing a standard table spec ... or standard anything really. Because
 elements (a lot of them). So ~ox-gfm~ is handy for exporting markdown with all the
 features that GitHub has.
 
-#+begin_src emacs-lisp :noweb-ref none :tangle packages.el
+#+begin_src emacs-lisp :tangle packages.el
 (package! ox-gfm :pin "46faa67dbb3fb0cd7a76c3fe518f16e4195c22c7")
 #+end_src
 
@@ -8739,8 +8903,60 @@ Since I'm using =mypyls=, as suggested in [[file:~/.config/emacs/modules/lang/py
 priority of =mypyls=
 
 #+begin_src emacs-lisp :tangle config.el
-(after! lsp-python-ms
-  (set-lsp-priority! 'mspyls 1))
+;; (after! lsp-python-ms
+;;   (set-lsp-priority! 'mspyls 1))
+#+end_src
+
+I use micromamba since it is available via =nix= installation. Let's add =micromamba.el=
+
+#+begin_src emacs-lisp :tangle packages.el
+(package! micromamba )
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! micromamba
+  :after python
+  ;; :config
+  ;; ;; The location of your anaconda home will be guessed from a list of common
+  ;; ;; possibilities, starting with `conda-anaconda-home''s default value (which
+  ;; ;; will consult a ANACONDA_HOME envvar, if it exists).
+  ;; ;;
+  ;; ;; If none of these work for you, `conda-anaconda-home' must be set
+  ;; ;; explicitly. Afterwards, run M-x `conda-env-activate' to switch between
+  ;; ;; environments
+  ;; (or (cl-loop for dir in (list conda-anaconda-home
+  ;;                               "~/.anaconda"
+  ;;                               "~/.miniconda"
+  ;;                               "~/.miniconda3"
+  ;;                               "~/.miniforge3"
+  ;;                               "~/anaconda3"
+  ;;                               "~/miniconda3"
+  ;;                               "~/miniforge3"
+  ;;                               "~/opt/miniconda3"
+  ;;                               "/usr/bin/anaconda3"
+  ;;                               "/usr/local/anaconda3"
+  ;;                               "/usr/local/miniconda3"
+  ;;                               "/usr/local/Caskroom/miniconda/base"
+  ;;                               "~/.conda")
+  ;;              if (file-directory-p dir)
+  ;;              return (setq conda-anaconda-home (expand-file-name dir)
+  ;;                           conda-env-home-directory (expand-file-name dir)))
+  ;;     (message "Cannot find Anaconda installation"))
+
+  ;; ;; integration with term/eshell
+  ;; (conda-env-initialize-interactive-shells)
+  ;; (after! eshell (conda-env-initialize-eshell))
+
+  ;; (add-to-list 'global-mode-string
+  ;;              '(conda-env-current-name (" conda:" conda-env-current-name " "))
+  ;;              'append)
+  )
+#+end_src
+
+Let's also prevent ligatures in =python-mode=.
+
+#+begin_src emacs-lisp
+(if (member 'python-mode +ligatures-in-modes) nil (setq +ligatures-in-modes (append +ligatures-in-modes '(python-mode))))
 #+end_src
 
 ** PDF
@@ -8748,10 +8964,10 @@ priority of =mypyls=
 
 =pdf-tools= is nice, but a =mupdf=-based solution is nicer.
 
-#+begin_src emacs-lisp :tangle no
-(package! paper :recipe (:host github :repo "ymarco/paper-mode"
-                         :files ("*.el" ".so")
-                         :pre-build ("make")))
+#+begin_src emacs-lisp :tangle packages.el
+;; (package! paper :recipe (:host github :repo "ymarco/paper-mode"
+;;                          :files ("*.el" ".so")
+;;                          :pre-build ("make")))
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -8868,11 +9084,11 @@ Of course, there's an Emacs mode for this.
 (use-package! beancount
   :mode ("\\.beancount\\'" . beancount-mode)
   :init
-  (after! all-the-icons
-    (add-to-list 'all-the-icons-icon-alist
-                 '("\\.beancount\\'" all-the-icons-material "attach_money" :face all-the-icons-lblue))
-    (add-to-list 'all-the-icons-mode-icon-alist
-                 '(beancount-mode all-the-icons-material "attach_money" :face all-the-icons-lblue)))
+  (after! nerd-icons
+    (add-to-list 'nerd-icons-extension-icon-alist
+                 '("\\.beancount\\'"  "attach_money" :face nerd-icons-lblue))
+    (add-to-list 'nerd-icons-mode-icon-alist
+                 '(beancount-mode  "attach_money" :face nerd-icons-lblue)))
   :config
   (setq beancount-electric-currency t)
   (defun beancount-bal ()
@@ -8978,7 +9194,7 @@ Whichever `point' is currently on is taken as the source of truth."
            nil t nil 2)))))
     (goto-char ipoint)))
 #+end_src
-   
+
 The last thing that's needed to make this functionality convenient is to have it
 automatically activate when appropriate. GIMP palette files re-use the =.gpl=
 extension, so ~auto-mode-alist~ isn't a good choice, but we can use the

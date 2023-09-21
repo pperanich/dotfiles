@@ -106,6 +106,7 @@
                   ./home-manager/features/darwin.nix
                   ./home-manager/features/aplnis.nix
                   ./home-manager/features/vscode.nix
+                  ./home-manager/features/fonts.nix
                 ];
               };
             }

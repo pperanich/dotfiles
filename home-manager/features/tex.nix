@@ -51,6 +51,9 @@
         xcolor xdvi xebaposter xechangebar xecolor xecyr xeindex xelatex-dev
         xesearch xespotcolor xetex xetex-itrans xetex-pstricks xetex-tibetan
         xetexconfig xetexfontinfo xetexko xevlna xkeyval xltxtra xpatch xstring
+        adjustbox cancel cleveref embedall hanging mathalpha pdfx siunitx soul
+        alegreya arev fourier gillius kpfonts libertine newtxsf fira
+        newpx newtx noto plex sourcecodepro sourcesanspro sourceserifpro
         xunicode zapfding zbmath-review-template;
       };
   };

@@ -17,6 +17,7 @@ in
     httpie # Better curl
     jq # JSON pretty printer and manipulator
     #azure-cli
+    direnv
     plantuml
     micromamba
     gnutls

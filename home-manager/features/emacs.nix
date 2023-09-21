@@ -8,7 +8,6 @@ let
       patches =
         (old.patches or [])
         ++ [
-          # ./patches/macos-nosignal.patch
           # Fix OS window role (needed for window managers like yabai)
           (pkgs.fetchpatch {
             url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/fix-window-role.patch";
@@ -34,13 +33,16 @@ let
   else
   pkgs.emacs-git.override { withImageMagick = true; withTreeSitter = true; };
 
-  # emacs-lsp = emacs.overrideAttrs (attrs: { src = pkgs.fetchFromGitHub {
-  #     owner="sebastiansturm";
-  #     repo = "emacs";
-  #     rev = "99186e71bff84a2fb217ef381437683d396cb811";
-  #     hash = "sha256-M3i9ftk4e3HWGLT5uEG9gynTA5uUJwPSddGlZF0VmQs=";
-  #   }; }).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; withTreeSitter = true; };
-  emacs-with-pkgs = with pkgs; ((emacsPackagesFor emacs).emacsWithPackages (epkgs: with epkgs; [
+emacs-lsp = (emacs.overrideAttrs (attrs: {
+      src = pkgs.fetchFromGitHub {
+        owner="sebastiansturm";
+        repo = "emacs";
+        rev = "7d72a033306260ecc4b9a56d81fa17b590df605a";
+        hash = "sha256-M3i9ftk4e3HWGLT5uEG9gynTA5uUJwPSddGlZF0VmQs=";
+      };
+      patches = (attrs.patches or []) ++ [ ./patches/macos-nosignal.patch ];
+      })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; withTreeSitter = true; };
+  emacs-with-pkgs = with pkgs; ((emacsPackagesFor emacs-lsp).emacsWithPackages (epkgs: with epkgs; [
     treesit-grammars.with-all-grammars
   ]));
 in
@@ -48,10 +50,7 @@ in
   home.packages = with pkgs; [
     nodePackages.pyright
     jansson
-    # tree-sitter-grammars.tree-sitter-python
-    # tree-sitter.allGrammars
-    # tree-sitter.withPlugins (_: allGrammars)
-    # tree-sitter.withPlugins (plugins: tree-sitter.allGrammars)
+    djvulibre
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     epdfview
     libvterm
@@ -70,4 +69,7 @@ in
   # xdg.configFile."doom".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom/";
   xdg.configFile."doom-literate".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom-literate/";
   xdg.configFile."yasnippet".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/yasnippet/";
+
+  home.sessionPath = [ "${homeDirectory}/dotfiles/config/emacs-doom/bin" ];
+  home.sessionVariables = {DOOMDIR="${homeDirectory}/dotfiles/config/doom-literate";};
 }

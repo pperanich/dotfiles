@@ -34,9 +34,12 @@ in
     sshfs
     xsel
     xclip
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    libtool
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     reattach-to-user-namespace
     pam-reattach
+    glibtool
     # xquartz
   ];
 

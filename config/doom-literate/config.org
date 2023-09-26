@@ -350,7 +350,7 @@ associated file.
 #+begin_src emacs-lisp
 ;;agda                       ; types of types of types of types...
 ;;beancount                  ; mind the GAAP
-(cc +lsp)                    ; C > C++ == 1
+(cc +lsp +treesitter)        ; C > C++ == 1
 ;;clojure                    ; java with a lisp
 ;;common-lisp                ; if you've seen one lisp, you've seen them all
 ;;coq                        ; proofs-as-programs
@@ -8340,7 +8340,7 @@ able to handle anyway. For them we define a table of LaTeX translations
 | א         | \(\aleph\) |
 | ב         | \(\beth\) |
 | ד         | \(\daleth\) |
-| ג         | \(\gimel\) |
+| ג          | \(\gimel\)  |
 
 #+name: gen-latex-non-ascii-char-substitutions
 #+begin_src emacs-lisp :noweb-ref none :var latex-non-ascii-char-substitutions=latex-non-ascii-char-substitutions

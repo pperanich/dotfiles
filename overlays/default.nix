@@ -34,6 +34,9 @@
     neovim-nightly = inputs.neovim-nightly-overlay.packages.${final.system}.neovim.overrideAttrs (oa: rec {
           nativeBuildInputs = oa.nativeBuildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.liblpeg ];
           });
+    glibtool = final.libtool.overrideAttrs (oldAttrs: {
+        configureFlags = (oldAttrs.configureFlags or []) ++ [ "--program-prefix=g" ];
+        });
   };
 
 }

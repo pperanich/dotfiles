@@ -28,8 +28,8 @@ Let's create the header for our config.el which many of the following blocks wil
 
 Let's move =authinfo.gpg= from it's default in =.config/emacs= into our XDG_DATA_HOME.
 #+begin_src emacs-lisp :tangle config.el
-(setq auth-sources '((substitute-in-file-name "$XDG_DATA_HOME/authinfo.gpg"))
-      auth-source-cache-expiry nil) ; default is 7200 (2h)
+;; (setq auth-sources '((substitute-in-file-name "$XDG_DATA_HOME/authinfo.gpg"))
+;;       auth-source-cache-expiry nil) ; default is 7200 (2h)
 #+end_src
 
 ** Better defaults
@@ -143,6 +143,16 @@ Let's make switching between windows easier. These keybinds match that of which 
 (map! :leader :desc "Switch to window 9" "9" #'winum-select-window-9)
 #+end_src
 
+*** Flymake patch
+
+For some strange reason, the following variable has recently been causing issues
+when starting LSP servers. Let's just set to =nil= for now and see if we can
+eventually find an explanation.
+
+#+begin_src emacs-lisp :tangle config.el
+(setq flymake-allowed-file-name-masks nil)
+#+end_src
+
 ** Doom configuration
 *** Modules
 :PROPERTIES:
@@ -245,7 +255,7 @@ doom-quit                    ; DOOM quit-message prompts when you quit Emacs
 hl-todo                      ; highlight TODO/FIXME/NOTE/DEPRECATED/HACK/REVIEW
 ;;hydra                      ; quick documentation for related commands
 ;;indent-guides              ; highlighted indent columns, notoriously slow
-(ligatures +extra)           ; ligatures and symbols to make your code pretty again
+;;(ligatures +extra)           ; ligatures and symbols to make your code pretty again
 ;;minimap                    ; show a map of the code on the side
 modeline                     ; snazzy, Atom-inspired modeline, plus API
 nav-flash                    ; blink the current line after jumping
@@ -469,8 +479,9 @@ aspects are nice, but on others I prefer Fira.
 #+begin_src emacs-lisp :tangle config.el
 (setq doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 24)
       doom-big-font (font-spec :family "Iosevka Nerd Font Mono" :size 36)
-      doom-variable-pitch-font (font-spec :family "Overpass Nerd font" :size 26)
+      doom-variable-pitch-font (font-spec :family "Overpass Nerd Font" :size 26)
       doom-unicode-font (font-spec :family "Iosevka Nerd Font Mono")
+      doom-emoji-font (font-spec :family "Twitter Color Emoji")
       doom-serif-font (font-spec :family "BlexMono Nerd Font" :size 22 :weight 'light))
 #+end_src
 
@@ -525,7 +536,7 @@ listing the missing fonts should appear for at least half a second.
 **** Theme
 
 #+begin_src emacs-lisp :tangle config.el
-(setq doom-theme 'modus-vivendi)
+(setq doom-theme 'modus-vivendi-tinted)
 #+end_src
 
 Oh, and with the nice selection doom provides there's no reason for me to want
@@ -734,7 +745,7 @@ The =rotate= package just adds the ability to rotate window layouts, but that
 sounds nice to me.
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! rotate :pin "4e9ac3ff800880bd9b705794ef0f7c99d72900a6")
+(package! rotate)
 #+end_src
 
 *** Emacs Everywhere
@@ -814,8 +825,7 @@ The /very large files/ mode loads large files in chunks, allowing one to open
 ridiculously large files.
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! vlf :recipe (:host github :repo "emacs-straight/vlf" :files ("*.el"))
-  :pin "cacdb359f8c37c6e7e4c7937462b632d22462130")
+(package! vlf :recipe (:host github :repo "emacs-straight/vlf" :files ("*.el")))
 #+end_src
 
 To make VLF available without delaying startup, we'll just load it in quiet moments.
@@ -1095,7 +1105,7 @@ distributions, but most reliably installed through Rust's package manager cargo.
 
 Now we can make use of the package for this.
 #+begin_src emacs-lisp :tangle packages.el :noweb-ref none
-;; (package! magit-delta :recipe (:host github :repo "dandavison/magit-delta") :pin "5fc7dbddcfacfe46d3fd876172ad02a9ab6ac616")
+;; (package! magit-delta :recipe (:host github :repo "dandavison/magit-delta"))
 #+end_src
 
 All that's left is to hook it into magit
@@ -1300,8 +1310,7 @@ That's no problem though, we just need to help TRAMP find them.
 
 Sometimes pressing =TAB= is just too much.
 #+begin_src emacs-lisp :tangle packages.el
-(package! aas :recipe (:host github :repo "ymarco/auto-activating-snippets")
-  :pin "e92b5cffa4e87c221c24f3e72ae33959e1ec2b68")
+(package! aas :recipe (:host github :repo "ymarco/auto-activating-snippets"))
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -1335,8 +1344,7 @@ be loaded in something like the [[https://www.speedscope.app/][speedscope]] weba
 investigation.
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! etrace :recipe (:host github :repo "aspiers/etrace")
-  :pin "2291ccf2f2ccc80a6aac4664e8ede736ceb672b7")
+(package! etrace :recipe (:host github :repo "aspiers/etrace"))
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -1359,7 +1367,7 @@ Nested snippets are good, so let's enable that.
 
 For when you want to change the case pattern for a symbol.
 #+begin_src emacs-lisp :tangle packages.el
-(package! string-inflection :pin "50ad54970b3cc79b6b83979bde9889ad9a9e1a9c")
+(package! string-inflection)
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -1412,7 +1420,7 @@ This makes manual pages nicer to look at by adding variable pitch fontification
 and colouring 🙂.
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! info-colors :pin "2e237c301ba62f0e0286a27c1abe48c4c8441143")
+(package! info-colors)
 #+end_src
 
 To use this we'll just hook it into =Info=.
@@ -1431,20 +1439,28 @@ welcomed into Emacs 28. However, he is also rather attentive with updates, and
 so I'd like to make sure we have a recent version.
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! modus-themes :pin "18dd2457d233859ad4d102d797d6744525177ac4")
+(package! modus-themes)
+#+end_src
+
+*** EF themes
+
+Proteolas also developed a great themes pack by the name of *EF Themes*.
+
+#+begin_src emacs-lisp :tangle packages.el
+(package! ef-themes)
 #+end_src
 
 *** Spacemacs themes
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! spacemacs-theme :pin "1ec73d68b0f120f92538d9a329a3a46e32f74510")
+(package! spacemacs-theme)
 #+end_src
 
 *** Theme magic
 
 With all our fancy Emacs themes, my terminal is missing out!
 #+begin_src emacs-lisp :tangle packages.el
-(package! theme-magic :pin "844c4311bd26ebafd4b6a1d72ddcc65d87f074e3")
+(package! theme-magic)
 #+end_src
 
 This operates using =pywal=, which is present in some repositories, but most
@@ -1702,7 +1718,7 @@ icon. Then we'll redefine two functions used to generate the modeline.
 
 In a similar manner to [[Keycast]], [[https://gitlab.com/ambrevar/emacs-gif-screencast][gif-screencast]] may come in handy.
 #+begin_src emacs-lisp :tangle packages.el
-(package! gif-screencast :pin "adec408e6adab2e8e057fe0ad828749f473bfb83")
+(package! gif-screencast)
 #+end_src
 
 We can lazy load this using the start/stop commands.
@@ -1897,15 +1913,15 @@ Then let's change the font to a sans serif, but the default one doesn't fit too
 well somehow, so let's switch to 'P22 Underground Book'; it looks much nicer.
 
 #+begin_src emacs-lisp :tangle config.el
-(after! centaur-tabs
-  (centaur-tabs-mode -1)
-  (setq centaur-tabs-height 36
-        centaur-tabs-set-icons t
-        centaur-tabs-modified-marker "o"
-        centaur-tabs-close-button "×"
-        centaur-tabs-set-bar 'above
-        centaur-tabs-gray-out-icons 'buffer)
-  (centaur-tabs-change-fonts "P22 Underground Book" 160))
+;; (after! centaur-tabs
+;;   (centaur-tabs-mode -1)
+;;   (setq centaur-tabs-height 36
+;;         centaur-tabs-set-icons t
+;;         centaur-tabs-modified-marker "o"
+;;         centaur-tabs-close-button "×"
+;;         centaur-tabs-set-bar 'above
+;;         centaur-tabs-gray-out-icons 'buffer)
+;;   (centaur-tabs-change-fonts "P22 Underground Book" 160))
 ;; (setq x-underline-at-descent-line t)
 #+end_src
 
@@ -1930,8 +1946,7 @@ In some files, =^L= appears as a page break character. This isn't that visually
 appealing, and Steve Purcell has been nice enough to make a package to display
 these as horizontal rules.
 #+begin_src emacs-lisp :tangle packages.el
-(package! page-break-lines :recipe (:host github :repo "purcell/page-break-lines")
-  :pin "79eca86e0634ac68af862e15c8a236c37f446dcd")
+(package! page-break-lines :recipe (:host github :repo "purcell/page-break-lines"))
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -2083,7 +2098,7 @@ Now, we just identify the files in question.
 
 XKCD comics are fun.
 #+begin_src emacs-lisp :tangle packages.el
-(package! xkcd :pin "80011da2e7def8f65233d4e0d790ca60d287081d")
+(package! xkcd)
 #+end_src
 
 We want to set this up so it loads nicely in [[*Extra links][Extra links]].
@@ -2374,7 +2389,7 @@ SQL can be either the emacsql vector representation, or a string."
 
 Why not flash words on the screen. Why not --- hey, it could be fun.
 #+begin_src emacs-lisp :tangle packages.el
-(package! spray :pin "74d9dcfa2e8b38f96a43de9ab0eb13364300cb46")
+(package! spray)
 #+end_src
 
 It would be nice if Spray's default speed suited me better, and the keybindings
@@ -2411,7 +2426,7 @@ we're at it.
 What's even the point of using Emacs unless you're constantly telling everyone
 about it?
 #+begin_src emacs-lisp :tangle packages.el
-(package! elcord :pin "d0c9ace493d088bc70f7422705ff27dfcf162cca")
+(package! elcord)
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -2426,7 +2441,7 @@ about it?
 
 For editing systemd unit files
 #+begin_src emacs-lisp :tangle packages.el
-(package! systemd :pin "b6ae63a236605b1c5e1069f7d3afe06ae32a7bae")
+(package! systemd)
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -2443,12 +2458,12 @@ For managing my ebooks, I'll hook into the well-established ebook library
 manager [[https://calibre-ebook.com/][calibre]]. A number of Emacs clients for this exist, but this seems like a
 good option.
 #+begin_src emacs-lisp :tangle packages.el
-(package! calibredb :pin "2f2cfc38f2d1c705134b692127c3008ac1382482")
+(package! calibredb)
 #+end_src
 
 Then for reading them, the only currently viable options seems to be [[https://depp.brause.cc/nov.el/][nov.el]].
 #+begin_src emacs-lisp :tangle packages.el
-(package! nov :pin "cb5f45cbcfbcf263cdeb2d263eb15edefc8b07cb")
+(package! nov)
 #+end_src
 
 Together these should give me a rather good experience reading ebooks.
@@ -2611,8 +2626,7 @@ opportunity which is taken advantage of in the CalcTeX package.
 
 #+begin_src emacs-lisp :tangle packages.el
 (package! calctex :recipe (:host github :repo "johnbcoughlin/calctex"
-                           :files ("*.el" "calctex/*.el" "calctex-contrib/*.el" "org-calctex/*.el" "vendor"))
-  :pin "67a2e76847a9ea9eff1f8e4eb37607f84b380ebb")
+                           :files ("*.el" "calctex/*.el" "calctex-contrib/*.el" "org-calctex/*.el" "vendor")))
 #+end_src
 
 We'd like to use CalcTeX too, so let's set that up, and fix some glaring
@@ -3100,9 +3114,9 @@ module. Let's just try to patch on the main things I like the look of.
   (defface elfeed-show-author-face `((t (:weight light)))
     "title face in elfeed show buffer"
     :group 'elfeed)
-  (set-face-attribute 'elfeed-search-title-face nil
-                      :foreground 'nil
-                      :weight 'light)
+  ;; (set-face-attribute 'elfeed-search-title-face nil
+  ;;                     :foreground 'nil
+  ;;                     :weight 'light)
 
   (defadvice! +rss-elfeed-wrap-h-nicer ()
     "Enhances an elfeed entry's readability by wrapping it to a width of
@@ -3443,7 +3457,6 @@ To check how my version compares to the latest published:
 curl --silent "https://api.github.com/repos/djcb/mu/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
 mu --version | head -n 1 | sed 's/.* version //'
 #+end_src
-
 #+results:
 | 1.4.6 |
 | 1.4.6 |
@@ -3535,7 +3548,7 @@ few more visual tweaks, we'll tweak the headers a bit
 
 We'll also use a nicer alert icon
 #+begin_src emacs-lisp
-(setq mu4e-alert-icon "/usr/share/icons/Papirus/64x64/apps/evolution.svg")
+;; (setq mu4e-alert-icon "/usr/share/icons/Papirus/64x64/apps/evolution.svg")
 #+end_src
 
 **** Sending Mail
@@ -3812,7 +3825,7 @@ numbers in text mode.
 **** Org itself
 
 #+begin_src emacs-lisp :tangle packages.el :noweb no-export
-(package! org)
+(package! org :pin "0ae9d86ef3ff08cfa8947fbda754b0282763a662")
 (package! org-contrib
   :recipe (:host nil :repo "https://git.sr.ht/~bzg/org-contrib"
            :files ("lisp/*.el")))
@@ -3918,8 +3931,7 @@ While ~org-hide-emphasis-markers~ is very nice, it can sometimes make edits whic
 occur at the border a bit more fiddley. We can improve this situation without
 sacrificing visual amenities with the =org-appear= package.
 #+begin_src emacs-lisp :tangle packages.el
-(package! org-appear :recipe (:host github :repo "awth13/org-appear")
-  :pin "eb9f9db40aa529fe4b977235d86494b115281d17")
+(package! org-appear :recipe (:host github :repo "awth13/org-appear"))
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -3939,8 +3951,7 @@ sacrificing visual amenities with the =org-appear= package.
 Speaking of headlines, a nice package for viewing and managing the heading
 structure has come to my attention.
 #+begin_src emacs-lisp :tangle packages.el
-(package! org-ol-tree :recipe (:host github :repo "Townk/org-ol-tree")
-  :pin "207c748aa5fea8626be619e8c55bdb1c16118c25")
+(package! org-ol-tree :recipe (:host github :repo "Townk/org-ol-tree"))
 #+end_src
 
 We'll bind this to =O= on the org-mode localleader, and manually apply a [[https://github.com/Townk/org-ol-tree/pull/13][PR
@@ -3980,8 +3991,7 @@ I like the idea of being able to make HTTP requests with Babel.
 
 There's a really cool package in development to /transclude/ Org document content.
 #+begin_src emacs-lisp :tangle packages.el
-(package! org-transclusion :recipe (:host github :repo "nobiot/org-transclusion")
-  :pin "cf51df7b87e0d32ba13ac5380557e81d9845d81b")
+(package! org-transclusion :recipe (:host github :repo "nobiot/org-transclusion"))
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -3996,7 +4006,7 @@ There's a really cool package in development to /transclude/ Org document conten
 
 Came across this and ... it's cool
 #+begin_src emacs-lisp :tangle packages.el
-(package! org-graph-view :recipe (:host github :repo "alphapapa/org-graph-view") :pin "233c6708c1f37fc60604de49ca192497aef39757")
+(package! org-graph-view :recipe (:host github :repo "alphapapa/org-graph-view"))
 #+end_src
 
 ***** Cooking recipes
@@ -4004,7 +4014,7 @@ Came across this and ... it's cool
 I *need* this in my life. It take a URL to a recipe from a common site, and
 inserts an org-ified version at point. Isn't that just great.
 #+begin_src emacs-lisp :tangle packages.el
-(package! org-chef :pin "6a786e77e67a715b3cd4f5128b59d501614928af")
+(package! org-chef)
 #+end_src
 
 Loading after org seems a bit premature. Let's just load it when we try to use
@@ -4072,6 +4082,27 @@ It's nice to be able to link to music
   (setq org-music-mpris-player "Lollypop"
         org-music-track-search-method 'beets
         org-music-beets-db "~/Music/library.db"))
+#+end_src
+
+***** Org Tangle Sync
+
+For syncing file changes from tangled files back to this config.
+#+begin_src emacs-lisp :tangle packages.el
+(package! org-tanglesync)
+#+end_src
+
+#+begin_src emacs-lisp :tangle config.el
+;; (use-package! org-tanglesync
+;;   :after org
+;;   :hook ((org-mode . org-tanglesync-mode)
+;;          ;; enable watch-mode globally:
+;;          ((prog-mode text-mode) . org-tanglesync-watch-mode))
+;;   :init
+;;   (map! :after org :map org-mode-map
+;;         "C-c M-i" #'org-tanglesync-process-buffer-interactive
+;;         "C-c M-a" #'org-tanglesync-process-buffer-automatic)
+;;   :config
+;;   (setq org-tanglesync-watch-files '("config.org")))
 #+end_src
 
 *** Behaviour
@@ -4209,7 +4240,7 @@ further. This mostly consists of tweaking settings, but there is one extra
 package I'll grab for prettier in-buffer citations.
 
 #+begin_src emacs-lisp :noweb-ref none :tangle packages.el
-(package! org-cite-csl-activate :recipe (:host github :repo "andras-simonyi/org-cite-csl-activate") :pin "9e68d9204469c674f49a20bdf7ea85da4f4bf720")
+(package! org-cite-csl-activate :recipe (:host github :repo "andras-simonyi/org-cite-csl-activate"))
 #+end_src
 
 In particular, by setting ~org-cite-csl-activate-use-document-style~, we can have
@@ -4245,6 +4276,7 @@ packages already loaded. For starters, we can make use of the my Zotero files
 with =citar=, and make the symbols a bit prettier.
 
 #+begin_src emacs-lisp
+(setq! citar-bibliography '("~/Documents/BibTex/library.bib"))
 (after! citar
   (setq org-cite-global-bibliography
         (let ((libfile-search-names '("library.json" "Library.json" "library.bib" "Library.bib"))
@@ -4257,9 +4289,9 @@ with =citar=, and make the symbols a bit prettier.
           paths)
         citar-bibliography org-cite-global-bibliography
         citar-symbols
-        `((file ,(nerd-icons-faicon "file-o" :face 'nerd-icons-green :v-adjust -0.1) . " ")
-          (note ,(nerd-icons-octicon "speaker_notes" :face 'nerd-icons-blue :v-adjust -0.3) . " ")
-          (link ,(nerd-icons-octicon "link" :face 'nerd-icons-orange :v-adjust 0.01) . " "))))
+        `((file ,(nerd-icons-faicon "nf-fa-file_o" :face 'nerd-icons-green :v-adjust -0.1) . " ")
+          (note ,(nerd-icons-octicon "nf-oct-note" :face 'nerd-icons-blue :v-adjust -0.3) . " ")
+          (link ,(nerd-icons-octicon "nf-oct-link" :face 'nerd-icons-orange :v-adjust 0.01) . " "))))
 #+end_src
 
 We can also make the Zotero CSL styles available to use.
@@ -4366,7 +4398,7 @@ Now, by default, LSPs don't really function at all in ~src~ blocks.
                 (format "Prepare local buffer environment for org source block (%s)."
                         (upcase ,lang))))))))
 (defvar org-babel-lang-list
-  '("go" "python" "ipython" "bash" "sh"))
+  '("go" "python" "ipython" "bash" "sh" "cpp"))
 (dolist (lang org-babel-lang-list)
   (eval `(lsp-org-babel-enable ,lang)))
 #+end_src
@@ -4416,7 +4448,7 @@ functionality as in LaTeX. Let's try viewing possible output files with this.
 
 The agenda is nice, but a souped up version is nicer.
 #+begin_src emacs-lisp :noweb-ref none :tangle packages.el
-(package! org-super-agenda :pin "f4f528985397c833c870967884b013cf91a1da4a")
+(package! org-super-agenda)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4505,8 +4537,7 @@ Let's setup some org-capture templates, and make them visually nice to access.
 set up org-capture.
 #+begin_src emacs-lisp :noweb-ref none :tangle packages.el
 (package! doct
-  :recipe (:host github :repo "progfolio/doct")
-  :pin "8464809754f3316d5a2fdcf3c01ce1e8736b323b")
+  :recipe (:host github :repo "progfolio/doct"))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4850,8 +4881,8 @@ Org-roam is nice by itself, but there are so /extra/ nice packages which integra
 with it.
 
 #+begin_src emacs-lisp :noweb-ref none :tangle packages.el
-(package! org-roam-ui :recipe (:host github :repo "org-roam/org-roam-ui" :files ("*.el" "out")) :pin "5ac74960231db0bf7783c2ba7a19a60f582e91ab")
-(package! websocket :pin "82b370602fa0158670b1c6c769f223159affce9b") ; dependency of `org-roam-ui'
+(package! org-roam-ui :recipe (:host github :repo "org-roam/org-roam-ui" :files ("*.el" "out")))
+(package! websocket) ; dependency of `org-roam-ui'
 #+end_src
 
 #+begin_src emacs-lisp
@@ -5363,8 +5394,9 @@ Saving seconds adds up after all! (but only so much)
   (let* ((xkcd-info (+xkcd-fetch-info (string-to-number link)))
          (img (plist-get xkcd-info :img))
          (alt (plist-get xkcd-info :alt)))
-    (message alt)
+    ;; (message alt)
     (+org-image-file-data-fn protocol (xkcd-download img (string-to-number link)) description)))
+    ;; (org-link-open (xkcd-download img (string-to-number link)) nil)))
 
 (defun +org-xkcd-export (num desc backend _com)
   "Convert xkcd to html/LaTeX form"
@@ -5688,7 +5720,7 @@ It's also nice to make use of the =prettify-symbols-mode= for a few Org syntacti
 tokens which we'd like to prettify that aren't covered by =org-modern= or any
 other settings.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no :noweb-ref none
 (appendq! +ligatures-extra-symbols
           (list :list_property "∷"
                 :em_dash       "—"
@@ -5802,7 +5834,7 @@ theme-appropriate foreground.
   (dolist (buffer (doom-buffers-in-mode 'org-mode (buffer-list)))
     (with-current-buffer buffer
       (+org--toggle-inline-images-in-subtree (point-min) (point-max) 'refresh)
-      (unless (eq org-latex-preview-default-process 'dvisvgm)
+      (unless (eq org-preview-latex-default-process 'dvisvgm)
         (org-clear-latex-preview (point-min) (point-max))
         (org--latex-preview-region (point-min) (point-max))))))
 
@@ -6778,7 +6810,8 @@ MathJax = {
 
 #+begin_src emacs-lisp :tangle config.el :noweb no-export :noweb-ref none
 (after! ox-latex
-  <<ox-latex-conf>>)
+  <<ox-latex-conf>>
+  )
 #+end_src
 
 **** Compiling
@@ -7944,7 +7977,11 @@ the infrastructure for this with the help of two packages
 With these packages we can insert an emoji image at the point and then place
 some invisible text on-top of it that copies as the emoji codepoint.
 
-Unfortunately though, =accsupp= doesn't seem to accept five digit hexadecimal
+Unfortunat
+
+
+
+ely though, =accsupp= doesn't seem to accept five digit hexadecimal
 codepoints at this point in time, instead we need to convert to UTF-16 surrogate
 pairs, so we'll give our =\DeclareEmoji= command two arguments: one for the
 non-surrogate form required by =\DeclareUnicodeCharacter=, and another for the
@@ -8296,51 +8333,51 @@ Now, there are some symbols that aren't included in =inputenc=, but we should be
 able to handle anyway. For them we define a table of LaTeX translations
 
 #+name: latex-non-ascii-char-substitutions
-| Character | LaTeX |
-|-----------+-------|
-| ɑ         | \(\alpha\) |
-| β         | \(\beta\) |
-| γ         | \(\gamma\) |
-| δ         | \(\delta\) |
-| ε         | \(\epsilon\) |
-| ϵ         | \(\varepsilon\) |
-| ζ         | \(\zeta\) |
-| η         | \(\eta\) |
-| θ         | \(\theta\) |
-| ϑ         | \(\vartheta\) |
-| ι         | \(\iota\) |
-| κ         | \(\kappa\) |
-| λ         | \(\lambda\) |
-| μ         | \(\mu\) |
-| ν         | \(\nu\) |
-| ξ         | \(\xi\) |
-| π         | \(\pi\) |
-| ϖ         | \(\varpi\) |
-| ρ         | \(\rho\) |
+| Character | LaTeX       |
+|-----------+-------------|
+| ɑ         | \(\alpha\)       |
+| β         | \(\beta\)       |
+| γ         | \(\gamma\)       |
+| δ         | \(\delta\)       |
+| ε         | \(\epsilon\)       |
+| ϵ         | \(\varepsilon\)       |
+| ζ         | \(\zeta\)       |
+| η         | \(\eta\)       |
+| θ         | \(\theta\)       |
+| ϑ         | \(\vartheta\)       |
+| ι         | \(\iota\)       |
+| κ         | \(\kappa\)       |
+| λ         | \(\lambda\)       |
+| μ         | \(\mu\)       |
+| ν         | \(\nu\)       |
+| ξ         | \(\xi\)       |
+| π         | \(\pi\)       |
+| ϖ         | \(\varpi\)       |
+| ρ         | \(\rho\)       |
 | ϱ         | \(\varrho\) |
-| σ         | \(\sigma\) |
-| ς         | \(\varsigma\) |
-| τ         | \(\tau\) |
-| υ         | \(\upsilon\) |
-| ϕ         | \(\phi\) |
-| φ         | \(\varphi\) |
-| ψ         | \(\psi\) |
-| ω         | \(\omega\) |
-| Γ         | \(\Gamma\) |
-| Δ         | \(\Delta\) |
-| Θ         | \(\Theta\) |
-| Λ         | \(\Lambda\) |
-| Ξ         | \(\Xi\) |
-| Π         | \(\Pi\) |
-| Σ         | \(\Sigma\) |
-| Υ         | \(\Upsilon\) |
-| Φ         | \(\Phi\) |
-| Ψ         | \(\Psi\) |
-| Ω         | \(\Omega\) |
-| א         | \(\aleph\) |
-| ב         | \(\beth\) |
+| σ         | \(\sigma\)       |
+| ς         | \(\varsigma\)       |
+| τ         | \(\tau\)       |
+| υ         | \(\upsilon\)       |
+| ϕ         | \(\phi\)       |
+| φ         | \(\varphi\)       |
+| ψ         | \(\psi\)       |
+| ω         | \(\omega\)       |
+| Γ         | \(\Gamma\)       |
+| Δ         | \(\Delta\)       |
+| Θ         | \(\Theta\)       |
+| Λ         | \(\Lambda\)       |
+| Ξ         | \(\Xi\)       |
+| Π         | \(\Pi\)       |
+| Σ         | \(\Sigma\)       |
+| Υ         | \(\Upsilon\)       |
+| Φ         | \(\Phi\)       |
+| Ψ         | \(\Psi\)       |
+| Ω         | \(\Omega\)       |
+| א         | \(\aleph\)       |
+| ב         | \(\beth\)       |
 | ד         | \(\daleth\) |
-| ג          | \(\gimel\)  |
+| ג          | \(\gimel\)        |
 
 #+name: gen-latex-non-ascii-char-substitutions
 #+begin_src emacs-lisp :noweb-ref none :var latex-non-ascii-char-substitutions=latex-non-ascii-char-substitutions
@@ -8735,7 +8772,7 @@ elements (a lot of them). So ~ox-gfm~ is handy for exporting markdown with all t
 features that GitHub has.
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! ox-gfm :pin "46faa67dbb3fb0cd7a76c3fe518f16e4195c22c7")
+(package! ox-gfm)
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -9025,7 +9062,7 @@ Julia server. The pseudo-fix is rather simple at least
 Graphviz is a nice method of visualising simple graphs, based on plaintext
 =.dot= / =.gv= files.
 #+begin_src emacs-lisp :tangle packages.el
-(package! graphviz-dot-mode :pin "46afe4825b4a3a5d1a1ac65ec7f585051f756b78")
+(package! graphviz-dot-mode)
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el
@@ -9076,8 +9113,7 @@ I change my mind) and has a gorgeous front-end --- [[https://beancount.github.io
 Of course, there's an Emacs mode for this.
 
 #+begin_src emacs-lisp :tangle packages.el
-(package! beancount :recipe (:host github :repo "beancount/beancount-mode")
-  :pin "687775da63784d153a3c1cfee9801090c6b51842")
+(package! beancount :recipe (:host github :repo "beancount/beancount-mode"))
 #+end_src
 
 #+begin_src emacs-lisp :tangle config.el

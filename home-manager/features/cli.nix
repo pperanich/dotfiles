@@ -11,13 +11,11 @@ in
     bc # Calculator
     bottom # System viewer
     # ncdu # TUI disk usage
-    exa # Better ls
     ripgrep # Better grep
     fd # Better find
     httpie # Better curl
     jq # JSON pretty printer and manipulator
     #azure-cli
-    direnv
     plantuml
     micromamba
     gnutls
@@ -34,6 +32,7 @@ in
     sshfs
     xsel
     xclip
+    nodePackages.npm
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     libtool
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
@@ -44,5 +43,7 @@ in
   ];
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
-  # xdg.configFile."npm".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npm";
+  home.file.".npmrc".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npmrc";
+
+  home.sessionPath = [ "${homeDirectory}/.npm-global/bin" ];
 }

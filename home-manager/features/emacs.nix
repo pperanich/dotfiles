@@ -33,16 +33,16 @@ let
   else
   pkgs.emacs-git.override { withImageMagick = true; withTreeSitter = true; };
 
-emacs-lsp = (emacs.overrideAttrs (attrs: {
-      src = pkgs.fetchFromGitHub {
-        owner="sebastiansturm";
-        repo = "emacs";
-        rev = "7d72a033306260ecc4b9a56d81fa17b590df605a";
-        hash = "sha256-M3i9ftk4e3HWGLT5uEG9gynTA5uUJwPSddGlZF0VmQs=";
-      };
-      patches = (attrs.patches or []) ++ [ ./patches/macos-nosignal.patch ];
-      })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; withTreeSitter = true; };
-  emacs-with-pkgs = with pkgs; ((emacsPackagesFor emacs-lsp).emacsWithPackages (epkgs: with epkgs; [
+# emacs-lsp = (emacs.overrideAttrs (attrs: {
+#       src = pkgs.fetchFromGitHub {
+#         owner="sebastiansturm";
+#         repo = "emacs";
+#         rev = "7d72a033306260ecc4b9a56d81fa17b590df605a";
+#         hash = "sha256-M3i9ftk4e3HWGLT5uEG9gynTA5uUJwPSddGlZF0VmQs=";
+#       };
+#       patches = (attrs.patches or []) ++ [ ./patches/macos-nosignal.patch ];
+#       })).override { withSQLite3 = true; withWebP = true; withImageMagick = true; withPgtk = true; withTreeSitter = true; };
+  emacs-with-pkgs = with pkgs; ((emacsPackagesFor emacs).emacsWithPackages (epkgs: with epkgs; [
     treesit-grammars.with-all-grammars
   ]));
 in
@@ -51,6 +51,7 @@ in
     nodePackages.pyright
     jansson
     djvulibre
+    pandoc
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     epdfview
     libvterm
@@ -58,7 +59,7 @@ in
 
   programs.emacs = {
     enable = true;
-    package = emacs-with-pkgs;
+    package = emacs;
   };
 
   xdg.configFile."emacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-chemacs/";

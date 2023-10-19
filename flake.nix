@@ -59,9 +59,9 @@
       );
 
       packages = forAllSystems (system:
-          let pkgs = legacyPackages.${system};
-          in import ./pkgs {inherit pkgs; }
-          );
+        let pkgs = legacyPackages.${system};
+        in import ./pkgs { inherit pkgs; }
+      );
 
       devShells = forAllSystems (system:
         let pkgs = legacyPackages.${system};
@@ -107,6 +107,7 @@
                   ./home-manager/features/aplnis.nix
                   ./home-manager/features/vscode.nix
                   ./home-manager/features/fonts.nix
+                  ./home-manager/features/rust.nix
                 ];
               };
             }

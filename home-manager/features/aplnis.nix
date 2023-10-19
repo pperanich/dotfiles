@@ -5,7 +5,7 @@ emacsSrc = pkgs.fetchFromGitHub {
   repo = "emacs";
   rev = "835d2b6acbe42b0bdef8f6e5f00fb0adbd1e3bcb";
   hash = "sha256-QZ1ike7Q46DeG6zuGVSej4a8VMvBMqE9zo6IzXwnTKI=";
-}; 
+};
 
 ssl-cert-path = if pkgs.stdenv.hostPlatform.isDarwin then
   "/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer"
@@ -19,11 +19,11 @@ in
 {
   nixpkgs = {
     config = {
-      packageOverrides = pkgs: {
-        emacsGit = pkgs.emacsGit.overrideAttrs (attrs: { src = emacsSrc; });
-      };
+      # packageOverrides = pkgs: {
+      #   emacsGit = pkgs.emacsGit.overrideAttrs (attrs: { src = emacsSrc; });
+      # };
       permittedInsecurePackages = [
-        "openssl-1.1.1v"
+        "openssl-1.1.1w"
       ];
     };
   };

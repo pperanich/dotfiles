@@ -7,6 +7,7 @@ in
   home.packages = with pkgs; [
     comma # Install and run programs by sticking a , before them
 
+    gnused
     bat # Better cat
     bc # Calculator
     bottom # System viewer
@@ -27,8 +28,6 @@ in
     ffmpeg
     cups
     tmux
-    libcxx
-    clang
     sshfs
     xsel
     xclip

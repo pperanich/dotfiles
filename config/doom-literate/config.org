@@ -15,7 +15,7 @@ I've been using emacs for about ~1 year now and figured I would dip my toe into 
 Let's create the header for our config.el which many of the following blocks will tangle into.
 
 #+name: config.el
-#+begin_src emacs-lisp :tangle "config.el"
+#+begin_src emacs-lisp :tangle config.el
 ;;; config.el -*- lexical-binding: t; -*-
 #+end_src
 
@@ -479,10 +479,10 @@ aspects are nice, but on others I prefer Fira.
 #+begin_src emacs-lisp :tangle config.el
 (setq doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 24)
       doom-big-font (font-spec :family "Iosevka Nerd Font Mono" :size 36)
-      doom-variable-pitch-font (font-spec :family "Overpass Nerd Font" :size 26)
+      doom-variable-pitch-font (font-spec :family "Iosevka Nerd Font" :size 26)
       doom-unicode-font (font-spec :family "Iosevka Nerd Font Mono")
       doom-emoji-font (font-spec :family "Twitter Color Emoji")
-      doom-serif-font (font-spec :family "BlexMono Nerd Font" :size 22 :weight 'light))
+      doom-serif-font (font-spec :family "Iosevka Nerd Font" :size 22 :weight 'light))
 #+end_src
 
 In addition to these fonts, Merriweather is used with =nov.el=, and Alegreya as a

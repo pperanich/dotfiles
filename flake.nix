@@ -113,6 +113,35 @@
             }
           ];
         };
+        "B1LOAN-21-ML126" = darwin.lib.darwinSystem {
+          system = "x86_64-darwin";
+          specialArgs = { inherit inputs outputs; };
+          modules = attrValues self.darwinModules ++ [
+            ./darwin/configuration.nix
+            ./darwin/features/yabai.nix
+            ./darwin/features/sketchybar.nix
+            ./darwin/features/skhd.nix
+            home-manager.darwinModules.home-manager
+            {
+              home-manager.extraSpecialArgs = { inherit inputs outputs; };
+              home-manager.useUserPackages = true;
+              home-manager.users.peranpl1 = {
+                imports = [
+                  ./home-manager
+                  ./home-manager/features/emacs.nix
+                  ./home-manager/features/desktop.nix
+                  ./home-manager/features/tex.nix
+                  ./home-manager/features/zotero.nix
+                  ./home-manager/features/darwin.nix
+                  ./home-manager/features/aplnis.nix
+                  ./home-manager/features/vscode.nix
+                  ./home-manager/features/fonts.nix
+                  ./home-manager/features/rust.nix
+                ];
+              };
+            }
+          ];
+        };
       };
 
       homeConfigurations = {

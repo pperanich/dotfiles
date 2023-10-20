@@ -5,6 +5,12 @@ let
 in
 {
   home.sessionVariables = { EDITOR = "nvim"; };
+  home.packages = with pkgs; [
+    fzf
+    pkg-config
+    mktemp
+    llvmPackages_16.clang-unwrapped
+  ];
 
   programs.neovim = {
     enable = true;

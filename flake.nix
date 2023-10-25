@@ -17,6 +17,9 @@
     NixOS-WSL.url = "github:nix-community/NixOS-WSL";
     NixOS-WSL.inputs.nixpkgs.follows = "nixpkgs";
 
+    # SOPS
+    inputs.sops-nix.url = "github:Mic92/sops-nix";
+
     hardware.url = "github:nixos/nixos-hardware";
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";

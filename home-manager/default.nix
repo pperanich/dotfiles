@@ -20,7 +20,8 @@
     ./features/git.nix
     ./features/zsh.nix
     ./features/ssh.nix
-    <sops-nix/modules/home-manager/sops.nix>
+    ./features/podman.nix
+    # <sops-nix/modules/home-manager/sops.nix>
   ] ++ (builtins.attrValues outputs.homeManagerModules);
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion

@@ -18,7 +18,7 @@
     NixOS-WSL.inputs.nixpkgs.follows = "nixpkgs";
 
     # SOPS
-    inputs.sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.url = "github:Mic92/sops-nix";
 
     hardware.url = "github:nixos/nixos-hardware";
 

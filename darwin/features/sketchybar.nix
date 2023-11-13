@@ -1,6 +1,6 @@
-{ pkgs, lib, inputs, outputs, config, ...}:
+{ pkgs, lib, inputs, outputs, config, ... }:
 let
-scripts = ./scripts;
+  scripts = ./scripts;
 in
 {
   services = {
@@ -10,7 +10,7 @@ in
       config = ''
         sketchybar --bar height=32 \
         blur_radius=30 \
-        position=bottom \
+        position=top \
         sticky=off \
         padding_left=10 \
         padding_right=10 \
@@ -68,10 +68,10 @@ in
         update_freq=120 \
         --subscribe battery system_woke power_source_change
         sketchybar --update
-              '';
+      '';
     };
   };
-  services.yabai.config.external_bar = "all:0:32";
+  services.yabai.config.external_bar = "all:32:0";
   system.defaults.NSGlobalDomain._HIHideMenuBar = true;
 
   # For spacebar debugging

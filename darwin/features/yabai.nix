@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, outputs, config, ...}:
+{ pkgs, lib, inputs, outputs, config, ... }:
 {
   services = {
     yabai = {
@@ -25,10 +25,10 @@
         mouse_action_2 = "resize";
         # general space settings;
         layout = "bsp";
-        bottom_padding = 0;
-        left_padding = 0;
-        right_padding = 0;
-        window_gap = 0;
+        bottom_padding = 10;
+        left_padding = 10;
+        right_padding = 10;
+        window_gap = 5;
         # spacebar padding on top screen
         # external_bar = "all:26:0";
       };

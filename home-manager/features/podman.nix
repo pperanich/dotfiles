@@ -10,8 +10,8 @@ in
     gvproxy
   ];
 
-  xdg.configFile."containers/containers.conf".source = ''
-    [engine]
-    helper_binaries_dir = ["${pkgs.gvproxy}/bin"]
-  '';
+  # xdg.configFile."containers/containers.conf".text = ''
+  #   [engine]
+  #   helper_binaries_dir = ["${pkgs.gvproxy}/bin"]
+  # '';
 }

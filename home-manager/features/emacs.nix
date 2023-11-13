@@ -60,7 +60,7 @@ in
 
   programs.emacs = {
     enable = true;
-    package = emacs;
+    package = emacs-with-pkgs;
   };
 
   xdg.configFile."emacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-chemacs/";

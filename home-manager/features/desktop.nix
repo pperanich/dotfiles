@@ -9,7 +9,6 @@ in
     feh
     libsecret
     slack
-    teams
     discord
     zoom-us
     glib
@@ -27,6 +26,7 @@ in
       vlc
       # nixgl.auto.nixGLDefault
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+    teams
     m-cli # useful macOS CLI commands
   ];
 

@@ -259,7 +259,7 @@
             {
               home.username = "peranpl1";
               imports = [
-                ./home-manager/features/emacs.nix
+                # ./home-manager/features/emacs.nix
                 ./home-manager/features/desktop.nix
                 ./home-manager/features/standalone.nix
                 ./home-manager/features/fonts.nix
@@ -276,7 +276,7 @@
             {
               home.username = "holo";
               imports = [
-                ./home-manager/features/emacs.nix
+                # ./home-manager/features/emacs.nix
                 ./home-manager/features/desktop.nix
                 ./home-manager/features/standalone.nix
                 ./home-manager/features/fonts.nix

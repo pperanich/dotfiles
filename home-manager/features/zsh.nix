@@ -2,6 +2,7 @@
 {
   programs.zsh = {
     enable = true;
+    completionInit = "autoload -U compinit && compinit -i";
     shellAliases = {
       ls="ls --color=auto";
       ll = "ls -la";

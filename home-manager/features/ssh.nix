@@ -70,7 +70,7 @@
       XAuthLocation ${pkgs.xorg.xauth}/bin/xauth
 
     Host holo-holobrain-ld3
-      HostName holobrain-ld3.local
+      HostName holobrain-ld3
       User holo
       ForwardX11 yes
       XAuthLocation ${pkgs.xorg.xauth}/bin/xauth

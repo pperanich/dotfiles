@@ -183,21 +183,6 @@
             }
           ];
         };
-        "holobrain@redd-holobrain-jr" = home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages.x86_64-linux;
-          extraSpecialArgs = { inherit inputs outputs; };
-          modules = [
-            ./home-manager
-            {
-              home.username = "holobrain";
-              imports = [
-                ./home-manager/features/emacs.nix
-                ./home-manager/features/desktop.nix
-                ./home-manager/features/standalone.nix
-              ];
-            }
-          ];
-        };
         "peranpl1@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
@@ -250,6 +235,40 @@
           ];
         };
         "holo@holobrain-ld2" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "holo";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+                ./home-manager/features/standalone.nix
+                ./home-manager/features/fonts.nix
+                ./home-manager/features/aplnis.nix
+              ];
+            }
+          ];
+        };
+        "peranpl1@holobrain-ld3" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "peranpl1";
+              imports = [
+                ./home-manager/features/emacs.nix
+                ./home-manager/features/desktop.nix
+                ./home-manager/features/standalone.nix
+                ./home-manager/features/fonts.nix
+                ./home-manager/features/aplnis.nix
+              ];
+            }
+          ];
+        };
+        "holo@holobrain-ld3" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [

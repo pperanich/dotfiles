@@ -63,6 +63,18 @@
       ForwardX11 yes
       XAuthLocation ${pkgs.xorg.xauth}/bin/xauth
 
+    Host holobrain-ld3
+      HostName holobrain-ld3
+      User peranpl1
+      ForwardX11 yes
+      XAuthLocation ${pkgs.xorg.xauth}/bin/xauth
+
+    Host holo-holobrain-ld3
+      HostName holobrain-ld3.local
+      User holo
+      ForwardX11 yes
+      XAuthLocation ${pkgs.xorg.xauth}/bin/xauth
+
     Host raspi1
       HostName 10.101.16.78
       User pi

@@ -10,6 +10,7 @@
 
   programs.home-manager.enable = true;
   xdg.enable = true;
+  home.sessionVariables = { OPENAI_API_KEY = "sk-REDACTED_OPENAI_API_KEY_XXX"; };
 
   programs.pandoc.enable = true;
   programs.gpg.enable = true;

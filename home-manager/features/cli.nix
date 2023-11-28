@@ -16,8 +16,9 @@ in
     fd # Better find
     httpie # Better curl
     jq # JSON pretty printer and manipulator
-    #azure-cli
+    # azure-cli
     heygpt
+    xplr
     plantuml
     micromamba
     gnutls
@@ -45,9 +46,10 @@ in
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
   home.file.".npmrc".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npmrc";
   home.file.".heygpt.toml".text = ''
-    model = "gpt-4"
+    model = "gpt-4-1106-preview"
     api_base_url = "https://api.openai.com/v1"
-    '';
+    stream = true
+  '';
 
   home.sessionPath = [ "${homeDirectory}/.npm-global/bin" ];
 }

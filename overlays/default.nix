@@ -2,7 +2,7 @@
 {
   # This one brings our custom packages from the 'pkgs' directory
   emacs-overlay = inputs.emacs-overlay.overlays.default;
-  # neovim-overlay = inputs.neovim-nightly-overlay.overlay;
+  neovim-overlay = inputs.neovim-nightly-overlay.overlay;
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
 
@@ -11,47 +11,11 @@
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
-    liblpeg = final.stdenv.mkDerivation {
-      pname = "liblpeg";
-      inherit (final.luajitPackages.lpeg) version meta src;
-
-      buildInputs = [ final.luajit ];
-
-      buildPhase = ''
-        sed -i makefile -e "s/CC = gcc/CC = clang/"
-        sed -i makefile -e "s/-bundle/-dynamiclib/"
-
-        make macosx
-        '';
-
-      installPhase = ''
-        mkdir -p $out/lib
-        mv lpeg.so $out/lib/lpeg.dylib
-        '';
-
-      nativeBuildInputs = [ final.fixDarwinDylibNames ];
-    };
-    neovim-nightly = inputs.neovim-nightly-overlay.packages.${final.system}.neovim.overrideAttrs (oa: rec {
-          nativeBuildInputs = oa.nativeBuildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.liblpeg ];
-          });
+    heygpt = prev.heygpt.overrideAttrs (oldAttrs: rec {
+      buildInputs = oldAttrs.buildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.darwin.apple_sdk.frameworks.SystemConfiguration ];
+    });
     glibtool = final.libtool.overrideAttrs (oldAttrs: {
-        configureFlags = (oldAttrs.configureFlags or []) ++ [ "--program-prefix=g" ];
-        });
+      configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--program-prefix=g" ];
+    });
   };
-
 }
-    # example = prev.example.overrideAttrs (oldAttrs: rec {
-    # ...
-    # });
-    # micromamba = prev.micromamba.overrideAttrs(oldAttrs: rec {
-    #   postInstall = ''
-    #     export HOME=$out
-    #     mkdir -p $out/.conda/
-    #     touch $out/.conda/environments.txt
-    #     mkdir -p $out/opt/
-    #     $out/bin/micromamba env create -n conda conda -c conda-forge --root-prefix $out/opt --ssl-verify false -y
-    #     rm -rf $out/.conda/
-    #     '';
-    # });
-#   };
-# }

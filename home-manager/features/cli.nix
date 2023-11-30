@@ -18,6 +18,7 @@ in
     jq # JSON pretty printer and manipulator
     # azure-cli
     heygpt
+    shell_gpt
     xplr
     plantuml
     micromamba
@@ -45,6 +46,7 @@ in
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
   home.file.".npmrc".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npmrc";
+  xdg.configFile."shell_gpt".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/shell_gpt";
   home.file.".heygpt.toml".text = ''
     model = "gpt-4-1106-preview"
     api_base_url = "https://api.openai.com/v1"

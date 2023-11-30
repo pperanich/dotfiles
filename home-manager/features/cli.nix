@@ -31,6 +31,7 @@ in
     ffmpeg
     cups
     tmux
+    zellij
     sshfs
     xsel
     xclip

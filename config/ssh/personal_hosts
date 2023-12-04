@@ -1,0 +1,8 @@
+Host pperanich-wd1
+  Hostname pperanich-wd1.local
+  User prest
+
+Host pperanich-wsl1
+  Hostname pperanich-wd1.local
+  User pperanich
+  Port 3000

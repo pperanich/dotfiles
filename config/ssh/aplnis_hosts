@@ -1,0 +1,31 @@
+Host hst-redd-holobrain
+  HostName 10.124.29.199
+  User hst
+
+Host redd-holobrain
+  HostName redd-holobrain
+  User peranpl1
+
+Host holobrain-ld1
+  HostName 10.101.61.57
+  User peranpl1
+
+Host holo-holobrain-ld1
+  HostName 10.101.61.57
+  User holo
+
+Host holobrain-ld2
+  HostName 10.124.29.188
+  User peranpl1
+
+Host holo-holobrain-ld2
+  HostName 10.124.29.188
+  User holo
+
+Host holobrain-ld3
+  HostName holobrain-ld3
+  User peranpl1
+
+Host holo-holobrain-ld3
+  HostName holobrain-ld3
+  User holo

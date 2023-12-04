@@ -1,0 +1,72 @@
+Host microtik
+  HostName 10.101.14.123
+  User admin
+
+Host asus
+  # HostName 10.101.15.91
+  HostName 10.101.16.41
+  User admin
+
+Host raspi1
+  HostName 10.101.16.78
+  User pi
+
+Host raspi3
+  HostName 10.101.16.54
+  User pi
+Host raspi1.axisrt.com
+  HostName 192.168.88.105
+  User pi
+
+Host raspi2.axisrt.com
+  HostName 192.168.88.106
+  User pi
+
+Host raspi3.axisrt.com
+  HostName 192.168.88.112
+  User pi
+
+Host om-columbia-st1-ws1
+  HostName 192.168.88.90
+  User ubuntu
+
+Host om-apl-st1-ws1
+  HostName 10.101.16.104
+  User omni
+
+Host om-apl-st1-ws2
+  HostName 10.101.16.103
+  User omni
+
+Host om-apl-st1-ws3
+  HostName 10.101.16.62
+  User omni
+
+Host om-apl-st2-agx1
+  HostName 10.101.16.84
+  # HostName 192.168.1.71
+  User nvidia
+
+Host om-apl-st1-raspi1
+  HostName 10.101.16.78
+  User pi
+
+Host om-apl-st1-raspi2
+  HostName 10.101.16.53
+  User pi
+
+Host om-apl-st1-raspi3
+  HostName 10.101.16.96
+  User pi
+
+Host om-apl-st1-raspi4
+  HostName 10.101.16.54
+  User pi
+
+Host om-apl-st2-raspi1
+  HostName 10.101.16.96
+  User pi
+
+Host om-apl-st2-raspi2
+  HostName 10.101.16.53
+  User pi

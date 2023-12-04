@@ -35,6 +35,7 @@ in
     sshfs
     xsel
     xclip
+    update-display
     nodePackages.npm
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     libtool

@@ -1,31 +1,31 @@
 Host hst-redd-holobrain
-  HostName 10.124.29.199
+  HostName redd-holobrain.jhuapl.edu
   User hst
 
 Host redd-holobrain
-  HostName redd-holobrain
+  HostName redd-holobrain.jhuapl.edu
   User peranpl1
 
 Host holobrain-ld1
-  HostName 10.101.61.57
+  HostName holobrain-ld1.jhuapl.edu
   User peranpl1
 
 Host holo-holobrain-ld1
-  HostName 10.101.61.57
+  HostName holobrain-ld1.jhuapl.edu
   User holo
 
 Host holobrain-ld2
-  HostName 10.124.29.188
+  HostName holobrain-ld2.jhuapl.edu
   User peranpl1
 
 Host holo-holobrain-ld2
-  HostName 10.124.29.188
+  HostName holobrain-ld2.jhuapl.edu
   User holo
 
 Host holobrain-ld3
-  HostName holobrain-ld3
+  HostName holobrain-ld3.jhuapl.edu
   User peranpl1
 
 Host holo-holobrain-ld3
-  HostName holobrain-ld3
+  HostName holobrain-ld3.jhuapl.edu
   User holo

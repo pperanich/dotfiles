@@ -37,6 +37,7 @@ in
     xclip
     update-display
     nodePackages.npm
+    kubectl
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     libtool
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [

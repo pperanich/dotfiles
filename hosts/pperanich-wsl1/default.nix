@@ -5,18 +5,17 @@
     ../common/users/pperanich
     ../common/features/wsl.nix
     {
-        home-manager.extraSpecialArgs = { inherit inputs outputs; };
-        home-manager.useUserPackages = true;
-        home-manager.users.pperanich = {
+      home-manager.extraSpecialArgs = { inherit inputs outputs; };
+      home-manager.useUserPackages = true;
+      home-manager.users.pperanich = {
         imports = [
-            ../../home-manager
-            ../../home-manager/features/emacs.nix
-            ../../home-manager/features/desktop.nix
-            ../../home-manager/features/tex.nix
-            ../../home-manager/features/zotero.nix
-            ../../home-manager/features/vscode.nix
+          ../../home-manager
+          ../../home-manager/features/emacs.nix
+          ../../home-manager/features/desktop.nix
+          ../../home-manager/features/tex.nix
+          ../../home-manager/features/vscode.nix
         ];
-        };
+      };
     }
   ];
 

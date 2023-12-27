@@ -17,20 +17,27 @@ in
     gimp
     inkscape
     alacritty
-    # wezterm -- broken on x86_64 darwin
+    logseq
     hdfview
-  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    zotero
     spotify
-    octave
     spotify-tui
-    firefox
     brave
+    wireshark
+    reaper
+    protonvpn-gui
+    vlc
+    # postman
+    # kicad
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    firefox
     bitwarden
     vlc
-    # nixgl.auto.nixGLDefault
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     teams
     m-cli # useful macOS CLI commands
+    shottr
+    docker-desktop
   ];
 
   xdg.configFile."alacritty".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/alacritty";

@@ -7,6 +7,7 @@ in
   home.packages = with pkgs; [
     comma # Install and run programs by sticking a , before them
 
+    act # Run github workflows locally
     gnused
     bat # Better cat
     bc # Calculator

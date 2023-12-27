@@ -5,4 +5,13 @@
   # example = pkgs.callPackage ./example { };
   aplnis-env = pkgs.callPackage ./aplnis-env { };
   update-display = pkgs.callPackage ./update-display { };
+  logseq = pkgs.callPackage ./logseq { };
+  brave = pkgs.callPackage ./brave { };
+  shottr = pkgs.callPackage ./shottr { };
+  zotero = pkgs.callPackage ./zotero { };
+  etcher = pkgs.callPackage ./etcher { };
+  spotify = pkgs.callPackage ./spotify { };
+  vlc = pkgs.callPackage ./vlc { };
+  protonvpn-gui = pkgs.callPackage ./protonvpn-gui { };
+  docker-desktop = pkgs.callPackage ./docker-desktop { };
 }

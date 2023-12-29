@@ -20,6 +20,10 @@
     # SOPS
     sops-nix.url = "github:Mic92/sops-nix";
 
+    # Nix Casks
+    # nixcasks.url = "github:jacekszymanski/nixcasks";
+    # nixcasks.inputs.nixpkgs.follows = "nixpkgs";
+
     hardware.url = "github:nixos/nixos-hardware";
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
@@ -56,6 +60,13 @@
           config.allowBroken = true;
           config.allowUnfreePredicate = (_: true);
           config.overlays = builtins.attrValues outputs.overlays;
+          # config.packageOverrides = _: {
+          #   nixcasks = import inputs.nixcasks {
+          #     inherit nixpkgs;
+          #     pkgs = import nixpkgs { };
+          #     osVersion = "monterey";
+          #   };
+          # };
         }
       );
 
@@ -86,7 +97,7 @@
 
       darwinConfigurations = {
         "peranpl1-ml1" = darwin.lib.darwinSystem {
-          system = "x86_64-darwin";
+          pkgs = legacyPackages.x86_64-darwin;
           specialArgs = { inherit inputs outputs; };
           modules = attrValues self.darwinModules ++ [
             ./darwin/configuration.nix
@@ -114,7 +125,7 @@
           ];
         };
         "B1LOAN-21-ML126" = darwin.lib.darwinSystem {
-          system = "x86_64-darwin";
+          pkgs = legacyPackages.aarch64-darwin;
           specialArgs = { inherit inputs outputs; };
           modules = attrValues self.darwinModules ++ [
             ./darwin/configuration.nix

@@ -41,5 +41,6 @@ in
   ];
 
   xdg.configFile."alacritty".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/alacritty";
+  home.sessionPath = lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin [ "${config.home.homeDirectory}/.docker/bin" ];
 }
 

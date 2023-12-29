@@ -19,8 +19,9 @@ in
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     darwin.libiconv
-    darwin.apple_sdk.frameworks.AppKit
-    darwin.apple_sdk.frameworks.SystemConfiguration
+    # darwin.CF
+    # darwin.SystemConfiguration
+    # darwin.Security
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [ systemd ];
 

@@ -10,7 +10,7 @@
 
   programs.home-manager.enable = true;
   xdg.enable = true;
-  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin/" ];
+  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
   home.sessionVariables = { OPENAI_API_KEY = "sk-REDACTED_OPENAI_API_KEY_XXX"; };
 
   programs.pandoc.enable = true;
@@ -27,5 +27,5 @@
   ] ++ (builtins.attrValues outputs.homeManagerModules);
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
-  home.stateVersion = "23.05";
+  home.stateVersion = "24.05";
 }

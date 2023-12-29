@@ -30,4 +30,5 @@ in
   };
 
   xdg.configFile."nvim/lua/".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/nvim/lua/";
+  # xdg.configFile."nvim/after/".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/nvim/after/";
 }

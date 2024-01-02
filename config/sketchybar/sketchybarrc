@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/zsh
+source /etc/zshenv
 source "$CONFIG_DIR/colors.sh" # Loads all defined colors
 source "$CONFIG_DIR/icons.sh"  # Loads all defined icons
 
@@ -21,15 +22,15 @@ launchctl unload -F /System/Library/LaunchAgents/com.apple.OSDUIHelper.plist >/d
 bar=(
 	height=32
 	color=$BAR_COLOR
-	border_width=2
+	border_width=0
 	border_color=$BAR_BORDER_COLOR
 	shadow=off
 	position=top
 	sticky=on
 	padding_right=10
 	padding_left=10
-	y_offset=-5
-	margin=-2
+	y_offset=0
+	margin=2
 	topmost=window
 )
 
@@ -80,7 +81,7 @@ source "$ITEM_DIR/wifi.sh"
 source "$ITEM_DIR/battery.sh"
 source "$ITEM_DIR/volume.sh"
 source "$ITEM_DIR/cpu.sh"
-source "$ITEM_DIR/svim.sh"
+# source "$ITEM_DIR/svim.sh"
 
 sketchybar --hotload on
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 update() {
   source "$CONFIG_DIR/icons.sh"

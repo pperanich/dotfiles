@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Trigger the brew_udpate event when brew update or upgrade is run from cmdline
 # e.g. via function in .zshrc
 
 brew=(
   icon=􀐛
-  label=?
+  label=\?
   padding_right=10
   script="$PLUGIN_DIR/brew.sh"
 )

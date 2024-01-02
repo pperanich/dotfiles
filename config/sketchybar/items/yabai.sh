@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 yabai=(
   icon.width=0

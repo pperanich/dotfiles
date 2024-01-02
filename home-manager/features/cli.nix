@@ -8,6 +8,7 @@ in
     comma # Install and run programs by sticking a , before them
 
     act # Run github workflows locally
+    gh # Github CLI
     gnused
     bat # Better cat
     bc # Calculator

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 SPOTIFY_EVENT="com.spotify.client.PlaybackStateChanged"
 POPUP_SCRIPT="sketchybar -m --set spotify.anchor popup.drawing=toggle"

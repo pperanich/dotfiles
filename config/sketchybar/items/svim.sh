@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 svim=(
   script="$PLUGIN_DIR/svim.sh"

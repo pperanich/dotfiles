@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 ### Sonokai
 # export BLACK=0xff181819
@@ -31,11 +31,11 @@ export BG1=0x603c3e4f
 export BG2=0x60494d64
 
 # General bar colors
-export BAR_COLOR=$BG0
+export BAR_COLOR=$TRANSPARENT
 export BAR_BORDER_COLOR=$BG2
 export BACKGROUND_1=$BG1
 export BACKGROUND_2=$BG2
-export ICON_COLOR=$WHITE # Color of all icons
+export ICON_COLOR=$WHITE  # Color of all icons
 export LABEL_COLOR=$WHITE # Color of all labels
 export POPUP_BACKGROUND_COLOR=$BAR_COLOR
 export POPUP_BORDER_COLOR=$WHITE

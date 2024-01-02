@@ -1,22 +1,18 @@
-#!/bin/bash
+#!/bin/zsh
 
-next ()
-{
+next () {
   osascript -e 'tell application "Spotify" to play next track'
 }
 
-back () 
-{
+back () {
   osascript -e 'tell application "Spotify" to play previous track'
 }
 
-play () 
-{
+play () {
   osascript -e 'tell application "Spotify" to playpause'
 }
 
-repeat () 
-{
+toggle_repeat () {
   REPEAT=$(osascript -e 'tell application "Spotify" to get repeating')
   if [ "$REPEAT" = "false" ]; then
     sketchybar -m --set spotify.repeat icon.highlight=on
@@ -27,8 +23,7 @@ repeat ()
   fi
 }
 
-shuffle () 
-{
+shuffle () {
   SHUFFLE=$(osascript -e 'tell application "Spotify" to get shuffling')
   if [ "$SHUFFLE" = "false" ]; then
     sketchybar -m --set spotify.shuffle icon.highlight=on
@@ -39,8 +34,7 @@ shuffle ()
   fi
 }
 
-update ()
-{
+update () {
   PLAYING=1
   if [ "$(echo "$INFO" | jq -r '.["Player State"]')" = "Playing" ]; then
     PLAYING=0
@@ -109,7 +103,7 @@ mouse_clicked () {
     ;;
     "spotify.shuffle") shuffle
     ;;
-    "spotify.repeat") repeat
+    "spotify.repeat") toggle_repeat
     ;;
     "spotify.state") scrubbing
     ;;

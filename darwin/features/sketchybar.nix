@@ -6,6 +6,11 @@
       package = pkgs.sketchybar;
     };
   };
+  homebrew = {
+    brews = [
+      "switchaudio-osx"
+    ];
+  };
 
   services.yabai.config.external_bar = "all:32:0";
   system.defaults.NSGlobalDomain._HIHideMenuBar = true;

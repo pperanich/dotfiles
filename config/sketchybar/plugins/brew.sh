@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 source "$CONFIG_DIR/colors.sh"
 

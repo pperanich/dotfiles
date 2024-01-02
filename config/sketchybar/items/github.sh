@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 POPUP_CLICK_SCRIPT="sketchybar --set \$NAME popup.drawing=toggle"
 

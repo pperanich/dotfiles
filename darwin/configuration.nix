@@ -82,4 +82,8 @@
       (nerdfonts.override { fonts = [ "Iosevka" "JetBrainsMono" ]; })
     ];
   };
+
+  homebrew = {
+    enable = true;
+  };
 }

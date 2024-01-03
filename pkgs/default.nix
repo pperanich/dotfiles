@@ -5,6 +5,7 @@
   # example = pkgs.callPackage ./example { };
   aplnis-env = pkgs.callPackage ./aplnis-env { };
   apple-fonts = pkgs.callPackage ./apple-fonts { };
+  ai-buddy = pkgs.callPackage ./ai-buddy { };
   update-display = pkgs.callPackage ./update-display { };
   logseq = pkgs.callPackage ./logseq { };
   brave = pkgs.callPackage ./brave { };

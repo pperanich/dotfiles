@@ -12,7 +12,7 @@
     ];
   };
 
-  services.yabai.config.external_bar = "all:32:0";
+  # services.yabai.config.external_bar = "all:42:0";
   system.defaults.NSGlobalDomain._HIHideMenuBar = true;
 
   # For spacebar debugging

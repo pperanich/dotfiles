@@ -10,6 +10,7 @@ in
     act # Run github workflows locally
     gh # Github CLI
     gnused
+    ai-buddy
     bat # Better cat
     bc # Calculator
     bottom # System viewer
@@ -46,7 +47,7 @@ in
     reattach-to-user-namespace
     pam-reattach
     glibtool
-    # xquartz
+    xquartz
   ];
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";

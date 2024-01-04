@@ -17,7 +17,6 @@ in
     gimp
     inkscape
     alacritty
-    logseq
     hdfview
     zotero
     spotify
@@ -34,6 +33,7 @@ in
     bitwarden
     vlc
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+    logseq
     teams
     m-cli # useful macOS CLI commands
     shottr
@@ -41,6 +41,6 @@ in
   ];
 
   xdg.configFile."alacritty".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/alacritty";
-  home.sessionPath = lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin [ "${config.home.homeDirectory}/.docker/bin" ];
+  home.sessionPath = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin [ "${homeDirectory}/.docker/bin" ];
 }
 

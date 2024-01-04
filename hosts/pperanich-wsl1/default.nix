@@ -4,6 +4,7 @@
     ../common/global
     ../common/users/pperanich
     ../common/features/wsl.nix
+    ../common/features/ssh.nix
     {
       home-manager.extraSpecialArgs = { inherit inputs outputs; };
       home-manager.useUserPackages = true;

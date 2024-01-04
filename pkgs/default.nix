@@ -7,13 +7,15 @@
   apple-fonts = pkgs.callPackage ./apple-fonts { };
   ai-buddy = pkgs.callPackage ./ai-buddy { };
   update-display = pkgs.callPackage ./update-display { };
-  logseq = pkgs.callPackage ./logseq { };
-  brave = pkgs.callPackage ./brave { };
-  shottr = pkgs.callPackage ./shottr { };
-  zotero = pkgs.callPackage ./zotero { };
-  etcher = pkgs.callPackage ./etcher { };
-  spotify = pkgs.callPackage ./spotify { };
-  vlc = pkgs.callPackage ./vlc { };
-  protonvpn-gui = pkgs.callPackage ./protonvpn-gui { };
+  # Darwin compatibility
+  logseq-darwin = pkgs.callPackage ./logseq { };
+  brave-darwin = pkgs.callPackage ./brave { };
+  zotero-darwin = pkgs.callPackage ./zotero { };
+  etcher-darwin = pkgs.callPackage ./etcher { };
+  # spotify-darwin = pkgs.callPackage ./spotify { };
+  vlc-darwin = pkgs.callPackage ./vlc { };
+  protonvpn-gui-darwin = pkgs.callPackage ./protonvpn-gui { };
+  # Extras
   docker-desktop = pkgs.callPackage ./docker-desktop { };
+  shottr = pkgs.callPackage ./shottr { };
 }

@@ -17,5 +17,12 @@
     glibtool = final.libtool.overrideAttrs (oldAttrs: {
       configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--program-prefix=g" ];
     });
+    logseq = if final.stdenv.hostPlatform.isDarwin then prev.logseq-darwin else prev.logseq;
+    brave = if final.stdenv.hostPlatform.isDarwin then prev.brave-darwin else prev.brave;
+    zotero = if final.stdenv.hostPlatform.isDarwin then prev.zotero-darwin else prev.zotero;
+    etcher = if final.stdenv.hostPlatform.isDarwin then prev.etcher-darwin else prev.etcher;
+    spotify = if final.stdenv.hostPlatform.isDarwin then prev.spotify-darwin else prev.spotify;
+    vlc = if final.stdenv.hostPlatform.isDarwin then prev.vlc-darwin else prev.vlc;
+    protonvpn-gui = if final.stdenv.hostPlatform.isDarwin then prev.protonvpn-gui-darwin else prev.protonvpn-gui;
   };
 }

@@ -8,7 +8,7 @@
 let
   inherit (stdenv.hostPlatform) system;
 
-  pname = "logseq";
+  pname = "logseq-darwin";
 
   x86_64-darwin-version = "0.10.2";
   x86_64-darwin-sha256 = "sha256-yYkKVZ5DhbV4tfq/n5EfnkuGvcl9h8X+BuhPkjUGOzE=";
@@ -48,12 +48,8 @@ let
     mainProgram = "logseq";
   };
 
-  linux = logseq;
-  darwin = callPackage ../dmg-app.nix {
+  package = callPackage ../dmg-app.nix {
     inherit pname version src meta;
   };
 in
-if stdenv.isDarwin
-then darwin
-else
-  linux
+package

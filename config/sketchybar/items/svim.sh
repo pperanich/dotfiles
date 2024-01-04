@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 svim=(
   script="$PLUGIN_DIR/svim.sh"

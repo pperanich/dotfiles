@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 volume_slider=(
   script="$PLUGIN_DIR/volume.sh"

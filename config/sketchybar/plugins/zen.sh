@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 zen_on() {
   sketchybar --set wifi drawing=off \

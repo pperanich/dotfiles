@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 update_media() {
   STATE="$(echo "$INFO" | jq -r '.state')"

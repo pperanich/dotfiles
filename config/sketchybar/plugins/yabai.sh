@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 window_state() {
   source "$CONFIG_DIR/colors.sh"

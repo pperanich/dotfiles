@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 battery=(
   script="$PLUGIN_DIR/battery.sh"

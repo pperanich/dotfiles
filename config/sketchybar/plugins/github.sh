@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 update() {
 	source "$CONFIG_DIR/colors.sh"

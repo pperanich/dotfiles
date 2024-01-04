@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 if [ "$SENDER" = "front_app_switched" ]; then
 	# Set the app name and app icon and then animate a bounce for the icon size

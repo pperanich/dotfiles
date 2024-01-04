@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 source "$CONFIG_DIR/icons.sh"
 source "$CONFIG_DIR/colors.sh"
@@ -6,6 +6,8 @@ source "$CONFIG_DIR/colors.sh"
 BATTERY_INFO="$(pmset -g batt)"
 PERCENTAGE=$(echo "$BATTERY_INFO" | grep -Eo "\d+%" | cut -d% -f1)
 CHARGING=$(echo "$BATTERY_INFO" | grep 'AC Power')
+
+echo $BATTERY_INFO
 
 if [ $PERCENTAGE = "" ]; then
   exit 0

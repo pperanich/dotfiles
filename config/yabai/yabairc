@@ -1,5 +1,4 @@
-#!/bin/zsh
-source /etc/zshenv
+#!/usr/bin/env zsh
 # global settings
 yabai -m config mouse_follows_focus off
 yabai -m config focus_follows_mouse autofocus

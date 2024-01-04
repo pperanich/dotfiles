@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 if [ "$SENDER" = "space_windows_change" ]; then
 	args=(--animate sin 10)

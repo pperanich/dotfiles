@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 front_app=(
   label.font="$FONT:Black:14.0"

@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh -f
 
 cpu_top=(
   label.font="$FONT:Semibold:7"

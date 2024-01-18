@@ -85,5 +85,8 @@
 
   homebrew = {
     enable = true;
+    masApps = {
+      "tailscale" = 1475387142;
+    };
   };
 }

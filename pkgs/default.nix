@@ -12,7 +12,8 @@
   brave-darwin = pkgs.callPackage ./brave { };
   zotero-darwin = pkgs.callPackage ./zotero { };
   etcher-darwin = pkgs.callPackage ./etcher { };
-  # spotify-darwin = pkgs.callPackage ./spotify { };
+  tailscale-darwin = pkgs.callPackage ./tailscale { };
+  spotify-darwin = pkgs.callPackage ./spotify { };
   vlc-darwin = pkgs.callPackage ./vlc { };
   protonvpn-gui-darwin = pkgs.callPackage ./protonvpn-gui { };
   # Extras

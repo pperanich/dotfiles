@@ -1,5 +1,6 @@
 { config, pkgs, lib, inputs, ... }:
 let
+  inherit (config.home) homeDirectory;
   toolchain = pkgs.rust-bin.beta.latest.default.override {
     extensions = [ "rust-src" "rustfmt" "llvm-tools-preview" "cargo" ];
     targets = [ "thumbv7em-none-eabi" "thumbv7em-none-eabihf" "wasm32-unknown-unknown" ];
@@ -25,6 +26,6 @@ in
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [ systemd ];
 
-  home.sessionPath = [ "\${CARGO_HOME:-~/.cargo}/bin" ];
+  home.sessionPath = [ "\${CARGO_HOME:-${homeDirectory}/.cargo}/bin" ];
 }
 

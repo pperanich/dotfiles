@@ -15,6 +15,7 @@
           ../../home-manager/features/desktop.nix
           ../../home-manager/features/tex.nix
           ../../home-manager/features/vscode.nix
+          # ../../home-manager/features/rust.nix
         ];
       };
     }

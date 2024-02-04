@@ -6,6 +6,9 @@ in
   users.users.pperanich = {
     initialPassword = "test";
     isNormalUser = true;
+    openssh.authorizedKeys.keys = [
+      (builtins.readFile ../../../../secrets/id_rsa.pub)
+    ];
     shell = pkgs.zsh;
     extraGroups = [
       "wheel"

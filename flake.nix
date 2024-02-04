@@ -93,6 +93,13 @@
             ./hosts/pperanich-wsl1
           ];
         };
+        "pperanich-raspi1" = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+            ./hosts/pperanich-raspi1
+          ];
+        };
       };
 
       darwinConfigurations = {

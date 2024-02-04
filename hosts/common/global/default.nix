@@ -11,10 +11,6 @@
     overlays = builtins.attrValues outputs.overlays;
     config = {
       allowUnfree = true;
-      # FIXME
-      permittedInsecurePackages = [
-        "openssl-1.1.1u"
-      ];
     };
   };
   environment.enableAllTerminfo = true;

@@ -10,8 +10,6 @@ in
   home.packages = with pkgs; [
     feh
     libsecret
-    slack
-    discord
     zoom-us
     glib
     gimp
@@ -38,6 +36,9 @@ in
     m-cli # useful macOS CLI commands
     shottr
     docker-desktop
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
+    discord
+    slack
   ];
 
   xdg.configFile."alacritty".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/alacritty";

@@ -14,6 +14,7 @@
   home.sessionVariables = {
     OPENAI_API_KEY = "sk-REDACTED_OPENAI_API_KEY_XXX";
     ASSEMBLYAI_API_KEY = "REDACTED_ASSEMBLYAI_KEY_XXX";
+    HUGGING_FACE_HUB_TOKEN = "hf_REDACTED_HUGGINGFACE_TOKEN_XXX";
   };
 
   programs.pandoc.enable = true;

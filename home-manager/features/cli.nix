@@ -60,5 +60,5 @@ in
     stream = true
   '';
 
-  home.sessionPath = [ "${homeDirectory}/.npm-global/bin" ];
+  home.sessionPath = [ "${homeDirectory}/.npm-global/bin" "${homeDirectory}/dotfiles/bin" ];
 }

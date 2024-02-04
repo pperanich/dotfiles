@@ -36,6 +36,7 @@ in
     tmux
     zellij
     sshfs
+    tealdeer
     xsel
     xclip
     update-display

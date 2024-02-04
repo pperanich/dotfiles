@@ -25,9 +25,11 @@ stdenv.mkDerivation {
     mnt=$(mktemp -d -t ci-XXXXXXXXXX)
 
     function finish {
-      echo "Detaching $mnt"
-      $hdiutil detach $mnt -force
-      rm -rf $mnt
+      if [ -d $mnt ]; then
+        echo "Detaching $mnt"
+        $hdiutil detach $mnt -force || true
+        rm -rf $mnt
+      fi
     }
     trap finish EXIT
 

@@ -9,7 +9,7 @@ let
   inherit (stdenv.hostPlatform) system;
 
   pname = "brave";
-  version = "1.61.109";
+  version = "1.62.156";
   src = fetchurl {
     url = "https://github.com/brave/brave-browser/releases/download/v${version}/Brave-Browser-universal.dmg";
     sha256 = "sha256-53khZAzAptV26RCweW/Y5KH8pUGeLPBmc+4E2EVnC2I=";

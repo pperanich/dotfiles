@@ -28,9 +28,9 @@
       bind_address = 0.0.0.0
 
       [cors]
-      origins = app://obsidian.md, capacitor://localhost, http://localhost
+      origins = app://obsidian.md,capacitor://localhost,http://localhost
       credentials = true
-      headers = accept, authorization, content-type, origin, referer
+      headers = accept,authorization,content-type,origin,referer
       methods = GET,PUT,POST,HEAD,DELETE
       max_age = 3600
     '';

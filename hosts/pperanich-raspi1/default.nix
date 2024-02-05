@@ -4,6 +4,8 @@
     ../common/global
     ../common/users/pperanich
     ../common/features/ssh.nix
+    ../common/features/tailscale.nix
+    ../common/features/couchdb.nix
     {
       home-manager.extraSpecialArgs = { inherit inputs outputs; };
       home-manager.useUserPackages = true;

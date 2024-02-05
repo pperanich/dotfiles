@@ -6,3 +6,8 @@ Host pperanich-wsl1
   Hostname pperanich-wd1.local
   User pperanich
   Port 2222
+
+Host pperanich-raspi1
+  Hostname pperanich-raspi1.local
+  User pperanich
+  Port 2222

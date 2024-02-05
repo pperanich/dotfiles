@@ -5,13 +5,15 @@
     ../common/users/pperanich
     ../common/features/wsl.nix
     ../common/features/ssh.nix
+    ../common/features/tailscale.nix
+    ../common/features/couchdb.nix
     {
       home-manager.extraSpecialArgs = { inherit inputs outputs; };
       home-manager.useUserPackages = true;
       home-manager.users.pperanich = {
         imports = [
           ../../home-manager
-          ../../home-manager/features/emacs.nix
+          # ../../home-manager/features/emacs.nix
           ../../home-manager/features/desktop.nix
           ../../home-manager/features/tex.nix
           ../../home-manager/features/vscode.nix

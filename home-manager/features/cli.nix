@@ -10,7 +10,7 @@ in
     act # Run github workflows locally
     gh # Github CLI
     gnused
-    ai-buddy
+    # ai-buddy
     bat # Better cat
     bc # Calculator
     bottom # System viewer

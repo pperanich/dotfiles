@@ -34,21 +34,6 @@
     loader.grub.enable = false;
     # Enables the generation of /boot/extlinux/extlinux.conf
     loader.generic-extlinux-compatible.enable = true;
-    # loader.raspberryPi = {
-    #   enable = true;
-    #   # Set the version depending on your raspberry pi. 
-    #   version = 3;
-    #   # We need uboot
-    #   uboot.enable = true;
-    #   # These two parameters are the important ones to get the
-    #   # camera working. These will be appended to /boot/config.txt.
-    #   firmwareConfig = ''
-    #     start_x=1
-    #     gpu_mem=256
-    #     core_freq=250
-    #     dtparam=audio=on
-    #   '';
-    # };
     kernelParams = [
       "console=ttyS1,115200n8"
     ];

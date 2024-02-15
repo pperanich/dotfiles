@@ -47,5 +47,7 @@
     config.common.default = "*";
   };
 
+  services.openssh.ports = [ 2222 ];
+
   system.stateVersion = "23.05";
 }

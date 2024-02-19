@@ -14,6 +14,7 @@ in
     bat # Better cat
     bc # Calculator
     bottom # System viewer
+    bandwhich
     # ncdu # TUI disk usage
     ripgrep # Better grep
     fd # Better find

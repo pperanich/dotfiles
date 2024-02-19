@@ -19,12 +19,17 @@
 
   programs.pandoc.enable = true;
   programs.gpg.enable = true;
+  programs.dircolors.enable = true;
+  programs.direnv.enable = true;
+  programs.atuin.enable = true;
+  programs.zoxide.enable = true;
 
   imports = [
     ./features/cli.nix
     ./features/nvim.nix
     ./features/git.nix
     ./features/zsh.nix
+    ./features/nushell.nix
     ./features/ssh.nix
     ./features/podman.nix
     # <sops-nix/modules/home-manager/sops.nix>

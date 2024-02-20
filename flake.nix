@@ -298,6 +298,21 @@
             }
           ];
         };
+        "mxwbio@mxwbio" = home-manager.lib.homeManagerConfiguration {
+          pkgs = legacyPackages.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = [
+            ./home-manager
+            {
+              home.username = "mxwbio";
+              imports = [
+                ./home-manager/features/desktop.nix
+                ./home-manager/features/standalone.nix
+                ./home-manager/features/fonts.nix
+              ];
+            }
+          ];
+        };
         "omni@om-apl-st1-ws1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };

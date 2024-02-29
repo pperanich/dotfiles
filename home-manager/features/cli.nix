@@ -21,6 +21,8 @@ in
     httpie # Better curl
     jq # JSON pretty printer and manipulator
     # azure-cli
+    gitui
+    git-filter-repo
     heygpt
     shell_gpt
     xplr

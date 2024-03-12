@@ -46,6 +46,7 @@ in
     update-display
     nodePackages.npm
     kubectl
+    pixi
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     libtool
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
@@ -60,10 +61,15 @@ in
   home.file.".npmrc".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npmrc";
   xdg.configFile."shell_gpt".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/shell_gpt";
   home.file.".heygpt.toml".text = ''
-    model = "gpt-4-1106-preview"
+    model = "gpt-4-0125-preview"
     api_base_url = "https://api.openai.com/v1"
     stream = true
   '';
 
-  home.sessionPath = [ "${homeDirectory}/.npm-global/bin" "${homeDirectory}/dotfiles/bin" ];
+  home.sessionPath = [
+    "${homeDirectory}/.npm-global/bin"
+    "${homeDirectory}/dotfiles/bin"
+    "${homeDirectory}/.pixi/bin"
+    "${homeDirectory}/.rye/shims"
+  ];
 }

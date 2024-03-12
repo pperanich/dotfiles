@@ -12,9 +12,11 @@
   xdg.enable = true;
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
   home.sessionVariables = {
+    OPAL_API_KEY = "REDACTED_OPAL_API_KEY_XXX";
     OPENAI_API_KEY = "sk-REDACTED_OPENAI_API_KEY_XXX";
     ASSEMBLYAI_API_KEY = "REDACTED_ASSEMBLYAI_KEY_XXX";
     HUGGING_FACE_HUB_TOKEN = "hf_REDACTED_HUGGINGFACE_TOKEN_XXX";
+    ANTHROPIC_API_KEY = "sk-ant-REDACTED_ANTHROPIC_API_KEY_XXX";
   };
 
   programs.pandoc.enable = true;

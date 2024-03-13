@@ -11,6 +11,13 @@
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
+    yabai = prev.yabai.overrideAttrs (old: {
+      version = "v7.0.0";
+      src = prev.fetchzip {
+        url = "https://github.com/koekeishiya/yabai/releases/download/v7.0.0/yabai-v7.0.0.tar.gz";
+        hash = "sha256-FJ4HHiniyvNvwQq5cxpGTAIS8g5vEoHAdtJ33qNzRZo=";
+      };
+    });
     tmux-sessionizer = prev.tmux-sessionizer.overrideAttrs (old: {
       patches =
         (old.patches or [ ])

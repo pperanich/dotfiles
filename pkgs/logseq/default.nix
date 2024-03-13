@@ -14,7 +14,7 @@ let
   x86_64-darwin-sha256 = "sha256-yYkKVZ5DhbV4tfq/n5EfnkuGvcl9h8X+BuhPkjUGOzE=";
 
   aarch64-darwin-version = "0.10.2";
-  aarch64-darwin-sha256 = "0yyqmyicf4rkpvp6al2kb7g188xhg3m8hyi24a23yhnil8hk2r3v";
+  aarch64-darwin-sha256 = "sha256-AVFmzC3Kq/ZHfrNjydR0prQTS/L8xHjN3aQPAthsBOQ=";
 
   version = {
     x86_64-darwin = x86_64-darwin-version;

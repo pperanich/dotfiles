@@ -21,8 +21,8 @@
     sops-nix.url = "github:Mic92/sops-nix";
 
     # Nix Casks
-    # nixcasks.url = "github:jacekszymanski/nixcasks";
-    # nixcasks.inputs.nixpkgs.follows = "nixpkgs";
+    nixcasks.url = "github:jacekszymanski/nixcasks";
+    nixcasks.inputs.nixpkgs.follows = "nixpkgs";
 
     hardware.url = "github:nixos/nixos-hardware";
 
@@ -56,17 +56,19 @@
       legacyPackages = forAllSystems (system:
         import nixpkgs {
           inherit system;
-          config.allowUnfree = true;
-          config.allowBroken = true;
-          config.allowUnfreePredicate = (_: true);
-          config.overlays = builtins.attrValues outputs.overlays;
-          # config.packageOverrides = _: {
-          #   nixcasks = import inputs.nixcasks {
-          #     inherit nixpkgs;
-          #     pkgs = import nixpkgs { };
-          #     osVersion = "monterey";
-          #   };
-          # };
+          config = {
+            allowUnfree = true;
+            allowBroken = true;
+            allowUnfreePredicate = (_: true);
+            overlays = builtins.attrValues outputs.overlays;
+            packageOverrides = _: {
+              nixcasks = import inputs.nixcasks {
+                inherit nixpkgs;
+                pkgs = import nixpkgs {};
+                osVersion = "sonoma";
+              };
+            };
+          };
         }
       );
 

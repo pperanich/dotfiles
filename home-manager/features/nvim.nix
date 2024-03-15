@@ -9,7 +9,7 @@ in
     fzf
     pkg-config
     mktemp
-    llvmPackages_16.clang-unwrapped
+    # llvmPackages_16.clang-unwrapped
   ];
 
   programs.neovim = {

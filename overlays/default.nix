@@ -14,7 +14,7 @@
     yabai = prev.yabai.overrideAttrs (old: {
       version = "v7.0.0";
       src = prev.fetchzip {
-        url = "https://github.com/koekeishiya/yabai/releases/download/v7.0.0/yabai-v7.0.0.tar.gz";
+        url = "https://github.com/koekeishiya/yabai/releases/download/v7.0.2/yabai-v7.0.2.tar.gz";
         hash = "sha256-FJ4HHiniyvNvwQq5cxpGTAIS8g5vEoHAdtJ33qNzRZo=";
       };
     });
@@ -31,13 +31,12 @@
     glibtool = final.libtool.overrideAttrs (oldAttrs: {
       configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--program-prefix=g" ];
     });
-    logseq = if final.stdenv.hostPlatform.isDarwin then prev.logseq-darwin else prev.logseq;
-    brave = if final.stdenv.hostPlatform.isDarwin then prev.brave-darwin else prev.brave;
-    zotero = if final.stdenv.hostPlatform.isDarwin then prev.zotero-darwin else prev.zotero;
-    etcher = if final.stdenv.hostPlatform.isDarwin then prev.etcher-darwin else prev.etcher;
-    spotify = if final.stdenv.hostPlatform.isDarwin then prev.spotify-darwin else prev.spotify;
-    tailscale = if final.stdenv.hostPlatform.isDarwin then prev.tailscale-darwin else prev.tailscale;
-    vlc = if final.stdenv.hostPlatform.isDarwin then prev.vlc-darwin else prev.vlc;
-    protonvpn-gui = if final.stdenv.hostPlatform.isDarwin then prev.protonvpn-gui-darwin else prev.protonvpn-gui;
+    logseq = if final.stdenv.hostPlatform.isDarwin then prev.nixcasks.logseq else prev.logseq;
+    brave = if final.stdenv.hostPlatform.isDarwin then prev.nixcasks.brave-browser else prev.brave;
+    zotero = if final.stdenv.hostPlatform.isDarwin then prev.nixcasks.zotero else prev.zotero;
+    etcher = if final.stdenv.hostPlatform.isDarwin then prev.nixcasks.etcher else prev.etcher;
+    tailscale = if final.stdenv.hostPlatform.isDarwin then prev.nixcasks.tailscale else prev.tailscale;
+    vlc = if final.stdenv.hostPlatform.isDarwin then prev.nixcasks.vlc else prev.vlc;
+    protonvpn-gui = if final.stdenv.hostPlatform.isDarwin then prev.nixcasks.protonvpn else prev.protonvpn-gui;
   };
 }

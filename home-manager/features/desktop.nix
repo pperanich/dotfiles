@@ -19,10 +19,10 @@ in
     zotero
     spotify
     spotify-tui
-    # brave
+    brave
     wireshark
     reaper
-    # protonvpn-gui
+    protonvpn-gui
     vlc
     # postman
     # kicad
@@ -31,11 +31,13 @@ in
     bitwarden
     vlc
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-    # logseq
+    logseq
     teams
     m-cli # useful macOS CLI commands
     ollama
-    # shottr
+    nixcasks.docker
+    nixcasks.shottr
+    nixcasks.tailscale
     # docker-desktop
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
     discord

@@ -5,6 +5,12 @@
     config = {
       allowUnfree = true;
       allowUnfreePredicate = (_: true);
+      packageOverrides = _: {
+        nixcasks = import inputs.nixcasks {
+          inherit pkgs;
+          osVersion = "sonoma";
+        };
+      };
     };
   };
 

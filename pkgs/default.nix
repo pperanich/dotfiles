@@ -17,6 +17,6 @@
   vlc-darwin = pkgs.callPackage ./vlc { };
   protonvpn-gui-darwin = pkgs.callPackage ./protonvpn-gui { };
   # Extras
-  docker-desktop = pkgs.callPackage ./docker-desktop { };
-  shottr = pkgs.callPackage ./shottr { };
+  # docker-desktop = pkgs.callPackage ./docker-desktop { };
+  # shottr = pkgs.callPackage ./shottr { };
 }

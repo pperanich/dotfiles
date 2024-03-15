@@ -28,6 +28,12 @@
     config = {
       allowUnfree = true;
       allowUnfreePredicate = (_: true);
+      packageOverrides = _: {
+        nixcasks = import inputs.nixcasks {
+          inherit pkgs;
+          osVersion = "sonoma";
+        };
+      };
     };
   };
 
@@ -85,8 +91,5 @@
 
   homebrew = {
     enable = true;
-    masApps = {
-      "tailscale" = 1475387142;
-    };
   };
 }

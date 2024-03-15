@@ -6,6 +6,8 @@
       package = pkgs.sketchybar;
     };
   };
+
+  # environment.systemPackages = [ pkgs.nixcasks.switchaudio-osx ];
   homebrew = {
     brews = [
       "switchaudio-osx"

@@ -25,7 +25,7 @@
       }
     ];
     historySubstringSearch.enable = true;
-    enableAutosuggestions = true;
+    autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     initExtra = ''
       # >>> mamba initialize >>>

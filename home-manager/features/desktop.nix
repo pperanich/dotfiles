@@ -18,7 +18,7 @@ in
     hdfview
     zotero
     spotify
-    spotify-tui
+    # spotify-tui
     brave
     wireshark
     reaper

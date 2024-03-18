@@ -11,19 +11,13 @@
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
-    yabai = prev.yabai.overrideAttrs (old: {
-      version = "v7.0.0";
-      src = prev.fetchzip {
-        url = "https://github.com/koekeishiya/yabai/releases/download/v7.0.2/yabai-v7.0.2.tar.gz";
-        hash = "sha256-FJ4HHiniyvNvwQq5cxpGTAIS8g5vEoHAdtJ33qNzRZo=";
-      };
-    });
     tmux-sessionizer = prev.tmux-sessionizer.overrideAttrs (old: {
-      patches =
-        (old.patches or [ ])
-        ++ [
-          ../home-manager/features/patches/0001-Expand-env-vars-and-tilde-for-search_dirs.patch
-        ];
+      src = prev.fetchFromGitHub {
+        owner = "jrmoulton";
+        repo = "tmux-sessionizer";
+        rev = "main";
+        hash = "sha256-gzbCeNZML2ygIy/H3uT9apahqI+4hmrTwgXvcZq4Xog=";
+      };
     });
     heygpt = prev.heygpt.overrideAttrs (oldAttrs: rec {
       buildInputs = oldAttrs.buildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.darwin.apple_sdk.frameworks.SystemConfiguration ];

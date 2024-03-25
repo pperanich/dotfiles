@@ -336,7 +336,7 @@
             {
               home.username = "mxwbio";
               imports = [
-                ./home-manager/features/desktop.nix
+                # ./home-manager/features/desktop.nix
                 ./home-manager/features/standalone.nix
                 ./home-manager/features/fonts.nix
               ];

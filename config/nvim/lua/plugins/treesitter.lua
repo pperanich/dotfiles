@@ -1,5 +1,6 @@
 return {
-  "nvim-treesitter/nvim-treesitter",
+  -- "nvim-treesitter/nvim-treesitter",
+  "rayliwell/nvim-treesitter",
   dependencies = { "nvim-treesitter/playground" },
   opts = function(_, opts)
     opts.playground = {
@@ -20,5 +21,16 @@ return {
         show_help = "?",
       },
     }
+    vim.list_extend(opts.ensure_installed, {
+      "rstml",
+    })
+    opts.sync_install = false
+    opts.highlight = { enable = true }
+    opts.indent = { enable = true }
   end,
+  -- ensure_installed = {},
+  -- sync_install = false,
+  -- highlight = { enable = true },
+  -- indent = { enable = true },
+  build = ":TSUpdate",
 }

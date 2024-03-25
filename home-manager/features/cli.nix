@@ -58,6 +58,7 @@ in
 
   xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
   xdg.configFile."tms".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tms";
+  xdg.configFile."direnv".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/direnv";
   home.file.".npmrc".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npmrc";
   xdg.configFile."shell_gpt".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/shell_gpt";
   home.file.".heygpt.toml".text = ''

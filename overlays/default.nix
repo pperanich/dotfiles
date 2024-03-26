@@ -11,19 +11,29 @@
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
-    tmux-sessionizer = prev.tmux-sessionizer.override (old: rec {
-      rustPlatform = old.rustPlatform // {
-        buildRustPackage = args: old.rustPlatform.buildRustPackage (args // {
-          # override src/cargoHash/buildFeatures here
-          src = prev.fetchFromGitHub {
-            owner = "jrmoulton";
-            repo = "tmux-sessionizer";
-            rev = "1add07dbaf6310393bf0791ad4143e16641b2a23";
-            hash = "sha256-ORMB4SoKDj4ZrFtZJMbasr6aBZhQKJAHDxMeLpZX4cg=";
-          };
-          cargoHash = "sha256-NZvx8iw7Fxd2qePr5fyo8rqOMB8xF2vDi0FZ9KWdfuA=";
-        });
-      };
+    # tmux-sessionizer = prev.tmux-sessionizer.override (old: rec {
+    #   rustPlatform = old.rustPlatform // {
+    #     buildRustPackage = args: old.rustPlatform.buildRustPackage (args // {
+    #       # override src/cargoHash/buildFeatures here
+    #       src = prev.fetchFromGitHub {
+    #         owner = "jrmoulton";
+    #         repo = "tmux-sessionizer";
+    #         rev = "1add07dbaf6310393bf0791ad4143e16641b2a23";
+    #         hash = "sha256-ORMB4SoKDj4ZrFtZJMbasr6aBZhQKJAHDxMeLpZX4cg=";
+    #       };
+    #       cargoHash = "sha256-NZvx8iw7Fxd2qePr5fyo8rqOMB8xF2vDi0FZ9KWdfuA=";
+    #     });
+    #     OPENSSL_NO_VENDOR=0;
+    #     nativeBuildInputs = [ ];
+    #     buildInputs = [ ] ++ prev.lib.optionals prev.stdenv.isDarwin [ final.darwin.apple_sdk.frameworks.Security ];
+    #   };
+    # });
+    tmux-sessionizer = prev.tmux-sessionizer.overrideAttrs (old: {
+      patches =
+        (old.patches or [ ])
+        ++ [
+          ../home-manager/features/patches/0001-Expand-env-vars-and-tilde-for-search_dirs.patch
+        ];
     });
     heygpt = prev.heygpt.overrideAttrs (oldAttrs: rec {
       buildInputs = oldAttrs.buildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.darwin.apple_sdk.frameworks.SystemConfiguration ];

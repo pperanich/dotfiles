@@ -290,6 +290,7 @@
                 ./home-manager/features/standalone.nix
                 ./home-manager/features/fonts.nix
                 ./home-manager/features/aplnis.nix
+                { services.sunshine.enable = true; }
               ];
             }
           ];

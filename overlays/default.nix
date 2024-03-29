@@ -28,6 +28,7 @@
     #     buildInputs = [ ] ++ prev.lib.optionals prev.stdenv.isDarwin [ final.darwin.apple_sdk.frameworks.Security ];
     #   };
     # });
+    # sunshine = prev.sunshine.override { cudaSupport = true; };
     tmux-sessionizer = prev.tmux-sessionizer.overrideAttrs (old: {
       patches =
         (old.patches or [ ])

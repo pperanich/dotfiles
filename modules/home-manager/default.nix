@@ -5,4 +5,5 @@
   # List your module files here
   # my-module = import ./my-module.nix;
   trampoline = import ./targets/darwin/trampoline.nix;
+  sunshine = import ./services/sunshine.nix;
 }

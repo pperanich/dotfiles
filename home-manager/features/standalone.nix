@@ -11,6 +11,7 @@ in
     };
   };
 
+
   home = {
     homeDirectory = "/${homePrefix}/${config.home.username}";
   };

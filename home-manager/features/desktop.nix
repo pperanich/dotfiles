@@ -38,6 +38,7 @@ in
     nixcasks.docker
     nixcasks.shottr
     nixcasks.tailscale
+    nixcasks.moonlight
     # docker-desktop
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
     discord

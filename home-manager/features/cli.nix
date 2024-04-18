@@ -21,6 +21,9 @@ in
     httpie # Better curl
     jq # JSON pretty printer and manipulator
     # azure-cli
+    nh
+    nix-output-monitor
+    nvd
     statix
     gitui
     git-filter-repo

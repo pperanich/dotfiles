@@ -29,6 +29,7 @@
       ASSEMBLYAI_API_KEY = "REDACTED_ASSEMBLYAI_KEY_XXX";
       HUGGING_FACE_HUB_TOKEN = "hf_REDACTED_HUGGINGFACE_TOKEN_XXX";
       ANTHROPIC_API_KEY = "sk-ant-REDACTED_ANTHROPIC_API_KEY_XXX";
+      FLAKE = "${config.home.homeDirectory}/dotfiles/";
     };
     # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
     stateVersion = "24.05";

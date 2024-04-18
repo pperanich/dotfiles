@@ -16,21 +16,21 @@ in
       gimp
       inkscape
       alacritty
-      hdfview
       zotero
       spotify
       # spotify-tui
       brave
       wireshark
       reaper
-      protonvpn-gui
       vlc
       # postman
       # kicad
     ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+      hdfview
       firefox
       bitwarden
       vlc
+      protonvpn-gui
     ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
       logseq
       teams

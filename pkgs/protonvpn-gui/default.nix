@@ -12,7 +12,7 @@ let
   version = "4.1.1";
   src = fetchurl {
     url = "https://protonvpn.com/download/ProtonVPN_mac_v${version}.dmg";
-    sha256 = "sha256-AL359+HGd5vrBZv5gOW6IOlK45c3DEV7Xl9SBI8LW20=";
+    sha256 = "sha256-AJpohcHTMmlNloq1p7A/QDv5Fbn79jX5CTbj+EUNqo8=";
   };
 
   meta = with lib; {

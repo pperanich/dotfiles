@@ -8,17 +8,19 @@
     ../common/features/tailscale.nix
     ../common/features/couchdb.nix
     {
-      home-manager.extraSpecialArgs = { inherit inputs outputs; };
-      home-manager.useUserPackages = true;
-      home-manager.users.pperanich = {
-        imports = [
-          ../../home-manager
-          # ../../home-manager/features/emacs.nix
-          ../../home-manager/features/desktop.nix
-          ../../home-manager/features/tex.nix
-          ../../home-manager/features/vscode.nix
-          # ../../home-manager/features/rust.nix
-        ];
+      home-manager = {
+        extraSpecialArgs = { inherit inputs outputs; };
+        useUserPackages = true;
+        users.pperanich = {
+          imports = [
+            ../../home-manager
+            # ../../home-manager/features/emacs.nix
+            ../../home-manager/features/desktop.nix
+            ../../home-manager/features/tex.nix
+            ../../home-manager/features/vscode.nix
+            # ../../home-manager/features/rust.nix
+          ];
+        };
       };
     }
   ];

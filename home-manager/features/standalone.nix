@@ -1,6 +1,6 @@
 { inputs, outputs, lib, config, pkgs, ... }:
 let
-  homePrefix = (if pkgs.stdenv.hostPlatform.isDarwin then "Users" else "home");
+  homePrefix = if pkgs.stdenv.hostPlatform.isDarwin then "Users" else "home";
 in
 {
   nix = {
@@ -10,9 +10,6 @@ in
       warn-dirty = false;
     };
   };
-
-
-  home = {
-    homeDirectory = "/${homePrefix}/${config.home.username}";
-  };
+  targets.genericLinux.enable = true;
+  homeDirectory = "/${homePrefix}/${config.home.username}";
 }

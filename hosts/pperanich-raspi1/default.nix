@@ -7,12 +7,14 @@
     ../common/features/tailscale.nix
     ../common/features/couchdb.nix
     {
-      home-manager.extraSpecialArgs = { inherit inputs outputs; };
-      home-manager.useUserPackages = true;
-      home-manager.users.pperanich = {
-        imports = [
-          ../../home-manager
-        ];
+      home-manager = {
+        extraSpecialArgs = { inherit inputs outputs; };
+        useUserPackages = true;
+        users.pperanich = {
+          imports = [
+            ../../home-manager
+          ];
+        };
       };
     }
   ];

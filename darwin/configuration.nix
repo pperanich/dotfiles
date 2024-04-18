@@ -13,13 +13,7 @@
       # Enable flakes and new 'nix' command
       experimental-features = [ "nix-command" "flakes" "repl-flake" ];
       warn-dirty = false;
-      # Deduplicate and optimize nix store
-      # auto-optimise-store = true;
     };
-    # gc = {
-    #   automatic = true;
-    #   interval = { Day = 7; };
-    # };
     envVars = { NIX_SSL_CERT_FILE = "/etc/ssl/certs/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"; };
   };
 
@@ -27,7 +21,7 @@
     overlays = builtins.attrValues outputs.overlays;
     config = {
       allowUnfree = true;
-      allowUnfreePredicate = (_: true);
+      allowUnfreePredicate = _: true;
       packageOverrides = _: {
         nixcasks = import inputs.nixcasks {
           inherit pkgs;

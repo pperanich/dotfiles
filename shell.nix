@@ -22,9 +22,9 @@
       export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
       '';
     # Add precompiled library to rustc search path
-    RUSTFLAGS = (builtins.map (a: ''-L ${a}/lib'') [
+    RUSTFLAGS = builtins.map (a: ''-L ${a}/lib'') [
       # add libraries here (e.g. pkgs.libvmi)
-    ]);
+    ];
     # Add glibc, clang, glib and other headers to bindgen search path
     BINDGEN_EXTRA_CLANG_ARGS = 
     # Includes with normal include path

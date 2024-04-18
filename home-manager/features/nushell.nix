@@ -1,16 +1,18 @@
 { inputs, outputs, lib, config, pkgs, ... }:
 {
-  programs.nushell = {
-    enable = true;
-  };
-  programs.direnv = {
-    enableNushellIntegration = true;
-  };
-  programs.atuin = {
-    enableNushellIntegration = true;
-  };
-  programs.zoxide = {
-    enableNushellIntegration = true;
+  programs = {
+    nushell = {
+      enable = true;
+    };
+    direnv = {
+      enableNushellIntegration = true;
+    };
+    atuin = {
+      enableNushellIntegration = true;
+    };
+    zoxide = {
+      enableNushellIntegration = true;
+    };
   };
 }
 

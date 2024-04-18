@@ -39,29 +39,35 @@ let
   ]));
 in
 {
-  home.packages = with pkgs; [
-    nodePackages.pyright
-    jansson
-    djvulibre
-  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-    epdfview
-    libvterm
-  ];
 
   programs.emacs = {
     enable = true;
     package = emacs-with-pkgs;
   };
 
-  xdg.configFile."emacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-chemacs/";
-  xdg.configFile."chemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/chemacs/";
-  xdg.configFile."emacs-spacemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-spacemacs/";
-  xdg.configFile."spacemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/spacemacs/";
-  xdg.configFile."emacs-doom".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-doom/";
-  # xdg.configFile."doom".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom/";
-  xdg.configFile."doom-literate".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom-literate/";
-  xdg.configFile."yasnippet".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/yasnippet/";
+  xdg = {
+    configFile = {
+      "emacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-chemacs/";
+      "chemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/chemacs/";
+      "emacs-spacemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-spacemacs/";
+      "spacemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/spacemacs/";
+      "emacs-doom".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-doom/";
+      # "doom".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom/";
+      "doom-literate".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom-literate/";
+      "yasnippet".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/yasnippet/";
+    };
+  };
 
-  home.sessionPath = [ "${homeDirectory}/dotfiles/config/emacs-doom/bin" ];
-  home.sessionVariables = { DOOMDIR = "${homeDirectory}/dotfiles/config/doom-literate"; };
+  home = {
+    sessionPath = [ "${homeDirectory}/dotfiles/config/emacs-doom/bin" ];
+    sessionVariables = { DOOMDIR = "${homeDirectory}/dotfiles/config/doom-literate"; };
+    packages = with pkgs; [
+      nodePackages.pyright
+      jansson
+      djvulibre
+    ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+      epdfview
+      libvterm
+    ];
+  };
 }

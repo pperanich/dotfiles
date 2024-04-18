@@ -4,7 +4,7 @@
     overlays = builtins.attrValues outputs.overlays;
     config = {
       allowUnfree = true;
-      allowUnfreePredicate = (_: true);
+      allowUnfreePredicate = _: true;
       packageOverrides = _: {
         nixcasks = import inputs.nixcasks {
           inherit pkgs;
@@ -14,23 +14,35 @@
     };
   };
 
-  programs.home-manager.enable = true;
+  # lib.meta = {
+  #   configPath = "${config.home.homeDirectory}/dotfiles";
+  #   mkMutableSymlink = path: config.hm.lib.file.mkOutOfStoreSymlink
+  #     (config.lib.meta.configPath + removePrefix (toString ./..) (toString path));
+  # };
+
   xdg.enable = true;
-  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
-  home.sessionVariables = {
-    OPAL_API_KEY = "REDACTED_OPAL_API_KEY_XXX";
-    OPENAI_API_KEY = "sk-REDACTED_OPENAI_API_KEY_XXX";
-    ASSEMBLYAI_API_KEY = "REDACTED_ASSEMBLYAI_KEY_XXX";
-    HUGGING_FACE_HUB_TOKEN = "hf_REDACTED_HUGGINGFACE_TOKEN_XXX";
-    ANTHROPIC_API_KEY = "sk-ant-REDACTED_ANTHROPIC_API_KEY_XXX";
+  home = {
+    sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
+    sessionVariables = {
+      OPAL_API_KEY = "REDACTED_OPAL_API_KEY_XXX";
+      OPENAI_API_KEY = "sk-REDACTED_OPENAI_API_KEY_XXX";
+      ASSEMBLYAI_API_KEY = "REDACTED_ASSEMBLYAI_KEY_XXX";
+      HUGGING_FACE_HUB_TOKEN = "hf_REDACTED_HUGGINGFACE_TOKEN_XXX";
+      ANTHROPIC_API_KEY = "sk-ant-REDACTED_ANTHROPIC_API_KEY_XXX";
+    };
+    # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
+    stateVersion = "24.05";
   };
 
-  programs.pandoc.enable = true;
-  programs.gpg.enable = true;
-  programs.dircolors.enable = true;
-  programs.direnv.enable = true;
-  programs.atuin.enable = true;
-  programs.zoxide.enable = true;
+  programs = {
+    home-manager.enable = true;
+    pandoc.enable = true;
+    gpg.enable = true;
+    dircolors.enable = true;
+    direnv.enable = true;
+    atuin.enable = true;
+    zoxide.enable = true;
+  };
 
   imports = [
     ./features/cli.nix
@@ -43,6 +55,4 @@
     # <sops-nix/modules/home-manager/sops.nix>
   ] ++ (builtins.attrValues outputs.homeManagerModules);
 
-  # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
-  home.stateVersion = "24.05";
 }

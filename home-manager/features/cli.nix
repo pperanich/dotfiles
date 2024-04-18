@@ -21,6 +21,7 @@ in
     httpie # Better curl
     jq # JSON pretty printer and manipulator
     # azure-cli
+    statix
     gitui
     git-filter-repo
     heygpt
@@ -56,21 +57,29 @@ in
     xquartz
   ];
 
-  xdg.configFile."tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
-  xdg.configFile."tms".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tms";
-  xdg.configFile."direnv".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/direnv";
-  home.file.".npmrc".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npmrc";
-  xdg.configFile."shell_gpt".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/shell_gpt";
-  home.file.".heygpt.toml".text = ''
-    model = "gpt-4-0125-preview"
-    api_base_url = "https://api.openai.com/v1"
-    stream = true
-  '';
+  xdg = {
+    configFile = {
+      "tmux".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tmux";
+      "tms".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/tms";
+      "direnv".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/direnv";
+      "shell_gpt".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/shell_gpt";
+    };
+  };
+  home = {
+    file = {
+      ".npmrc".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/npmrc";
+      ".heygpt.toml".text = ''
+        model = "gpt-4-0125-preview"
+        api_base_url = "https://api.openai.com/v1"
+        stream = true
+        '';
+    };
+    sessionPath = [
+      "${homeDirectory}/.npm-global/bin"
+        "${homeDirectory}/dotfiles/bin"
+        "${homeDirectory}/.pixi/bin"
+        "${homeDirectory}/.rye/shims"
+    ];
+  };
 
-  home.sessionPath = [
-    "${homeDirectory}/.npm-global/bin"
-    "${homeDirectory}/dotfiles/bin"
-    "${homeDirectory}/.pixi/bin"
-    "${homeDirectory}/.rye/shims"
-  ];
 }

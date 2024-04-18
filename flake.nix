@@ -59,7 +59,7 @@
           config = {
             allowUnfree = true;
             allowBroken = true;
-            allowUnfreePredicate = (_: true);
+            allowUnfreePredicate = _: true;
             overlays = builtins.attrValues outputs.overlays;
             packageOverrides = _: {
               nixcasks = import inputs.nixcasks {
@@ -115,20 +115,22 @@
             ./darwin/features/skhd.nix
             home-manager.darwinModules.home-manager
             {
-              home-manager.extraSpecialArgs = { inherit inputs outputs; };
-              home-manager.useUserPackages = true;
-              home-manager.users.peranpl1 = {
-                imports = [
-                  ./home-manager
-                  # ./home-manager/features/emacs.nix
-                  ./home-manager/features/desktop.nix
-                  ./home-manager/features/tex.nix
-                  ./home-manager/features/darwin.nix
-                  ./home-manager/features/aplnis.nix
-                  ./home-manager/features/vscode.nix
-                  ./home-manager/features/fonts.nix
-                  ./home-manager/features/rust.nix
-                ];
+              home-manager = {
+                extraSpecialArgs = { inherit inputs outputs; };
+                useUserPackages = true;
+                users.peranpl1 = {
+                  imports = [
+                    ./home-manager
+                    # ./home-manager/features/emacs.nix
+                    ./home-manager/features/desktop.nix
+                    ./home-manager/features/tex.nix
+                    ./home-manager/features/darwin.nix
+                    ./home-manager/features/aplnis.nix
+                    ./home-manager/features/vscode.nix
+                    ./home-manager/features/fonts.nix
+                    ./home-manager/features/rust.nix
+                  ];
+                };
               };
             }
           ];
@@ -143,20 +145,22 @@
             ./darwin/features/skhd.nix
             home-manager.darwinModules.home-manager
             {
-              home-manager.extraSpecialArgs = { inherit inputs outputs; };
-              home-manager.useUserPackages = true;
-              home-manager.users.peranpl1 = {
-                imports = [
-                  ./home-manager
-                  # ./home-manager/features/emacs.nix
-                  ./home-manager/features/desktop.nix
-                  ./home-manager/features/tex.nix
-                  ./home-manager/features/darwin.nix
-                  ./home-manager/features/aplnis.nix
-                  ./home-manager/features/vscode.nix
-                  ./home-manager/features/fonts.nix
-                  ./home-manager/features/rust.nix
-                ];
+              home-manager = {
+                extraSpecialArgs = { inherit inputs outputs; };
+                useUserPackages = true;
+                users.peranpl1 = {
+                  imports = [
+                    ./home-manager
+                    # ./home-manager/features/emacs.nix
+                    ./home-manager/features/desktop.nix
+                    ./home-manager/features/tex.nix
+                    ./home-manager/features/darwin.nix
+                    ./home-manager/features/aplnis.nix
+                    ./home-manager/features/vscode.nix
+                    ./home-manager/features/fonts.nix
+                    ./home-manager/features/rust.nix
+                  ];
+                };
               };
             }
           ];
@@ -171,20 +175,22 @@
             ./darwin/features/skhd.nix
             home-manager.darwinModules.home-manager
             {
-              home-manager.extraSpecialArgs = { inherit inputs outputs; };
-              home-manager.useUserPackages = true;
-              home-manager.users.peranpl1 = {
-                imports = [
-                  ./home-manager
-                  ./home-manager/features/emacs.nix
-                  ./home-manager/features/desktop.nix
-                  ./home-manager/features/tex.nix
-                  ./home-manager/features/darwin.nix
-                  ./home-manager/features/aplnis.nix
-                  ./home-manager/features/vscode.nix
-                  ./home-manager/features/fonts.nix
-                  ./home-manager/features/rust.nix
-                ];
+              home-manager = {
+                extraSpecialArgs = { inherit inputs outputs; };
+                useUserPackages = true;
+                users.peranpl1 = {
+                  imports = [
+                    ./home-manager
+                    # ./home-manager/features/emacs.nix
+                    ./home-manager/features/desktop.nix
+                    ./home-manager/features/tex.nix
+                    ./home-manager/features/darwin.nix
+                    ./home-manager/features/aplnis.nix
+                    ./home-manager/features/vscode.nix
+                    ./home-manager/features/fonts.nix
+                    ./home-manager/features/rust.nix
+                  ];
+                };
               };
             }
           ];

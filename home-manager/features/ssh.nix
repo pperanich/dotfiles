@@ -1,7 +1,6 @@
 { inputs, outputs, lib, config, pkgs, ... }:
 let
-  inherit (config.home) homeDirectory;
-  inherit (config.lib.file) mkOutOfStoreSymlink;
+  inherit (config.lib.meta) mkMutableSymlink;
 in
 {
   home.packages = with pkgs; [
@@ -17,5 +16,5 @@ in
     Include config.d/*
   '';
 
-  home.file.".ssh/config.d".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/ssh";
+  home.file.".ssh/config.d".source = mkMutableSymlink "ssh";
 }

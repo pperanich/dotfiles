@@ -10,7 +10,6 @@ in
   home.packages = with pkgs; [
     toolchain
 
-    openssl
     pkg-config
     # Extra cargo dependencies
     cargo-bloat

@@ -1,7 +1,6 @@
 { config, pkgs, lib, inputs, ... }:
 let
-  inherit (config.home) homeDirectory;
-  inherit (config.lib.file) mkOutOfStoreSymlink;
+  inherit (config.lib.meta) mkMutableSymlink;
 in
 {
   programs.vscode = {

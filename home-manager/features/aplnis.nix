@@ -40,6 +40,7 @@ in
   };
   programs.git.package = git-openssl-v1;
   home.packages = with pkgs; [
+    openssl_1_1
     aplnis-env # Small shell script to set and unset environment variables to work around VPN.
   ];
 }

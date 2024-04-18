@@ -14,11 +14,11 @@
     };
   };
 
-  # lib.meta = {
-  #   configPath = "${config.home.homeDirectory}/dotfiles";
-  #   mkMutableSymlink = path: config.hm.lib.file.mkOutOfStoreSymlink
-  #     (config.lib.meta.configPath + removePrefix (toString ./..) (toString path));
-  # };
+  lib.meta = {
+    configPath = "${config.home.homeDirectory}/dotfiles/config/";
+    mkMutableSymlink =
+      path: config.lib.file.mkOutOfStoreSymlink (config.lib.meta.configPath + path);
+  };
 
   xdg.enable = true;
   home = {

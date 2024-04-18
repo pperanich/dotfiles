@@ -1,7 +1,6 @@
 { config, pkgs, lib, inputs, ... }:
 let
-  inherit (config.home) homeDirectory;
-  inherit (config.lib.file) mkOutOfStoreSymlink;
+  inherit (config.lib.meta) mkMutableSymlink;
 in
 {
   home.sessionVariables = { EDITOR = "nvim"; };
@@ -29,6 +28,6 @@ in
     ];
   };
 
-  xdg.configFile."nvim/lua/".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/nvim/lua/";
-  # xdg.configFile."nvim/after/".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/nvim/after/";
+  xdg.configFile."nvim/lua/".source = mkMutableSymlink "nvim/lua/";
+  # xdg.configFile."nvim/after/".source = mkMutableSymlink "nvim/after/";
 }

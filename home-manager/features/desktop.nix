@@ -1,7 +1,7 @@
 { inputs, pkgs, config, lib, ... }:
 let
   inherit (config.home) homeDirectory;
-  inherit (config.lib.file) mkOutOfStoreSymlink;
+  inherit (config.lib.meta) mkMutableSymlink;
 in
 {
   home = {
@@ -48,6 +48,6 @@ in
     sessionPath = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin [ "${homeDirectory}/.docker/bin" ];
   };
 
-  xdg.configFile."alacritty".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/alacritty";
+  xdg.configFile."alacritty".source = mkMutableSymlink "alacritty";
 }
 

@@ -1,7 +1,7 @@
 { config, pkgs, lib, inputs, ... }:
 let
   inherit (config.home) homeDirectory;
-  inherit (config.lib.file) mkOutOfStoreSymlink;
+  inherit (config.lib.meta) mkMutableSymlink;
 
   emacs =
     if pkgs.stdenv.hostPlatform.isDarwin then
@@ -47,14 +47,14 @@ in
 
   xdg = {
     configFile = {
-      "emacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-chemacs/";
-      "chemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/chemacs/";
-      "emacs-spacemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-spacemacs/";
-      "spacemacs".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/spacemacs/";
-      "emacs-doom".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/emacs-doom/";
-      # "doom".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom/";
-      "doom-literate".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/doom-literate/";
-      "yasnippet".source = mkOutOfStoreSymlink "${homeDirectory}/dotfiles/config/yasnippet/";
+      "emacs".source = mkMutableSymlink "emacs-chemacs/";
+      "chemacs".source = mkMutableSymlink "chemacs/";
+      "emacs-spacemacs".source = mkMutableSymlink "emacs-spacemacs/";
+      "spacemacs".source = mkMutableSymlink "spacemacs/";
+      "emacs-doom".source = mkMutableSymlink "emacs-doom/";
+      # "doom".source = mkMutableSymlink "doom/";
+      "doom-literate".source = mkMutableSymlink "doom-literate/";
+      "yasnippet".source = mkMutableSymlink "yasnippet/";
     };
   };
 

@@ -4,8 +4,6 @@ let
 in
 {
   home.packages = with pkgs; [
-    comma  # Install and run programs by sticking a , before them
-
     act  # Run github workflows locally
     gh  # Github CLI
     gitui  # Blazing fast terminal-ui for Git written in Rust

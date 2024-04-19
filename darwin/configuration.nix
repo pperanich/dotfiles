@@ -15,6 +15,27 @@
       warn-dirty = false;
     };
     envVars = { NIX_SSL_CERT_FILE = "/etc/ssl/certs/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"; };
+    extraOptions = ''
+      extra-platforms = x86_64-darwin aarch64-darwin
+      '';
+    linux-builder = {
+      enable = true;
+      ephemeral = true;
+      maxJobs = 4;
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      config = {
+        virtualisation = {
+          darwin-builder = {
+            diskSize = 40 * 1024;
+            memorySize = 8 * 1024;
+          };
+          cores = 6;
+        };
+      };
+    };
   };
 
   nixpkgs = {

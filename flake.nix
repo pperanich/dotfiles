@@ -32,6 +32,9 @@
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixgl.url = "github:guibou/nixGL";
     rust-overlay.url = "github:oxalica/rust-overlay";
+
+    nix-index-database.url = "github:nix-community/nix-index-database";
+    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, home-manager, darwin, ... }@inputs:
@@ -100,6 +103,12 @@
           modules = [
             "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
             ./hosts/pperanich-raspi1
+          ];
+        };
+        "narwhal-ld1" = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            ./hosts/narwhal-ld1
           ];
         };
       };

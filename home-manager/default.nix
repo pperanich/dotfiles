@@ -53,6 +53,8 @@
     ./features/nushell.nix
     ./features/ssh.nix
     ./features/podman.nix
+    inputs.nix-index-database.hmModules.nix-index
+    { programs.nix-index-database.comma.enable = true; }
     # <sops-nix/modules/home-manager/sops.nix>
   ] ++ (builtins.attrValues outputs.homeManagerModules);
 

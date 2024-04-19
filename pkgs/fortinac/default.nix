@@ -3,14 +3,40 @@
 , fetchurl
 , dpkg
 , autoPatchelfHook
+, glibc
+, gcc-unwrapped
+, zeroc-ice
+, libz
+, freetype
+, fontconfig
+, libX11
+, libxcb
+, libXScrnSaver
+, libXcomposite
+, libXcursor
+, libXdamage
+, libXext
+, libXfixes
+, libXi
+, libXrandr
+, libXrender
+, libXtst
+, libdrm
+, libnotify
+, libpulseaudio
+, libuuid
+, libICE
+, libSM
 }:
-stdenv.mkDerivation {
+let
   pname = "fortinac-persistent-agent";
   version = "9.4.0.93";
-
+in
+stdenv.mkDerivation {
+  name = pname;
   src = fetchurl {
     url = "https://apllinuxdepot.jhuapl.edu/linux/apl-software/deb/${pname}_${version}-1.amd64.deb";
-    hash = lib.fakeHash;
+    hash = "sha256-gS8sT+AJANYXN6jsNBzzvMxrcMP8ycdMTvxD9ZiHqeE=";
   };
 
   nativeBuildInputs = [
@@ -19,12 +45,42 @@ stdenv.mkDerivation {
   ];
 
   buildInputs = [
+    glibc
+    gcc-unwrapped
+    libz
+    freetype
+    fontconfig.lib
+    libX11
+    libXScrnSaver
+    libXcomposite
+    libXcursor
+    libXdamage
+    libXext
+    libXfixes
+    libXi
+    libXrandr
+    libXrender
+    libXtst
+    libdrm
+    libnotify
+    libuuid
+    libxcb
+    libICE
+    libSM
   ];
 
+  unpackPhase = "true";
+
   installPhase = ''
-    mkdir -p $out/bin
-    cp -r usr $out
-    cp -r usr/share $out/share
+    mkdir -p $out
+    dpkg -x $src $out
+    mv $out/opt/com.bradfordnetworks/PersistentAgent/ $out/bin/
+    rm -rf $out/opt
+    rm -rf $out/lib
+    rm -rf $out/etc
+
+    chmod 755 $out
+    ls -lahR $out
   '';
 
   meta = with lib; {

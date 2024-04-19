@@ -5,7 +5,42 @@ let
     url = "https://apllinuxdepot.jhuapl.edu/linux/APL-root-cert/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer";
     sha256 = "sha256:169zi75ca4w2175c68837khvbid8lvgap8y50scnbgivh2rxzaps";
   };
+
+  bncsaui-autostart = pkgs.writeTextFile {
+    name = "autostart-bncsaui";
+    destination = "/etc/xdg/autostart/bncsaui.desktop";
+    text = ''
+      [Desktop Entry]
+      Type=Application
+      Exec=${pkgs.fortinac}/bin/bncsaui
+      Name=FortiNAC Persistent Agent
+      Categories=System
+      '';
+  };
+  persistent-agent-conf = pkgs.writeTextFile {
+    name = "persistent-agent-conf";
+    destination = "/etc/xdg/com.bradfordnetworks/PersistentAgent.conf";
+    text = ''
+      [General]
+      allowedCiphers="TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256,TLS_CHACHA20_POLY1305_SHA256,ECDHE-RSA-AES128-GCM-SHA256"
+      caTrustDepth=4
+      caFile=/etc/ssl/certs/ca-bundle.crt
+      selfSignedAllowed=true
+      discoveryEnabled=true
+      restrictRoaming=false
+      homeServer=
+      allowedServers=
+      maxConnectInterval=960
+      macPollInterval=5
+      showDisconnectedIcon=false
+      showDisconnectedMsg=false
+      disconnectedMsg="Your network access may be restricted.  Persistent Agent is disconnected from Network Sentry."
+      ShowIcon=1
+      '';
+  };
+
   cfg = config.modules.aplnis;
+
 in
 {
   options.modules.aplnis = {
@@ -13,6 +48,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+
+    xdg.autostart.enable = true;
+    systemd.services.bndaemon = {
+      description = "bndaemon";
+      path = [ pkgs.fortinac ];
+      serviceConfig.ExecStart = ''${pkgs.fortinac}/bin/bndaemon -d -p /var/run/bndaemon.pid -l /var/log/bndaemon'';
+      serviceConfig.Restart = "on-failure";
+    };
 
     # Time Synchronization
     services.ntp.enable = true;
@@ -32,7 +75,9 @@ in
     programs.git.package = pkgs.git.override { openssl = pkgs.openssl_1_1; curl = curl-openssl-v1; };
 
     environment.systemPackages = [
-      pkgs.authy
+      bncsaui-autostart
+      persistent-agent-conf
+      pkgs.fortinac
     ];
 
     ########################################

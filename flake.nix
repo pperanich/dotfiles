@@ -108,6 +108,7 @@
         "narwhal-ld1" = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs outputs; };
           modules = [
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ./hosts/narwhal-ld1
           ];
         };

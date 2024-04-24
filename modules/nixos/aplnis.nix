@@ -159,6 +159,26 @@ in
     # [domain_realm]
     #  .dom1.jhuapl.edu = DOM1.JHUAPL.EDU
     #  dom1.jhuapl.edu = DOM1.JHUAPL.EDU
+    security.krb5 = {
+      enable = true;
+      settings = {
+        realms = {
+          "DOM1.JHUAPL.EDU" = {
+            kdc = [
+              "dom1.jhuapl.edu:88"
+            ];
+          };
+        };
+        domain_realm = {
+          "dom1.jhuapl.edu" = "DOM1.JHUAPL.EDU";
+        };
+        logging = {
+          default = "FILE:/var/log/krb5libs.log";
+          kdc = "FILE:/var/log/krb5kdc.log";
+          admin_server = "FILE:/var/log/kadmind.log";
+        };
+      };
+    };
 
     ########################################
     # endregion: krb5 setup
@@ -202,6 +222,10 @@ in
     # account required            pam_krb5.so minimum_uid=1000
     # # end of pam-auth-update config
     # account required            pam_tally2.so
+
+    # security.pam = {
+    #   enable = true;
+    # };
 
     ########################################
     # endregion: Firefox setup

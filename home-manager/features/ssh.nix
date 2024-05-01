@@ -7,14 +7,12 @@ in
     xorg.xauth
   ];
 
-  programs.ssh.enable = true;
-  programs.ssh.extraConfig = ''
-    Host *
-      ForwardX11 yes
-      XAuthLocation ${pkgs.xorg.xauth}/bin/xauth
-
-    Include config.d/*
-  '';
-
-  home.file.".ssh/config.d".source = mkMutableSymlink "ssh";
+  # programs.ssh.enable = true;
+  # programs.ssh.extraConfig = ''
+  #   Host *
+  #     ForwardX11 yes
+  #     XAuthLocation ${pkgs.xorg.xauth}/bin/xauth
+  #
+  #   Include config.d/*
+  # '';
 }

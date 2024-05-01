@@ -1,9 +1,9 @@
-[submodule "config/emacs-spacemacs"]
-	path = config/emacs-spacemacs
+[submodule "home/.config/emacs-spacemacs"]
+	path = home/.config/emacs-spacemacs
 	url = https://github.com/syl20bnr/spacemacs.git
-[submodule "config/emacs-doom"]
-	path = config/emacs-doom
+[submodule "home/.config/emacs-doom"]
+	path = home/.config/emacs-doom
 	url = https://github.com/doomemacs/doomemacs.git
-[submodule "config/emacs-chemacs"]
-	path = config/emacs-chemacs
+[submodule "home/.config/emacs"]
+	path = home/.config/emacs
 	url = https://github.com/plexus/chemacs2.git

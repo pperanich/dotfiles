@@ -1,0 +1,14 @@
+[filter "lfs"]
+        clean = "git-lfs clean -- %f"
+        process = "git-lfs filter-process"
+        required = true
+        smudge = "git-lfs smudge -- %f"
+
+[protocol "file"]
+        allow = "always"
+
+[includeIf "gitdir:~/Documents/repos/oss/"]
+        path = "./oss.gitconfig"
+
+[includeIf "gitdir:~/Documents/repos/work/"]
+        path = "./work.gitconfig"

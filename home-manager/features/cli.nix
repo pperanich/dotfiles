@@ -8,6 +8,7 @@ in
     gh  # Github CLI
     gitui  # Blazing fast terminal-ui for Git written in Rust
     git-filter-repo  # Quickly rewrite git repository history
+    stow  # Symlink farm manager
 
     bat  # Better cat
     eva  # A calculator REPL, similar to bc
@@ -71,23 +72,7 @@ in
     # glibtool  # GNU Libtool, a generic library support script
   ];
 
-  xdg = {
-    configFile = {
-      "tmux".source = mkMutableSymlink "tmux";
-      "tms".source = mkMutableSymlink "tms";
-      "direnv".source = mkMutableSymlink "direnv";
-      "shell_gpt".source = mkMutableSymlink "shell_gpt";
-    };
-  };
   home = {
-    file = {
-      ".npmrc".source = mkMutableSymlink "npmrc";
-      ".heygpt.toml".text = ''
-        model = "gpt-4-0125-preview"
-        api_base_url = "https://api.openai.com/v1"
-        stream = true
-        '';
-    };
     sessionPath = [
       "${config.home.homeDirectory}/.npm-global/bin"
         "${config.home.homeDirectory}/dotfiles/bin"

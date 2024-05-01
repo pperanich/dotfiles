@@ -4,11 +4,4 @@ let
 in
 {
   home.packages = with pkgs; [ ];
-
-  xdg.configFile = {
-    "spacebar".source = mkMutableSymlink "spacebar";
-    "sketchybar".source = mkMutableSymlink "sketchybar";
-    "yabai".source = mkMutableSymlink "yabai";
-    "skhd".source = mkMutableSymlink "skhd";
-  };
 }

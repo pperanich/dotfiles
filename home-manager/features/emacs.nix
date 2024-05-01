@@ -1,7 +1,6 @@
 { config, pkgs, lib, inputs, ... }:
 let
   inherit (config.home) homeDirectory;
-  inherit (config.lib.meta) mkMutableSymlink;
 
   emacs =
     if pkgs.stdenv.hostPlatform.isDarwin then
@@ -45,22 +44,9 @@ in
     package = emacs-with-pkgs;
   };
 
-  xdg = {
-    configFile = {
-      "emacs".source = mkMutableSymlink "emacs-chemacs/";
-      "chemacs".source = mkMutableSymlink "chemacs/";
-      "emacs-spacemacs".source = mkMutableSymlink "emacs-spacemacs/";
-      "spacemacs".source = mkMutableSymlink "spacemacs/";
-      "emacs-doom".source = mkMutableSymlink "emacs-doom/";
-      # "doom".source = mkMutableSymlink "doom/";
-      "doom-literate".source = mkMutableSymlink "doom-literate/";
-      "yasnippet".source = mkMutableSymlink "yasnippet/";
-    };
-  };
-
   home = {
-    sessionPath = [ "${homeDirectory}/dotfiles/config/emacs-doom/bin" ];
-    sessionVariables = { DOOMDIR = "${homeDirectory}/dotfiles/config/doom-literate"; };
+    sessionPath = [ "${homeDirectory}/.config/emacs-doom/bin" ];
+    sessionVariables = { DOOMDIR = "${homeDirectory}/.config/doom-literate"; };
     packages = with pkgs; [
       nodePackages.pyright
       jansson

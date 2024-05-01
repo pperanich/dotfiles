@@ -47,7 +47,5 @@ in
     ];
     sessionPath = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin [ "${homeDirectory}/.docker/bin" ];
   };
-
-  xdg.configFile."alacritty".source = mkMutableSymlink "alacritty";
 }
 

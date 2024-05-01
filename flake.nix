@@ -131,7 +131,7 @@
                 users.peranpl1 = {
                   imports = [
                     ./home-manager
-                    # ./home-manager/features/emacs.nix
+                    ./home-manager/features/emacs.nix
                     ./home-manager/features/desktop.nix
                     ./home-manager/features/tex.nix
                     ./home-manager/features/darwin.nix

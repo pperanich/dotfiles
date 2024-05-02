@@ -66,7 +66,7 @@
 
 (setq flymake-allowed-file-name-masks nil)
 
-(setq doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 24)
+(setq doom-font (font-spec :family "Iosevka Nerd Font" :size 24)
       doom-big-font (font-spec :family "Iosevka Nerd Font Mono" :size 36)
       doom-variable-pitch-font (font-spec :family "Iosevka Nerd Font" :size 26)
       doom-unicode-font (font-spec :family "Iosevka Nerd Font Mono")

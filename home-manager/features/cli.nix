@@ -69,7 +69,7 @@ in
     reattach-to-user-namespace  # A wrapper that provides access to the Mac OS X pasteboard service
     pam-reattach  # Reattach to the user's GUI session on macOS during authentication (for Touch ID support in tmux)
     xquartz  # Version of the X.Org X Window System that runs on macOS
-    # glibtool  # GNU Libtool, a generic library support script
+    glibtool  # GNU Libtool, a generic library support script. Needed to compile libvterm on Mac
   ];
 
   home = {

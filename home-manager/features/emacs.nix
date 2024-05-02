@@ -39,7 +39,7 @@ in
   programs.emacs = {
     enable = true;
     package = emacs;
-    extraPackages = (epkgs: [ epkgs.treesit-grammars.with-all-grammars ]);
+    extraPackages = (epkgs: [ epkgs.treesit-grammars.with-all-grammars epkgs.vterm ]);
   };
 
   home = {

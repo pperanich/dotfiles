@@ -1,16 +1,16 @@
 (
  ("spacemacs" . (
-                 (user-emacs-directory . "$XDG_CONFIG_HOME/emacs-spacemacs/")
-                 (env . (("SPACEMACSDIR" . "$XDG_CONFIG_HOME/spacemacs/")))
+                 (user-emacs-directory . "~/.config/emacs-spacemacs/")
+                 (env . (("SPACEMACSDIR" . "~/.config/spacemacs/")))
                  )
   )
  ("doom" . (
-            (user-emacs-directory . "$XDG_CONFIG_HOME/emacs-doom")
+            (user-emacs-directory . "~/.config/emacs-doom")
             )
   )
  ("doom-literate" . (
-            (user-emacs-directory . "$XDG_CONFIG_HOME/emacs-doom")
-            (env . (("DOOMDIR" . "$XDG_CONFIG_HOME/doom-literate/")))
+            (user-emacs-directory . "~/.config/emacs-doom")
+            (env . (("DOOMDIR" . "~/.config/doom-literate/")))
             )
   )
  )

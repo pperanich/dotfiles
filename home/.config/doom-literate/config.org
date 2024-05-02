@@ -477,7 +477,7 @@ trying out JetBrains Mono though. So far I have mixed feelings on it, some
 aspects are nice, but on others I prefer Fira.
 
 #+begin_src emacs-lisp :tangle config.el
-(setq doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 24)
+(setq doom-font (font-spec :family "Iosevka Nerd Font" :size 24)
       doom-big-font (font-spec :family "Iosevka Nerd Font Mono" :size 36)
       doom-variable-pitch-font (font-spec :family "Iosevka Nerd Font" :size 26)
       doom-unicode-font (font-spec :family "Iosevka Nerd Font Mono")
@@ -8377,7 +8377,7 @@ able to handle anyway. For them we define a table of LaTeX translations
 | א         | \(\aleph\)       |
 | ב         | \(\beth\)       |
 | ד         | \(\daleth\) |
-| ג          | \(\gimel\)        |
+| ג          | \(\gimel\)       |
 
 #+name: gen-latex-non-ascii-char-substitutions
 #+begin_src emacs-lisp :noweb-ref none :var latex-non-ascii-char-substitutions=latex-non-ascii-char-substitutions

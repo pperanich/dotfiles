@@ -82,6 +82,8 @@
 (package! doct
   :recipe (:host github :repo "progfolio/doct"))
 
+(package! org-roam :disable t)
+
 (package! org-roam-ui :recipe (:host github :repo "org-roam/org-roam-ui" :files ("*.el" "out")))
 (package! websocket) ; dependency of `org-roam-ui'
 

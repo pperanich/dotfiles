@@ -225,7 +225,7 @@
             }
           ];
         };
-        "peranpl1@redd-holobrain" = home-manager.lib.homeManagerConfiguration {
+        "peranpl1" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = [
@@ -234,7 +234,6 @@
               home.username = "peranpl1";
               imports = [
                 ./home-manager/features/aplnis.nix
-                # ./home-manager/features/emacs.nix
                 ./home-manager/features/desktop.nix
                 ./home-manager/features/standalone.nix
                 ./home-manager/features/fonts.nix

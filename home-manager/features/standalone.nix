@@ -11,5 +11,5 @@ in
     };
   };
   targets.genericLinux.enable = true;
-  homeDirectory = "/${homePrefix}/${config.home.username}";
+  home.homeDirectory = "/${homePrefix}/${config.home.username}";
 }

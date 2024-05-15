@@ -11,6 +11,10 @@
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
+    atuin = prev.atuin.overrideAttrs (old: {
+        # as cursed as doing mitigations=off in the kernel command line
+        patches = [ ./patches/0001-make-atuin-on-zfs-fast-again.patch ];
+    });
     # tmux-sessionizer = prev.tmux-sessionizer.override (old: rec {
     #   rustPlatform = old.rustPlatform // {
     #     buildRustPackage = args: old.rustPlatform.buildRustPackage (args // {
@@ -33,7 +37,7 @@
     #   patches =
     #     (old.patches or [ ])
     #     ++ [
-    #       ../home-manager/features/patches/0001-Expand-env-vars-and-tilde-for-search_dirs.patch
+    #       ./patches/0001-Expand-env-vars-and-tilde-for-search_dirs.patch
     #     ];
     # });
     heygpt = prev.heygpt.overrideAttrs (oldAttrs: rec {

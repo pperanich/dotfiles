@@ -3,3 +3,5 @@ preston-private.el
 packer_compiled.lua
 .direnv/
 result
+lazy-lock.json
+lazyvim.json

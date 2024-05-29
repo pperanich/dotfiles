@@ -41,6 +41,9 @@
   nixpkgs = {
     overlays = builtins.attrValues outputs.overlays;
     config = {
+      permittedInsecurePackages = [
+        "openssl-1.1.1w"
+      ];
       allowUnfree = true;
       allowUnfreePredicate = _: true;
       packageOverrides = _: {

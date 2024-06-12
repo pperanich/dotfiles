@@ -2,7 +2,8 @@
 {
   # This one brings our custom packages from the 'pkgs' directory
   emacs-overlay = inputs.emacs-overlay.overlays.default;
-  neovim-overlay = inputs.neovim-nightly-overlay.overlay;
+  neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
+
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
 
@@ -40,7 +41,7 @@
     #       ./patches/0001-Expand-env-vars-and-tilde-for-search_dirs.patch
     #     ];
     # });
-    heygpt = prev.heygpt.overrideAttrs (oldAttrs: rec {
+    heygpt = prev.heygpt.overrideAttrs (oldAttrs: {
       buildInputs = oldAttrs.buildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.darwin.apple_sdk.frameworks.SystemConfiguration ];
     });
     glibtool = final.libtool.overrideAttrs (oldAttrs: {

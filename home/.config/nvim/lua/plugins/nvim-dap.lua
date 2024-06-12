@@ -2,7 +2,6 @@ return {
   "mfussenegger/nvim-dap",
 
   dependencies = {
-
     -- fancy UI for the debugger
     {
       "rcarriga/nvim-dap-ui",
@@ -103,12 +102,28 @@ return {
         { text = sign[1], texthl = sign[2] or "DiagnosticInfo", linehl = sign[3], numhl = sign[3] }
       )
     end
-    local port = 50000 -- Example fixed port, consider making this dynamic or configurable
+
     local dap = require("dap")
     dap.adapters["probe-rs-debug"] = {
-      type = "executable",
-      command = "probe-rs",
-      args = { "dap-server", "--port", tostring(port) },
+      type = "server",
+      port = "${port}",
+      executable = {
+        command = vim.fn.expand("$HOME/.cargo/bin/probe-rs"),
+        args = { "dap-server", "--port", "${port}" },
+      },
     }
+    require("dap.ext.vscode").type_to_filetypes["probe-rs-debug"] = { "rust" }
+    -- dap.listeners.before["event_probe-rs-rtt-channel-config"]["plugins.nvim-dap-probe-rs"] = function(session, body)
+    --   print("it works before", vim.inspect(body))
+    -- end
+    -- dap.listeners.after["event_probe-rs-rtt-channel-config"]["plugins.nvim-dap-probe-rs"] = function(session, body)
+    --   print("it works after", vim.inspect(body))
+    -- end
+    -- dap.listeners.after["event_probe-rs-show-message"]["plugins.nvim-dap-probe-rs"] = function(session, body)
+    --   print("it works after", vim.inspect(body.message))
+    -- end
+    dap.listeners.before["event_probe-rs-rtt-channel-config"]["plugins.nvim-dap-probe-rs"] = function(session, body)
+      session:request("rttWindowOpened", { body.channelNumber, true })
+    end
   end,
 }

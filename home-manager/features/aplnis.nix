@@ -1,16 +1,20 @@
-{ config, pkgs, lib, inputs, ... }:
+{ pkgs, outputs, ... }:
 let
 ssl-cert-path = if pkgs.stdenv.hostPlatform.isDarwin then
-  "/Users/peranpl1/Documents/certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer"
+  "/usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
 else
   "/etc/ssl/certs/ca-certificates.crt";
 
-curl-openssl-v1 = pkgs.curl.override { openssl = pkgs.openssl_1_1; };
-git-openssl-v1 = pkgs.git.override { openssl = pkgs.openssl_1_1; curl = curl-openssl-v1; };
+
+  aplnis-overlay = final: prev: {
+    curl-aplnis = prev.curl.override { openssl = prev.openssl_1_1; };
+    git-aplnis = prev.git.override { openssl = prev.openssl_1_1; curl = final.curl-aplnis; };
+  };
 
 in
 {
   nixpkgs = {
+    overlays = builtins.attrValues outputs.overlays ++ [ aplnis-overlay ];
     config = {
       permittedInsecurePackages = [
         "openssl-1.1.1w"
@@ -28,9 +32,10 @@ in
     POETRY_REQUEST_TIMEOUT="30";
     PIP_DEFAULT_TIMEOUT="30";
   };
-  programs.git.package = git-openssl-v1;
   home.packages = with pkgs; [
     openssl_1_1
+    git-aplnis
+    curl-aplnis
     aplnis-env # Small shell script to set and unset environment variables to work around VPN.
   ];
 }

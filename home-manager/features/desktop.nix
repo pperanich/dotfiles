@@ -11,7 +11,6 @@ in
     packages = with pkgs; [
       feh
       libsecret
-      zoom-us
       glib
       gimp
       inkscape
@@ -26,6 +25,7 @@ in
       # postman
       # kicad
     ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+      zoom-us
       hdfview
       firefox
       bitwarden

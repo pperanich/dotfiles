@@ -1,7 +1,4 @@
-{ config, pkgs, lib, inputs, ... }:
-let
-  inherit (config.lib.meta) mkMutableSymlink;
-in
+{ pkgs, ... }:
 {
   home.sessionVariables = { EDITOR = "nvim"; };
   home.packages = with pkgs; [
@@ -12,7 +9,7 @@ in
 
   programs.neovim = {
     enable = true;
-    package = pkgs.neovim-nightly;
+    package = pkgs.neovim;
 
     plugins = with pkgs.vimPlugins; [
       nvim-treesitter.withAllGrammars

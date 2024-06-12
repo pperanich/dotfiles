@@ -6,6 +6,8 @@ in
   home.packages = with pkgs; [
     act  # Run github workflows locally
     gh  # Github CLI
+    # git
+    git-lfs
     gitui  # Blazing fast terminal-ui for Git written in Rust
     git-filter-repo  # Quickly rewrite git repository history
     stow  # Symlink farm manager
@@ -39,7 +41,7 @@ in
     rye  # A tool to easily manage python dependencies and environments
 
     heygpt  # A simple command-line interface for ChatGPT API
-    shell_gpt  # Access ChatGPT from your terminal
+    shell-gpt  # Access ChatGPT from your terminal
 
     gnused  # sed (stream editor) is a non-interactive command-line text editor.
     gnutls  # The GNU Transport Layer Security Library

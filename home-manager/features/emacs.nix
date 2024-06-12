@@ -46,7 +46,7 @@ in
     sessionPath = [ "${homeDirectory}/.config/emacs-doom/bin" ];
     sessionVariables = { DOOMDIR = "${homeDirectory}/.config/doom-literate"; };
     packages = with pkgs; [
-      nodePackages.pyright
+      pyright
       jansson
       djvulibre
     ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [

@@ -49,6 +49,22 @@ layout_rye() {
 	export VIRTUAL_ENV
 }
 
+layout_venv() {
+
+	if [[ -d ".venv" ]]; then
+		VIRTUAL_ENV="$(pwd)/.venv"
+	fi
+
+	if [[ -z $VIRTUAL_ENV || ! -d $VIRTUAL_ENV ]]; then
+		log_status "No virtual environment exists. Please create."
+		exit
+	fi
+
+	PATH_add "$VIRTUAL_ENV/bin"
+	export VENV_ACTIVE=1
+	export VIRTUAL_ENV
+}
+
 layout_micromamba() {
 	if [ -n "$1" ]; then
 		# Explicit environment name from layout command.

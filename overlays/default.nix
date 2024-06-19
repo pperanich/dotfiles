@@ -16,23 +16,22 @@
         # as cursed as doing mitigations=off in the kernel command line
         patches = [ ./patches/0001-make-atuin-on-zfs-fast-again.patch ];
     });
-    # tmux-sessionizer = prev.tmux-sessionizer.override (old: rec {
-    #   rustPlatform = old.rustPlatform // {
-    #     buildRustPackage = args: old.rustPlatform.buildRustPackage (args // {
-    #       # override src/cargoHash/buildFeatures here
-    #       src = prev.fetchFromGitHub {
-    #         owner = "jrmoulton";
-    #         repo = "tmux-sessionizer";
-    #         rev = "1add07dbaf6310393bf0791ad4143e16641b2a23";
-    #         hash = "sha256-ORMB4SoKDj4ZrFtZJMbasr6aBZhQKJAHDxMeLpZX4cg=";
-    #       };
-    #       cargoHash = "sha256-NZvx8iw7Fxd2qePr5fyo8rqOMB8xF2vDi0FZ9KWdfuA=";
-    #     });
-    #     OPENSSL_NO_VENDOR=0;
-    #     nativeBuildInputs = [ ];
-    #     buildInputs = [ ] ++ prev.lib.optionals prev.stdenv.isDarwin [ final.darwin.apple_sdk.frameworks.Security ];
-    #   };
-    # });
+    tmux-sessionizer = prev.tmux-sessionizer.override (old: rec {
+      rustPlatform = old.rustPlatform // {
+        buildRustPackage = args: old.rustPlatform.buildRustPackage (args // {
+          # override src/cargoHash/buildFeatures here
+          src = prev.fetchFromGitHub {
+            owner = "jrmoulton";
+            repo = "tmux-sessionizer";
+            rev = "bc2440c880f307b3073c0fdaefea89b98c54acc7";
+            hash = "sha256-ORMB4SoKDj4ZrFtZJMbasr6aBZhQKJAHDxMeLpZX4cg=";
+          };
+          cargoHash = "sha256-FhoHrIaYhdTHhmXLcesVpmBOzhFu/OO8c9di9XZm2eg=";
+        });
+        nativeBuildInputs = [ ];
+        buildInputs = [ ] ++ prev.lib.optionals prev.stdenv.isDarwin [ final.darwin.apple_sdk.frameworks.Security ];
+      };
+    });
     # sunshine = prev.sunshine.override { cudaSupport = true; };
     # tmux-sessionizer = prev.tmux-sessionizer.overrideAttrs (old: {
     #   patches =

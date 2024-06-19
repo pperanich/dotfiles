@@ -9,6 +9,17 @@ else
   aplnis-overlay = final: prev: {
     curl-aplnis = prev.curl.override { openssl = prev.openssl_1_1; };
     git-aplnis = prev.git.override { openssl = prev.openssl_1_1; curl = final.curl-aplnis; };
+    rustPlatform = prev.rustPlatform // {
+      buildRustPackage = args: prev.rustPlatform.buildRustPackage.override{
+        fetchCargoTarball = prev.rustPlatform.fetchCargoTarball.override {
+          cacert = prev.cacert.override {
+            extraCertificateFiles = [ 
+              /usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt
+            ];
+          };
+        };
+      } (args // { });
+    };
   };
 
 in

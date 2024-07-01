@@ -29,7 +29,6 @@ in
         export REQUESTS_CA_BUNDLE=${ssl-cert-path}
         export NODE_EXTRA_CA_CERTS=${ssl-cert-path}
         export CURL_CA_BUNDLE=${ssl-cert-path}
-        export GIT_SSL_CAINFO=${ssl-cert-path}
         if ${darwin};
         then
           matches=$(rg ${ssl-cert-path} /Library/LaunchDaemons/org.nixos.nix-daemon.plist)
@@ -47,7 +46,6 @@ in
         unset REQUESTS_CA_BUNDLE
         unset NODE_EXTRA_CA_CERTS
         unset CURL_CA_BUNDLE
-        unset GIT_SSL_CAINFO
         if ${darwin};
         then
           matches=$(rg ${ssl-cert-path} /Library/LaunchDaemons/org.nixos.nix-daemon.plist)

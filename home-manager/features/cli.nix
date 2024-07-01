@@ -38,11 +38,12 @@ in
 
     micromamba  # Reimplementation of the conda package manager
     pixi  # Package management made easy
-    rye  # A tool to easily manage python dependencies and environments
+    # rye  # A tool to easily manage python dependencies and environments
 
     heygpt  # A simple command-line interface for ChatGPT API
     shell-gpt  # Access ChatGPT from your terminal
 
+    hdf5
     gnused  # sed (stream editor) is a non-interactive command-line text editor.
     gnutls  # The GNU Transport Layer Security Library
     sshfs  # FUSE-based filesystem that allows remote filesystems to be mounted over SSH

@@ -39,9 +39,9 @@ in
     REQUESTS_CA_BUNDLE=ssl-cert-path;
     NODE_EXTRA_CA_CERTS=ssl-cert-path;
     CURL_CA_BUNDLE=ssl-cert-path;
-    GIT_SSL_CAINFO=ssl-cert-path;
-    POETRY_REQUEST_TIMEOUT="30";
-    PIP_DEFAULT_TIMEOUT="30";
+    POETRY_REQUEST_TIMEOUT="600";
+    PIP_DEFAULT_TIMEOUT="600";
+    UV_HTTP_TIMEOUT="600";
   };
   home.packages = with pkgs; [
     openssl_1_1

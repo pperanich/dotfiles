@@ -1,3 +1,6 @@
 [user]
 name = Preston Peranich
 email = preston.peranich@jhuapl.edu
+
+[http "https://gitlab.jhuapl.edu/"]
+sslCAInfo = /etc/ssl/certs/ca-certificates.crt

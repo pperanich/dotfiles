@@ -2,25 +2,26 @@ return {
   "jackMort/ChatGPT.nvim",
   event = "VeryLazy",
   config = function()
-    require("chatgpt").setup({
-      require("which-key").register({
-        c = {
-          name = "ChatGPT",
-          c = { "<cmd>ChatGPT<CR>", "ChatGPT" },
-          e = { "<cmd>ChatGPTEditWithInstruction<CR>", "Edit with instruction", mode = { "n", "v" } },
-          g = { "<cmd>ChatGPTRun grammar_correction<CR>", "Grammar Correction", mode = { "n", "v" } },
-          t = { "<cmd>ChatGPTRun translate<CR>", "Translate", mode = { "n", "v" } },
-          k = { "<cmd>ChatGPTRun keywords<CR>", "Keywords", mode = { "n", "v" } },
-          d = { "<cmd>ChatGPTRun docstring<CR>", "Docstring", mode = { "n", "v" } },
-          a = { "<cmd>ChatGPTRun add_tests<CR>", "Add Tests", mode = { "n", "v" } },
-          o = { "<cmd>ChatGPTRun optimize_code<CR>", "Optimize Code", mode = { "n", "v" } },
-          s = { "<cmd>ChatGPTRun summarize<CR>", "Summarize", mode = { "n", "v" } },
-          f = { "<cmd>ChatGPTRun fix_bugs<CR>", "Fix Bugs", mode = { "n", "v" } },
-          x = { "<cmd>ChatGPTRun explain_code<CR>", "Explain Code", mode = { "n", "v" } },
-          r = { "<cmd>ChatGPTRun roxygen_edit<CR>", "Roxygen Edit", mode = { "n", "v" } },
-          l = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis", mode = { "n", "v" } },
-        },
-      }, { prefix = "<leader>c" }),
+    require("chatgpt").setup()
+    local wk = require("which-key")
+    wk.add({
+      { "<leader>cc", group = "ChatGPT" },
+      { "<leader>ccc", "<cmd>ChatGPT<CR>", desc = "ChatGPT" },
+      {
+        mode = { "n", "v" },
+        { "<leader>cca", "<cmd>ChatGPTRun add_tests<CR>", desc = "Add Tests" },
+        { "<leader>ccd", "<cmd>ChatGPTRun docstring<CR>", desc = "Docstring" },
+        { "<leader>cce", "<cmd>ChatGPTEditWithInstruction<CR>", desc = "Edit with instruction" },
+        { "<leader>ccf", "<cmd>ChatGPTRun fix_bugs<CR>", desc = "Fix Bugs" },
+        { "<leader>ccg", "<cmd>ChatGPTRun grammar_correction<CR>", desc = "Grammar Correction" },
+        { "<leader>cck", "<cmd>ChatGPTRun keywords<CR>", desc = "Keywords" },
+        { "<leader>ccl", "<cmd>ChatGPTRun code_readability_analysis<CR>", desc = "Code Readability Analysis" },
+        { "<leader>cco", "<cmd>ChatGPTRun optimize_code<CR>", desc = "Optimize Code" },
+        { "<leader>ccr", "<cmd>ChatGPTRun roxygen_edit<CR>", desc = "Roxygen Edit" },
+        { "<leader>ccs", "<cmd>ChatGPTRun summarize<CR>", desc = "Summarize" },
+        { "<leader>cct", "<cmd>ChatGPTRun translate<CR>", desc = "Translate" },
+        { "<leader>ccx", "<cmd>ChatGPTRun explain_code<CR>", desc = "Explain Code" },
+      },
     })
   end,
   dependencies = {

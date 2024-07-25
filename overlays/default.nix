@@ -24,9 +24,9 @@
             owner = "jrmoulton";
             repo = "tmux-sessionizer";
             rev = "bc2440c880f307b3073c0fdaefea89b98c54acc7";
-            hash = "sha256-ORMB4SoKDj4ZrFtZJMbasr6aBZhQKJAHDxMeLpZX4cg=";
+            hash = "sha256-kbYLLtgGQGycFmjR8RYsm0e1xMCd5yCEqaj5Wxhq+mY=";
           };
-          cargoHash = "sha256-FhoHrIaYhdTHhmXLcesVpmBOzhFu/OO8c9di9XZm2eg=";
+          cargoHash = "sha256-thFefGTRznWv6wJF+qK4QVtZjORHw3WZcsYJ4ktCfSU=";
         });
         nativeBuildInputs = [ ];
         buildInputs = [ ] ++ prev.lib.optionals prev.stdenv.isDarwin [ final.darwin.apple_sdk.frameworks.Security ];

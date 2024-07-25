@@ -1,7 +1,4 @@
-{ config, pkgs, lib, inputs, ... }:
-let
-  inherit (config.lib.meta) mkMutableSymlink;
-in
+{ config, pkgs, lib, ... }:
 {
   home.packages = with pkgs; [
     act  # Run github workflows locally
@@ -10,8 +7,10 @@ in
     git-lfs
     gitui  # Blazing fast terminal-ui for Git written in Rust
     git-filter-repo  # Quickly rewrite git repository history
+    lazygit  # A simple terminal UI for git commands
     stow  # Symlink farm manager
 
+    atool  # Easier packing and unpacking of archives
     bat  # Better cat
     eva  # A calculator REPL, similar to bc
     bottom  # System viewer

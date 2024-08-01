@@ -13,5 +13,5 @@
 [includeIf "gitdir:~/Documents/repos/work/"]
   path = "./work.gitconfig"
 
-; [http]
-;   sslCAInfo = /usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt
+[http "https://gitlab.jhuapl.edu/"]
+sslCAInfo = /etc/ssl/certs/ca-certificates.crt

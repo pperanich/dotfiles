@@ -3,7 +3,7 @@
 let
   ssl-cert-path =
     if stdenv.hostPlatform.isDarwin then
-      "/etc/ssl/certs/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
+      "/usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
     else
       "/etc/ssl/certs/ca-certificates.crt";
 

@@ -14,7 +14,7 @@
       experimental-features = [ "nix-command" "flakes" "repl-flake" ];
       warn-dirty = false;
     };
-    envVars = { NIX_SSL_CERT_FILE = "/etc/ssl/certs/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"; };
+    envVars = { NIX_SSL_CERT_FILE = "/usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"; };
     extraOptions = ''
       extra-platforms = x86_64-darwin aarch64-darwin
       '';

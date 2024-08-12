@@ -56,6 +56,9 @@
     graphviz  # Graph visualization tools
 
     nodejs  # Event-driven I/O framework for the V8 JavaScript engine
+    bun  # Incredibly fast JavaScript runtime, bundler, test runner, and package manager
+    deno  # A modern runtime for JavaScript and TypeScript.
+    tailwindcss  # Rapidly build modern websites without ever leaving your HTML.
 
     qpdf  # A C++ library and set of programs that inspect and manipulate the structure of PDF files
     cmake  # Cross-platform, open-source build system generator

@@ -38,7 +38,7 @@ in
       ollama
       nixcasks.docker
       nixcasks.shottr
-      nixcasks.tailscale
+      # nixcasks.tailscale
       nixcasks.moonlight
       # docker-desktop
     ] ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [

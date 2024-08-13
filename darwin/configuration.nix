@@ -100,12 +100,9 @@
   # Add ability to used TouchID for sudo authentication
   security.pam.enableSudoTouchIdAuth = true;
 
-  fonts = {
-    fontDir.enable = true;
-    fonts = with pkgs; [
-      (nerdfonts.override { fonts = [ "Iosevka" "JetBrainsMono" ]; })
-    ];
-  };
+  fonts.packages = with pkgs; [
+    (nerdfonts.override { fonts = [ "Iosevka" "JetBrainsMono" ]; })
+  ];
 
   homebrew = {
     enable = true;

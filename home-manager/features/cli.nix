@@ -36,7 +36,7 @@
     statix  # Lints and suggestions for the nix programming language
 
     micromamba  # Reimplementation of the conda package manager
-    pixi  # Package management made easy
+    # pixi  # Package management made easy
     # rye  # A tool to easily manage python dependencies and environments
 
     heygpt  # A simple command-line interface for ChatGPT API

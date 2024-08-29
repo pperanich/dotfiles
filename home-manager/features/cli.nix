@@ -3,6 +3,7 @@
   home.packages = with pkgs; [
     act  # Run github workflows locally
     gh  # Github CLI
+    glab  # Gitlab CLI
     # git
     git-lfs
     gitui  # Blazing fast terminal-ui for Git written in Rust

@@ -27,5 +27,15 @@ in
   ++ lib.optionals stdenv.hostPlatform.isLinux [ systemd ];
 
   home.sessionPath = [ "\${CARGO_HOME:-${homeDirectory}/.cargo}/bin" ];
+
+  # cwi = pkgs.writeShellScriptBin "cwi" ''
+  #   cargo watch -x "install --path ."
+  # '';
+  # cwe = pkgs.writeShellScriptBin "cwi" ''
+  #   cargo watch -q -c -x "run -q --example '$1'"
+  # '';
+  # cwt = pkgs.writeShellScriptBin "cwi" ''
+  #   cargo watch -q -c -x "test -- --nocapture"
+  # '';
 }
 

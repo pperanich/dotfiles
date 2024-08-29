@@ -84,6 +84,7 @@
         "${config.home.homeDirectory}/dotfiles/bin"
         "${config.home.homeDirectory}/.pixi/bin"
         "${config.home.homeDirectory}/.rye/shims"
+        "${config.home.homeDirectory}/.cargo/bin"
     ];
   };
 

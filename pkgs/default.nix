@@ -3,7 +3,6 @@
 
 { pkgs ? (import ../nixpkgs.nix) { } }: {
   # example = pkgs.callPackage ./example { };
-  fortinac = pkgs.callPackage ./fortinac { };
   aplnis-env = pkgs.callPackage ./aplnis-env { };
   apple-fonts = pkgs.callPackage ./apple-fonts { };
   ai-buddy = pkgs.callPackage ./ai-buddy { };

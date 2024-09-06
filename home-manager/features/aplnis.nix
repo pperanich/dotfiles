@@ -1,10 +1,15 @@
-{ pkgs, outputs, ... }:
+{ pkgs, outputs, lib, ... }:
 let
-ssl-cert-path = if pkgs.stdenv.hostPlatform.isDarwin then
-  "/usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
-else
-  "/etc/ssl/certs/ca-certificates.crt";
+  ssl-cert-path = if pkgs.stdenv.hostPlatform.isDarwin then
+    "/usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
+  else
+    "/etc/ssl/certs/ca-certificates.crt";
 
+  extra-certs = [
+    /usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt
+  ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    /usr/share/ca-certificates/jhuapl/JHUAPL-MS-Root-CA-05-21-2038.crt
+  ];
 
   aplnis-overlay = final: prev: {
     curl-aplnis = prev.curl.override { openssl = prev.openssl_1_1; };
@@ -13,9 +18,7 @@ else
       buildRustPackage = args: prev.rustPlatform.buildRustPackage.override{
         fetchCargoTarball = prev.rustPlatform.fetchCargoTarball.override {
           cacert = prev.cacert.override {
-            extraCertificateFiles = [ 
-              /usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt
-            ];
+            extraCertificateFiles = extra-certs;
           };
         };
       } (args // { });

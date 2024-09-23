@@ -39,6 +39,28 @@ yabai -m rule --add title='Preferences$' manage=off
 # float settings windows
 yabai -m rule --add title='Settings$' manage=off
 
+# label spaces
+yabai -m space 1 --label mail
+yabai -m space 2 --label slack
+yabai -m space 3 --label web
+yabai -m space 4 --label term
+yabai -m space 5 --label code
+yabai -m space 6 --label notes
+yabai -m space 7 --label social
+yabai -m space 8 --label zoom
+
+# Assign apps to spaces
+yabai -m rule --add app="^Microsoft Outlook$" space=mail
+yabai -m rule --add app="^Slack$" space=slack
+yabai -m rule --add app="^Safari$" space=web
+yabai -m rule --add app="^Brave Browser$" space=web
+yabai -m rule --add app="^Alacritty$" space=term
+yabai -m rule --add app="^Code$" space=code
+yabai -m rule --add app="^Obsidian$" space=notes
+yabai -m rule --add app="^Messages$" space=social
+yabai -m rule --add app="^Discord$" space=social
+yabai -m rule --add app="^Element$" space=social
+
 # spacebar padding on top screen
 SKETCHYBAR_HEIGHT=$(sketchybar --query bar | jq '.height + (.y_offset*2)')
 yabai -m config external_bar all:"$SKETCHYBAR_HEIGHT":0

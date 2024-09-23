@@ -71,6 +71,7 @@
     update-display  # Re-export DISPLAY in tmux shells.
     # ai-buddy  # AI assistant for projects
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    lazydocker  # A simple terminal UI for both docker and docker-compose
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     reattach-to-user-namespace  # A wrapper that provides access to the Mac OS X pasteboard service
     pam-reattach  # Reattach to the user's GUI session on macOS during authentication (for Touch ID support in tmux)

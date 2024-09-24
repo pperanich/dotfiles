@@ -1,7 +1,4 @@
-{ pkgs, lib, inputs, outputs, config, ... }:
-let
-  inherit (config.users.users.peranpl1) home;
-in
+{ pkgs, ... }:
 {
 
   environment.systemPackages = [ pkgs.skhd ];

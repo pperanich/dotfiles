@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, outputs, config, ... }:
+{ pkgs, ... }:
 {
   services = {
     sketchybar = {

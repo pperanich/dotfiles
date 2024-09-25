@@ -13,6 +13,8 @@ alt + shift - r : \
   launchctl kickstart -k "gui/$(id -u)/org.nixos.yabai" && \
   skhd --reload
 
+alt + shift - e : yabai -m rule --apply
+
 ####### Application Blacklists #############
 #.blacklist [
 #  "IntelliJ IDEA"

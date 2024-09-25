@@ -56,6 +56,7 @@ yabai -m rule --add app="^Safari$" space=web
 yabai -m rule --add app="^Brave Browser$" space=web
 yabai -m rule --add app="^Alacritty$" space=term
 yabai -m rule --add app="^Code$" space=code
+yabai -m rule --add app="^Visual Studio Code$" space=code
 yabai -m rule --add app="^Obsidian$" space=notes
 yabai -m rule --add app="^Messages$" space=social
 yabai -m rule --add app="^Discord$" space=social

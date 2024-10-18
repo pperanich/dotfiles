@@ -10,6 +10,7 @@
     git-filter-repo  # Quickly rewrite git repository history
     lazygit  # A simple terminal UI for git commands
     stow  # Symlink farm manager
+    rclone  # Command line program to sync files and directories to and from major cloud storage
 
     atool  # Easier packing and unpacking of archives
     bat  # Better cat

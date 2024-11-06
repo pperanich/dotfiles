@@ -4,7 +4,7 @@ let
 in
 {
   home.packages = with pkgs; [
-    xorg.xauth
+    # xorg.xauth
   ];
 
   # programs.ssh.enable = true;

@@ -16,30 +16,6 @@
         # as cursed as doing mitigations=off in the kernel command line
         patches = [ ./patches/0001-make-atuin-on-zfs-fast-again.patch ];
     });
-    tmux-sessionizer = prev.tmux-sessionizer.override (old: rec {
-      rustPlatform = old.rustPlatform // {
-        buildRustPackage = args: old.rustPlatform.buildRustPackage (args // {
-          # override src/cargoHash/buildFeatures here
-          src = prev.fetchFromGitHub {
-            owner = "jrmoulton";
-            repo = "tmux-sessionizer";
-            rev = "bc2440c880f307b3073c0fdaefea89b98c54acc7";
-            hash = "sha256-kbYLLtgGQGycFmjR8RYsm0e1xMCd5yCEqaj5Wxhq+mY=";
-          };
-          cargoHash = "sha256-thFefGTRznWv6wJF+qK4QVtZjORHw3WZcsYJ4ktCfSU=";
-        });
-        nativeBuildInputs = [ ];
-        buildInputs = [ ] ++ prev.lib.optionals prev.stdenv.isDarwin [ final.darwin.apple_sdk.frameworks.Security ];
-      };
-    });
-    # sunshine = prev.sunshine.override { cudaSupport = true; };
-    # tmux-sessionizer = prev.tmux-sessionizer.overrideAttrs (old: {
-    #   patches =
-    #     (old.patches or [ ])
-    #     ++ [
-    #       ./patches/0001-Expand-env-vars-and-tilde-for-search_dirs.patch
-    #     ];
-    # });
     heygpt = prev.heygpt.overrideAttrs (oldAttrs: {
       buildInputs = oldAttrs.buildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.darwin.apple_sdk.frameworks.SystemConfiguration ];
     });

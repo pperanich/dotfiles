@@ -11,7 +11,7 @@
     settings = {
       trusted-users = [ "root" "peranpl1" ];
       # Enable flakes and new 'nix' command
-      experimental-features = [ "nix-command" "flakes" "repl-flake" ];
+      experimental-features = [ "nix-command" "flakes" ];
       warn-dirty = false;
     };
     envVars = { NIX_SSL_CERT_FILE = "/usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"; };

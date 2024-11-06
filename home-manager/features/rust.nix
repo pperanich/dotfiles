@@ -2,8 +2,21 @@
 let
   inherit (config.home) homeDirectory;
   toolchain = pkgs.rust-bin.beta.latest.default.override {
-    extensions = [ "rust-src" "rustfmt" "llvm-tools-preview" "cargo" ];
-    targets = [ "thumbv7em-none-eabi" "thumbv7em-none-eabihf" "wasm32-unknown-unknown" ];
+    extensions = [ "rust-src" "rustfmt" "llvm-tools" "cargo" ];
+    targets = [
+      "thumbv6m-none-eabi"
+      "thumbv7m-none-eabi"
+      "thumbv7em-none-eabi"
+      "thumbv7em-none-eabihf"
+      "thumbv8m.main-none-eabihf"
+      "riscv32imac-unknown-none-elf"
+      "aarch64-apple-darwin"
+      "aarch64-unknown-linux-gnu"
+      "x86_64-apple-darwin"
+      "x86_64-unknown-linux-gnu"
+      "wasm32-unknown-unknown"
+      "wasm32-wasip1"
+    ];
   };
 in
 {

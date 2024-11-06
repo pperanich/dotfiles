@@ -40,6 +40,7 @@
     micromamba  # Reimplementation of the conda package manager
     # pixi  # Package management made easy
     # rye  # A tool to easily manage python dependencies and environments
+    python-launcher  # An implementation of the `py` command for Unix-based platforms
 
     heygpt  # A simple command-line interface for ChatGPT API
     shell-gpt  # Access ChatGPT from your terminal
@@ -76,7 +77,7 @@
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     reattach-to-user-namespace  # A wrapper that provides access to the Mac OS X pasteboard service
     pam-reattach  # Reattach to the user's GUI session on macOS during authentication (for Touch ID support in tmux)
-    xquartz  # Version of the X.Org X Window System that runs on macOS
+    # xquartz  # Version of the X.Org X Window System that runs on macOS
     glibtool  # GNU Libtool, a generic library support script. Needed to compile libvterm on Mac
   ];
 

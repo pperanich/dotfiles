@@ -32,4 +32,4 @@ fi
 
 # Finally, build generate for host
 echo "Generating home-manager generation."
-home-manager switch --flake .#$USER
+home-manager switch --flake .#$USER --impure --keep-going

@@ -26,7 +26,7 @@ in
       # kicad
     ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
       zoom-us
-      hdfview
+      # hdfview
       firefox
       bitwarden
       vlc

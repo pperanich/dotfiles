@@ -7,6 +7,10 @@
 [protocol "file"]
   allow = "always"
 
+[user]
+name = Preston Peranich
+email = pperanich@gmail.com
+
 [includeIf "gitdir:~/Documents/repos/oss/"]
   path = "./oss.gitconfig"
 

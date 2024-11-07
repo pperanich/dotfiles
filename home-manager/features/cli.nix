@@ -20,6 +20,7 @@
 
     ripgrep  # Better grep
     fd  # Better find
+    fzf  # Command-line fuzzy finder written in Go
     # ncdu  # TUI disk usage
     xplr  # A hackable, minimal, fast TUI file explorer
 

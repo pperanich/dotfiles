@@ -73,6 +73,7 @@
     kubectl  # Kubernetes CLI
     update-display  # Re-export DISPLAY in tmux shells.
     # ai-buddy  # AI assistant for projects
+    # devai  # Command Agent runner to accelerate production coding.
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     lazydocker  # A simple terminal UI for both docker and docker-compose
   ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [

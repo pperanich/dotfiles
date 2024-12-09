@@ -6,6 +6,7 @@
   aplnis-env = pkgs.callPackage ./aplnis-env { };
   apple-fonts = pkgs.callPackage ./apple-fonts { };
   ai-buddy = pkgs.callPackage ./ai-buddy { };
+  devai = pkgs.callPackage ./devai { };
   update-display = pkgs.callPackage ./update-display { };
   # Darwin compatibility
   logseq-darwin = pkgs.callPackage ./logseq { };

@@ -1,8 +1,12 @@
-{ pkgs, config, lib, ... }:
+{ pkgs, ... }:
 {
   home.packages = with pkgs; [
-    (nerdfonts.override { fonts = [ "SourceCodePro" "Iosevka" "IBMPlexMono" "Overpass" "FiraMono" "FiraCode" ]; })
-
+    nerd-fonts.sauce-code-pro
+    nerd-fonts.iosevka
+    nerd-fonts.im-writing
+    nerd-fonts.overpass
+    nerd-fonts.fira-mono
+    nerd-fonts.fira-code
     # Add below once the following is closed: https://github.com/NixOS/nixpkgs/issues/270222
     twitter-color-emoji
     sketchybar-app-font

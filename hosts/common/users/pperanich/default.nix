@@ -1,41 +1,47 @@
 { pkgs, config, ... }:
-let ifTheyExist = groups: builtins.filter (group: builtins.hasAttr group config.users.groups) groups;
+let
+  platform = if isDarwin then "darwin" else "nixos";
 in
 {
+  imports = [
+    ./${platform}.nix
+  ];
+
   users = {
-    mutableUsers = false;
     users.pperanich = {
-      initialPassword = "test";
-      isNormalUser = true;
+      name = "pperanich";
       openssh.authorizedKeys.keys = [
-        (builtins.readFile ../../../../secrets/id_rsa.pub)
+        (builtins.readFile ./id_ed25519.pub)
       ];
       shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-          "video"
-          "audio"
-      ] ++ ifTheyExist [
-      "network"
-        "wireshark"
-        "i2c"
-        "mysql"
-        "docker"
-        "podman"
-        "git"
-      ];
       packages = [ pkgs.home-manager ];
     };
   };
-  programs = {
-    zsh.enable = true;
-    nix-ld.enable = true;
-    nix-ld.libraries = with pkgs; [
-      # Add any missing dynamic libraries for unpackaged programs
-      # here, NOT in environment.systemPackages
-    ];
-  };
+  programs.zsh.enable = true;
 
-  services.geoclue2.enable = true;
-  security.pam.services = { swaylock = { }; };
+  nix.settings.trusted-users = [ "pperanich" ];
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    extraSpecialArgs = {
+      inherit pkgs inputs;
+    };
+    users.pperanich.imports = lib.flatten (
+      [
+        (
+          { config, ... }:
+          # import (lib.custom.relativeToRoot "home-manager/pperanich/${networking.hostName}.nix") {
+          import (lib.custom.relativeToRoot "home-manager/pperanich") {
+            inherit
+              pkgs
+              inputs
+              config
+              lib
+              ;
+          }
+        )
+      ]
+    );
+  };
 }

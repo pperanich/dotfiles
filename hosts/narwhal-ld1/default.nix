@@ -5,21 +5,13 @@
 
   imports = [
     ./hardware-configuration.nix
-    ../common/global
-    ../common/users/pperanich
-    ../common/features/ssh.nix
+    "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+    ../common/core
+    ../common/users/peranpl1
+    ../common/optional/ssh.nix
     # If you want to use modules from other flakes (such as nixos-hardware), use something like:
     inputs.hardware.nixosModules.common-cpu-amd
     # inputs.hardware.nixosModules.common-ssd
-
-    # It's strongly recommended you take a look at
-    # https://github.com/nixos/nixos-hardware
-    # and import modules relevant to your hardware.
-
-    # Import your generated (nixos-generate-config) hardware configuration
-    ./hardware-configuration.nix
-
-    # You can also split up your configuration and import pieces of it here.
   ];
 
   nix = {

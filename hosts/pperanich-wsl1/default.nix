@@ -1,28 +1,12 @@
 { pkgs, inputs, outputs, ... }: {
   imports = [
     ./hardware-configuration.nix
-    ../common/global
+    inputs.NixOS-WSL.nixosModules.wsl
+    ../common/core
     ../common/users/pperanich
-    ../common/features/wsl.nix
-    ../common/features/ssh.nix
-    ../common/features/tailscale.nix
-    ../common/features/couchdb.nix
-    {
-      home-manager = {
-        extraSpecialArgs = { inherit inputs outputs; };
-        useUserPackages = true;
-        users.pperanich = {
-          imports = [
-            ../../home-manager
-            # ../../home-manager/features/emacs.nix
-            ../../home-manager/features/desktop.nix
-            ../../home-manager/features/tex.nix
-            ../../home-manager/features/vscode.nix
-            # ../../home-manager/features/rust.nix
-          ];
-        };
-      };
-    }
+    ../common/optional/wsl.nix
+    ../common/optional/tailscale.nix
+    ../common/optional/couchdb.nix
   ];
 
   networking = {

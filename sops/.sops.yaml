@@ -1,0 +1,11 @@
+keys:
+  - &users:
+    - &peranpl1 age1sy8x2rtl25pqlt3vceqjzgn7ym3mfn8wavwjd4t8e38t4mmcyamqcmdp9k
+  - &hosts:
+    - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
+creation_rules:
+  - path_regex: secrets.yaml$
+    key_groups:
+      - age:
+          - *peranpl1
+          - *peranpl1-ml2

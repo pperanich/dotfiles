@@ -1,22 +1,11 @@
 { inputs, outputs, lib, config, pkgs, ... }: {
   imports = [
     ./hardware-configuration.nix
-    ../common/global
+    "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+    ../common/core
     ../common/users/pperanich
-    ../common/features/ssh.nix
-    ../common/features/tailscale.nix
-    ../common/features/couchdb.nix
-    {
-      home-manager = {
-        extraSpecialArgs = { inherit inputs outputs; };
-        useUserPackages = true;
-        users.pperanich = {
-          imports = [
-            ../../home-manager
-          ];
-        };
-      };
-    }
+    ../common/optional/tailscale.nix
+    ../common/optional/couchdb.nix
   ];
 
   sdImage.compressImage = false;

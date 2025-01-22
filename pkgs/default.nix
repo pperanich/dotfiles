@@ -12,7 +12,7 @@
   logseq-darwin = pkgs.callPackage ./logseq { };
   brave-darwin = pkgs.callPackage ./brave { };
   zotero-darwin = pkgs.callPackage ./zotero { };
-  etcher-darwin = pkgs.callPackage ./etcher { };
+  # etcher-darwin = pkgs.callPackage ./etcher { };
   tailscale-darwin = pkgs.callPackage ./tailscale { };
   spotify-darwin = pkgs.callPackage ./spotify { };
   vlc-darwin = pkgs.callPackage ./vlc { };

@@ -1,11 +1,6 @@
-{ pkgs, config, ... }:
-let
-  platform = if isDarwin then "darwin" else "nixos";
-in
+{ pkgs, config, inputs, lib, ... }:
 {
-  imports = [
-    ./${platform}.nix
-  ]
+  imports = if pkgs.stdenv.isDarwin then [ ./darwin.nix ] else [ ./nixos.nix ];
 
   users = {
     users.peranpl1 = {

@@ -1,5 +1,3 @@
-#FIXME: Move attrs that will only work on linux to nixos.nix
-#FIXME: if pulling in homemanager for isMinimal maybe set up conditional for some packages
 {
   config,
   lib,
@@ -8,10 +6,24 @@
   ...
 }:
 let
-  platform = if hostSpec.isDarwin then "darwin" else "nixos";
   homePrefix = if pkgs.stdenv.hostPlatform.isDarwin then "Users" else "home";
 in
 {
+  imports = [
+    ./sops.nix
+    inputs.nix-index-database.hmModules.nix-index
+    { programs.nix-index-database.comma.enable = true; }
+  ] ++ lib.mkMerge [
+
+    (lib.mkIf pkgs.stdenv.isLinux {
+      programs.emacs.enable = true;
+    })
+
+    (lib.mkIf pkgs.stdenv.isDarwin {
+      programs.emacs.enable = false;
+    })
+  ];
+
   home = {
     homeDirectory = "/${homePrefix}/${config.home.username}";
     sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];

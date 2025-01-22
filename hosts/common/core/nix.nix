@@ -1,4 +1,4 @@
-{ inputs, lib, outputs, ... }:
+{ inputs, lib, outputs, config, ... }:
 {
   nix = {
     settings = {

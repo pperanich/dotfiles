@@ -1,9 +1,5 @@
 # Host configuration for peranpl1-ml2
-{
-  inputs,
-  outputs,
-  ...
-}: {
+{outputs, ...}: {
   imports = builtins.attrValues outputs.darwinModules;
 
   # Enable the modules

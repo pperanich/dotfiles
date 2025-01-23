@@ -1,10 +1,5 @@
-{...}: {
-  imports = [
-    ../common/core
-    ../common/optional/desktop
-    ../common/optional/development
-    ../common/optional/shell
-  ];
+{outputs, ...}: {
+  imports = outputs.homeManagerModules;
 
   sops = {
     secrets = {

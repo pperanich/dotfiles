@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   imports = [
     ./editors
     # ./containers
@@ -23,4 +21,4 @@
     delta.enable = true;
     lfs.enable = true;
   };
-} 
+}

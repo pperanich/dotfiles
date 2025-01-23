@@ -1,18 +1,21 @@
 # SOPS secrets management configuration
-{ pkgs, inputs, config, lib, ... }:
-
-let
+{
+  pkgs,
+  inputs,
+  config,
+  lib,
+  ...
+}: let
   cfg = config.modules.core;
   sopsFolder = builtins.toString lib.custom.relativeToRoot "sops/";
-in
-{
+in {
   config = lib.mkIf cfg.enable {
     sops = {
       defaultSopsFile = "${sopsFolder}/secrets.yaml";
       validateSopsFiles = false;
       age = {
         # automatically import host SSH keys as age keys
-        sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+        sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
       };
       # secrets will be output to /run/secrets
       # e.g. /run/secrets/msmtp-password

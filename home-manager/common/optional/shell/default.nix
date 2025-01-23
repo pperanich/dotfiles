@@ -1,6 +1,9 @@
-{ config, lib, pkgs, ... }:
-
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   imports = [
     ./cli.nix
     ./zsh.nix
@@ -23,4 +26,4 @@
     jq
     tree
   ];
-} 
+}

@@ -6,11 +6,12 @@
   inputs,
   outputs,
   ...
-}:
-let
-  homePrefix = if pkgs.stdenv.hostPlatform.isDarwin then "Users" else "home";
-in
-{
+}: let
+  homePrefix =
+    if pkgs.stdenv.hostPlatform.isDarwin
+    then "Users"
+    else "home";
+in {
   imports = [
     ./sops.nix
     inputs.nix-index-database.hmModules.nix-index
@@ -18,7 +19,7 @@ in
 
   home = {
     homeDirectory = "/${homePrefix}/${config.home.username}";
-    sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
+    sessionPath = ["${config.home.homeDirectory}/.local/bin"];
     sessionVariables = {
       OPAL_API_KEY = "REDACTED_OPAL_API_KEY_XXX";
       OPENAI_API_KEY = "sk-REDACTED_OPENAI_API_KEY_XXX";
@@ -33,14 +34,12 @@ in
 
   lib.meta = {
     configPath = "${config.home.homeDirectory}/dotfiles/home/";
-    mkMutableSymlink =
-      path: config.lib.file.mkOutOfStoreSymlink (config.lib.meta.configPath + path);
+    mkMutableSymlink = path: config.lib.file.mkOutOfStoreSymlink (config.lib.meta.configPath + path);
   };
 
   xdg.enable = true;
 
   programs = {
-    # home-manager.enable = true;
     pandoc.enable = true;
     gpg.enable = true;
     dircolors.enable = true;
@@ -50,7 +49,7 @@ in
     nix-index-database.comma.enable = true;
   };
 
-  services.ssh-agent.enable = true;
+  # services.ssh-agent.enable = true;
 
   nixpkgs = {
     overlays = builtins.attrValues outputs.overlays;
@@ -60,7 +59,7 @@ in
       packageOverrides = _: {
         nixcasks = import inputs.nixcasks {
           inherit pkgs;
-          osVersion = "sonoma";
+          osVersion = "sequoia";
         };
       };
     };

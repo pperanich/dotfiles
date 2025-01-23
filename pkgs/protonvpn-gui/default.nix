@@ -1,11 +1,11 @@
-{ lib
-, stdenv
-, fetchurl
-, makeWrapper
-, callPackage
-, protonvpn-gui
-}:
-let
+{
+  lib,
+  stdenv,
+  fetchurl,
+  makeWrapper,
+  callPackage,
+  protonvpn-gui,
+}: let
   inherit (stdenv.hostPlatform) system;
 
   pname = "protonvpn-gui";
@@ -18,10 +18,10 @@ let
   meta = with lib; {
     description = "Official ProtonVPN Linux app";
     homepage = "https://github.com/ProtonVPN/linux-app";
-    maintainers = with maintainers; [ wolfangaukang ];
+    maintainers = with maintainers; [wolfangaukang];
     license = licenses.gpl3Plus;
     mainProgram = "protonvpn";
-    platforms = [ "x86_64-darwin" "aarch64-darwin" ];
+    platforms = ["x86_64-darwin" "aarch64-darwin"];
   };
 
   linux = protonvpn-gui;
@@ -29,7 +29,6 @@ let
     inherit pname version src meta;
   };
 in
-if stdenv.isDarwin
-then darwin
-else
-  linux
+  if stdenv.isDarwin
+  then darwin
+  else linux

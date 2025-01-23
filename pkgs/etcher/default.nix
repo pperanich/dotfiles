@@ -1,11 +1,11 @@
-{ lib
-, stdenv
-, fetchurl
-, makeWrapper
-, callPackage
-, etcher
-}:
-let
+{
+  lib,
+  stdenv,
+  fetchurl,
+  makeWrapper,
+  callPackage,
+  etcher,
+}: let
   inherit (stdenv.hostPlatform) system;
 
   pname = "etcher";
@@ -20,9 +20,9 @@ let
     homepage = "https://etcher.io/";
     license = licenses.asl20;
     mainProgram = pname;
-    maintainers = with maintainers; [ wegank ];
-    platforms = [ "x86_64-darwin" "aarch64-darwin" ];
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+    maintainers = with maintainers; [wegank];
+    platforms = ["x86_64-darwin" "aarch64-darwin"];
+    sourceProvenance = with sourceTypes; [binaryNativeCode];
   };
 
   linux = etcher;
@@ -30,7 +30,6 @@ let
     inherit pname version src meta;
   };
 in
-if stdenv.isDarwin
-then darwin
-else
-  linux
+  if stdenv.isDarwin
+  then darwin
+  else linux

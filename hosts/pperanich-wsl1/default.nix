@@ -1,4 +1,9 @@
-{ pkgs, inputs, outputs, ... }: {
+{
+  pkgs,
+  inputs,
+  outputs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
     inputs.NixOS-WSL.nixosModules.wsl
@@ -20,7 +25,7 @@
 
   boot = {
     kernelPackages = pkgs.linuxKernel.packages.linux_zen;
-    binfmt.emulatedSystems = [ "aarch64-linux" "i686-linux" ];
+    binfmt.emulatedSystems = ["aarch64-linux" "i686-linux"];
   };
 
   programs = {
@@ -33,7 +38,7 @@
     config.common.default = "*";
   };
 
-  services.openssh.ports = [ 2222 ];
+  services.openssh.ports = [2222];
 
   system.stateVersion = "24.11";
 }

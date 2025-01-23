@@ -1,5 +1,9 @@
-{ config, pkgs, ... }:
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   programs = {
     zsh = {
       enable = true;
@@ -13,16 +17,16 @@
         path = "${config.xdg.dataHome}/zsh/history";
       };
       plugins = with pkgs; [
-      {
-        name = "powerlevel10k-config";
-        file = "p10k.zsh";
-        src = ../../home/.config/zsh/powerlevel10k-config;
-      }
-      {
-        name = "powerlevel10k";
-        file = "powerlevel10k.zsh-theme";
-        src = "${zsh-powerlevel10k}/share/zsh-powerlevel10k";
-      }
+        {
+          name = "powerlevel10k-config";
+          file = "p10k.zsh";
+          src = lib.custom.relativeToRoot "home/.config/zsh/powerlevel10k-config";
+        }
+        {
+          name = "powerlevel10k";
+          file = "powerlevel10k.zsh-theme";
+          src = "${zsh-powerlevel10k}/share/zsh-powerlevel10k";
+        }
       ];
       historySubstringSearch.enable = true;
       autosuggestion.enable = true;
@@ -49,8 +53,8 @@
           local_host_port=''${3:-$2} # If $3 is not given, use $2
           ssh -fNT -L 127.0.0.1:$local_host_port:127.0.0.1:$2 $1 && echo "Port forward to: http://127.0.0.1:$local_host_port"
         }
-        '';
-  };
+      '';
+    };
     dircolors = {
       enableZshIntegration = true;
     };
@@ -65,4 +69,3 @@
     };
   };
 }
-

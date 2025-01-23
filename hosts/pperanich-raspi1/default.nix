@@ -1,4 +1,11 @@
-{ inputs, outputs, lib, config, pkgs, ... }: {
+{
+  inputs,
+  outputs,
+  lib,
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
     "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
@@ -20,7 +27,7 @@
     wireless = {
       enable = true;
       networks."VirusInfectedWifi".psk = "vacinate";
-      interfaces = [ "wlan0" ];
+      interfaces = ["wlan0"];
     };
     interfaces.eth0 = {
       useDHCP = true;
@@ -45,9 +52,9 @@
   hardware.pulseaudio.enable = true;
 
   systemd.services.btattach = {
-    before = [ "bluetooth.service" ];
-    after = [ "dev-ttyAMA0.device" ];
-    wantedBy = [ "multi-user.target" ];
+    before = ["bluetooth.service"];
+    after = ["dev-ttyAMA0.device"];
+    wantedBy = ["multi-user.target"];
     serviceConfig = {
       ExecStart = "${pkgs.bluez}/bin/btattach -B /dev/ttyAMA0 -P bcm -S 3000000";
     };

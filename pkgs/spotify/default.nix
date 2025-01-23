@@ -1,13 +1,12 @@
-{ lib
-, stdenv
-, fetchurl
-, makeWrapper
-, callPackage
-, spotify
-}:
-let
+{
+  lib,
+  stdenv,
+  fetchurl,
+  makeWrapper,
+  callPackage,
+  spotify,
+}: let
   inherit (stdenv.hostPlatform) system;
-
 
   pname = "spotify";
   version = "10.13-14";
@@ -19,9 +18,9 @@ let
   meta = with lib; {
     homepage = "https://www.spotify.com/";
     description = "Play music from the Spotify music service";
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+    sourceProvenance = with sourceTypes; [binaryNativeCode];
     license = licenses.unfree;
-    platforms = [ "x86_64-darwin" "aarch64-darwin" ];
+    platforms = ["x86_64-darwin" "aarch64-darwin"];
     mainProgram = "spotify";
   };
 
@@ -30,7 +29,6 @@ let
     inherit pname version src meta;
   };
 in
-if stdenv.isDarwin
-then darwin
-else
-  linux
+  if stdenv.isDarwin
+  then darwin
+  else linux

@@ -39,130 +39,148 @@
       url = "github:jacekszymanski/nixcasks";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     # Development Tools
     nil.url = "github:oxalica/nil"; # Nix LSP
     treefmt-nix.url = "github:numtide/treefmt-nix"; # Formatting tools
   };
 
-  outputs = { self, nixpkgs, systems, darwin, home-manager, NixOS-WSL, ... }@inputs:
-    let
-      inherit (self) outputs;
-      # lib = nixpkgs.lib;
-      lib = nixpkgs.lib.extend (self: super: { custom = import ./lib { inherit (nixpkgs) lib; }; });
+  outputs = {
+    self,
+    nixpkgs,
+    systems,
+    darwin,
+    home-manager,
+    NixOS-WSL,
+    nixcasks,
+    ...
+  } @ inputs: let
+    inherit (self) outputs;
+    # lib = nixpkgs.lib;
+    lib = nixpkgs.lib.extend (self: super: {custom = import ./lib {inherit (nixpkgs) lib;};});
 
-      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-      pkgsFor = lib.genAttrs (import systems) (
-        system:
-          import nixpkgs {
-            inherit system;
-            config = {
-              allowUnfree = true;
-              allowBroken = true;
-              allowUnfreePredicate = _: true;
-              overlays = builtins.attrValues outputs.overlays;
-              packageOverrides = _: {
-                nixcasks = import inputs.nixcasks {
-                  inherit nixpkgs;
-                  pkgs = import nixpkgs {};
-                  osVersion = "sonoma";
-                };
-              };
+    forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+    nixcasks =
+      forEachSystem
+      (inputs.nixcasks.output {
+        osVersion = "sequoia";
+      })
+      .packages;
+
+    pkgsFor = lib.genAttrs (import systems) (
+      system:
+        import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            allowBroken = true;
+            allowUnfreePredicate = _: true;
+            overlays = builtins.attrValues outputs.overlays;
+            packageOverrides = _: {
+              inherit nixcasks;
             };
-          }
-      );
-    in {
-      inherit lib;
+          };
+        }
+    );
+  in {
+    inherit lib;
 
-      # Reusable modules
-      commonModules = import ./modules/common;
-      nixosModules = import ./modules/nixos;
-      darwinModules = import ./modules/darwin;
-      homeManagerModules = import ./modules/home-manager;
+    nixcasks =
+      forEachSystem
+      (inputs.nixcasks.output {
+        osVersion = "sequoia";
+      })
+      .packages;
 
-      # Overlays
-      overlays = import ./overlays {inherit inputs outputs;};
+    # Reusable modules
+    commonModules = import ./modules/common;
+    nixosModules = import ./modules/nixos;
+    darwinModules = import ./modules/darwin;
+    homeManagerModules = import ./modules/home-manager;
 
-      # Packages & Development Shells
-      packages = forEachSystem (pkgs: import ./pkgs {inherit pkgs;});
-      devShells = forEachSystem (pkgs: import ./shell.nix {inherit pkgs;});
-      formatter = forEachSystem (pkgs: pkgs.alejandra);
+    # Overlays
+    overlays = import ./overlays {inherit inputs outputs;};
 
-      # System Configurations
-      # nixosConfigurations = {
-      #   # Linux Desktop
-      #   pperanich-ld1 = lib.nixosSystem {
-      #     modules = [
-      #       ./hosts/pperanich-ld1
-      #     ];
-      #     specialArgs = {
-      #       inherit inputs outputs;
-      #     };
-      #   };
+    # Packages & Development Shells
+    packages = forEachSystem (pkgs: import ./pkgs {inherit pkgs;});
+    devShells = forEachSystem (pkgs: import ./shell.nix {inherit pkgs;});
+    formatter = forEachSystem (pkgs: pkgs.alejandra);
 
-      #   # WSL Configuration
-      #   pperanich-wsl1 = lib.nixosSystem {
-      #     modules = [
-      #       ./hosts/pperanich-wsl1
-      #     ];
-      #     specialArgs = {
-      #       inherit inputs outputs;
-      #     };
-      #   };
+    # System Configurations
+    # nixosConfigurations = {
+    #   # Linux Desktop
+    #   pperanich-ld1 = lib.nixosSystem {
+    #     modules = [
+    #       ./hosts/pperanich-ld1
+    #     ];
+    #     specialArgs = {
+    #       inherit inputs outputs;
+    #     };
+    #   };
 
-      #   # Raspberry Pi
-      #   pperanich-raspi1 = lib.nixosSystem {
-      #     modules = [
-      #       ./hosts/pperanich-raspi1
-      #     ];
-      #     specialArgs = {
-      #       inherit inputs outputs;
-      #     };
-      #   };
+    #   # WSL Configuration
+    #   pperanich-wsl1 = lib.nixosSystem {
+    #     modules = [
+    #       ./hosts/pperanich-wsl1
+    #     ];
+    #     specialArgs = {
+    #       inherit inputs outputs;
+    #     };
+    #   };
 
-      #   # Installation Media
-      #   narwhal-ld1 = lib.nixosSystem {
-      #     modules = [
-      #       ./hosts/narwhal-ld1
-      #     ];
-      #     specialArgs = {
-      #       inherit inputs outputs;
-      #     };
+    #   # Raspberry Pi
+    #   pperanich-raspi1 = lib.nixosSystem {
+    #     modules = [
+    #       ./hosts/pperanich-raspi1
+    #     ];
+    #     specialArgs = {
+    #       inherit inputs outputs;
+    #     };
+    #   };
+
+    #   # Installation Media
+    #   narwhal-ld1 = lib.nixosSystem {
+    #     modules = [
+    #       ./hosts/narwhal-ld1
+    #     ];
+    #     specialArgs = {
+    #       inherit inputs outputs;
+    #     };
+    #   };
+    # };
+
+    # Darwin Configurations
+    darwinConfigurations = {
+      # M1 MacBook
+      peranpl1-ml2 = darwin.lib.darwinSystem {
+        modules = [
+          ./hosts/peranpl1-ml2
+        ];
+        specialArgs = {
+          inherit inputs outputs lib;
+        };
+      };
+
+      # Intel MacBook
+      # peranpl1-ml1 = darwin.lib.darwinSystem {
+      #   modules = [
+      #     ./hosts/peranpl1-ml1
+      #   ];
+      #   specialArgs = {
+      #     inherit inputs outputs;
       #   };
       # };
 
-      # Darwin Configurations
-      darwinConfigurations = {
-        # M1 MacBook
-        peranpl1-ml2 = darwin.lib.darwinSystem {
-          modules = [
-            ./hosts/peranpl1-ml2
-          ];
-          specialArgs = {
-            inherit inputs outputs lib;
-          };
-        };
-
-        # Intel MacBook
-        # peranpl1-ml1 = darwin.lib.darwinSystem {
-        #   modules = [
-        #     ./hosts/peranpl1-ml1
-        #   ];
-        #   specialArgs = {
-        #     inherit inputs outputs;
-        #   };
-        # };
-
-        # # Work MacBook
-        # B1LOAN-21-ML126 = darwin.lib.darwinSystem {
-        #   modules = [
-        #     ./hosts/B1LOAN-21-ML126
-        #   ];
-        #   specialArgs = {
-        #     inherit inputs outputs;
-        #   };
-        # };
-      };
+      # # Work MacBook
+      # B1LOAN-21-ML126 = darwin.lib.darwinSystem {
+      #   modules = [
+      #     ./hosts/B1LOAN-21-ML126
+      #   ];
+      #   specialArgs = {
+      #     inherit inputs outputs;
+      #   };
+      # };
+    };
 
     #   # Home Manager Configurations
     #   homeConfigurations = {
@@ -201,5 +219,5 @@
     #       ];
     #     };
     #   };
-    };
+  };
 }

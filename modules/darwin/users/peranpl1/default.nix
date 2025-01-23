@@ -1,11 +1,14 @@
-{ config, lib, pkgs, inputs, ... }:
-
-let
-  cfg = config.modules.users.peranpl1;
-in
 {
-  imports = [
-    ../../../../common/users/peranpl1
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}: let
+  cfg = config.modules.users.peranpl1;
+in {
+  imports = lib.flatten [
+    (lib.custom.relativeToRoot "modules/common/users/peranpl1")
   ];
 
   config = lib.mkMerge [
@@ -17,4 +20,4 @@ in
       launchd.user.envVariables = config.home-manager.users.peranpl1.home.sessionVariables;
     })
   ];
-} 
+}

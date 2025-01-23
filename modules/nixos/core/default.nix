@@ -1,20 +1,24 @@
 # Core module for shared configuration across all systems
-{ inputs, config, lib, pkgs, ... }:
-
-let
-  cfg = config.modules.core;
-in
 {
+  inputs,
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  cfg = config.modules.core;
+in {
   imports = [
-    lib.custom.relativeToRoot "modules/common/core"
+    # lib.custom.relativeToRoot "modules/common/core"
+    ../../common/core
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
   ];
 
   config = lib.mkMerge [
     # NixOS-specific configuration
-    (lib.mkIf (cfg.enable) {
-    #   boot.tmp.cleanOnBoot = true;
+    (lib.mkIf cfg.enable {
+      #   boot.tmp.cleanOnBoot = true;
       zramSwap.enable = true;
 
       services = {
@@ -44,5 +48,4 @@ in
       ];
     })
   ];
-} 
-
+}

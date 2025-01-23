@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   home.packages = with pkgs; [
     nerd-fonts.sauce-code-pro
     nerd-fonts.iosevka

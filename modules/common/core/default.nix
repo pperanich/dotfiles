@@ -1,14 +1,15 @@
 # Core module for shared configuration across all systems
-{ inputs, config, lib, pkgs, ... }:
-
-let
-  cfg = config.modules.core;
-in
 {
-  imports = [
-    ./nix.nix
-    ./sops.nix
-    ./ssh.nix
+  inputs,
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  cfg = config.modules.core;
+in {
+  imports = lib.flatten [
+    (lib.custom.scanPaths ./.)
   ];
 
   options.modules.core = {
@@ -18,7 +19,7 @@ in
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       # Common configuration for all systems
-    #   environment.enableAllTerminfo = true;
+      #   environment.enableAllTerminfo = true;
     })
   ];
-} 
+}

@@ -1,10 +1,14 @@
 # User module for peranpl1
-{ config, lib, pkgs, inputs, outputs, ... }:
-
-let
-  cfg = config.modules.users.peranpl1;
-in
 {
+  config,
+  lib,
+  pkgs,
+  inputs,
+  outputs,
+  ...
+}: let
+  cfg = config.modules.users.peranpl1;
+in {
   options.modules.users.peranpl1 = {
     enable = lib.mkEnableOption "peranpl1 user configuration";
   };
@@ -17,26 +21,27 @@ in
           (builtins.readFile ./id_ed25519.pub)
         ];
         shell = pkgs.zsh;
-        packages = [ pkgs.home-manager ];
+        packages = [pkgs.home-manager];
       };
 
       programs.zsh.enable = true;
-      nix.settings.trusted-users = [ "peranpl1" ];
+      nix.settings.trusted-users = ["peranpl1"];
 
       home-manager = {
-        useGlobalPkgs = true;
+        # useGlobalPkgs = true;
         useUserPackages = true;
         extraSpecialArgs = {
-          inherit pkgs inputs;
+          inherit pkgs inputs outputs;
         };
-        users.peranpl1.imports = lib.flatten ([
-          ({ config, inputs, outputs, pkgs, lib, ... }:
-            import (lib.custom.relativeToRoot "home-manager/peranpl1") {
-              inherit pkgs inputs outputs config lib;
-            }
+        users.peranpl1.imports = lib.flatten [
+          (
+            {config, ...}:
+              import (lib.custom.relativeToRoot "home-manager/peranpl1") {
+                inherit pkgs inputs outputs;
+              }
           )
-        ]);
+        ];
       };
     })
   ];
-} 
+}

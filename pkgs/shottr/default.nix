@@ -1,8 +1,8 @@
-{ lib
-, fetchurl
-, callPackage
-}:
-let
+{
+  lib,
+  fetchurl,
+  callPackage,
+}: let
   pname = "shottr";
   version = "1.7.2";
 
@@ -16,12 +16,12 @@ let
     homepage = "https://shottr.cc";
     changelog = "https://shottr.cc/#section-releasenotes";
     license = licenses.unfree;
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
-    maintainers = with maintainers; [ ];
-    platforms = [ "x86_64-darwin" "aarch64-darwin" ];
+    sourceProvenance = with sourceTypes; [binaryNativeCode];
+    maintainers = with maintainers; [];
+    platforms = ["x86_64-darwin" "aarch64-darwin"];
     mainProgram = "shottr";
   };
 in
-callPackage ../dmg-app.nix {
-  inherit pname version src meta;
-}
+  callPackage ../dmg-app.nix {
+    inherit pname version src meta;
+  }

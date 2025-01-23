@@ -1,20 +1,22 @@
 # Core module for shared configuration across all systems
-{ inputs, config, lib, pkgs, ... }:
-
-let
-  cfg = config.modules.core;
-in
 {
-  imports = [
-    # lib.custom.relativeToRoot "modules/common/core"
-    ../../../common/core
+  inputs,
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  cfg = config.modules.core;
+in {
+  imports = lib.flatten [
+    (lib.custom.relativeToRoot "modules/common/core")
     inputs.home-manager.darwinModules.home-manager
     inputs.sops-nix.darwinModules.sops
   ];
 
   config = lib.mkMerge [
     # Darwin-specific configuration
-    (lib.mkIf (cfg.enable) {
+    (lib.mkIf cfg.enable {
       system.stateVersion = 4;
 
       nix = {
@@ -74,4 +76,4 @@ in
       homebrew.enable = true;
     })
   ];
-} 
+}

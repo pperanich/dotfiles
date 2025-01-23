@@ -1,5 +1,10 @@
-{ lib, stdenv, fetchurl, unzip, p7zip }:
-
+{
+  lib,
+  stdenv,
+  fetchurl,
+  unzip,
+  p7zip,
+}:
 stdenv.mkDerivation rec {
   pname = "apple-fonts";
   version = "1";
@@ -24,7 +29,7 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-HC7ttFJswPMm+Lfql49aQzdWR2osjFYHJTdgjtuI+PQ=";
   };
 
-  nativeBuildInputs = [ p7zip ];
+  nativeBuildInputs = [p7zip];
 
   sourceRoot = ".";
 
@@ -32,7 +37,7 @@ stdenv.mkDerivation rec {
 
   installPhase = ''
     7z x ${pro}
-    cd SFProFonts 
+    cd SFProFonts
     7z x 'SF Pro Fonts.pkg'
     7z x 'Payload~'
     mkdir -p $out/fontfiles

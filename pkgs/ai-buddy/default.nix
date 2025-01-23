@@ -1,10 +1,10 @@
-{ lib
-, stdenv
-, fetchFromGitHub
-, rustPlatform
-, darwin
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  rustPlatform,
+  darwin,
 }:
-
 rustPlatform.buildRustPackage
 rec {
   pname = "ai-buddy";
@@ -34,8 +34,8 @@ rec {
   meta = with lib; {
     description = "Simple on-device AI assistant that leverages AI assistant services";
     homepage = "https://github.com/rust10x/rust-ai-buddy";
-    license = with licenses; [ mit ];
-    maintainers = with maintainers; [ ];
+    license = with licenses; [mit];
+    maintainers = with maintainers; [];
     mainProgram = "ai-buddy";
   };
 }

@@ -1,11 +1,11 @@
-{ lib
-, stdenv
-, fetchurl
-, makeWrapper
-, callPackage
-, brave
-}:
-let
+{
+  lib,
+  stdenv,
+  fetchurl,
+  makeWrapper,
+  callPackage,
+  brave,
+}: let
   inherit (stdenv.hostPlatform) system;
 
   pname = "brave";
@@ -18,16 +18,16 @@ let
   meta = with lib; {
     homepage = "https://brave.com/";
     description = "Privacy-oriented browser for Desktop and Laptop computers";
-    changelog = "https://github.com/brave/brave-browser/blob/master/CHANGELOG_DESKTOP.md#" + replaceStrings [ "." ] [ "" ] version;
+    changelog = "https://github.com/brave/brave-browser/blob/master/CHANGELOG_DESKTOP.md#" + replaceStrings ["."] [""] version;
     longDescription = ''
       Brave browser blocks the ads and trackers that slow you down,
       chew up your bandwidth, and invade your privacy. Brave lets you
       contribute to your favorite creators automatically.
     '';
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+    sourceProvenance = with sourceTypes; [binaryNativeCode];
     license = licenses.mpl20;
-    maintainers = with maintainers; [ ];
-    platforms = [ "x86_64-darwin" "aarch64-darwin" ];
+    maintainers = with maintainers; [];
+    platforms = ["x86_64-darwin" "aarch64-darwin"];
   };
 
   linux = brave;
@@ -35,7 +35,6 @@ let
     inherit pname version src meta;
   };
 in
-if stdenv.isDarwin
-then darwin
-else
-  linux
+  if stdenv.isDarwin
+  then darwin
+  else linux

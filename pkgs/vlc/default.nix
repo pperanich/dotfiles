@@ -1,11 +1,11 @@
-{ lib
-, stdenv
-, fetchurl
-, makeWrapper
-, callPackage
-, vlc
-}:
-let
+{
+  lib,
+  stdenv,
+  fetchurl,
+  makeWrapper,
+  callPackage,
+  vlc,
+}: let
   inherit (stdenv.hostPlatform) system;
 
   pname = "vlc";
@@ -19,7 +19,7 @@ let
     description = "Cross-platform media player and streaming server";
     homepage = "http://www.videolan.org/vlc/";
     license = lib.licenses.lgpl21Plus;
-    platforms = [ "x86_64-darwin" "aarch64-darwin" ];
+    platforms = ["x86_64-darwin" "aarch64-darwin"];
   };
 
   linux = vlc;
@@ -27,7 +27,6 @@ let
     inherit pname version src meta;
   };
 in
-if stdenv.isDarwin
-then darwin
-else
-  linux
+  if stdenv.isDarwin
+  then darwin
+  else linux

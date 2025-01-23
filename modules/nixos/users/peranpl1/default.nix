@@ -1,13 +1,19 @@
 # User module for peranpl1
-{ config, lib, pkgs, inputs, ... }:
-
-let
-  cfg = config.modules.users.peranpl1;
-in
 {
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}: let
+  cfg = config.modules.users.peranpl1;
+in {
+  imports = [
+    (lib.custom.relativeToRoot "modules/common/users/peranpl1")
+  ];
   config = lib.mkMerge [
     # NixOS-specific configuration
-    (lib.mkIf (cfg.enable) {
+    (lib.mkIf cfg.enable {
       sops.secrets.peranpl1-password = {
         neededForUsers = true;
       };
@@ -16,19 +22,21 @@ in
         home = "/home/peranpl1";
         hashedPasswordFile = config.sops.secrets.peranpl1-password.path;
         isNormalUser = true;
-        extraGroups = [
-          "wheel"
-          "video"
-          "audio"
-        ] ++ (builtins.filter (group: builtins.hasAttr group config.users.groups) [
-          "network"
-          "wireshark"
-          "i2c"
-          "mysql"
-          "docker"
-          "podman"
-          "git"
-        ]);
+        extraGroups =
+          [
+            "wheel"
+            "video"
+            "audio"
+          ]
+          ++ (builtins.filter (group: builtins.hasAttr group config.users.groups) [
+            "network"
+            "wireshark"
+            "i2c"
+            "mysql"
+            "docker"
+            "podman"
+            "git"
+          ]);
       };
 
       programs = {
@@ -40,7 +48,7 @@ in
       };
 
       services.geoclue2.enable = true;
-      security.pam.services = { swaylock = { }; };
+      security.pam.services = {swaylock = {};};
     })
   ];
-} 
+}

@@ -1,6 +1,5 @@
-{ pkgs, ... }:
-{
-  home.sessionVariables = { EDITOR = "nvim"; };
+{pkgs, ...}: {
+  home.sessionVariables = {EDITOR = "nvim";};
   home.packages = with pkgs; [
     fzf
     pkg-config

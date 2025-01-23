@@ -1,11 +1,11 @@
-{ lib
-, stdenv
-, fetchurl
-, makeWrapper
-, callPackage
-, zotero
-}:
-let
+{
+  lib,
+  stdenv,
+  fetchurl,
+  makeWrapper,
+  callPackage,
+  zotero,
+}: let
   inherit (stdenv.hostPlatform) system;
 
   pname = "zotero";
@@ -19,9 +19,9 @@ let
   meta = with lib; {
     homepage = "https://www.zotero.org";
     description = "Collect, organize, cite, and share your research sources";
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+    sourceProvenance = with sourceTypes; [binaryNativeCode];
     license = licenses.agpl3Only;
-    platforms = [ "x86_64-darwin" "aarch64-darwin" ];
+    platforms = ["x86_64-darwin" "aarch64-darwin"];
   };
 
   linux = zotero;
@@ -29,7 +29,6 @@ let
     inherit pname version src meta;
   };
 in
-if stdenv.isDarwin
-then darwin
-else
-  linux
+  if stdenv.isDarwin
+  then darwin
+  else linux

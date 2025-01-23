@@ -1,8 +1,12 @@
-{ config, pkgs, lib, ... }:
-let
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: let
   inherit (config.home) homeDirectory;
   toolchain = pkgs.rust-bin.nightly.latest.default.override {
-    extensions = [ "rust-src" "rustfmt" "llvm-tools" "cargo" ];
+    extensions = ["rust-src" "rustfmt" "llvm-tools" "cargo"];
     targets = [
       "thumbv6m-none-eabi"
       "thumbv7m-none-eabi"
@@ -18,28 +22,28 @@ let
       "wasm32-wasip1"
     ];
   };
-in
-{
-  home.packages = with pkgs; [
-    # rustup
-    toolchain
+in {
+  home.packages = with pkgs;
+    [
+      # rustup
+      toolchain
 
-    pkg-config
-    # Extra cargo dependencies
-    cargo-bloat
-    # For LSP
-    # We want the unwrapped version, "rust-analyzer" (wrapped) comes with nixpkgs' toolchain
-    rust-analyzer-unwrapped
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.libiconv
-    # darwin.CF
-    # darwin.SystemConfiguration
-    # darwin.Security
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isLinux [ systemd ];
+      pkg-config
+      # Extra cargo dependencies
+      cargo-bloat
+      # For LSP
+      # We want the unwrapped version, "rust-analyzer" (wrapped) comes with nixpkgs' toolchain
+      rust-analyzer-unwrapped
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      darwin.libiconv
+      # darwin.CF
+      # darwin.SystemConfiguration
+      # darwin.Security
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [systemd];
 
-  home.sessionPath = [ "\${CARGO_HOME:-${homeDirectory}/.cargo}/bin" ];
+  home.sessionPath = ["\${CARGO_HOME:-${homeDirectory}/.cargo}/bin"];
 
   # cwi = pkgs.writeShellScriptBin "cwi" ''
   #   cargo watch -x "install --path ."
@@ -51,4 +55,3 @@ in
   #   cargo watch -q -c -x "test -- --nocapture"
   # '';
 }
-

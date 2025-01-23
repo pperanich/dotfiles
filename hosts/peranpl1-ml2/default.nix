@@ -1,10 +1,9 @@
 # Host configuration for peranpl1-ml2
-{ inputs, outputs, ... }:
 {
-  # imports = builtins.attrValues outputs.nixosModules
-  #   ++ builtins.attrValues outputs.commonModules
-  #   ++ builtins.attrValues outputs.darwinModules
-  #   ++ [../../modules/common/users/peranpl1];
+  inputs,
+  outputs,
+  ...
+}: {
   imports = builtins.attrValues outputs.darwinModules;
 
   # Enable the modules

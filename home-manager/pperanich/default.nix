@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   imports = [
     ../common/core
     ../common/optional/desktop
@@ -9,7 +8,8 @@
 
   sops = {
     secrets = {
-        "private_keys/pperanich" = { };
+      "private_keys/pperanich" = {};
+    };
   };
 
   home = {

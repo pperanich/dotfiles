@@ -24,7 +24,7 @@ in
             "hugging_face_hub_token" = {};
             "anthropic_api_key" = {};
             "mistral_api_key" = {};
-        }
-    } ;
+        };
+    };
   };
 }

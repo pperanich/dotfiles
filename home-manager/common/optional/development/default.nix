@@ -3,10 +3,10 @@
 {
   imports = [
     ./editors
-    ./containers
+    # ./containers
     ./rust.nix
     ./tex.nix
-    ./git.nix
+    # ./git.nix
   ];
 
   # Common development tools

@@ -1,7 +1,7 @@
 # This file (and the global directory) holds config that i use on all hosts
-{ inputs, outputs, lib, config, pkgs, ... }: 
+{ inputs, outputs, lib, config, pkgs, system, ... }: 
 let
-  platform = if pkgs.stdenv.isDarwin then "darwin" else "nixos";
+  platform = if builtins.match ".*-darwin" system != null then "darwin" else "nixos";
   platformModules = "${platform}Modules";
 in
 {

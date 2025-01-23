@@ -3,6 +3,8 @@
   lib,
   pkgs,
   hostSpec,
+  inputs,
+  outputs,
   ...
 }:
 let
@@ -12,16 +14,6 @@ in
   imports = [
     ./sops.nix
     inputs.nix-index-database.hmModules.nix-index
-    { programs.nix-index-database.comma.enable = true; }
-  ] ++ lib.mkMerge [
-
-    (lib.mkIf pkgs.stdenv.isLinux {
-      programs.emacs.enable = true;
-    })
-
-    (lib.mkIf pkgs.stdenv.isDarwin {
-      programs.emacs.enable = false;
-    })
   ];
 
   home = {
@@ -48,13 +40,14 @@ in
   xdg.enable = true;
 
   programs = {
-    home-manager.enable = true;
+    # home-manager.enable = true;
     pandoc.enable = true;
     gpg.enable = true;
     dircolors.enable = true;
     direnv.enable = true;
     atuin.enable = true;
     zoxide.enable = true;
+    nix-index-database.comma.enable = true;
   };
 
   services.ssh-agent.enable = true;

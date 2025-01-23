@@ -56,7 +56,6 @@
     ...
   } @ inputs: let
     inherit (self) outputs;
-    # lib = nixpkgs.lib;
     lib = nixpkgs.lib.extend (self: super: {custom = import ./lib {inherit (nixpkgs) lib;};});
 
     forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
@@ -103,7 +102,9 @@
 
     # Packages & Development Shells
     packages = forEachSystem (pkgs: import ./pkgs {inherit pkgs;});
-    devShells = forEachSystem (pkgs: import ./shell.nix {inherit pkgs;});
+    devShells = forEachSystem (pkgs: {
+      default = import ./shell.nix {inherit pkgs;};
+    });
     formatter = forEachSystem (pkgs: pkgs.alejandra);
 
     # System Configurations

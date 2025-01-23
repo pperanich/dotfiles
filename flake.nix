@@ -84,13 +84,6 @@
   in {
     inherit lib;
 
-    nixcasks =
-      forEachSystem
-      (inputs.nixcasks.output {
-        osVersion = "sequoia";
-      })
-      .packages;
-
     # Reusable modules
     commonModules = import ./modules/common;
     nixosModules = import ./modules/nixos;
@@ -103,7 +96,9 @@
     # Packages & Development Shells
     packages = forEachSystem (pkgs: import ./pkgs {inherit pkgs;});
     devShells = forEachSystem (pkgs: {
-      default = import ./shell.nix {inherit pkgs;};
+      default = import ./shell.nix {
+        inherit pkgs;
+      };
     });
     formatter = forEachSystem (pkgs: pkgs.alejandra);
 

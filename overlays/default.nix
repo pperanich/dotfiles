@@ -15,39 +15,13 @@
       # as cursed as doing mitigations=off in the kernel command line
       patches = [./patches/0001-make-atuin-on-zfs-fast-again.patch];
     });
-    heygpt = prev.heygpt.overrideAttrs (oldAttrs: {
-      buildInputs = oldAttrs.buildInputs ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [final.darwin.apple_sdk.frameworks.SystemConfiguration];
-    });
     glibtool = final.libtool.overrideAttrs (oldAttrs: {
       configureFlags = (oldAttrs.configureFlags or []) ++ ["--program-prefix=g"];
     });
-    logseq =
-      if final.stdenv.hostPlatform.isDarwin
-      then prev.nixcasks.logseq
-      else prev.logseq;
-    brave =
-      if final.stdenv.hostPlatform.isDarwin
-      then prev.nixcasks.brave-browser
-      else prev.brave;
-    zotero =
-      if final.stdenv.hostPlatform.isDarwin
-      then prev.nixcasks.zotero
-      else prev.zotero;
-    etcher =
-      if final.stdenv.hostPlatform.isDarwin
-      then prev.nixcasks.etcher
-      else prev.etcher;
-    tailscale =
-      if final.stdenv.hostPlatform.isDarwin
-      then prev.nixcasks.tailscale
-      else prev.tailscale;
-    vlc =
-      if final.stdenv.hostPlatform.isDarwin
-      then prev.nixcasks.vlc
-      else prev.vlc;
-    protonvpn-gui =
-      if final.stdenv.hostPlatform.isDarwin
-      then prev.nixcasks.protonvpn
-      else prev.protonvpn-gui;
+    apple-fonts = {
+      inherit (inputs.apple-fonts.packages.${final.system}) 
+      sf-pro sf-pro-nerd sf-compact sf-compact-nerd sf-mono 
+      sf-mono-nerd sf-arabic sf-arabic-nerd ny ny-nerd;
+    };
   };
 }

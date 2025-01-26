@@ -3,14 +3,12 @@
   inputs,
   config,
   lib,
-  pkgs,
   ...
 }: let
   cfg = config.my.core;
 in {
-  imports = [
-    # lib.my.relativeToRoot "modules/shared/core"
-    ../../shared/core
+  imports = lib.flatten [
+    (lib.my.relativeToRoot "modules/shared/core")
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
   ];

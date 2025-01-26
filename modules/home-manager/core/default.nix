@@ -29,6 +29,9 @@ in {
       homeDirectory = "/${homePrefix}/${config.home.username}";
       stateVersion = "24.11";
       sessionPath = ["${config.home.homeDirectory}/.local/bin"];
+      sessionVariables = {
+        FLAKE = "${config.home.homeDirectory}/dotfiles/";
+      };
     };
 
     xdg.enable = true;

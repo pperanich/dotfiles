@@ -65,6 +65,13 @@ in {
             local_host_port=''${3:-$2} # If $3 is not given, use $2
             ssh -fNT -L 127.0.0.1:$local_host_port:127.0.0.1:$2 $1 && echo "Port forward to: http://127.0.0.1:$local_host_port"
           }
+
+          export OPAL_API_KEY=$(cat /run/secrets/opal_api_key)
+          export OPENAI_API_KEY=$(cat /run/secrets/openai_api_key)
+          export ASSEMBLYAI_API_KEY=$(cat /run/secrets/assemblyai_api_key)
+          export HUGGING_FACE_HUB_TOKEN=$(cat /run/secrets/hugging_face_hub_token)
+          export ANTHROPIC_API_KEY=$(cat /run/secrets/anthropic_api_key)
+          export MISTRAL_API_KEY=$(cat /run/secrets/mistral_api_key)
         '';
       };
       dircolors = {

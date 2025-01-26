@@ -1,10 +1,7 @@
 # SSH configuration
 {
-  inputs,
   lib,
-  pkgs,
   config,
-  modulesPath,
   ...
 }: let
   cfg = config.my.core;

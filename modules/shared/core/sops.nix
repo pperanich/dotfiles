@@ -1,7 +1,5 @@
 # SOPS secrets management configuration
 {
-  pkgs,
-  inputs,
   config,
   lib,
   ...

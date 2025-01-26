@@ -3,7 +3,6 @@
   inputs,
   config,
   lib,
-  pkgs,
   ...
 }: let
   cfg = config.my.core;

@@ -43,6 +43,8 @@
     # Development Tools
     nil.url = "github:oxalica/nil"; # Nix LSP
     treefmt-nix.url = "github:numtide/treefmt-nix"; # Formatting tools
+
+    apple-fonts.url = "github:Lyndeno/apple-fonts.nix";
   };
 
   outputs = {

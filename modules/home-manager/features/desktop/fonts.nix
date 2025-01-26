@@ -18,7 +18,11 @@ in {
       # Add below once the following is closed: https://github.com/NixOS/nixpkgs/issues/270222
       twitter-color-emoji
       sketchybar-app-font
-      apple-fonts
+      apple-fonts.sf-pro
+      apple-fonts.sf-compact
+      apple-fonts.sf-mono
+      apple-fonts.sf-arabic
+      apple-fonts.ny
     ];
 
     # required to autoload fonts from packages installed via Home Manager

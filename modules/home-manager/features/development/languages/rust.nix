@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development.languages;
+  cfg = config.my.home.features.development.languages;
   inherit (config.home) homeDirectory;
   toolchain = pkgs.rust-bin.nightly.latest.default.override {
     extensions = ["rust-src" "rustfmt" "llvm-tools" "cargo"];

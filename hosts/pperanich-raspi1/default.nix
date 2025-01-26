@@ -9,10 +9,10 @@
   imports = [
     ./hardware-configuration.nix
     "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-    ../common/core
-    ../common/users/pperanich
-    ../common/optional/tailscale.nix
-    ../common/optional/couchdb.nix
+    ../shared/core
+    ../shared/users/pperanich
+    ../shared/optional/tailscale.nix
+    ../shared/optional/couchdb.nix
   ];
 
   sdImage.compressImage = false;

@@ -6,8 +6,8 @@
   lib,
   ...
 }: let
-  cfg = config.modules.core;
-  sopsFolder = builtins.toString lib.custom.relativeToRoot "sops/";
+  cfg = config.my.core;
+  sopsFolder = builtins.toString lib.my.relativeToRoot "sops/";
 in {
   config = lib.mkIf cfg.enable {
     sops = {

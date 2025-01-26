@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home;
+  cfg = config.my.home;
 in {
   config = lib.mkIf cfg.enable {
     # Basic shell environment

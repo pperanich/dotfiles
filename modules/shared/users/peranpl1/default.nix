@@ -7,9 +7,9 @@
   outputs,
   ...
 }: let
-  cfg = config.modules.users.peranpl1;
+  cfg = config.my.users.peranpl1;
 in {
-  options.modules.users.peranpl1 = {
+  options.my.users.peranpl1 = {
     enable = lib.mkEnableOption "peranpl1 user configuration";
   };
 
@@ -36,7 +36,7 @@ in {
         users.peranpl1.imports = lib.flatten [
           (
             {config, ...}:
-              import (lib.custom.relativeToRoot "home-manager/peranpl1") {
+              import (lib.my.relativeToRoot "home-manager/peranpl1") {
                 inherit pkgs inputs outputs;
               }
           )

@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development.editors;
+  cfg = config.my.home.features.development.editors;
 in {
   imports = [
     ./emacs.nix
@@ -13,10 +13,10 @@ in {
     ./vscode.nix
   ];
 
-  options.modules.home.features.development.editors = {
+  options.my.home.features.development.editors = {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = config.modules.home.features.development.enable;
+      default = config.my.home.features.development.enable;
       description = "Whether to enable development editors";
     };
 

@@ -6,7 +6,7 @@
   outputs,
   ...
 }: let
-  cfg = config.modules.home.features.work;
+  cfg = config.my.home.features.work;
 
   ssl-cert-path =
     if pkgs.stdenv.hostPlatform.isDarwin

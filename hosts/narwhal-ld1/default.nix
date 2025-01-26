@@ -11,12 +11,12 @@
   imports = [
     ./hardware-configuration.nix
     "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-    ../common/core
-    ../common/users/peranpl1
-    ../common/optional/ssh.nix
+    ../shared/core
+    ../shared/users/peranpl1
+    ../shared/optional/ssh.nix
     # If you want to use modules from other flakes (such as nixos-hardware), use something like:
-    inputs.hardware.nixosModules.common-cpu-amd
-    # inputs.hardware.nixosModules.common-ssd
+    inputs.hardware.nixosModules.shared-cpu-amd
+    # inputs.hardware.nixosModules.shared-ssd
   ];
 
   nix = {

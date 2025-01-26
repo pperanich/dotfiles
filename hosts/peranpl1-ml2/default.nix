@@ -3,7 +3,7 @@
   imports = builtins.attrValues outputs.darwinModules;
 
   # Enable the modules
-  modules = {
+  my = {
     core.enable = true;
     users.peranpl1.enable = true;
   };

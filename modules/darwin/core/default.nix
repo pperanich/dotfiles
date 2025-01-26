@@ -6,10 +6,10 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.core;
+  cfg = config.my.core;
 in {
   imports = lib.flatten [
-    (lib.custom.relativeToRoot "modules/common/core")
+    (lib.my.relativeToRoot "modules/shared/core")
     inputs.home-manager.darwinModules.home-manager
     inputs.sops-nix.darwinModules.sops
   ];

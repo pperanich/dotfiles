@@ -7,11 +7,11 @@
   imports = [
     ./hardware-configuration.nix
     inputs.NixOS-WSL.nixosModules.wsl
-    ../common/core
-    ../common/users/pperanich
-    ../common/optional/wsl.nix
-    ../common/optional/tailscale.nix
-    ../common/optional/couchdb.nix
+    ../shared/core
+    ../shared/users/pperanich
+    ../shared/optional/wsl.nix
+    ../shared/optional/tailscale.nix
+    ../shared/optional/couchdb.nix
   ];
 
   networking = {
@@ -35,7 +35,7 @@
   xdg.portal = {
     enable = true;
     wlr.enable = true;
-    config.common.default = "*";
+    config.shared.default = "*";
   };
 
   services.openssh.ports = [2222];

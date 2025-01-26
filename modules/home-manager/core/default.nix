@@ -7,7 +7,7 @@
   inputs,
   ...
 }: let
-  cfg = config.modules.home;
+  cfg = config.my.home;
   homePrefix =
     if pkgs.stdenv.hostPlatform.isDarwin
     then "Users"
@@ -19,7 +19,7 @@ in {
     inputs.nix-index-database.hmModules.nix-index
   ];
 
-  options.modules.home = {
+  options.my.home = {
     enable = lib.mkEnableOption "home-manager core configuration";
   };
 

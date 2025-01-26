@@ -5,9 +5,9 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.shell;
+  cfg = config.my.home.features.shell;
 in {
-  options.modules.home.features.shell.zsh = {
+  options.my.home.features.shell.zsh = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = cfg.enable;
@@ -32,7 +32,7 @@ in {
           {
             name = "powerlevel10k-config";
             file = "p10k.zsh";
-            src = lib.custom.relativeToRoot "home/.config/zsh/powerlevel10k-config";
+            src = lib.my.relativeToRoot "home/.config/zsh/powerlevel10k-config";
           }
           {
             name = "powerlevel10k";

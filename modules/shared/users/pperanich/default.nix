@@ -7,9 +7,9 @@
   outputs,
   ...
 }: let
-  cfg = config.modules.users.pperanich;
+  cfg = config.my.users.pperanich;
 in {
-  options.modules.users.pperanich = {
+  options.my.users.pperanich = {
     enable = lib.mkEnableOption "pperanich user configuration";
   };
 
@@ -36,7 +36,7 @@ in {
         users.pperanich.imports = lib.flatten [
           (
             {config, ...}:
-              import (lib.custom.relativeToRoot "home-manager/pperanich") {
+              import (lib.my.relativeToRoot "home-manager/pperanich") {
                 inherit pkgs inputs outputs;
               }
           )

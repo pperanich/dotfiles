@@ -1,5 +1,5 @@
 {inputs, ...}: {
-  # This one brings our custom packages from the 'pkgs' directory
+  # This one brings our my packages from the 'pkgs' directory
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
 

@@ -1,5 +1,5 @@
 {
-  description = "My custom nix configs";
+  description = "My my nix configs";
 
   inputs = {
     # Core
@@ -56,7 +56,7 @@
     ...
   } @ inputs: let
     inherit (self) outputs;
-    lib = nixpkgs.lib.extend (self: super: {custom = import ./lib {inherit (nixpkgs) lib;};});
+    lib = nixpkgs.lib.extend (self: super: {my = import ./lib {inherit (nixpkgs) lib;};});
 
     forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
     nixcasks =
@@ -85,7 +85,7 @@
     inherit lib;
 
     # Reusable modules
-    commonModules = import ./modules/common;
+    sharedModules = import ./modules/shared;
     nixosModules = import ./modules/nixos;
     darwinModules = import ./modules/darwin;
     homeManagerModules = import ./modules/home-manager;

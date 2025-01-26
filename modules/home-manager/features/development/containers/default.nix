@@ -5,16 +5,16 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development.containers;
+  cfg = config.my.home.features.development.containers;
 in {
   imports = [
     ./podman.nix
   ];
 
-  options.modules.home.features.development.containers = {
+  options.my.home.features.development.containers = {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = config.modules.home.features.development.enable;
+      default = config.my.home.features.development.enable;
       description = "Whether to enable container runtime support";
     };
   };

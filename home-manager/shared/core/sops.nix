@@ -4,12 +4,12 @@
   lib,
   ...
 }: let
-  sopsFolder = lib.custom.relativeToRoot "sops/";
+  sopsFolder = lib.my.relativeToRoot "sops/";
   inherit (config.home) homeDirectory;
 in {
   imports = [inputs.sops-nix.homeManagerModules.sops];
   sops = {
-    # This is the location of the host specific age-key and will to have been extracted to this location via hosts/common/core/sops.nix on the host
+    # This is the location of the host specific age-key and will to have been extracted to this location via hosts/shared/core/sops.nix on the host
     age.keyFile = "${homeDirectory}/.config/sops/age/keys.txt";
     defaultSopsFile = "${sopsFolder}/secrets.yaml";
     validateSopsFiles = true;

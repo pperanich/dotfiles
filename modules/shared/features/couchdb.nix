@@ -5,9 +5,9 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.features.couchdb;
+  cfg = config.my.features.couchdb;
 in {
-  options.modules.features.couchdb = {
+  options.my.features.couchdb = {
     enable = lib.mkEnableOption "CouchDB database server";
     port = lib.mkOption {
       type = lib.types.port;
@@ -40,7 +40,7 @@ in {
 
     # Secret management
     sops.secrets.couchdb-admin-pass = {
-      sopsFile = lib.custom.relativeToRoot "sops/secrets.yaml";
+      sopsFile = lib.my.relativeToRoot "sops/secrets.yaml";
     };
 
     # Open firewall port if not binding to localhost

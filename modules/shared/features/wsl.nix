@@ -5,9 +5,9 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.features.wsl;
+  cfg = config.my.features.wsl;
 in {
-  options.modules.features.wsl = {
+  options.my.features.wsl = {
     enable = lib.mkEnableOption "Windows Subsystem for Linux configuration";
 
     defaultUser = lib.mkOption {

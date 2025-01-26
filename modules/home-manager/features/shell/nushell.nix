@@ -5,9 +5,9 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.shell;
+  cfg = config.my.home.features.shell;
 in {
-  options.modules.home.features.shell.nushell = {
+  options.my.home.features.shell.nushell = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = cfg.enable;

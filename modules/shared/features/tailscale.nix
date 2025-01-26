@@ -5,9 +5,9 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.features.tailscale;
+  cfg = config.my.features.tailscale;
 in {
-  options.modules.features.tailscale = {
+  options.my.features.tailscale = {
     enable = lib.mkEnableOption "Tailscale VPN";
   };
 

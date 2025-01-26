@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development.editors;
+  cfg = config.my.home.features.development.editors;
 in {
   config = lib.mkIf (cfg.enable && cfg.neovim.enable) {
     home.sessionVariables = {EDITOR = "nvim";};

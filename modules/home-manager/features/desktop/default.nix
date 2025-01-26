@@ -5,13 +5,13 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.desktop;
+  cfg = config.my.home.features.desktop;
 in {
   imports = [
     ./fonts.nix
   ];
 
-  options.modules.home.features.desktop = {
+  options.my.home.features.desktop = {
     enable = lib.mkEnableOption "desktop environment features";
 
     # Sub-feature toggles

@@ -1,5 +1,5 @@
 {lib, ...}: {
   imports = lib.flatten [
-    (lib.custom.scanPaths ./.)
+    (lib.my.scanPaths ./.)
   ];
 }

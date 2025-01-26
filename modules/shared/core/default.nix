@@ -6,13 +6,13 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.core;
+  cfg = config.my.core;
 in {
   imports = lib.flatten [
-    (lib.custom.scanPaths ./.)
+    (lib.my.scanPaths ./.)
   ];
 
-  options.modules.core = {
+  options.my.core = {
     enable = lib.mkEnableOption "core system configuration";
   };
 

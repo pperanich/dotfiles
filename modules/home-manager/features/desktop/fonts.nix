@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.desktop;
+  cfg = config.my.home.features.desktop;
 in {
   config = lib.mkIf (cfg.enable && cfg.fonts.enable) {
     home.packages = with pkgs; [

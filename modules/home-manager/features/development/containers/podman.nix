@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development.containers;
+  cfg = config.my.home.features.development.containers;
 in {
   config = lib.mkIf (cfg.enable) {
     home.packages = with pkgs; [

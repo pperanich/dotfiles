@@ -8,10 +8,10 @@
 }: {
   imports = [
     ./hardware-configuration.nix
-    ../common/core
-    ../common/optional/tailscale.nix
-    ../common/optional/couchdb.nix
-    ../common/users/pperanich
+    ../shared/core
+    ../shared/optional/tailscale.nix
+    ../shared/optional/couchdb.nix
+    ../shared/users/pperanich
   ];
 
   nix = {

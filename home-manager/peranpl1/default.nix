@@ -5,7 +5,7 @@
 }: {
   imports = builtins.attrValues outputs.homeManagerModules;
 
-  modules.home = {
+  my.home = {
     enable = true;
 
     features = {

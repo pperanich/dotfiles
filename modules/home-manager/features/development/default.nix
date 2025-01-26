@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development;
+  cfg = config.my.home.features.development;
 in {
   imports = [
     ./editors
@@ -13,7 +13,7 @@ in {
     ./containers
   ];
 
-  options.modules.home.features.development = {
+  options.my.home.features.development = {
     enable = lib.mkEnableOption "development tools and configurations";
   };
 }

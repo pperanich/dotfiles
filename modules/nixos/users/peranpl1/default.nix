@@ -6,10 +6,10 @@
   inputs,
   ...
 }: let
-  cfg = config.modules.users.peranpl1;
+  cfg = config.my.users.peranpl1;
 in {
   imports = [
-    (lib.custom.relativeToRoot "modules/common/users/peranpl1")
+    (lib.my.relativeToRoot "modules/shared/users/peranpl1")
   ];
   config = lib.mkMerge [
     # NixOS-specific configuration

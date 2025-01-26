@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development.editors;
+  cfg = config.my.home.features.development.editors;
   inherit (config.home) homeDirectory;
 
   # Fetch the repositories

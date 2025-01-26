@@ -5,13 +5,13 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.work;
+  cfg = config.my.home.features.work;
 in {
   imports = [
     ./aplnis.nix
   ];
 
-  options.modules.home.features.work = {
+  options.my.home.features.work = {
     enable = lib.mkEnableOption "work-specific features";
 
     # Sub-feature toggles

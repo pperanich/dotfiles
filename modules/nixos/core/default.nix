@@ -6,11 +6,11 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.core;
+  cfg = config.my.core;
 in {
   imports = [
-    # lib.custom.relativeToRoot "modules/common/core"
-    ../../common/core
+    # lib.my.relativeToRoot "modules/shared/core"
+    ../../shared/core
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
   ];

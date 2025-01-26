@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.shell;
+  cfg = config.my.home.features.shell;
 in {
   imports = [
     ./tools.nix
@@ -13,7 +13,7 @@ in {
     ./nushell.nix
   ];
 
-  options.modules.home.features.shell = {
+  options.my.home.features.shell = {
     enable = lib.mkEnableOption "shell environment features";
 
     # Sub-feature toggles

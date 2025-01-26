@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.development.languages;
+  cfg = config.my.home.features.development.languages;
 in {
   imports = [
     ./rust.nix
@@ -14,10 +14,10 @@ in {
     ./tex.nix
   ];
 
-  options.modules.home.features.development.languages = {
+  options.my.home.features.development.languages = {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = config.modules.home.features.development.enable;
+      default = config.my.home.features.development.enable;
       description = "Whether to enable programming language support";
     };
 

@@ -7,7 +7,7 @@
   config,
   ...
 }: let
-  cfg = config.modules.core;
+  cfg = config.my.core;
 in {
   config = lib.mkIf cfg.enable {
     nix = {

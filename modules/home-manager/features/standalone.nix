@@ -5,13 +5,13 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home;
+  cfg = config.my.home;
   homePrefix =
     if pkgs.stdenv.hostPlatform.isDarwin
     then "Users"
     else "home";
 in {
-  options.modules.home.standalone = {
+  options.my.home.standalone = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;

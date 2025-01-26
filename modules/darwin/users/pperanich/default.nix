@@ -5,10 +5,10 @@
   inputs,
   ...
 }: let
-  cfg = config.modules.users.pperanich;
+  cfg = config.my.users.pperanich;
 in {
   imports = lib.flatten [
-    (lib.custom.relativeToRoot "modules/common/users/pperanich")
+    (lib.my.relativeToRoot "modules/shared/users/pperanich")
   ];
 
   config = lib.mkMerge [

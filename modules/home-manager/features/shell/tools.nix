@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.modules.home.features.shell;
+  cfg = config.my.home.features.shell;
 in {
   config = lib.mkIf (cfg.enable && cfg.tools.enable) {
     home.packages = with pkgs;

@@ -34,8 +34,6 @@ in {
         gimp # GNU Image Manipulation Program
         inkscape # Vector graphics editor
         alacritty # GPU-accelerated terminal emulator
-        zotero # Reference manager
-        spotify # Music streaming client
         # spotify-tui
         brave # Privacy-focused web browser
         wireshark # Network protocol analyzer
@@ -65,6 +63,9 @@ in {
       ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
         discord # Chat and voice communication
         slack # Team communication platform
+      ] ++ lib.optionals (!(pkgs.stdenv.hostPlatform.isAarch64 && pkgs.stdenv.hostPlatform.isLinux)) [
+        zotero # Reference manager
+        spotify # Music streaming client
       ];
   };
 }

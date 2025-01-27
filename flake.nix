@@ -77,6 +77,9 @@
             allowUnfree = true;
             allowBroken = true;
             allowUnfreePredicate = _: true;
+            permittedInsecurePackages = [
+              "openssl-1.1.1w"
+            ];
             overlays = builtins.attrValues outputs.overlays;
             packageOverrides = _: {
               inherit nixcasks;

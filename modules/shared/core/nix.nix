@@ -38,11 +38,11 @@ in {
     nixpkgs = {
       overlays = builtins.attrValues outputs.overlays;
       config = {
+        allowUnfree = true;
+        allowUnfreePredicate = _: true;
         permittedInsecurePackages = [
           "openssl-1.1.1w"
         ];
-        allowUnfree = true;
-        allowUnfreePredicate = _: true;
         packageOverrides = _: {
           nixcasks = import inputs.nixcasks {
             inherit pkgs;

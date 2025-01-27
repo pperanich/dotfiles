@@ -7,6 +7,7 @@
 
     features = {
       shell.enable = true;
+      work.enable = true;
       development = {
         enable = true;
 

@@ -2,73 +2,102 @@
 {
   lib,
   writeShellApplication,
-  stdenv,
+  aplCertificate,
 }: let
-  ssl-cert-path =
-    if stdenv.hostPlatform.isDarwin
-    then "/usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
-    else "/etc/ssl/certs/ca-certificates.crt";
+  ssl-cert-path = "${aplCertificate}/etc/ssl/certs/apl-ca.crt";
+  system-cert-path = "/etc/ssl/certs/ca-certificates.crt";
 
-  darwin =
-    if stdenv.hostPlatform.isDarwin
-    then "true"
-    else "false";
+  # List of environment variables to manage
+  ssl_vars = [
+    "PIP_CERT"
+    "NIX_SSL_CERT_FILE"
+    "SSL_CERT_FILE"
+    "NIX_GIT_SSL_CAINFO"
+    "REQUESTS_CA_BUNDLE"
+    "NODE_EXTRA_CA_CERTS"
+    "CURL_CA_BUNDLE"
+  ];
 in
-  (writeShellApplication {
+  writeShellApplication {
     name = "aplnis-env";
+
+    runtimeInputs = [ "ripgrep" ];
 
     text = ''
       set +o errexit
       set +o nounset
       set +o pipefail
 
-      if [ $# -eq 0 ]; then
-        echo "Usage: $0 <on/off>"
-      else
-        arg=$1
-        if [ "$arg" = "on" ]; then
-          export PIP_CERT=${ssl-cert-path}
-          export NIX_SSL_CERT_FILE=${ssl-cert-path}
-          export SSL_CERT_FILE=${ssl-cert-path}
-          export NIX_GIT_SSL_CAINFO=${ssl-cert-path}
-          export REQUESTS_CA_BUNDLE=${ssl-cert-path}
-          export NODE_EXTRA_CA_CERTS=${ssl-cert-path}
-          export CURL_CA_BUNDLE=${ssl-cert-path}
-          if ${darwin};
-          then
-            matches=$(rg ${ssl-cert-path} /Library/LaunchDaemons/org.nixos.nix-daemon.plist)
-            if [ -z "$matches" ]; then
-              sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>${ssl-cert-path}</string>' /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-              sudo launchctl unload /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-              sudo launchctl load /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-            fi
-          fi
-        elif [ "$arg" = "off" ]; then
-          unset PIP_CERT
-          unset NIX_SSL_CERT_FILE
-          unset SSL_CERT_FILE
-          unset NIX_GIT_SSL_CAINFO
-          unset REQUESTS_CA_BUNDLE
-          unset NODE_EXTRA_CA_CERTS
-          unset CURL_CA_BUNDLE
-          if ${darwin};
-          then
-            matches=$(rg ${ssl-cert-path} /Library/LaunchDaemons/org.nixos.nix-daemon.plist)
-            if [ -n "$matches" ]; then
-              sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>/etc/ssl/certs/ca-certificates.crt</string>' /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-              sudo launchctl unload /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-              sudo launchctl load /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-            fi
-          fi
-        else
-          echo "Invalid argument. Must be either 'on' or 'off'."
+      is_darwin() {
+        [ "$(uname -s)" = "Darwin" ]
+      }
+
+      usage() {
+        echo "Usage: $0 <on|off>"
+        echo "  on  - Enable APLNIS certificate and environment"
+        echo "  off - Disable APLNIS certificate and environment"
+        exit 1
+      }
+
+      update_darwin_daemon() {
+        local cert_path="$1"
+        local plist="/Library/LaunchDaemons/org.nixos.nix-daemon.plist"
+        
+        matches=$(rg "${ssl-cert-path}" "$plist" || true)
+        if [ "$cert_path" = "${ssl-cert-path}" ] && [ -z "$matches" ]; then
+          sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>'"$cert_path"'</string>' "$plist"
+          sudo launchctl unload "$plist"
+          sudo launchctl load "$plist"
+        elif [ "$cert_path" = "${system-cert-path}" ] && [ -n "$matches" ]; then
+          sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>'"$cert_path"'</string>' "$plist"
+          sudo launchctl unload "$plist"
+          sudo launchctl load "$plist"
         fi
+      }
+
+      set_vars() {
+        local cert_path="$1"
+        for var in ${toString ssl_vars}; do
+          export "$var=$cert_path"
+        done
+      }
+
+      unset_vars() {
+        for var in ${toString ssl_vars}; do
+          unset "$var"
+        done
+      }
+
+      main() {
+        case "$1" in
+          "on")
+            set_vars "${ssl-cert-path}"
+            if is_darwin; then
+              update_darwin_daemon "${ssl-cert-path}"
+            fi
+            ;;
+          "off")
+            unset_vars
+            if is_darwin; then
+              update_darwin_daemon "${system-cert-path}"
+            fi
+            ;;
+          *)
+            usage
+            ;;
+        esac
+      }
+
+      if [ $# -eq 0 ]; then
+        usage
+      else
+        main "$1"
       fi
     '';
-  })
+  }
   // {
     meta = with lib; {
-      description = "APLNIS environment helper script.";
+      description = "APLNIS environment helper script";
       license = licenses.mit;
       platforms = platforms.all;
     };

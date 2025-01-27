@@ -40,7 +40,6 @@ in {
 
         # Build dependencies
         pkg-config
-        openssl
 
         # Debug tools
         lldb

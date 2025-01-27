@@ -19,6 +19,5 @@
   };
 
   hardware.enableRedistributableFirmware = true;
-
-  hardware.pulseaudio.enable = true;
+  services.pulseaudio.enable = true;
 }

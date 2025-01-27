@@ -9,4 +9,3 @@ creation_rules:
       - age:
           - *peranpl1
           - *peranpl1-ml2
-# MISTRAL_API_KEY = "REDACTED_MISTRAL_API_KEY_XXX";

@@ -34,7 +34,6 @@ in {
         gimp # GNU Image Manipulation Program
         inkscape # Vector graphics editor
         alacritty # GPU-accelerated terminal emulator
-        # spotify-tui
         brave # Privacy-focused web browser
         wireshark # Network protocol analyzer
         # reaper        # Digital audio workstation
@@ -43,7 +42,7 @@ in {
         # kicad
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-        zoom-us # Video conferencing
+        # zoom-us # Video conferencing
         # hdfview
         firefox # Web browser
         bitwarden # Password manager

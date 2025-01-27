@@ -169,7 +169,7 @@
           ./hosts/peranpl1-ml1
         ];
         specialArgs = {
-          inherit inputs outputs;
+          inherit inputs outputs lib;
         };
       };
     };
@@ -177,14 +177,24 @@
     # Home Manager Configurations
     homeConfigurations = {
       peranpl1 = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor.x86_64-linux;
         modules = [
-          ./home-manager/users/peranpl1
+          ./home-manager/peranpl1
         ];
+        extraSpecialArgs = {
+          inherit inputs outputs;
+          lib = lib.extend (_: _: home-manager.lib);
+        };
       };
       pperanich = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor.x86_64-linux;
         modules = [
-          ./home-manager/users/pperanich
+          ./home-manager/pperanich
         ];
+        extraSpecialArgs = {
+          inherit inputs outputs;
+          lib = lib.extend (_: _: home-manager.lib);
+        };
       };
     };
   };

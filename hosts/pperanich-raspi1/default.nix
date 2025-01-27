@@ -1,21 +1,20 @@
 {
-  inputs,
   outputs,
-  lib,
-  config,
   pkgs,
   ...
 }: {
-  imports = [
+  imports = builtins.attrValues outputs.nixosModules ++ [
     ./hardware-configuration.nix
-    "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-    ../shared/core
-    ../shared/users/pperanich
-    ../shared/optional/tailscale.nix
-    ../shared/optional/couchdb.nix
   ];
 
-  sdImage.compressImage = false;
+  nixpkgs.hostPlatform = "aarch64-linux";
+
+  my = {
+    core.enable = true;
+    users.pperanich.enable = true;
+    features.tailscale.enable = true;
+    features.couchdb.enable = true;
+  };
 
   environment.systemPackages = with pkgs; [
     libraspberrypi
@@ -35,22 +34,6 @@
     };
   };
 
-  boot = {
-    kernelPackages = pkgs.linuxKernel.packages.linux_rpi3;
-    # initrd.kernelModules = [ "vc4" "bcm2835_dma" "i2c_bcm2835" "bcm2835-v4l2" "xhci_pci" "usbhid" "usb_storage" ];
-    loader.grub.enable = false;
-    # Enables the generation of /boot/extlinux/extlinux.conf
-    loader.generic-extlinux-compatible.enable = true;
-    kernelParams = [
-      "cma=256M"
-    ];
-  };
-
-  hardware.enableRedistributableFirmware = true;
-
-  sound.enable = true;
-  hardware.pulseaudio.enable = true;
-
   systemd.services.btattach = {
     before = ["bluetooth.service"];
     after = ["dev-ttyAMA0.device"];
@@ -59,7 +42,4 @@
       ExecStart = "${pkgs.bluez}/bin/btattach -B /dev/ttyAMA0 -P bcm -S 3000000";
     };
   };
-
-  # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
-  system.stateVersion = "24.11";
 }

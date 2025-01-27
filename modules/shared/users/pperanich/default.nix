@@ -13,8 +13,7 @@ in {
     enable = lib.mkEnableOption "pperanich user configuration";
   };
 
-  config = lib.mkMerge [
-    (lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
       # Common configuration
       users.users.pperanich = {
         openssh.authorizedKeys.keys = [
@@ -42,6 +41,5 @@ in {
           )
         ];
       };
-    })
-  ];
+    };
 }

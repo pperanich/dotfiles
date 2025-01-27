@@ -8,26 +8,18 @@
   cfg = config.my.core;
 in {
   imports = lib.flatten [
+    (lib.my.scanPaths ./.)
     (lib.my.relativeToRoot "modules/shared/core")
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
   ];
 
-  config = lib.mkMerge [
-    # NixOS-specific configuration
-    (lib.mkIf cfg.enable {
-      #   boot.tmp.cleanOnBoot = true;
-      zramSwap.enable = true;
+  config = lib.mkIf cfg.enable {
 
-      services = {
-        openssh = {
-          enable = true;
-          settings = {
-            PasswordAuthentication = false;
-            PermitRootLogin = "no";
-          };
-        };
-      };
+      # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
+      system.stateVersion = "24.11";
+
+      zramSwap.enable = true;
 
       # Increase open file limit for sudoers
       security.pam.loginLimits = [
@@ -44,6 +36,5 @@ in {
           value = "1048576";
         }
       ];
-    })
-  ];
+    };
 }

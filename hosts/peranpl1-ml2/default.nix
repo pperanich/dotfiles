@@ -6,6 +6,11 @@
   my = {
     core.enable = true;
     users.peranpl1.enable = true;
+    features = {
+      sketchybar.enable = true;
+      yabai.enable = true;
+      skhd.enable = true;
+    };
   };
 
   # Host-specific configuration goes here

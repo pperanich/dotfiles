@@ -89,7 +89,7 @@ in {
           djvulibre
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-          epdfview
+          qpdfview
           libvterm
         ];
       file = {

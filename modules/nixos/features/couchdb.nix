@@ -33,15 +33,10 @@ in {
       inherit (cfg) port;
       inherit (cfg) bindAddress;
       inherit (cfg) adminUser;
-      adminPass = {
-        file = config.sops.secrets.couchdb-admin-pass.path;
-      };
     };
 
     # Secret management
-    sops.secrets.couchdb-admin-pass = {
-      sopsFile = lib.my.relativeToRoot "sops/secrets.yaml";
-    };
+    sops.secrets.couchdb-admin-pass = { };
 
     # Open firewall port if not binding to localhost
     networking.firewall.allowedTCPPorts = lib.mkIf (cfg.bindAddress != "127.0.0.1") [

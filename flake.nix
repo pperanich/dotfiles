@@ -15,8 +15,8 @@
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    NixOS-WSL = {
-      url = "github:nix-community/NixOS-WSL";
+    nixos-wsl = {
+      url = "github:nix-community/nixos-wsl";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -27,6 +27,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     systems.url = "github:nix-systems/default";
+    mac-app-util.url = "github:hraban/mac-app-util";
 
     # Development Tools
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
@@ -53,7 +54,7 @@
     systems,
     darwin,
     home-manager,
-    NixOS-WSL,
+    nixos-wsl,
     nixcasks,
     ...
   } @ inputs: let
@@ -105,51 +106,51 @@
     formatter = forEachSystem (pkgs: pkgs.alejandra);
 
     # System Configurations
-    # nixosConfigurations = {
-    #   # Linux Desktop
-    #   pperanich-ld1 = lib.nixosSystem {
-    #     modules = [
-    #       ./hosts/pperanich-ld1
-    #     ];
-    #     specialArgs = {
-    #       inherit inputs outputs;
-    #     };
-    #   };
+    nixosConfigurations = {
+      # Linux Desktop
+      pperanich-ld1 = lib.nixosSystem {
+        modules = [
+          ./hosts/pperanich-ld1
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
+      };
 
-    #   # WSL Configuration
-    #   pperanich-wsl1 = lib.nixosSystem {
-    #     modules = [
-    #       ./hosts/pperanich-wsl1
-    #     ];
-    #     specialArgs = {
-    #       inherit inputs outputs;
-    #     };
-    #   };
+    # WSL Configuration
+    pperanich-wsl1 = lib.nixosSystem {
+      modules = [
+        ./hosts/pperanich-wsl1
+      ];
+      specialArgs = {
+        inherit inputs outputs;
+      };
+    };
 
-    #   # Raspberry Pi
-    #   pperanich-raspi1 = lib.nixosSystem {
-    #     modules = [
-    #       ./hosts/pperanich-raspi1
-    #     ];
-    #     specialArgs = {
-    #       inherit inputs outputs;
-    #     };
-    #   };
+    # Raspberry Pi
+    pperanich-raspi1 = lib.nixosSystem {
+      modules = [
+        ./hosts/pperanich-raspi1
+      ];
+      specialArgs = {
+        inherit inputs outputs;
+      };
+    };
 
-    #   # Installation Media
-    #   narwhal-ld1 = lib.nixosSystem {
-    #     modules = [
-    #       ./hosts/narwhal-ld1
-    #     ];
-    #     specialArgs = {
-    #       inherit inputs outputs;
-    #     };
-    #   };
-    # };
+    # Installation Media
+    narwal-ld1 = lib.nixosSystem {
+      modules = [
+        ./hosts/narwal-ld1
+      ];
+      specialArgs = {
+        inherit inputs outputs;
+      };
+    };
+     };
 
     # Darwin Configurations
     darwinConfigurations = {
-      # M1 MacBook
+      # M3 Max MacBook
       peranpl1-ml2 = darwin.lib.darwinSystem {
         modules = [
           ./hosts/peranpl1-ml2
@@ -160,62 +161,28 @@
       };
 
       # Intel MacBook
-      # peranpl1-ml1 = darwin.lib.darwinSystem {
-      #   modules = [
-      #     ./hosts/peranpl1-ml1
-      #   ];
-      #   specialArgs = {
-      #     inherit inputs outputs;
-      #   };
-      # };
-
-      # # Work MacBook
-      # B1LOAN-21-ML126 = darwin.lib.darwinSystem {
-      #   modules = [
-      #     ./hosts/B1LOAN-21-ML126
-      #   ];
-      #   specialArgs = {
-      #     inherit inputs outputs;
-      #   };
-      # };
+      peranpl1-ml1 = darwin.lib.darwinSystem {
+        modules = [
+          ./hosts/peranpl1-ml1
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
+      };
     };
 
-    #   # Home Manager Configurations
-    #   homeConfigurations = {
-    #     # Linux Workstations
-    #     "peranpl1@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
-    #       pkgs = pkgsFor.x86_64-linux;
-    #       modules = [
-    #         ./home-manager/users/peranpl1
-    #         ./home-manager/features/emacs.nix
-    #         ./home-manager/features/desktop.nix
-    #         ./home-manager/features/aplnis.nix
-    #       ];
-    #     };
-
-    #     "holo@holobrain-ld1" = home-manager.lib.homeManagerConfiguration {
-    #       pkgs = pkgsFor.x86_64-linux;
-    #       modules = [
-    #         ./home-manager/users/holo
-    #         ./home-manager/features/desktop.nix
-    #         ./home-manager/features/aplnis.nix
-    #       ];
-    #     };
-
-    #     # Embedded Systems
-    #     "pi@om-apl-st2-raspi1" = home-manager.lib.homeManagerConfiguration {
-    #       pkgs = pkgsFor.aarch64-linux;
-    #       modules = [
-    #         ./home-manager/users/pi
-    #       ];
-    #     };
-
-    #     "nvidia@om-apl-st2-agx1" = home-manager.lib.homeManagerConfiguration {
-    #       pkgs = pkgsFor.aarch64-linux;
-    #       modules = [
-    #         ./home-manager/users/nvidia
-    #       ];
-    #     };
-    #   };
+    # Home Manager Configurations
+    homeConfigurations = {
+      peranpl1 = home-manager.lib.homeManagerConfiguration {
+        modules = [
+          ./home-manager/users/peranpl1
+        ];
+      };
+      pperanich = home-manager.lib.homeManagerConfiguration {
+        modules = [
+          ./home-manager/users/pperanich
+        ];
+      };
+    };
   };
 }

@@ -2,7 +2,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }: let
   cfg = config.my.home.features.shell;

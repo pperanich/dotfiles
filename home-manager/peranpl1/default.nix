@@ -9,6 +9,7 @@
     enable = true;
 
     features = {
+      shell.enable = true;
       development = {
         enable = true;
 

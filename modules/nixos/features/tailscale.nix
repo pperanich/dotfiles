@@ -15,11 +15,13 @@ in {
     services.tailscale = {
       enable = true;
       package = pkgs.tailscale;
+      # Optional (default: 41641):
+      port = 41641;
     };
 
     networking.firewall = {
       # Enable Tailscale's ports
-      allowedUDPPorts = [config.services.tailscale.port];
+      # allowedUDPPorts = [ config.services.tailscale.port ];
       # Enable Tailscale's built-in firewall
       trustedInterfaces = ["tailscale0"];
     };

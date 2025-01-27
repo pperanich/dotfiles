@@ -9,14 +9,13 @@
 in {
   imports = lib.flatten [
     (lib.my.relativeToRoot "modules/shared/core")
+    inputs.mac-app-util.darwinModules.default
     inputs.home-manager.darwinModules.home-manager
     inputs.sops-nix.darwinModules.sops
   ];
 
-  config = lib.mkMerge [
-    # Darwin-specific configuration
-    (lib.mkIf cfg.enable {
-      system.stateVersion = 4;
+  config = lib.mkIf cfg.enable {
+      system.stateVersion = 5;
 
       nix = {
         extraOptions = ''
@@ -73,6 +72,9 @@ in {
 
       security.pam.enableSudoTouchIdAuth = true;
       homebrew.enable = true;
-    })
-  ];
+
+      home-manager.sharedModules = [
+        inputs.mac-app-util.homeManagerModules.default
+      ];
+    };
 }

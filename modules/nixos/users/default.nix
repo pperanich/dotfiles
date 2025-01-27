@@ -1,4 +1,5 @@
-{
-  peranpl1 = import ./peranpl1;
-  pperanich = import ./pperanich;
+{lib, ...}: {
+  imports = lib.flatten [
+    (lib.my.scanPaths ./.)
+  ];
 }

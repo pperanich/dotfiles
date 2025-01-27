@@ -1,31 +1,34 @@
 {
-  pkgs,
   inputs,
   outputs,
   ...
 }: {
-  imports = [
+  imports = builtins.attrValues outputs.nixosModules ++ [
     ./hardware-configuration.nix
-    inputs.NixOS-WSL.nixosModules.wsl
-    ../shared/core
-    ../shared/users/pperanich
-    ../shared/optional/wsl.nix
-    ../shared/optional/tailscale.nix
-    ../shared/optional/couchdb.nix
+    inputs.nixos-wsl.nixosModules.default
   ];
+
+  nixpkgs.hostPlatform = "x86_64-linux";
+
+  my = {
+    core.enable = true;
+    users.peranpl1.enable = true;
+  };
+
+  wsl = {
+    enable = true;
+    defaultUser = "pperanich";
+    docker-desktop.enable = true;
+    interop.register = true;
+    startMenuLaunchers = true;
+  };
 
   networking = {
     hostName = "pperanich-wsl1";
-    useDHCP = true;
     interfaces.eth0 = {
       useDHCP = true;
       wakeOnLan.enable = true;
     };
-  };
-
-  boot = {
-    kernelPackages = pkgs.linuxKernel.packages.linux_zen;
-    binfmt.emulatedSystems = ["aarch64-linux" "i686-linux"];
   };
 
   programs = {
@@ -39,6 +42,4 @@
   };
 
   services.openssh.ports = [2222];
-
-  system.stateVersion = "24.11";
 }

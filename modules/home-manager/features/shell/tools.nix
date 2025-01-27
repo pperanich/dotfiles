@@ -7,7 +7,7 @@
 }: let
   cfg = config.my.home.features.shell;
 in {
-  config = lib.mkIf (cfg.enable && cfg.tools.enable) {
+  config = lib.mkIf cfg.tools.enable {
     home.packages = with pkgs;
       [
         act # Run github workflows locally

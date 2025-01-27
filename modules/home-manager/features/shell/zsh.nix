@@ -7,15 +7,7 @@
 }: let
   cfg = config.my.home.features.shell;
 in {
-  options.my.home.features.shell.zsh = {
-    enable = lib.mkOption {
-      type = lib.types.bool;
-      default = cfg.enable;
-      description = "Whether to enable Zsh configuration";
-    };
-  };
-
-  config = lib.mkIf (cfg.enable && cfg.zsh.enable) {
+  config = lib.mkIf cfg.zsh.enable {
     programs = {
       zsh = {
         enable = true;

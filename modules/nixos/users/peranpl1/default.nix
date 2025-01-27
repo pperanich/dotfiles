@@ -11,9 +11,7 @@ in {
   imports = [
     (lib.my.relativeToRoot "modules/shared/users/peranpl1")
   ];
-  config = lib.mkMerge [
-    # NixOS-specific configuration
-    (lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
       sops.secrets.peranpl1-password = {
         neededForUsers = true;
       };
@@ -49,6 +47,5 @@ in {
 
       services.geoclue2.enable = true;
       security.pam.services = {swaylock = {};};
-    })
-  ];
+    };
 }

@@ -21,7 +21,6 @@ in {
 
     # Basic shell configuration
     programs = {
-      bash.enable = true; # Always enable bash as fallback
       zsh.enable = true; # Default shell
     };
   };

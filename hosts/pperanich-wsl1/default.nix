@@ -14,7 +14,7 @@
 
   my = {
     core.enable = true;
-    users.peranpl1.enable = true;
+    users.pperanich.enable = true;
   };
 
   wsl = {

@@ -769,17 +769,6 @@ With a prefix ARG, remove start location."
 ;; (require 'tree-sitter-debug)
 ;; (require 'tree-sitter-query)
 
-(setq chatgpt-shell-openai-key "sk-REDACTED_OPENAI_API_KEY_XXX")
-(setq chatgpt-shell-request-timeout 900)
-;; (ob-chatgpt-shell)
-(require 'ob-chatgpt-shell)
-(ob-chatgpt-shell-setup)
-
-
-(setq dall-e-shell-openai-key "sk-REDACTED_OPENAI_API_KEY_XXX")
-(require 'ob-dall-e-shell)
-(ob-dall-e-shell-setup)
-
 (defun my/md-to-org-region (start end)
   "Convert region from markdown to org"
   (interactive "r")

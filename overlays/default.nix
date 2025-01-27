@@ -1,5 +1,4 @@
-{inputs, ...}:
-{
+{inputs, ...}: {
   # This one brings our my packages from the 'pkgs' directory
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
@@ -51,7 +50,7 @@
           prev.rustPlatform.buildRustPackage.override {
             fetchCargoTarball = prev.rustPlatform.fetchCargoTarball.override {
               cacert = prev.cacert.override {
-                extraCertificateFiles = [ ./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt ];
+                extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
               };
             };
           } (args // {});

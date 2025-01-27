@@ -1,9 +1,5 @@
 # Work-specific features
-{
-  lib,
-  ...
-}:
-{
+{lib, ...}: {
   imports = [
     ./aplnis.nix
   ];

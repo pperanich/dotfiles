@@ -21,7 +21,7 @@ in
   writeShellApplication {
     name = "aplnis-env";
 
-    runtimeInputs = [ "ripgrep" ];
+    runtimeInputs = ["ripgrep"];
 
     text = ''
       set +o errexit
@@ -42,7 +42,7 @@ in
       update_darwin_daemon() {
         local cert_path="$1"
         local plist="/Library/LaunchDaemons/org.nixos.nix-daemon.plist"
-        
+
         matches=$(rg "${ssl-cert-path}" "$plist" || true)
         if [ "$cert_path" = "${ssl-cert-path}" ] && [ -z "$matches" ]; then
           sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>'"$cert_path"'</string>' "$plist"

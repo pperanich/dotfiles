@@ -18,7 +18,7 @@
   };
 
   extra-certs = [
-      ssl-cert-file
+    ssl-cert-file
   ];
 
   aplnis-overlay = final: prev: {
@@ -42,7 +42,7 @@
   };
 in {
   config = lib.mkMerge [
-    (lib.mkIf (cfg.enable) {
+    (lib.mkIf cfg.enable {
       nixpkgs = {
         overlays = [aplnis-overlay];
         config = {
@@ -63,9 +63,8 @@ in {
         PIP_DEFAULT_TIMEOUT = "600";
         UV_HTTP_TIMEOUT = "600";
       };
-
     })
-    (lib.mkIf (cfg.enable) {
+    (lib.mkIf cfg.enable {
       home.packages = with pkgs; [
         openssl_1_1
         git-openssl_1_1

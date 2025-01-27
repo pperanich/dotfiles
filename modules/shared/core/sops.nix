@@ -2,12 +2,14 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.my.core;
   sopsFolder = lib.my.relativeToRoot "sops/";
 in {
   config = lib.mkIf cfg.enable {
+    environment.systemPackages = [ pkgs.sops ];
     sops = {
       defaultSopsFile = "${sopsFolder}/secrets.yaml";
       validateSopsFiles = false;

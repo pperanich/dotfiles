@@ -9,12 +9,11 @@ in {
     (lib.my.relativeToRoot "modules/shared/users/pperanich")
   ];
 
-  config = 
-   lib.mkIf cfg.enable {
-      users.users.pperanich = {
-        home = "/Users/pperanich";
-      };
-
-      launchd.user.envVariables = config.home-manager.users.pperanich.home.sessionVariables;
+  config = lib.mkIf cfg.enable {
+    users.users.pperanich = {
+      home = "/Users/pperanich";
     };
+
+    launchd.user.envVariables = config.home-manager.users.pperanich.home.sessionVariables;
+  };
 }

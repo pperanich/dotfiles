@@ -1,12 +1,11 @@
-{ 
+{
   config,
   lib,
-  pkgs, 
-  ... 
+  pkgs,
+  ...
 }: let
   cfg = config.my.features.sketchybar;
 in {
-
   options.my.features.sketchybar = {
     enable = lib.mkEnableOption "Sketchy Bar status bar.";
   };
@@ -19,7 +18,7 @@ in {
       };
     };
 
-    environment.systemPackages = [ pkgs.switchaudio-osx ];
+    environment.systemPackages = [pkgs.switchaudio-osx];
 
     system.defaults.NSGlobalDomain._HIHideMenuBar = true;
 

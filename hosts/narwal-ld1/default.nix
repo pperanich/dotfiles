@@ -1,10 +1,9 @@
-{
-  outputs,
-  ...
-}: {
-  imports = builtins.attrValues outputs.nixosModules ++ [
-    ./hardware-configuration.nix
-  ];
+{outputs, ...}: {
+  imports =
+    builtins.attrValues outputs.nixosModules
+    ++ [
+      ./hardware-configuration.nix
+    ];
 
   my = {
     core.enable = true;

@@ -1,8 +1,4 @@
-{
-  pkgs,
-  ...
-}:
-{
+{pkgs, ...}: {
   fileSystems = {
     "/" = {
       device = "/dev/disk/by-label/NIXOS_SD";
@@ -26,5 +22,4 @@
 
   sound.enable = true;
   hardware.pulseaudio.enable = true;
-
 }

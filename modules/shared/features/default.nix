@@ -4,4 +4,3 @@
     (lib.my.scanPaths ./.)
   ];
 }
-

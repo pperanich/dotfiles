@@ -9,7 +9,7 @@
   sopsFolder = lib.my.relativeToRoot "sops/";
 in {
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [ pkgs.sops ];
+    environment.systemPackages = [pkgs.sops];
     sops = {
       defaultSopsFile = "${sopsFolder}/secrets.yaml";
       validateSopsFiles = false;

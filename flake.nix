@@ -117,36 +117,36 @@
         };
       };
 
-    # WSL Configuration
-    pperanich-wsl1 = lib.nixosSystem {
-      modules = [
-        ./hosts/pperanich-wsl1
-      ];
-      specialArgs = {
-        inherit inputs outputs;
+      # WSL Configuration
+      pperanich-wsl1 = lib.nixosSystem {
+        modules = [
+          ./hosts/pperanich-wsl1
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
       };
-    };
 
-    # Raspberry Pi
-    pperanich-raspi1 = lib.nixosSystem {
-      modules = [
-        ./hosts/pperanich-raspi1
-      ];
-      specialArgs = {
-        inherit inputs outputs;
+      # Raspberry Pi
+      pperanich-raspi1 = lib.nixosSystem {
+        modules = [
+          ./hosts/pperanich-raspi1
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
       };
-    };
 
-    # Installation Media
-    narwal-ld1 = lib.nixosSystem {
-      modules = [
-        ./hosts/narwal-ld1
-      ];
-      specialArgs = {
-        inherit inputs outputs;
+      # Installation Media
+      narwal-ld1 = lib.nixosSystem {
+        modules = [
+          ./hosts/narwal-ld1
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
       };
     };
-     };
 
     # Darwin Configurations
     darwinConfigurations = {

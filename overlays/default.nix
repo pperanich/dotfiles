@@ -19,9 +19,19 @@
       configureFlags = (oldAttrs.configureFlags or []) ++ ["--program-prefix=g"];
     });
     apple-fonts = {
-      inherit (inputs.apple-fonts.packages.${final.system}) 
-      sf-pro sf-pro-nerd sf-compact sf-compact-nerd sf-mono 
-      sf-mono-nerd sf-arabic sf-arabic-nerd ny ny-nerd;
+      inherit
+        (inputs.apple-fonts.packages.${final.system})
+        sf-pro
+        sf-pro-nerd
+        sf-compact
+        sf-compact-nerd
+        sf-mono
+        sf-mono-nerd
+        sf-arabic
+        sf-arabic-nerd
+        ny
+        ny-nerd
+        ;
     };
   };
 }

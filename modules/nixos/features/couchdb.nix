@@ -36,7 +36,7 @@ in {
     };
 
     # Secret management
-    sops.secrets.couchdb-admin-pass = { };
+    sops.secrets.couchdb-admin-pass = {};
 
     # Open firewall port if not binding to localhost
     networking.firewall.allowedTCPPorts = lib.mkIf (cfg.bindAddress != "127.0.0.1") [

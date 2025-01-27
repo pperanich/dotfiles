@@ -3,10 +3,12 @@
   outputs,
   ...
 }: {
-  imports = builtins.attrValues outputs.nixosModules ++ [
-    ./hardware-configuration.nix
-    inputs.nixos-wsl.nixosModules.default
-  ];
+  imports =
+    builtins.attrValues outputs.nixosModules
+    ++ [
+      ./hardware-configuration.nix
+      inputs.nixos-wsl.nixosModules.default
+    ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
 

@@ -1,8 +1,5 @@
 # Home configuration for peranpl1
-{
-  outputs,
-  ...
-}: {
+{outputs, ...}: {
   imports = builtins.attrValues outputs.homeManagerModules;
 
   my.home = {

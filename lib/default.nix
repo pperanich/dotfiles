@@ -18,5 +18,4 @@
 
   # configPath = "${config.home.homeDirectory}/dotfiles/home/";
   # mkMutableSymlink = path: config.lib.file.mkOutOfStoreSymlink (config.lib.meta.configPath + path);
-
 }

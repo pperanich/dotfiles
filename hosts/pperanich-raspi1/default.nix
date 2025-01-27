@@ -3,9 +3,11 @@
   pkgs,
   ...
 }: {
-  imports = builtins.attrValues outputs.nixosModules ++ [
-    ./hardware-configuration.nix
-  ];
+  imports =
+    builtins.attrValues outputs.nixosModules
+    ++ [
+      ./hardware-configuration.nix
+    ];
 
   nixpkgs.hostPlatform = "aarch64-linux";
 

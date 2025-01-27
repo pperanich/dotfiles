@@ -26,7 +26,8 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Common desktop packages
-    home.packages = with pkgs; [
+    home.packages = with pkgs;
+      [
         feh # Fast image viewer
         libsecret # Secret service API library
         glib # Low-level core library for GNOME

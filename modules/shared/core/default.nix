@@ -1,9 +1,5 @@
 # Core module for shared configuration across all systems
-{
-  lib,
-  ...
-}:
-{
+{lib, ...}: {
   imports = lib.flatten [
     (lib.my.scanPaths ./.)
   ];

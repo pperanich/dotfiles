@@ -1,12 +1,11 @@
-{ 
+{
   config,
   lib,
-  pkgs, 
-  ... 
+  pkgs,
+  ...
 }: let
   cfg = config.my.features.skhd;
 in {
-
   options.my.features.skhd = {
     enable = lib.mkEnableOption "Simple hot-key daemon.";
   };
@@ -19,7 +18,7 @@ in {
       };
     };
 
-    environment.systemPackages = [ pkgs.skhd ];
+    environment.systemPackages = [pkgs.skhd];
 
     # For skhd debugging
     launchd.user.agents.skhd.serviceConfig.StandardErrorPath = "/tmp/skhd.err.log";

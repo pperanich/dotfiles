@@ -6,7 +6,7 @@
 }: let
   cfg = config.my.home.features.shell;
 in {
-  config = lib.mkIf (cfg.nushell.enable) {
+  config = lib.mkIf cfg.nushell.enable {
     programs = {
       nushell = {
         enable = true;

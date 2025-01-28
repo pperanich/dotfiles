@@ -1,11 +1,15 @@
 keys:
   - &users:
     - &peranpl1 age1sy8x2rtl25pqlt3vceqjzgn7ym3mfn8wavwjd4t8e38t4mmcyamqcmdp9k
+    - &pperanich age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
   - &hosts:
     - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
+    - &pperanich-wsl1 age1pfappspcu2kdx33gxjpxapltx70qenl5dlwx00ugcghpvxg2t3aqfx53cz
 creation_rules:
   - path_regex: secrets.yaml$
     key_groups:
       - age:
           - *peranpl1
+          - *pperanich
           - *peranpl1-ml2
+          - *pperanich-wsl1

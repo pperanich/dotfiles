@@ -38,6 +38,19 @@
         ny-nerd
         ;
     };
+    buildPackages = prev.buildPackages // {
+      openssl = prev.openssl_1_1;
+      buildInputs = (prev.buildInputs or []) // [ prev.openssl_1_1 ];
+    };
+
+    # buildGoModule = prev.buildGoModule // {
+    #   env = { 
+    #     NIX_SSL_CERT_FILE = final.aplCertificate;
+    #     SSL_CERT_FILE = final.aplCertificate;
+    #     GIT_SSL_CAINFO= final.aplCertificate;
+    #     };
+    # };
+
     curl-openssl_1_1 = prev.curl.override {openssl = prev.openssl_1_1;};
     git-openssl_1_1 = prev.git.override {
       openssl = prev.openssl_1_1;

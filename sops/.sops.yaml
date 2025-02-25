@@ -6,6 +6,7 @@ keys:
     - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
     - &pperanich-wsl1 age1pfappspcu2kdx33gxjpxapltx70qenl5dlwx00ugcghpvxg2t3aqfx53cz
     - &redd-holobrain age1l9fpjdh9ksma28zqhnl28k6pal5s2x9m586a9xjgyec6dsjrs34qsd6krx
+    - &holobrain-ld2 age1tmd7d6g6f9lzmg44g0uer2d6kzzktxh7d5dmdfhdcn3cm97xz9qsl2qv60
 creation_rules:
   - path_regex: secrets.yaml$
     key_groups:
@@ -15,3 +16,4 @@ creation_rules:
           - *peranpl1-ml2
           - *pperanich-wsl1
           - *redd-holobrain
+          - *holobrain-ld2

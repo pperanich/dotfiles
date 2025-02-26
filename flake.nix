@@ -196,6 +196,16 @@
           lib = lib.extend (_: _: home-manager.lib);
         };
       };
+      holo = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor.x86_64-linux;
+        modules = [
+          ./home-manager/holo
+        ];
+        extraSpecialArgs = {
+          inherit inputs outputs;
+          lib = lib.extend (_: _: home-manager.lib);
+        };
+      };
     };
   };
 }

@@ -4,7 +4,7 @@
 
   my.home = {
     enable = true;
-    my.home.core.sops.enable = false;
+    sops.enable = false;
 
     features = {
       shell.enable = true;

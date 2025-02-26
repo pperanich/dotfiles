@@ -15,7 +15,6 @@
 in {
   imports = [
     ./shell.nix
-    ./sops.nix
     inputs.nix-index-database.hmModules.nix-index
   ];
 

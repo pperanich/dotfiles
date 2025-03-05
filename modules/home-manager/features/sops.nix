@@ -6,11 +6,19 @@
   pkgs,
   ...
 }: let
-  cfg = config.my.home;
+  cfg = config.my.home.sops;
   sopsFolder = lib.my.relativeToRoot "sops/";
   inherit (config.home) homeDirectory;
 in {
   imports = [inputs.sops-nix.homeManagerModules.sops];
+
+  options.my.home.sops = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to enable sops home-manager configuration";
+    };
+  };
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {

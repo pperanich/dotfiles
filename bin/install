@@ -174,11 +174,12 @@ main() {
 
   # Setup based on OS
   if [ "$(detect_os)" = "darwin" ]; then
+    # Setup nix-darwin (which includes home-manager)
     setup_darwin
+  else
+    # Setup home-manager
+    setup_home_manager
   fi
-
-  # Setup home-manager
-  setup_home_manager
 
   log_info "Installation completed successfully!"
   log_warn "Please restart your shell or source your profile"

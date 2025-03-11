@@ -17,29 +17,8 @@ in {
   config = lib.mkIf cfg.enable {
     system.stateVersion = 5;
 
-    nix = {
-      extraOptions = ''
-        extra-platforms = x86_64-darwin aarch64-darwin
-      '';
-      linux-builder = {
-        enable = true;
-        ephemeral = true;
-        maxJobs = 4;
-        systems = [
-          "x86_64-linux"
-          "aarch64-linux"
-        ];
-        config = {
-          virtualisation = {
-            darwin-builder = {
-              diskSize = 40 * 1024;
-              memorySize = 8 * 1024;
-            };
-            cores = 6;
-          };
-        };
-      };
-    };
+    # We are using the Determinate daemon
+    nix.enable = false;
 
     system.defaults = {
       dock = {

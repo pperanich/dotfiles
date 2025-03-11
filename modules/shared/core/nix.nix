@@ -18,7 +18,7 @@ in {
         system-features = ["kvm" "big-parallel" "nixos-test"];
         flake-registry = ""; # Disable global flake registry
       };
-      optimise.automatic = true;
+      # optimise.automatic = true;
       # gc = {
       #   automatic = true;
       #   interval = "weekly";

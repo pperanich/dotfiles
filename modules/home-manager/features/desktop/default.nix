@@ -50,7 +50,7 @@ in {
         protonvpn-gui # VPN client
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-        logseq # Knowledge management tool
+        # logseq # Knowledge management tool
         m-cli # useful macOS CLI commands
         ollama # Local LLM runner
         nixcasks.docker # Container platform

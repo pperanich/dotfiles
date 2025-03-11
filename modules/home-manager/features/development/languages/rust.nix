@@ -22,6 +22,8 @@
       "x86_64-unknown-linux-gnu"
       "wasm32-unknown-unknown"
       "wasm32-wasip1"
+      "aarch64-apple-ios-sim"
+      "aarch64-linux-android"
     ];
   };
 in {

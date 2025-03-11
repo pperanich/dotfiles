@@ -41,8 +41,6 @@ in {
       };
     };
 
-    services.nix-daemon.enable = true;
-
     system.defaults = {
       dock = {
         autohide = true;
@@ -70,7 +68,11 @@ in {
       };
     };
 
-    security.pam.enableSudoTouchIdAuth = true;
+    security.pam.services.sudo_local = {
+      enable = true;
+      touchIdAuth = true;
+      reattach = true;
+    };
     homebrew.enable = true;
 
     home-manager.sharedModules = [

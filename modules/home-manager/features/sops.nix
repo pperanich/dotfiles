@@ -36,6 +36,7 @@ in {
           "api_keys/hugging_face_hub_token" = {};
           "api_keys/anthropic_api_key" = {};
           "api_keys/mistral_api_key" = {};
+          "api_keys/openrouter_api_key" = {};
         };
       };
     })
@@ -47,6 +48,7 @@ in {
         export HUGGING_FACE_HUB_TOKEN=$(cat ${config.sops.secrets."api_keys/hugging_face_hub_token".path})
         export ANTHROPIC_API_KEY=$(cat ${config.sops.secrets."api_keys/anthropic_api_key".path})
         export MISTRAL_API_KEY=$(cat ${config.sops.secrets."api_keys/mistral_api_key".path})
+        export OPENROUTER_API_KEY=$(cat ${config.sops.secrets."api_keys/openrouter_api_key".path})
       '';
     })
   ];

@@ -26,7 +26,7 @@ in {
         eva # A calculator REPL, similar to bc
         bottom # System viewer
         bandwhich # A CLI utility for displaying current network utilization
-        yazi  # Blazing fast terminal file manager written in Rust, based on async I/O
+        # yazi-unwrapped  # Blazing fast terminal file manager written in Rust, based on async I/O
 
         curlie  # Frontend to curl that adds the ease of use of httpie, without compromising on features and performance
         xh  # Friendly and fast tool for sending HTTP requests

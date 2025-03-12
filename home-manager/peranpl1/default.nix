@@ -10,6 +10,7 @@
       work.enable = true;
       development = {
         enable = true;
+        containers.enable = false;
 
         editors = {
           enable = true;

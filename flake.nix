@@ -20,6 +20,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Disk Management
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Security & Utils
     sops-nix.url = "github:Mic92/sops-nix";
     nix-index-database = {
@@ -56,6 +62,7 @@
     home-manager,
     nixos-wsl,
     nixcasks,
+    disko,
     ...
   } @ inputs: let
     inherit (self) outputs;
@@ -110,6 +117,26 @@
 
     # System Configurations
     nixosConfigurations = {
+      # MacBook Pro 2019 with T2 chip
+      macbook-pro = lib.nixosSystem {
+        modules = [
+          ./hosts/macbook-pro
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
+      };
+
+      # ISO for MacBook Pro installation
+      macbook-pro-iso = lib.nixosSystem {
+        modules = [
+          ./hosts/macbook-pro-iso
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
+      };
+
       # Linux Desktop
       pperanich-ld1 = lib.nixosSystem {
         modules = [

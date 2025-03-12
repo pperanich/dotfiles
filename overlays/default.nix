@@ -38,13 +38,15 @@
         ny-nerd
         ;
     };
-    buildPackages = prev.buildPackages // {
-      openssl = prev.openssl_1_1;
-      buildInputs = (prev.buildInputs or []) // [ prev.openssl_1_1 ];
-    };
+    buildPackages =
+      prev.buildPackages
+      // {
+        openssl = prev.openssl_1_1;
+        buildInputs = (prev.buildInputs or []) // [prev.openssl_1_1];
+      };
 
     # buildGoModule = prev.buildGoModule // {
-    #   env = { 
+    #   env = {
     #     NIX_SSL_CERT_FILE = final.aplCertificate;
     #     SSL_CERT_FILE = final.aplCertificate;
     #     GIT_SSL_CAINFO= final.aplCertificate;

@@ -85,6 +85,7 @@ install_nix() {
     log_error "Failed to install Nix"
     exit 1
   fi
+  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 }
 
 # Configure Nix

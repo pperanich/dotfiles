@@ -28,14 +28,14 @@ in {
         bandwhich # A CLI utility for displaying current network utilization
         # yazi-unwrapped  # Blazing fast terminal file manager written in Rust, based on async I/O
 
-        curlie  # Frontend to curl that adds the ease of use of httpie, without compromising on features and performance
-        xh  # Friendly and fast tool for sending HTTP requests
-        choose  # Human-friendly and fast alternative to cut and (sometimes) awk
-        httpie  # Command line HTTP client whose goal is to make CLI human-friendly
-        dust  # du + rust = dust. Like du but more intuitive
-        duf  # Disk Usage/Free Utility
-        delta  # Syntax-highlighting pager for git
-        eza  # Modern, maintained replacement for ls
+        curlie # Frontend to curl that adds the ease of use of httpie, without compromising on features and performance
+        xh # Friendly and fast tool for sending HTTP requests
+        choose # Human-friendly and fast alternative to cut and (sometimes) awk
+        httpie # Command line HTTP client whose goal is to make CLI human-friendly
+        dust # du + rust = dust. Like du but more intuitive
+        duf # Disk Usage/Free Utility
+        delta # Syntax-highlighting pager for git
+        eza # Modern, maintained replacement for ls
 
         ripgrep # Better grep
         fd # Better find

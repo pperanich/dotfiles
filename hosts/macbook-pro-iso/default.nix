@@ -1,7 +1,6 @@
 {
   inputs,
   outputs,
-  lib,
   config,
   pkgs,
   ...
@@ -47,6 +46,7 @@
 
   # Enable the desktop environment in the ISO
   my = {
+    users.pperanich.enable = true;
     core.enable = true;
 
     # Desktop environment configuration for the live environment
@@ -54,7 +54,7 @@
       # Enable display manager with Sway as default
       display-manager = {
         enable = true;
-        manager = "gdm";
+        manager = "sddm";
         defaultSession = "sway";
         autoLogin = {
           enable = true; # Auto-login for the live session
@@ -106,13 +106,14 @@
 
   # Hardware configuration for MacBook Pro
   hardware = {
-    opengl.enable = true;
+    graphics.enable = true;
     bluetooth.enable = true;
-    pulseaudio.enable = false;
 
     # Apple-specific configuration
     facetimehd.enable = true; # Enable FaceTime HD camera if available
   };
+
+  services.pulseaudio.enable = false;
 
   # Enable sound via pipewire
   security.rtkit.enable = true;
@@ -200,9 +201,6 @@
 
     # MacBook-specific utilities
     brightnessctl # Backlight control
-
-    # Installation documentation
-    nixos-manual
 
     # T2Linux-specific tools
     python3

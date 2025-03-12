@@ -12,7 +12,6 @@
       ./hardware-configuration.nix
       # Include the T2 security chip module from nixos-hardware
       inputs.hardware.nixosModules.apple-t2
-      # Removed Disko modules
     ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
@@ -64,7 +63,7 @@
 
   # T2 Mac specific hardware configuration
   hardware = {
-    opengl = {
+    graphics = {
       enable = true;
       driSupport = true;
       driSupport32Bit = true;

@@ -34,7 +34,7 @@ in {
 
   config = mkIf cfg.enable {
     # Common X11 configuration
-    services.xserver = {
+    services = {
       # Display Manager Configuration
       displayManager = {
         # Default session configuration
@@ -45,19 +45,16 @@ in {
           enable = true;
           user = cfg.autoLogin.user;
         };
+      };
+      xserver = {
 
         # Configure the selected display manager
-        gdm = {
+        displayManager.gdm = {
           enable = cfg.manager == "gdm";
           wayland = true;
         };
 
-        sddm = {
-          enable = lib.mkForce cfg.manager == "sddm";
-          theme = "breeze";
-        };
-
-        lightdm = {
+        displayManager.lightdm = {
           enable = cfg.manager == "lightdm";
           background = "#000000";
           greeters.gtk = {

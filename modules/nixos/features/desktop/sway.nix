@@ -76,7 +76,6 @@ in {
     fonts.packages = with pkgs; [
       noto-fonts
       font-awesome
-      (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
     ];
 
     # Environment variables for Wayland

@@ -39,22 +39,6 @@ in
         exit 1
       }
 
-      update_darwin_daemon() {
-        local cert_path="$1"
-        local plist="/Library/LaunchDaemons/org.nixos.nix-daemon.plist"
-
-        matches=$(rg "${ssl-cert-path}" "$plist" || true)
-        if [ "$cert_path" = "${ssl-cert-path}" ] && [ -z "$matches" ]; then
-          sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>'"$cert_path"'</string>' "$plist"
-          sudo launchctl unload "$plist"
-          sudo launchctl load "$plist"
-        elif [ "$cert_path" = "${system-cert-path}" ] && [ -n "$matches" ]; then
-          sudo sed -i '/<key>NIX_SSL_CERT_FILE<\/key>/!b;n;c<string>'"$cert_path"'</string>' "$plist"
-          sudo launchctl unload "$plist"
-          sudo launchctl load "$plist"
-        fi
-      }
-
       set_vars() {
         local cert_path="$1"
         for var in ${toString ssl_vars}; do
@@ -72,15 +56,9 @@ in
         case "$1" in
           "on")
             set_vars "${ssl-cert-path}"
-            if is_darwin; then
-              update_darwin_daemon "${ssl-cert-path}"
-            fi
             ;;
           "off")
             unset_vars
-            if is_darwin; then
-              update_darwin_daemon "${system-cert-path}"
-            fi
             ;;
           *)
             usage

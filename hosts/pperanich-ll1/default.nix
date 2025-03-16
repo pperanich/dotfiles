@@ -59,6 +59,7 @@
     hostName = "pperanich-ll1";
     wireless.enable = true;
     wireless.userControlled.enable = true;
+    wireless.networks."VirusInfectedWifi".psk = "vacinate";
     useDHCP = true;
   };
 

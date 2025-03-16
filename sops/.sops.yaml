@@ -8,6 +8,7 @@ keys:
   - &hosts:
     - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
     - &pperanich-wsl1 age1pfappspcu2kdx33gxjpxapltx70qenl5dlwx00ugcghpvxg2t3aqfx53cz
+    - &pperanich-ll1 age1k5jdqa6mrymfjvrdazfuzx2rn3xavj43da5r4qt6v8pqyyvmjdhsejllsx
     - &redd-holobrain age1l9fpjdh9ksma28zqhnl28k6pal5s2x9m586a9xjgyec6dsjrs34qsd6krx
     - &holobrain-ld2 age1tmd7d6g6f9lzmg44g0uer2d6kzzktxh7d5dmdfhdcn3cm97xz9qsl2qv60
 creation_rules:
@@ -20,5 +21,6 @@ creation_rules:
           - *pperanich-ed25519
           - *peranpl1-ml2
           - *pperanich-wsl1
+          - *pperanich-ll1
           - *redd-holobrain
           - *holobrain-ld2

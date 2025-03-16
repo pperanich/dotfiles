@@ -9,7 +9,7 @@
     builtins.attrValues outputs.nixosModules
     ++ [
       # Use nixos-generators module
-      "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix"
+      "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
       # T2Linux channel requirements
       "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
       # Include the T2 security chip module from nixos-hardware
@@ -51,19 +51,19 @@
 
     # Desktop environment configuration for the live environment
     desktop = {
-      # Enable display manager with Sway as default
+      # Enable display manager with KDE as default
       display-manager = {
         enable = true;
         manager = "sddm";
-        defaultSession = "sway";
+        defaultSession = "plasma";
         autoLogin = {
           enable = true; # Auto-login for the live session
           user = "nixos"; # Default user for the live session
         };
       };
 
-      # Enable desktop environments
-      sway.enable = true;
+      # Enable only KDE desktop environment
+      sway.enable = false;
       kde.enable = true;
     };
   };

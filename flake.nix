@@ -1,5 +1,5 @@
 {
-  description = "My my nix configs";
+  description = "My nix configs";
 
   inputs = {
     # Core
@@ -118,9 +118,9 @@
     # System Configurations
     nixosConfigurations = {
       # MacBook Pro 2019 with T2 chip
-      macbook-pro = lib.nixosSystem {
+      "pperanich-ll1" = lib.nixosSystem {
         modules = [
-          ./hosts/macbook-pro
+          ./hosts/pperanich-ll1
         ];
         specialArgs = {
           inherit inputs outputs;
@@ -131,6 +131,16 @@
       macbook-pro-iso = lib.nixosSystem {
         modules = [
           ./hosts/macbook-pro-iso
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
+      };
+
+      # ISO for Apple T2 MacBook installation
+      apple-t2-iso = lib.nixosSystem {
+        modules = [
+          ./hosts/apple-t2-iso
         ];
         specialArgs = {
           inherit inputs outputs;

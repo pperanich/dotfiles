@@ -40,8 +40,8 @@
       # Enable display manager with Sway as default
       display-manager = {
         enable = true;
-        manager = "gdm";
-        defaultSession = "sway";
+        manager = "sddm";
+        defaultSession = "plasma";
         autoLogin = {
           enable = false;
           user = "pperanich"; # Change to your desired user
@@ -56,35 +56,10 @@
 
   # Networking configuration
   networking = {
-    hostName = "macbook-pro";
-    wireless.enable = false; # Disable wpa_supplicant
-    networkmanager.enable = true; # Use NetworkManager instead
-  };
-
-  # T2 Mac specific hardware configuration
-  hardware = {
-    graphics = {
-      enable = true;
-      driSupport = true;
-      driSupport32Bit = true;
-    };
-
-    # Enable sound via pipewire
-    bluetooth.enable = true;
-
-    # Apple-specific configuration
-    facetimehd.enable = true; # Enable FaceTime HD camera if available
-  };
-
-  services.pulseaudio.enable = false;
-
-  # Enable sound via pipewire
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
+    hostName = "pperanich-ll1";
+    wireless.enable = true;
+    wireless.userControlled.enable = true;
+    useDHCP = true;
   };
 
   # Additional services
@@ -94,31 +69,6 @@
 
     # Enable printing
     printing.enable = true;
-
-    # Enable Bluetooth
-    blueman.enable = true;
-
-    # Touchpad support
-    libinput = {
-      enable = true;
-      touchpad = {
-        naturalScrolling = true;
-        tapping = true;
-        disableWhileTyping = true;
-      };
-    };
-
-    # Thermal management
-    thermald.enable = true;
-
-    # Power management
-    tlp = {
-      enable = true;
-      settings = {
-        CPU_SCALING_GOVERNOR_ON_AC = "performance";
-        CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
-      };
-    };
   };
 
   # Allow unfree packages (needed for some firmware)
@@ -151,19 +101,7 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
-    kernelPackages = pkgs.linuxPackages_latest;
-
-    # T2 Mac specific kernel parameters
-    kernelParams = [
-      "intel_iommu=on"
-      "iommu=pt"
-      "pcie_ports=compat"
-      "pcie_aspm.policy=powersupersave"
-    ];
-
-    # Enable keyboard in early boot
-    initrd.availableKernelModules = ["applespi" "spi_pxa2xx_platform"];
-
+    
     # Enable APFS support (for accessing macOS partitions)
     extraModulePackages = with config.boot.kernelPackages; [
       apfs

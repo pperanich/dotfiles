@@ -25,7 +25,12 @@ in {
       home.packages = [pkgs.sops];
       sops = {
         # This is the location of the host specific age-key and will to have been extracted to this location via hosts/shared/core/sops.nix on the host
-        age.keyFile = "${homeDirectory}/.config/sops/age/keys.txt";
+        age = {
+          keyFile = "${homeDirectory}/.config/sops/age/keys.txt";
+          sshKeyPaths = [
+          "${homeDirectory}/.ssh/id_ed25519"
+          ];
+        };
         defaultSopsFile = "${sopsFolder}/secrets.yaml";
         validateSopsFiles = true;
 

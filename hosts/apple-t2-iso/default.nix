@@ -43,7 +43,7 @@
     # };
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 22 ]; # Open SSH port
+      allowedTCPPorts = [22]; # Open SSH port
     };
   };
 
@@ -102,17 +102,17 @@
     iwd
     iw
     wirelesstools
-    networkmanager    # For nmcli
-    bind.dnsutils     # For nslookup, dig
+    networkmanager # For nmcli
+    bind.dnsutils # For nslookup, dig
 
     # Disk utilities
     parted
     gptfdisk
-    cryptsetup        # For encrypted installations
+    cryptsetup # For encrypted installations
 
     # T2Linux-specific tools
     python3
     dmg2img
     get-apple-firmware
   ];
-} 
+}

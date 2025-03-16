@@ -47,7 +47,6 @@ in {
         };
       };
       xserver = {
-
         # Configure the selected display manager
         displayManager.gdm = {
           enable = cfg.manager == "gdm";

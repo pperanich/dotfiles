@@ -18,6 +18,7 @@ in {
     users.users.peranpl1 = {
       openssh.authorizedKeys.keys = [
         (builtins.readFile ./id_ed25519.pub)
+        (builtins.readFile ../pperanich/id_ed25519.pub)
       ];
       shell = pkgs.zsh;
       packages = [pkgs.home-manager];

@@ -8,7 +8,7 @@
 }: let
   cfg = config.my.home.sops;
   sopsFolder = lib.my.relativeToRoot "sops/";
-  inherit (config.home) homeDirectory;
+  inherit (config.home) username homeDirectory;
 in {
   imports = [inputs.sops-nix.homeManagerModules.sops];
 
@@ -37,6 +37,10 @@ in {
           "api_keys/anthropic_api_key" = {};
           "api_keys/mistral_api_key" = {};
           "api_keys/openrouter_api_key" = {};
+          "private_keys/${username}" = {
+            path = "${homeDirectory}/.ssh/id_ed25519";
+            mode = "0400";
+          };
         };
       };
     })

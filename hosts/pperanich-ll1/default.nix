@@ -101,7 +101,7 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
-    
+
     # Enable APFS support (for accessing macOS partitions)
     extraModulePackages = with config.boot.kernelPackages; [
       apfs

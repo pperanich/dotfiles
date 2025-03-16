@@ -11,6 +11,7 @@ in {
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [pkgs.sops];
     sops = {
+      secrets."test/a" = {};
       defaultSopsFile = "${sopsFolder}/secrets.yaml";
       validateSopsFiles = false;
       age = {

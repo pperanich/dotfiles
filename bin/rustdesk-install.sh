@@ -56,14 +56,19 @@ else
 fi
 
 # Install RustDesk
+latest_version=$(curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest | jq -r '.tag_name')
 
 echo "Installing RustDesk"
 if [ "${ID}" = "debian" ] || [ "$OS" = "Ubuntu" ] || [ "$OS" = "Debian" ] || [ "${UPSTREAM_ID}" = "ubuntu" ] || [ "${UPSTREAM_ID}" = "debian" ]; then
-  wget https://github.com/rustdesk/rustdesk/releases/download/1.2.6/rustdesk-1.2.6-x86_64.deb
-  apt-get install -fy ./rustdesk-1.2.6-x86_64.deb >null
+  # wget https://github.com/rustdesk/rustdesk/releases/download/1.2.6/rustdesk-1.2.6-x86_64.deb
+  wget "https://github.com/rustdesk/rustdesk/releases/download/${latest_version}/rustdesk-${latest_version}-x86_64.deb"
+  apt-get install -fy "./rustdesk-${latest_version}-x86_64.deb" >/dev/null
+  rm ./rustdesk-1.2.6-x86_64.deb
 elif [ "$OS" = "CentOS" ] || [ "$OS" = "RedHat" ] || [ "$OS" = "Fedora Linux" ] || [ "${UPSTREAM_ID}" = "rhel" ] || [ "$OS" = "Almalinux" ] || [ "$OS" = "Rocky*" ]; then
-  wget https://github.com/rustdesk/rustdesk/releases/download/1.2.6/rustdesk-1.2.6-0.x86_64.rpm
-  yum localinstall ./rustdesk-1.2.6-0.x86_64.rpm -y >null
+  # wget https://github.com/rustdesk/rustdesk/releases/download/1.2.6/rustdesk-1.2.6-0.x86_64.rpm
+  wget "https://github.com/rustdesk/rustdesk/releases/download/${latest_version}/rustdesk-${latest_version}-0.x86_64.rpm"
+  yum localinstall "./rustdesk-${latest_version}-0.x86_64.rpm" -y >/dev/null
+  rm ./rustdesk-1.2.6-x86_64.deb
 else
   echo "Unsupported OS"
   # here you could ask the user for permission to try and install anyway

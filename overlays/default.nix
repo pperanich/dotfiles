@@ -45,13 +45,13 @@
         buildInputs = (prev.buildInputs or []) // [prev.openssl_1_1];
       };
 
-    # buildGoModule = prev.buildGoModule // {
-    #   env = {
-    #     NIX_SSL_CERT_FILE = final.aplCertificate;
-    #     SSL_CERT_FILE = final.aplCertificate;
-    #     GIT_SSL_CAINFO= final.aplCertificate;
-    #     };
-    # };
+    buildGoModule = prev.buildGoModule // {
+      env = {
+        NIX_SSL_CERT_FILE = final.aplCertificate;
+        SSL_CERT_FILE = final.aplCertificate;
+        GIT_SSL_CAINFO= final.aplCertificate;
+        };
+    };
 
     curl-openssl_1_1 = prev.curl.override {openssl = prev.openssl_1_1;};
     git-openssl_1_1 = prev.git.override {
@@ -68,7 +68,15 @@
                 extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
               };
             };
-          } (args // {});
+          } //
+          prev.rustPlatform.buildRustPackage.override {
+            fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
+              cacert = prev.cacert.override {
+                extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
+              };
+            };
+          }
+          (args // {});
       };
   };
 }

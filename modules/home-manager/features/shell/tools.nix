@@ -35,7 +35,7 @@ in {
         dust # du + rust = dust. Like du but more intuitive
         duf # Disk Usage/Free Utility
         delta # Syntax-highlighting pager for git
-        eza # Modern, maintained replacement for ls
+        # eza # Modern, maintained replacement for ls
 
         ripgrep # Better grep
         fd # Better find
@@ -50,7 +50,7 @@ in {
 
         tmux # Terminal multiplexer
         tmux-sessionizer # The fastest way to manage projects as tmux sessions
-        zellij # A terminal workspace with batteries included
+        # zellij # A terminal workspace with batteries included
 
         nh # NH reimplements some basic nix commands.
         nix-output-monitor # Processes output of Nix commands to show helpful and pretty information

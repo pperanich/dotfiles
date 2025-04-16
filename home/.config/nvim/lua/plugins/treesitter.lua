@@ -24,6 +24,12 @@ return {
     vim.list_extend(opts.ensure_installed, {
       "rstml",
     })
+    vim.filetype.add({
+      extension = {
+        aip = "markdown",
+        pio = "asm",
+      },
+    })
     opts.sync_install = false
     opts.highlight = { enable = true }
     opts.indent = { enable = true }

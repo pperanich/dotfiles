@@ -2,6 +2,7 @@
   # This one brings our my packages from the 'pkgs' directory
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
+  # ghostty-overlay = inputs.ghostty.overlays.default;
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
@@ -62,13 +63,6 @@
       prev.rustPlatform
       // {
         buildRustPackage = args:
-          prev.rustPlatform.buildRustPackage.override {
-            fetchCargoTarball = prev.rustPlatform.fetchCargoTarball.override {
-              cacert = prev.cacert.override {
-                extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
-              };
-            };
-          } //
           prev.rustPlatform.buildRustPackage.override {
             fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
               cacert = prev.cacert.override {

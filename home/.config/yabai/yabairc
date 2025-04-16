@@ -66,3 +66,8 @@ yabai -m rule --add app="^zoom\.us$" space=zoom
 # spacebar padding on top screen
 SKETCHYBAR_HEIGHT=$(sketchybar --query bar | jq '.height + (.y_offset*2)')
 yabai -m config external_bar all:"$SKETCHYBAR_HEIGHT":0
+
+# Ghostty workaround, see: https://ghostty.org/docs/help/macos-tiling-wms
+yabai -m signal --add app='^Ghostty$' event=window_created action='yabai -m space --layout bsp'
+yabai -m signal --add app='^Ghostty$' event=window_destroyed action='yabai -m space --layout bsp'
+

@@ -42,6 +42,7 @@ in {
           "api_keys/anthropic_api_key" = {};
           "api_keys/mistral_api_key" = {};
           "api_keys/openrouter_api_key" = {};
+          "api_keys/gemini_api_key" = {};
           "private_keys/${username}" = {
             path = "${homeDirectory}/.ssh/id_ed25519";
             mode = "0400";
@@ -58,6 +59,7 @@ in {
         export ANTHROPIC_API_KEY=$(cat ${config.sops.secrets."api_keys/anthropic_api_key".path})
         export MISTRAL_API_KEY=$(cat ${config.sops.secrets."api_keys/mistral_api_key".path})
         export OPENROUTER_API_KEY=$(cat ${config.sops.secrets."api_keys/openrouter_api_key".path})
+        export GEMINI_API_KEY=$(cat ${config.sops.secrets."api_keys/gemini_api_key".path})
       '';
     })
   ];

@@ -20,6 +20,9 @@ case "$1" in
 "Pine")
   icon_result=":pine:"
   ;;
+"Ghostty")
+  icon_result=":ghostty:"
+  ;;
 "Alacritty" | "Hyper" | "iTerm2" | "kitty" | "Terminal" | "终端" | "WezTerm")
   icon_result=":terminal:"
   ;;
@@ -211,6 +214,9 @@ case "$1" in
   ;;
 "Final Cut Pro")
   icon_result=":final_cut_pro:"
+  ;;
+"Microsoft Outlook")
+  icon_result=":microsoft_outlook:"
   ;;
 "Microsoft PowerPoint")
   icon_result=":microsoft_power_point:"
@@ -406,6 +412,15 @@ case "$1" in
   ;;
 "Calibre")
   icon_result=":book:"
+  ;;
+"RustDesk")
+  icon_result=":rustdesk:"
+  ;;
+"Moonlight")
+  icon_result=":moonlight:"
+  ;;
+"Cursor")
+  icon_result=":cursor:"
   ;;
 *)
   icon_result=":default:"

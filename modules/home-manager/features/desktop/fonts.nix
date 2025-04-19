@@ -17,7 +17,6 @@ in {
       nerd-fonts.fira-code
       # Add below once the following is closed: https://github.com/NixOS/nixpkgs/issues/270222
       twitter-color-emoji
-      sketchybar-app-font
       apple-fonts.sf-pro
       apple-fonts.sf-compact
       apple-fonts.sf-mono

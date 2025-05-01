@@ -5,8 +5,14 @@
 #
 # Additionally, each config option is also explained in detail
 # on Ghostty's website, at https://ghostty.org/docs/config.
+#
+# Reload config with: Super + Shift + ,
 
-font-family = Iosevka Nerd Font
+font-family = "Iosevka Nerd Font"
+font-feature = -calt
+font-feature = -dlig
+font-feature = -liga
+
 theme = Github-Dark-Default
 # theme = tokyonight
 clipboard-read = allow

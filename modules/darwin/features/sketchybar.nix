@@ -16,12 +16,14 @@ in {
         enable = true;
         package = pkgs.sketchybar;
         extraPackages = [
-          pkgs.sketchybar-app-font
+          pkgs.switchaudio-osx
         ];
       };
     };
 
-    environment.systemPackages = [pkgs.switchaudio-osx];
+    fonts.packages = [
+      pkgs.sketchybar-app-font
+    ];
 
     system.defaults.NSGlobalDomain._HIHideMenuBar = true;
 

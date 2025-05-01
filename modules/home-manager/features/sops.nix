@@ -28,7 +28,7 @@ in {
         age = {
           keyFile = "${homeDirectory}/.config/sops/age/keys.txt";
           sshKeyPaths = [
-          "${homeDirectory}/.ssh/id_ed25519"
+            "${homeDirectory}/.ssh/id_ed25519"
           ];
         };
         defaultSopsFile = "${sopsFolder}/secrets.yaml";

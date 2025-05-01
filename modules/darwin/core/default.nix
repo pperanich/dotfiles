@@ -3,6 +3,7 @@
   inputs,
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.my.core;
@@ -57,5 +58,17 @@ in {
     home-manager.sharedModules = [
       inputs.mac-app-util.homeManagerModules.default
     ];
+
+    nixpkgs = {
+      config = {
+        packageOverrides = _: {
+          nixcasks = import inputs.nixcasks {
+            inherit pkgs;
+            osVersion = "sequoia";
+          };
+        };
+      };
+    };
+
   };
 }

@@ -10,6 +10,7 @@
       sketchybar.enable = true;
       yabai.enable = true;
       skhd.enable = true;
+      work.enable = true;
     };
   };
 

@@ -46,13 +46,67 @@
         buildInputs = (prev.buildInputs or []) // [prev.openssl_1_1];
       };
 
-    buildGoModule = prev.buildGoModule // {
-      env = {
-        NIX_SSL_CERT_FILE = final.aplCertificate;
-        SSL_CERT_FILE = final.aplCertificate;
-        GIT_SSL_CAINFO= final.aplCertificate;
-        };
+    # buildGoModule = prev.buildGoModule // {
+    #   preBuild = builtins.trace "Running prebuild" ''
+    #   echo "Hello world"
+    #   export GODEBUG=x509negativeserial=1
+    #   exit 234
+    #   '';
+    #   env = {
+    #     NIX_SSL_CERT_FILE = final.aplCertificate;
+    #     SSL_CERT_FILE = final.aplCertificate;
+    #     GIT_SSL_CAINFO= final.aplCertificate;
+    #     GODEBUG= "x509negativeserial=1";
+    #     GOEXPERIMENT="x509negativeserial";
+    #     };
+    #     GODEBUG= "x509negativeserial=1";
+    # };
+  
+    buildGoModule = prev.buildGoModule.override {
+      cacert = prev.cacert.override {
+        extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
+      };
     };
+
+    # sops-install-secrets = prev.sops-install-secrets.overrideAttrs (
+    #   oldAttrs: {
+    #     env = {
+    #       NIX_SSL_CERT_FILE = final.aplCertificate;
+    #       SSL_CERT_FILE = final.aplCertificate;
+    #       GIT_SSL_CAINFO= final.aplCertificate;
+    #       GODEBUG= "x509negativeserial=1";
+    #       GOEXPERIMENT="x509negativeserial";
+    #       };
+    #       GODEBUG= "x509negativeserial=1";
+    # });
+
+    # sops-install-secrets = prev.sops-install-secrets.overrideAttrs (oldAttrs: {
+    #   buildPhase = throw ''
+    #     export GODEBUG=x509negativeserial=1
+    #     ${oldAttrs.buildPhase}
+    #   '';
+    #   env = {
+    #     NIX_SSL_CERT_FILE = final.aplCertificate;
+    #     SSL_CERT_FILE = final.aplCertificate;
+    #     GIT_SSL_CAINFO= final.aplCertificate;
+    #     GODEBUG= "x509negativeserial=1";
+    #     GOEXPERIMENT="x509negativeserial";
+    #     };
+    #     GODEBUG= "x509negativeserial=1";
+    # });
+    # buildGoModule = prev.buildGoModule // {
+    #   buildGoModule = args:
+    #   prev.buildGoModule // {
+    #     env = {
+    #       NIX_SSL_CERT_FILE = final.aplCertificate;
+    #       SSL_CERT_FILE = final.aplCertificate;
+    #       GIT_SSL_CAINFO= final.aplCertificate;
+    #       GODEBUG= "x509negativeserial=1";
+    #       GOEXPERIMENT="x509negativeserial";
+    #     };
+    #   }
+    # (args // {});
+    # };
 
     curl-openssl_1_1 = prev.curl.override {openssl = prev.openssl_1_1;};
     git-openssl_1_1 = prev.git.override {

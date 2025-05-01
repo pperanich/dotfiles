@@ -17,6 +17,9 @@ email = pperanich@gmail.com
 [includeIf "gitdir:~/Documents/repos/work/"]
   path = "./work.gitconfig"
 
+[includeIf "gitdir:~/.cache/uv/**"]
+  path = "./lfs-fix.gitconfig"
+
 [http "https://gitlab.jhuapl.edu/"]
 sslCAInfo = /etc/ssl/certs/ca-certificates.crt
 

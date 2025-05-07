@@ -15,6 +15,14 @@
   my = {
     core.enable = true;
     users.pperanich.enable = true;
+    features.virtualization = {
+      docker.enable = true;
+      podman.enable = true;
+      qemu = {
+        enable = true;
+        enableVirtManager = true;
+      };
+    };
   };
 
   wsl = {

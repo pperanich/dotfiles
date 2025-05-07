@@ -12,6 +12,7 @@
       ./hardware-configuration.nix
       # Include the T2 security chip module from nixos-hardware
       inputs.hardware.nixosModules.apple-t2
+      inputs.hardware.nixosModules.common-cpu-intel
     ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
@@ -66,6 +67,19 @@
     # useDHCP = true;
   };
 
+  boot.kernelParams = [ "mem_sleep_default=s2idle" ];
+  systemd = {
+    services.tiny-dfr = {
+      wantedBy = [
+        "post-resume.target"
+        "dev-tiny_dfr_display.device"
+        "dev-tiny_dfr_backlight.device"
+        "dev-tiny_dfr_display_backlight.device"
+      ];
+      after = [ "post-resume.target" ];
+    };
+  };
+
   powerManagement = {
     enable = true;
     powertop.enable = true;
@@ -96,6 +110,13 @@
 
   security = {
     polkit.enable = true;
+  };
+
+  hardware.apple.touchBar = {
+    enable = true;
+    settings = {
+      FontTemplate = "Hurmit Nerd Font";
+    };
   };
 
   # Additional services
@@ -211,6 +232,7 @@
   };
 
   # Boot configuration
+  boot.initrd.systemd.enable = true;
   boot = {
     loader = {
       systemd-boot.enable = true;

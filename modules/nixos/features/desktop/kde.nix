@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib; let
@@ -18,5 +19,9 @@ in {
       displayManager.sddm.wayland.enable = true;
       desktopManager.plasma6.enable = true;
     };
+
+    environment.systemPackages = with pkgs; [
+      polonium
+    ];
   };
 }

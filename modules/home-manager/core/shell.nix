@@ -22,6 +22,7 @@ in {
     # Basic shell configuration
     programs = {
       zsh.enable = true; # Default shell
+      # bash.enable = true;
       atuin.enable = true;
     };
   };

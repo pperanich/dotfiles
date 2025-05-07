@@ -10,6 +10,7 @@ in {
     ./tools.nix
     ./zsh.nix
     ./nushell.nix
+    ./bash.nix
   ];
 
   options.my.home.features.shell = {
@@ -37,6 +38,14 @@ in {
         type = lib.types.bool;
         default = cfg.enable;
         description = "Whether to enable Nushell configuration";
+      };
+    };
+
+    bash = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = cfg.enable;
+        description = "Whether to enable Bash configuration";
       };
     };
   };

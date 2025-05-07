@@ -6,6 +6,9 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     hardware.url = "github:nixos/nixos-hardware";
 
+    # Temporary, for latest cursor
+    nixpkgs-cursor.url = "github:sarahec/nixpkgs/code-cursor-via-api";
+
     # System Management
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -90,7 +93,7 @@
           config = {
             allowUnfree = true;
             allowBroken = true;
-            allowUnfreePredicate = _: true;
+            # allowUnfreePredicate = _: true;
             permittedInsecurePackages = [
               "openssl-1.1.1w"
             ];

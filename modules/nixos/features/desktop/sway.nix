@@ -34,9 +34,21 @@ in {
           grim # screenshot functionality
           slurp # screen area selection
           kanshi # autorandr alternative for wayland
+          sway
+          # dbus-sway-environment
+          # configure-gtk
+          wayland
+          xdg-utils
+          glib
+          whitesur-icon-theme
+          capitaine-cursors
         ]
         ++ cfg.extraPackages;
     };
+
+    programs.light.enable = true;
+
+    services.dbus.enable = true;
 
     # XDG portal with Wayland support
     xdg.portal = {
@@ -52,6 +64,16 @@ in {
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
+    };
+    services.gnome.gnome-keyring.enable = true;
+
+    # kanshi systemd service
+    systemd.user.services.kanshi = {
+      description = "kanshi daemon";
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = ''${pkgs.kanshi}/bin/kanshi -c kanshi_config_file'';
+      };
     };
 
     # Supporting packages for a better Wayland experience

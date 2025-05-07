@@ -76,10 +76,10 @@ in {
         enableBashIntegration = true;
       };
       # Optional: Add starship for a nice prompt (alternative to powerlevel10k)
-      starship = {
-        enable = true;
-        enableBashIntegration = true;
-      };
+      # starship = {
+      #   enable = true;
+      #   enableBashIntegration = true;
+      # };
     };
   };
 } 

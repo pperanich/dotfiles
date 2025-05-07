@@ -51,7 +51,7 @@ in {
       };
     })
     (lib.mkIf (cfg.enable && config.my.home.features.shell.zsh.enable) {
-      programs.zsh.initExtra = ''
+      programs.zsh.initContent = ''
         export OPAL_API_KEY=$(cat ${config.sops.secrets."api_keys/opal_api_key".path})
         export OPENAI_API_KEY=$(cat ${config.sops.secrets."api_keys/openai_api_key".path})
         export ASSEMBLYAI_API_KEY=$(cat ${config.sops.secrets."api_keys/assemblyai_api_key".path})

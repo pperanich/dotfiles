@@ -52,7 +52,7 @@ in {
         tmux-sessionizer # The fastest way to manage projects as tmux sessions
         # zellij # A terminal workspace with batteries included
 
-        nh # NH reimplements some basic nix commands.
+        # nh # NH reimplements some basic nix commands.
         nix-output-monitor # Processes output of Nix commands to show helpful and pretty information
         nvd # Nix/NixOS package version diff tool
         statix # Lints and suggestions for the nix programming language
@@ -80,7 +80,7 @@ in {
 
         nodejs # Event-driven I/O framework for the V8 JavaScript engine
         bun # Incredibly fast JavaScript runtime, bundler, test runner, and package manager
-        deno # A modern runtime for JavaScript and TypeScript.
+        # deno # A modern runtime for JavaScript and TypeScript.
         tailwindcss # Rapidly build modern websites without ever leaving your HTML.
 
         qpdf # A C++ library and set of programs that inspect and manipulate the structure of PDF files

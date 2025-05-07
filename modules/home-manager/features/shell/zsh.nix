@@ -35,7 +35,7 @@ in {
         historySubstringSearch.enable = true;
         autosuggestion.enable = true;
         syntaxHighlighting.enable = true;
-        initExtra = ''
+        initContent = ''
           # >>> mamba initialize >>>
           # !! Contents within this block are managed by 'mamba init' !!
           export MAMBA_EXE="${pkgs.micromamba}/bin/micromamba";

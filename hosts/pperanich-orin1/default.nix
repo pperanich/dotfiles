@@ -9,6 +9,7 @@
   imports =
     builtins.attrValues outputs.nixosModules
     ++ [
+      ./disko-config.nix
       ./hardware-configuration.nix
       # Include the T2 security chip module from nixos-hardware
       inputs.jetpack-nixos.nixosModules
@@ -107,4 +108,6 @@
   boot.kernelParams = [ "initcall_blacklist=tegra_se_module_init" ];
 
   hardware.opengl.enable = true;
+
+  time.timeZone = "America/New_York";
 }

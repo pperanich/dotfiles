@@ -7,7 +7,7 @@
     hardware.url = "github:nixos/nixos-hardware";
 
     # Temporary, for latest cursor
-    nixpkgs-cursor.url = "github:sarahec/nixpkgs/code-cursor-via-api";
+    # nixpkgs-cursor.url = "github:sarahec/nixpkgs/code-cursor-via-api";
 
     # System Management
     home-manager = {

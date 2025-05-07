@@ -362,6 +362,27 @@
         "type": "github"
       }
     },
+    "jetpack-nixos": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1746548607,
+        "narHash": "sha256-F5W/FH4EuNDeZIizKpeRw3qU+SNK+2u4skdLDHcbKGU=",
+        "owner": "elliotberman",
+        "repo": "jetpack-nixos",
+        "rev": "263d12d76df850ca65cb167471b9a7dcc4f80036",
+        "type": "github"
+      },
+      "original": {
+        "owner": "elliotberman",
+        "ref": "jetpack6",
+        "repo": "jetpack-nixos",
+        "type": "github"
+      }
+    },
     "mac-app-util": {
       "inputs": {
         "cl-nix-lite": "cl-nix-lite",
@@ -719,6 +740,7 @@
         "emacs-overlay": "emacs-overlay",
         "hardware": "hardware",
         "home-manager": "home-manager",
+        "jetpack-nixos": "jetpack-nixos",
         "mac-app-util": "mac-app-util",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nil": "nil",

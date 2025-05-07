@@ -19,6 +19,12 @@
       url = "github:nix-community/nixos-wsl";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # https://github.com/elliotberman/jetpack-nixos/tree/jetpack6
+    jetpack-nixos = {
+      url = "github:elliotberman/jetpack-nixos/jetpack6";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
 
     # Disk Management
     disko = {

@@ -67,7 +67,6 @@
     # useDHCP = true;
   };
 
-  boot.kernelParams = [ "mem_sleep_default=s2idle" ];
   systemd = {
     services.tiny-dfr = {
       wantedBy = [
@@ -246,14 +245,15 @@
 
     # Add kernel parameters for better hibernation support
     kernelParams = [
-      "acpi_osi=Darwin"           # Better ACPI compatibility for MacBooks
-      "acpi_force"                # Force ACPI
-      "acpi_enforce_resources=lax" # More lenient ACPI resource checking
-      "mem_sleep_default=deep"     # Enable deep sleep states
-      "pcie_aspm=force"           # Force PCIe Active State Power Management
-      "pcie_port_pm=force"        # Force PCIe port power management
-      "nvme.noacpi=1"             # Disable ACPI for NVMe - can help with sleep
-      "intel_idle.max_cstate=4"   # Limit C-states for better stability
+      "mem_sleep_default=s2idle"
+      # "acpi_osi=Darwin"           # Better ACPI compatibility for MacBooks
+      # "acpi_force"                # Force ACPI
+      # "acpi_enforce_resources=lax" # More lenient ACPI resource checking
+      # "mem_sleep_default=deep"     # Enable deep sleep states
+      # "pcie_aspm=force"           # Force PCIe Active State Power Management
+      # "pcie_port_pm=force"        # Force PCIe port power management
+      # "nvme.noacpi=1"             # Disable ACPI for NVMe - can help with sleep
+      # "intel_idle.max_cstate=4"   # Limit C-states for better stability
     ];
   };
 }

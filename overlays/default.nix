@@ -5,6 +5,7 @@
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
+  jetpack-nixos = inputs.jetpack-nixos.overlays.jetpack6;
 
   additions = final: _prev: import ../pkgs {pkgs = final;};
   # This one contains whatever you want to overlay

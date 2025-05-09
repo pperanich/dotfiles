@@ -10,6 +10,7 @@
     builtins.attrValues outputs.nixosModules
     ++ [
       ./hardware-configuration.nix
+      ./nat-adapter.nix
       # Include the T2 security chip module from nixos-hardware
       inputs.hardware.nixosModules.apple-t2
       inputs.hardware.nixosModules.common-cpu-intel
@@ -232,6 +233,7 @@
 
   # Boot configuration
   boot.initrd.systemd.enable = true;
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
   boot = {
     loader = {
       systemd-boot.enable = true;
@@ -245,6 +247,7 @@
 
     # Add kernel parameters for better hibernation support
     kernelParams = [
+      "usbcore.autosuspend=-1"
       "mem_sleep_default=s2idle"
       # "acpi_osi=Darwin"           # Better ACPI compatibility for MacBooks
       # "acpi_force"                # Force ACPI
@@ -255,5 +258,16 @@
       # "nvme.noacpi=1"             # Disable ACPI for NVMe - can help with sleep
       # "intel_idle.max_cstate=4"   # Limit C-states for better stability
     ];
+  };
+  systemd.services = {
+    tune-usb-autosuspend = {
+      description = "Disable USB autosuspend";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = { Type = "oneshot"; };
+      unitConfig.RequiresMountsFor = "/sys";
+      script = ''
+        echo -1 > /sys/module/usbcore/parameters/autosuspend
+        '';
+    };
   };
 }

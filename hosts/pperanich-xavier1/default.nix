@@ -39,7 +39,7 @@
 
   # Networking configuration
   networking = {
-    hostName = "pperanich-orin1";
+    hostName = "pperanich-xavier1";
     wireless.enable = true;
     wireless.userControlled.enable = true;
     wireless.networks."VirusInfectedWifi".psk = "vacinate";
@@ -85,7 +85,7 @@
 
   hardware.nvidia-jetpack = {
     enable = true;
-    som = "orin-agx";
+    som = "xavier-agx";
     carrierBoard = "devkit";
   };
 

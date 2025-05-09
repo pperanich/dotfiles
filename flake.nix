@@ -127,6 +127,25 @@
 
     # System Configurations
     nixosConfigurations = {
+      # Nvidia Orin AGX
+      "pperanich-orin1" = lib.nixosSystem {
+        modules = [
+          ./hosts/pperanich-orin1
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
+      };
+      # Nvidia Xavier AGX
+      "pperanich-xavier1" = lib.nixosSystem {
+        modules = [
+          ./hosts/pperanich-xavier1
+        ];
+        specialArgs = {
+          inherit inputs outputs;
+        };
+      };
+
       # MacBook Pro 2019 with T2 chip
       "pperanich-ll1" = lib.nixosSystem {
         modules = [

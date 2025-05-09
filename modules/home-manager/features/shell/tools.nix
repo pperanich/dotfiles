@@ -86,7 +86,7 @@ in {
         qpdf # A C++ library and set of programs that inspect and manipulate the structure of PDF files
         cmake # Cross-platform, open-source build system generator
         gnumake # Tool to control the generation of non-source files from sources
-        clang_multi # C language family frontend for LLVM (wrapper script)
+        # clang_multi # C language family frontend for LLVM (wrapper script)
         devenv #
         rbw # Unofficial Bitwarden CLI
         pinentry-curses # GnuPG's interface to passphrase input

@@ -51,18 +51,5 @@
     config.shared.default = "*";
   };
 
-  boot.kernelParams = [ "usbcore.autosuspend=-1" ];
   services.openssh.ports = [2222];
-
-  systemd.services = {
-    tune-usb-autosuspend = {
-      description = "Disable USB autosuspend";
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = { Type = "oneshot"; };
-      unitConfig.RequiresMountsFor = "/sys";
-      script = ''
-        echo -1 > /sys/module/usbcore/parameters/autosuspend
-        '';
-    };
-  };
 }

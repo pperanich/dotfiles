@@ -24,8 +24,10 @@
     };
     # https://github.com/elliotberman/jetpack-nixos/tree/jetpack6
     jetpack-nixos = {
-      url = "github:elliotberman/jetpack-nixos/jetpack6";
+      # url = "github:elliotberman/jetpack-nixos/jetpack6";
+      url = "github:anduril/jetpack-nixos";
       inputs.nixpkgs.follows = "nixpkgs";
+      # inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     };
 
 

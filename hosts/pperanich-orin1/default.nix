@@ -77,6 +77,9 @@
 
   # Boot configuration
   boot = {
+    # kernelPackages = pkgs.linuxPackages_latest;
+    # kernelPackages = pkgs.linuxPackages;
+    # kernelPackages = pkgs.linuxPackages_5_15;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;

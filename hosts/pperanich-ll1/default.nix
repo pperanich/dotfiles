@@ -11,6 +11,7 @@
     ++ [
       ./hardware-configuration.nix
       ./nat-adapter.nix
+      # ./bridge-adapter.nix
       # Include the T2 security chip module from nixos-hardware
       inputs.hardware.nixosModules.apple-t2
       inputs.hardware.nixosModules.common-cpu-intel

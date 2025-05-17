@@ -78,17 +78,63 @@
     # Firmware updates
     fwupd
 
-    # nvidia-jetpack.cudaPackages.cudatoolkit
-    # nvidia-jetpack.cudaPackages.cudnn
-    nvidia-jetpack.cudaPackages.tensorrt
-    # nvidia-jetpack.cudaPackages.nsight_compute
-    nvidia-jetpack.cudaPackages.libnvjpeg
     nvidia-jetpack.nvidia-ctk
     nvidia-jetpack.python-jetson
     nvidia-jetpack.board-automation
     nvidia-jetpack.tegra-eeprom-tool
     nvidia-jetpack.orinAgxJetsonBenchmarks
     nvidia-jetpack.otaUtils
+
+  nvidia-jetpack.cudaPackages.cuda_cudart
+  nvidia-jetpack.cudaPackages.cuda_cuobjdump
+  nvidia-jetpack.cudaPackages.cuda_gdb
+  nvidia-jetpack.cudaPackages.cuda_nvcc
+  nvidia-jetpack.cudaPackages.cuda_nvdisasm
+  nvidia-jetpack.cudaPackages.cuda_nvprune
+  nvidia-jetpack.cudaPackages.cuda_nvrtc
+  nvidia-jetpack.cudaPackages.cuda_nvtx
+  nvidia-jetpack.cudaPackages.cuda_profiler_api
+  nvidia-jetpack.cudaPackages.cuda_sanitizer_api
+  nvidia-jetpack.cudaPackages.cudnn
+  nvidia-jetpack.cudaPackages.libcublas
+  nvidia-jetpack.cudaPackages.libcudla
+  nvidia-jetpack.cudaPackages.libcufft
+  nvidia-jetpack.cudaPackages.libcurand
+  nvidia-jetpack.cudaPackages.libcusolver
+  nvidia-jetpack.cudaPackages.libcusparse
+  nvidia-jetpack.cudaPackages.libnpp
+  nvidia-jetpack.cudaPackages.libnvjitlink
+  nvidia-jetpack.cudaPackages.libnvjpeg
+  nvidia-jetpack.cudaPackages.tensorrt
+  nvidia-jetpack.cudaPackages.vpi-firmware
+  nvidia-jetpack.cudaPackages.cudatoolkit
+  # nvidia-jetpack.samples.libnvinfer-samples
+  # nvidia-jetpack.samples.libnvinfer-test
+  # nvidia-jetpack.samples.combined-test
+  # nvidia-jetpack.samples.multimedia-samples
+  # nvidia-jetpack.samples.cuda-samples
+  # nvidia-jetpack.samples.multimedia-test
+  nvidia-jetpack.samples.cuda-test
+  # nvidia-jetpack.samples.cudnn-samples
+  # nvidia-jetpack.samples.cudnn-test
+  # nvidia-jetpack.samples.cupti-samples
+  # nvidia-jetpack.samples.cupti-test
+  # nvidia-jetpack.samples.graphics-demos
+  # nvidia-jetpack.samples.vpi2-samples
+  # nvidia-jetpack.samples.vpi2-test
+  # nvidia-jetpack.cudaPackages.cuda_cccl
+  # nvidia-jetpack.cudaPackages.cuda_cuxxfilt
+  # nvidia-jetpack.cudaPackages.cuda_nvml_dev
+  # nvidia-jetpack.cudaPackages.vpi
+  # nvidia-jetpack.l4tCsv
+  # nvidia-jetpack.cudaPackages.cuda_cupti
+  # nvidia-jetpack.cudaPackages.flags
+  # nvidia-jetpack.cudaPackages.markForCudatoolkitRootHook
+  # nvidia-jetpack.cudaPackages.nsight_compute_host
+  # nvidia-jetpack.cudaPackages.nsight_compute_target
+  # nvidia-jetpack.cudaPackages.nsight_systems_host
+  # nvidia-jetpack.cudaPackages.nsight_systems_target
+  # nvidia-jetpack.cudaPackages.setupCudaHook
 
 # nvidia-jetpack.cudaPackages.cuda-command-line-tools-12-6
 # nvidia-jetpack.cudaPackages."cuda-compat-12-6"
@@ -278,8 +324,7 @@
 # nvidia-jetpack."python-jetson-gpio"
 # nvidia-jetpack."python3-jetson-gpio"
   ] 
-  ++ builtins.attrValues pkgs.nvidia-jetpack.tests; 
-  # ++ builtins.attrValues pkgs.nvidia-jetpack.samples;
+  ++ builtins.attrValues pkgs.nvidia-jetpack.tests;
 
   # Just ensure containers are enabled by boot.
     boot.enableContainers = true;

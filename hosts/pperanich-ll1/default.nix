@@ -77,7 +77,7 @@
         "dev-tiny_dfr_backlight.device"
         "dev-tiny_dfr_display_backlight.device"
       ];
-      after = [ "post-resume.target" ];
+      after = ["post-resume.target"];
     };
   };
 
@@ -234,7 +234,7 @@
 
   # Boot configuration
   boot.initrd.systemd.enable = true;
-  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+  boot.binfmt.emulatedSystems = ["aarch64-linux"];
   boot = {
     loader = {
       systemd-boot.enable = true;
@@ -263,12 +263,12 @@
   systemd.services = {
     tune-usb-autosuspend = {
       description = "Disable USB autosuspend";
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = { Type = "oneshot"; };
+      wantedBy = ["multi-user.target"];
+      serviceConfig = {Type = "oneshot";};
       unitConfig.RequiresMountsFor = "/sys";
       script = ''
         echo -1 > /sys/module/usbcore/parameters/autosuspend
-        '';
+      '';
     };
   };
 }

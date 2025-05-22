@@ -1,13 +1,15 @@
-{ config, pkgs, ... }:
-
-let
+{
+  config,
+  pkgs,
+  ...
+}: let
   # Define your interfaces
-  wifiInterface = "wlp5s0";    # Change if your Wi-Fi interface is different
+  wifiInterface = "wlp5s0"; # Change if your Wi-Fi interface is different
   ethernetInterface = "enp0s20f0u2u1"; # Change if your Ethernet interface for Orin is different
 
   # Define the network for the Orin
   orinSubnetAddress = "192.168.2.1"; # IP of NixOS machine on the Orin's network
-  orinSubnetPrefixLength = 24;       # Corresponds to netmask 255.255.255.0
+  orinSubnetPrefixLength = 24; # Corresponds to netmask 255.255.255.0
   orinDhcpRangeStart = "192.168.2.100";
   orinDhcpRangeEnd = "192.168.2.200";
   orinLeaseTime = "24h";
@@ -15,17 +17,18 @@ let
   # Define a local domain name for the Orin network
   localDomainName = "orin.lan";
   nixosRouterHostname = "nixos-gw"; # Hostname for your NixOS machine on this local LAN
-in
-{
-# 1. Enable IP Forwarding
+in {
+  # 1. Enable IP Forwarding
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
   # 2. Configure the Ethernet interface connected to the Orin AGX
   # This interface needs a static IP for dnsmasq to bind to and serve as gateway.
-  networking.interfaces.${ethernetInterface}.ipv4.addresses = [{
-    address = orinSubnetAddress;
-    prefixLength = orinSubnetPrefixLength;
-  }];
+  networking.interfaces.${ethernetInterface}.ipv4.addresses = [
+    {
+      address = orinSubnetAddress;
+      prefixLength = orinSubnetPrefixLength;
+    }
+  ];
   # If using NetworkManager, you might want to tell it to leave this interface alone
   # or ensure it doesn't try to get DHCP on it.
   # Example:
@@ -33,12 +36,11 @@ in
   # Or ensure useDHCP is false (often default when static IP is assigned by NixOS modules)
   # networking.interfaces.${ethernetInterface}.useDHCP = false;
 
-
   # 3. Enable NAT (Network Address Translation)
   networking.nat = {
     enable = true;
     externalInterface = wifiInterface;
-    internalInterfaces = [ ethernetInterface ];
+    internalInterfaces = [ethernetInterface];
   };
   # networking.firewall.enable = false;
   networking.firewall.interfaces.${ethernetInterface} = {
@@ -90,9 +92,9 @@ in
       no-resolv = true; # Do not read /etc/resolv.conf from the host NixOS system.
 
       # ---- Local DNS and Domain Configuration ----
-      domain = localDomainName;   # e.g., clients will get FQDNs like client.${localDomainName}
+      domain = localDomainName; # e.g., clients will get FQDNs like client.${localDomainName}
       local = "/${localDomainName}/"; # Queries for this domain are local and not forwarded
-      expand-hosts = true;        # Add domain to simple names in /etc/hosts & DHCP leases
+      expand-hosts = true; # Add domain to simple names in /etc/hosts & DHCP leases
       no-hosts = true;
 
       # Provide a DNS name for the NixOS router itself on this local network
@@ -100,9 +102,9 @@ in
       address = "/${nixosRouterHostname}.${localDomainName}/${orinSubnetAddress}";
 
       # ---- Other sensible defaults ----
-      domain-needed = false;       # Don't forward plain names (without dots)
-      bogus-priv = true;          # Don't forward reverse lookups for private IP ranges
-      cache-size = 1000;          # Increase DNS cache size
+      domain-needed = false; # Don't forward plain names (without dots)
+      bogus-priv = true; # Don't forward reverse lookups for private IP ranges
+      cache-size = 1000; # Increase DNS cache size
     };
   };
 

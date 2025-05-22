@@ -11,13 +11,12 @@ in {
 
   config = lib.mkIf cfg.enable {
     nixpkgs = {
-      overlays = [ (import ../../../overlays/aplnis-overlay.nix) ];
+      overlays = [(import ../../../overlays/aplnis-overlay.nix)];
       config = {
-      permittedInsecurePackages = [
-        "openssl-1.1.1w"
-      ];
+        permittedInsecurePackages = [
+          "openssl-1.1.1w"
+        ];
       };
     };
   };
 }
-

@@ -58,7 +58,7 @@ in {
         statix # Lints and suggestions for the nix programming language
 
         micromamba # Reimplementation of the conda package manager
-        pixi  # Package management made easy
+        pixi # Package management made easy
         # rye  # A tool to easily manage python dependencies and environments
         python-launcher # An implementation of the `py` command for Unix-based platforms
 

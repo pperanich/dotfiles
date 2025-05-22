@@ -1,12 +1,16 @@
-{ config, lib, pkgs, ... }: # Added lib for mkForce
-
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+# Added lib for mkForce
 let
   # Define your interfaces
-  wifiInterface = "wlp5s0";    # Your Wi-Fi interface
+  wifiInterface = "wlp5s0"; # Your Wi-Fi interface
   ethernetInterface = "enp0s20f0u2u1"; # Ethernet interface connected to Orin
-  bridgeInterface = "br0";     # Name for the new bridge interface
-in
-{
+  bridgeInterface = "br0"; # Name for the new bridge interface
+in {
   # 1. Define the bridge interface and add member interfaces
   networking.bridges.${bridgeInterface}.interfaces = [
     wifiInterface
@@ -43,7 +47,6 @@ in
   # networking.interfaces.${ethernetInterface}.ipv4.addresses = lib.mkForce [];
   # networking.interfaces.${ethernetInterface}.ipv6.addresses = lib.mkForce [];
 
-
   # 4. Disable IP Forwarding (not needed for a bridge, which is Layer 2)
   #    If it was enabled by the previous NAT setup, explicitly disable it.
   #    If it defaults to 0, this line is just for clarity.
@@ -70,7 +73,7 @@ in
   #    - Ensure your main firewall allows DHCP client and typical traffic for the NixOS host
   #      itself on the br0 interface.
   networking.firewall.enable = true; # Or false if you manage it externally/don't want it
-  networking.firewall.trustedInterfaces = [ bridgeInterface ]; # Optional: if you want to simplify rules for br0
+  networking.firewall.trustedInterfaces = [bridgeInterface]; # Optional: if you want to simplify rules for br0
   # If your firewall was previously open due to `networking.firewall.enable = false;`
   # and you want to keep it that way, you can. If you enable it, ensure necessary
   # services on the NixOS host itself are allowed. For the bridging functionality,

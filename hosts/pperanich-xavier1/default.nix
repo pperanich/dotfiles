@@ -92,7 +92,7 @@
   # services.nvpmodel.profileNumber = 0;
 
   # Avoid kernel crashes
-  boot.kernelParams = [ "initcall_blacklist=tegra_se_module_init" ];
+  boot.kernelParams = ["initcall_blacklist=tegra_se_module_init"];
 
   # hardware.opengl.enable = true;
 

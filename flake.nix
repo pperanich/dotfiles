@@ -31,7 +31,6 @@
       # inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     };
 
-
     # Disk Management
     disko = {
       url = "github:nix-community/disko";

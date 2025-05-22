@@ -49,39 +49,41 @@ in {
     services.gnome.gnome-keyring.enable = true;
 
     # Essential packages for Hyprland
-    environment.systemPackages = with pkgs; [
-      # Core Hyprland utilities
-      waybar # status bar
-      wofi # application launcher
-      mako # notification daemon
-      # swww # wallpaper daemon for Hyprland
-      wl-clipboard # clipboard manager
-      alacritty # terminal
+    environment.systemPackages = with pkgs;
+      [
+        # Core Hyprland utilities
+        waybar # status bar
+        wofi # application launcher
+        mako # notification daemon
+        # swww # wallpaper daemon for Hyprland
+        wl-clipboard # clipboard manager
+        alacritty # terminal
 
-      # Display management
-      wlr-randr # Wayland randr equivalent
-      kanshi # autorandr alternative for wayland
+        # Display management
+        wlr-randr # Wayland randr equivalent
+        kanshi # autorandr alternative for wayland
 
-      # Screenshot and screen recording
-      grim # screenshot functionality
-      slurp # screen area selection
+        # Screenshot and screen recording
+        grim # screenshot functionality
+        slurp # screen area selection
 
-      # Wayland utilities
-      wev # Wayland event viewer
-      wlogout # logout menu
+        # Wayland utilities
+        wev # Wayland event viewer
+        wlogout # logout menu
 
-      # File management and utilities
-      xdg-utils
-      qt5.qtwayland
-      qt6.qtwayland
-      
-      # Theming
-      adwaita-qt
-      gtk-engine-murrine
-      gtk_engines
-      gsettings-desktop-schemas
-      lxappearance
-    ] ++ cfg.extraPackages;
+        # File management and utilities
+        xdg-utils
+        qt5.qtwayland
+        qt6.qtwayland
+
+        # Theming
+        adwaita-qt
+        gtk-engine-murrine
+        gtk_engines
+        gsettings-desktop-schemas
+        lxappearance
+      ]
+      ++ cfg.extraPackages;
 
     # Configure fonts
     fonts.packages = with pkgs; [
@@ -102,4 +104,4 @@ in {
       NIXOS_OZONE_WL = "1";
     };
   };
-} 
+}

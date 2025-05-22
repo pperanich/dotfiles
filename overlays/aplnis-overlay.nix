@@ -23,14 +23,10 @@ final: prev: {
     };
 
     rustPlatform =
-      prev.rustPlatform
-      // {
-        buildRustPackage = args:
-          prev.rustPlatform.buildRustPackage.override {
-            fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
-              cacert = final.cacert-apl;
-            };
-          }
-          (args // {});
+      prev.rustPlatform //
+       {
+          fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
+            cacert = final.cacert-apl;
+          };
       };
   }

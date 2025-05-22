@@ -3,7 +3,8 @@
 
   inputs = {
     # Core
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    # nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     hardware.url = "github:nixos/nixos-hardware";
 
     # Temporary, for latest cursor
@@ -23,8 +24,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     jetpack-nixos = {
-      url = "github:pperanich/jetpack-nixos/jetpack6";
-      # url = "github:elliotberman/jetpack-nixos/jetpack6";
+      # url = "github:pperanich/jetpack-nixos/jetpack6";
+      url = "github:elliotberman/jetpack-nixos/jetpack6-25.05";
       # url = "github:anduril/jetpack-nixos";
       inputs.nixpkgs.follows = "nixpkgs";
       # inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";

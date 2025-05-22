@@ -50,15 +50,15 @@ in {
 
         tmux # Terminal multiplexer
         tmux-sessionizer # The fastest way to manage projects as tmux sessions
-        # zellij # A terminal workspace with batteries included
+        zellij # A terminal workspace with batteries included
 
-        # nh # NH reimplements some basic nix commands.
+        nh # NH reimplements some basic nix commands.
         nix-output-monitor # Processes output of Nix commands to show helpful and pretty information
         nvd # Nix/NixOS package version diff tool
         statix # Lints and suggestions for the nix programming language
 
         micromamba # Reimplementation of the conda package manager
-        # pixi  # Package management made easy
+        pixi  # Package management made easy
         # rye  # A tool to easily manage python dependencies and environments
         python-launcher # An implementation of the `py` command for Unix-based platforms
 

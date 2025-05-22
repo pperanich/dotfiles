@@ -26,7 +26,7 @@ in {
     # Basic home-manager configuration
     home = {
       homeDirectory = "/${homePrefix}/${config.home.username}";
-      stateVersion = "24.11";
+      stateVersion = "25.05";
       sessionPath = ["${config.home.homeDirectory}/.local/bin"];
       sessionVariables = {
         FLAKE = "${config.home.homeDirectory}/dotfiles/";

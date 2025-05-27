@@ -16,7 +16,7 @@ in {
   ];
 
   config = lib.mkIf cfg.enable {
-    system.stateVersion = 5;
+    system.stateVersion = 6;
 
     # We are using the Determinate daemon
     nix.enable = false;

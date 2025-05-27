@@ -10,6 +10,7 @@ in {
   ];
 
   config = lib.mkIf cfg.enable {
+    system.primaryUser = "pperanich";
     users.users.pperanich = {
       home = "/Users/pperanich";
     };

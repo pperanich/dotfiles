@@ -35,3 +35,6 @@ sslCAInfo = /etc/ssl/certs/ca-certificates.crt
 
 [merge]
     conflictstyle = zdiff3
+[credential "https://gitlab.sitcore.net"]
+	helper = 
+	helper = !/nix/store/gwm0q042mjybkbid3chx7qchb09lacgb-glab-1.56.0/bin/glab auth git-credential

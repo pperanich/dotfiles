@@ -28,6 +28,7 @@ in {
         bandwhich # A CLI utility for displaying current network utilization
         # yazi-unwrapped  # Blazing fast terminal file manager written in Rust, based on async I/O
 
+        picocom  # Minimal dumb-terminal emulation program
         curlie # Frontend to curl that adds the ease of use of httpie, without compromising on features and performance
         xh # Friendly and fast tool for sending HTTP requests
         choose # Human-friendly and fast alternative to cut and (sometimes) awk

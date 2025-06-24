@@ -10,6 +10,12 @@ in {
   config = lib.mkIf cfg.tools.enable {
     home.packages = with pkgs;
       [
+        direnv  # Shell extension that manages your environment
+        uutils-coreutils-noprefix  # Cross-platform Rust rewrite of the GNU coreutils
+        uutils-findutils  # Rust implementation of findutils
+        # starship  # Minimal, blazing fast, and extremely customizable prompt for any shell
+        oh-my-posh  # Prompt theme engine for any shell
+        sheldon  # Fast and configurable shell plugin manager
         act # Run github workflows locally
         gh # Github CLI
         glab # Gitlab CLI

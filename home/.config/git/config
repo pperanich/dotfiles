@@ -25,6 +25,7 @@ sslCAInfo = /etc/ssl/certs/ca-certificates.crt
 
 [core]
     pager = delta
+    excludesFile = "~/.config/git/gitignore_global"
 
 [interactive]
     diffFilter = delta --color-only

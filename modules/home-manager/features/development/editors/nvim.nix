@@ -12,7 +12,7 @@ in {
     home.packages = with pkgs; [
       fzf
       pkg-config
-      mktemp
+      # mktemp
     ];
 
     programs.neovim = {

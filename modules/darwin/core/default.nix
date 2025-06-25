@@ -20,6 +20,8 @@ in {
 
     # We are using the Determinate daemon
     nix.enable = false;
+    programs.zsh.enableCompletion = false;
+    programs.zsh.enableBashCompletion = false;
 
     system.defaults = {
       dock = {

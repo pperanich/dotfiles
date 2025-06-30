@@ -172,7 +172,6 @@ if [[ $options[zle] == on ]]; then
   # Atuin portable keybindings for up/down arrow search.
   if command -v atuin >/dev/null && (( $+widgets[_atuin_up_search_widget] )); then
     bindkey "${terminfo[kcuu1]}" _atuin_up_search_widget
-    bindkey "${terminfo[kcud1]}" _atuin_down_search_widget
   fi
 fi
 
@@ -183,3 +182,5 @@ fi
 if [[ -f "$HOME/.zshrc.local" ]]; then
   source "$HOME/.zshrc.local"
 fi
+
+. "$HOME/.local/share/../bin/env"

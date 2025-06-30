@@ -103,6 +103,7 @@ in {
         update-display # Re-export DISPLAY in tmux shells.
         # ai-buddy  # AI assistant for projects
         # devai  # Command Agent runner to accelerate production coding.
+        ghostty # Fast, native, feature-rich terminal emulator pushing modern features
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         lazydocker # A simple terminal UI for both docker and docker-compose

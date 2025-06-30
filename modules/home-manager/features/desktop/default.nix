@@ -48,7 +48,6 @@ in {
         bitwarden # Password manager
         vlc # Media player
         protonvpn-gui # VPN client
-        ghostty # Fast, native, feature-rich terminal emulator pushing modern features
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
         # logseq # Knowledge management tool

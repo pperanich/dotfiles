@@ -182,5 +182,3 @@ fi
 if [[ -f "$HOME/.zshrc.local" ]]; then
   source "$HOME/.zshrc.local"
 fi
-
-. "$HOME/.local/share/../bin/env"

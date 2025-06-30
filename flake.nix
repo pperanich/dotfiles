@@ -271,6 +271,16 @@
           lib = lib.extend (_: _: home-manager.lib);
         };
       };
+      mxwbio = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor.x86_64-linux;
+        modules = [
+          ./home-manager/mxwbio
+        ];
+        extraSpecialArgs = {
+          inherit inputs outputs;
+          lib = lib.extend (_: _: home-manager.lib);
+        };
+      };
     };
   };
 }

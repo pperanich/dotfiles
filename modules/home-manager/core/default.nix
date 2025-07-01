@@ -31,6 +31,13 @@ in {
       sessionVariables = {
         FLAKE = "${config.home.homeDirectory}/dotfiles/";
       };
+      activation = {
+        stowHome = lib.hm.dag.entryAfter ["writeBoundary"] ''
+          pushd ${config.home.homeDirectory}/dotfiles/ >/dev/null
+          ${pkgs.stow}/bin/stow home
+          popd >/dev/null
+          '';
+      };
     };
 
     xdg.enable = true;

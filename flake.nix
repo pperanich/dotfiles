@@ -265,10 +265,30 @@
           lib = lib.extend (_: _: home-manager.lib);
         };
       };
+      hst = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor.x86_64-linux;
+        modules = [
+          ./home-manager/generic
+          {
+            home = {
+              username = "hst";
+            };
+          }
+        ];
+        extraSpecialArgs = {
+          inherit inputs outputs;
+          lib = lib.extend (_: _: home-manager.lib);
+        };
+      };
       holo = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor.x86_64-linux;
         modules = [
-          ./home-manager/holo
+          ./home-manager/generic
+          {
+            home = {
+              username = "holo";
+            };
+          }
         ];
         extraSpecialArgs = {
           inherit inputs outputs;
@@ -278,7 +298,12 @@
       mxwbio = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor.x86_64-linux;
         modules = [
-          ./home-manager/mxwbio
+          ./home-manager/generic
+          {
+            home = {
+              username = "mxwbio";
+            };
+          }
         ];
         extraSpecialArgs = {
           inherit inputs outputs;

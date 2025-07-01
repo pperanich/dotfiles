@@ -1,4 +1,3 @@
-# Home configuration for holo
 {outputs, ...}: {
   imports = builtins.attrValues outputs.homeManagerModules;
 
@@ -8,6 +7,7 @@
 
     features = {
       shell.enable = true;
+      shell.bash.enable = false;
       work.enable = true;
       development = {
         enable = true;
@@ -18,23 +18,12 @@
           vscode.enable = true;
           emacs.enable = false;
         };
-
-        languages = {
-          enable = true;
-          rust.enable = true;
-          tex.enable = true;
-        };
       };
 
       desktop = {
-        enable = true;
+        enable = false;
         fonts.enable = true;
       };
     };
-  };
-
-  # User identity
-  home = {
-    username = "holo";
   };
 }

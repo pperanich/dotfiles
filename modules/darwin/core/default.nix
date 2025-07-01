@@ -13,6 +13,7 @@ in {
     inputs.mac-app-util.darwinModules.default
     inputs.home-manager.darwinModules.home-manager
     inputs.sops-nix.darwinModules.sops
+    inputs.nix-index-database.darwinModules.nix-index
   ];
 
   config = lib.mkIf cfg.enable {

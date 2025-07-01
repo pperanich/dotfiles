@@ -12,6 +12,7 @@ in {
     (lib.my.relativeToRoot "modules/shared/core")
     inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
+    inputs.nix-index-database.nixosModules.nix-index
   ];
 
   config = lib.mkIf cfg.enable {

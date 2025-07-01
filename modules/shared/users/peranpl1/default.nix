@@ -24,7 +24,11 @@ in {
       packages = [pkgs.home-manager];
     };
 
-    programs.zsh.enable = true;
+    programs.zsh = {
+      enable = true;
+      enableCompletion = false;
+    };
+
     nix.settings.trusted-users = ["peranpl1"];
 
     home-manager = {

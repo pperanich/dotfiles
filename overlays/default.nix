@@ -2,6 +2,7 @@
   # This one brings our my packages from the 'pkgs' directory
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
+  sops-nix = inputs.sops-nix.overlays.default;
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
@@ -34,5 +35,43 @@
         ny-nerd
         ;
     };
+
+    sops-install-secrets = prev.sops-install-secrets.overrideAttrs( old: { env.GODEBUG = "x509negativeserial=1";});
+    # sops-install-secrets = inputs.sops-nix.packages.sops-install-secrets.overrideAttrs( old: {
+    #   GODEBUG = "x509negativeserial=1";
+    #   env = {
+    #     GODEBUG = "x509negativeserial=1";
+    #   };
+    # });
+    # buildGoModule = (prev.buildGoModule // {
+    #   env = {
+    #     NIX_SSL_CERT_FILE = final.aplCertificate;
+    #     SSL_CERT_FILE = final.aplCertificate;
+    #     GIT_SSL_CAINFO= final.aplCertificate;
+    #     GODEBUG = "x509negativeserial=1";
+    #   };
+    # }).override {
+    #   cacert = prev.cacert.override {
+    #     extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
+    #   };
+    # };
+  # rustPlatform =
+  #   prev.rustPlatform
+  #   // {
+  #     fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
+  #       cacert = prev.cacert.override {
+  #         extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
+  #       };
+  #     };
+  #     buildRustPackage = 
+  #       prev.rustPlatform.buildRustPackage.override {
+  #         fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
+  #           cacert = prev.cacert.override {
+  #             extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
+  #           };
+  #         };
+  #       };
+  #   };
+
   };
 }

@@ -35,7 +35,10 @@
     };
 
     # Security & Utils
-    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix = {
+      url = "github:pperanich/sops-nix/hm-package-option";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -96,6 +99,7 @@
             permittedInsecurePackages = [
               "openssl-1.1.1w"
             ];
+            # overlays = builtins.attrValues outputs.overlays ++ (import ./overlays/aplnis-overlay.nix);
             overlays = builtins.attrValues outputs.overlays;
             packageOverrides = _: {
               inherit nixcasks;

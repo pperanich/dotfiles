@@ -28,5 +28,16 @@ final: prev: {
       fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
         cacert = final.cacert-apl;
       };
+      buildRustPackage = 
+        prev.rustPlatform.buildRustPackage.override {
+          fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
+            cacert = prev.cacert.override {
+              extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
+            };
+          };
+        };
     };
+  # fetch-cargo-vendor = prev.fetch-cargo-vendor.override { 
+  #   cacert = final.cacert-apl;
+  # };
 }

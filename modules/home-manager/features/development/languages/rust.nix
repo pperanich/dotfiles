@@ -8,7 +8,7 @@
   cfg = config.my.home.features.development.languages;
   inherit (config.home) homeDirectory;
   toolchain = pkgs.rust-bin.nightly.latest.default.override {
-    extensions = ["rust-src" "rustfmt" "llvm-tools" "cargo"];
+    extensions = ["rust-src" "rustfmt" "llvm-tools" "cargo" "rust-analyzer"];
     targets = [
       "thumbv6m-none-eabi"
       "thumbv7m-none-eabi"
@@ -32,7 +32,7 @@ in {
       [
         # Rust toolchain
         toolchain
-        rust-analyzer-unwrapped
+        # rust-analyzer-unwrapped
         cargo-edit
         cargo-watch
         cargo-audit

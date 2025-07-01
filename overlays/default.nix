@@ -12,7 +12,8 @@
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
-  modifications = final: prev: {
+  modifications = final: prev: 
+  {
     atuin = prev.atuin.overrideAttrs (old: {
       # as cursed as doing mitigations=off in the kernel command line
       patches = [./patches/0001-make-atuin-on-zfs-fast-again.patch];
@@ -35,43 +36,5 @@
         ny-nerd
         ;
     };
-
-    sops-install-secrets = prev.sops-install-secrets.overrideAttrs( old: { env.GODEBUG = "x509negativeserial=1";});
-    # sops-install-secrets = inputs.sops-nix.packages.sops-install-secrets.overrideAttrs( old: {
-    #   GODEBUG = "x509negativeserial=1";
-    #   env = {
-    #     GODEBUG = "x509negativeserial=1";
-    #   };
-    # });
-    # buildGoModule = (prev.buildGoModule // {
-    #   env = {
-    #     NIX_SSL_CERT_FILE = final.aplCertificate;
-    #     SSL_CERT_FILE = final.aplCertificate;
-    #     GIT_SSL_CAINFO= final.aplCertificate;
-    #     GODEBUG = "x509negativeserial=1";
-    #   };
-    # }).override {
-    #   cacert = prev.cacert.override {
-    #     extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
-    #   };
-    # };
-  # rustPlatform =
-  #   prev.rustPlatform
-  #   // {
-  #     fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
-  #       cacert = prev.cacert.override {
-  #         extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
-  #       };
-  #     };
-  #     buildRustPackage = 
-  #       prev.rustPlatform.buildRustPackage.override {
-  #         fetchCargoVendor = prev.rustPlatform.fetchCargoVendor.override {
-  #           cacert = prev.cacert.override {
-  #             extraCertificateFiles = [./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt];
-  #           };
-  #         };
-  #       };
-  #   };
-
   };
 }

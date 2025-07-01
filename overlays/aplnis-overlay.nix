@@ -18,9 +18,7 @@ final: prev: {
       buildInputs = (prev.buildInputs or []) // [prev.openssl_1_1];
     };
 
-  buildGoModule = prev.buildGoModule.override {
-    cacert = final.cacert-apl;
-  };
+  buildGoModule = prev.buildGoModule.override { cacert = final.cacert-apl; };
 
   rustPlatform =
     prev.rustPlatform
@@ -37,7 +35,4 @@ final: prev: {
           };
         };
     };
-  # fetch-cargo-vendor = prev.fetch-cargo-vendor.override { 
-  #   cacert = final.cacert-apl;
-  # };
 }

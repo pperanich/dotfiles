@@ -10,12 +10,12 @@ in {
   config = lib.mkIf cfg.tools.enable {
     home.packages = with pkgs;
       [
-        direnv  # Shell extension that manages your environment
-        uutils-coreutils-noprefix  # Cross-platform Rust rewrite of the GNU coreutils
-        uutils-findutils  # Rust implementation of findutils
+        direnv # Shell extension that manages your environment
+        uutils-coreutils-noprefix # Cross-platform Rust rewrite of the GNU coreutils
+        uutils-findutils # Rust implementation of findutils
         # starship  # Minimal, blazing fast, and extremely customizable prompt for any shell
-        oh-my-posh  # Prompt theme engine for any shell
-        sheldon  # Fast and configurable shell plugin manager
+        oh-my-posh # Prompt theme engine for any shell
+        sheldon # Fast and configurable shell plugin manager
         act # Run github workflows locally
         gh # Github CLI
         glab # Gitlab CLI
@@ -34,7 +34,7 @@ in {
         bandwhich # A CLI utility for displaying current network utilization
         # yazi-unwrapped  # Blazing fast terminal file manager written in Rust, based on async I/O
 
-        picocom  # Minimal dumb-terminal emulation program
+        picocom # Minimal dumb-terminal emulation program
         curlie # Frontend to curl that adds the ease of use of httpie, without compromising on features and performance
         xh # Friendly and fast tool for sending HTTP requests
         choose # Human-friendly and fast alternative to cut and (sometimes) awk

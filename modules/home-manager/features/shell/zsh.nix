@@ -1,5 +1,5 @@
 # Zsh configuration
-{...}: {}
+_: {}
 # {
 #   config,
 #   lib,
@@ -75,3 +75,4 @@
 #     };
 #   };
 # }
+

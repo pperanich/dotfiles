@@ -43,26 +43,30 @@
   };
 
   # Enable the X11 windowing system.
-  services.xserver.enable = true;
-  services.xserver.videoDrivers = ["nvidia"];
-  hardware.nvidia.open = false;
+  services = {
+    xserver = {
+      enable = true;
+      videoDrivers = ["nvidia"];
+      displayManager.gdm.enable = true;
+      desktopManager.gnome.enable = true;
+      displayManager.gdm.wayland = false;
+    };
+  };
 
   # Need to add gdm user to video group.
-  users.users.gdm = { extraGroups = [ "video" ]; };
+  users.users.gdm = {extraGroups = ["video"];};
   # enable Gnome
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-  services.xserver.displayManager.gdm.wayland = false;
   programs.dconf.enable = true;
-
 
   # Networking configuration
   networking = {
     networkmanager.enable = lib.mkForce false;
     hostName = "pperanich-orin1";
-    wireless.enable = true;
-    wireless.userControlled.enable = true;
-    wireless.networks."VirusInfectedWifi".psk = "vacinate";
+    wireless = {
+      enable = true;
+      wireless.userControlled.enable = true;
+      wireless.networks."VirusInfectedWifi".psk = "vacinate";
+    };
     useDHCP = true;
   };
 
@@ -130,13 +134,6 @@
     ]
     ++ builtins.attrValues pkgs.nvidia-jetpack.tests;
 
-  # Just ensure containers are enabled by boot.
-  boot.enableContainers = true;
-
-  # Enable Opengl renamed to hardware.graphics.enable
-  hardware.graphics.enable = true;
-  # hardware.nvidia-container-toolkit.enable = true;
-
   # Docker Daemon Settings
   # I think the following helped fix nvidia container woes: https://stackoverflow.com/questions/75118992/docker-error-response-from-daemon-could-not-select-device-driver-with-capab
   virtualisation.docker = {
@@ -198,28 +195,32 @@
 
   # Boot configuration
   boot = {
+    # Avoid kernel crashes
+    kernelParams = ["initcall_blacklist=tegra_se_module_init"];
+    # Just ensure containers are enabled by boot.
+    enableContainers = true;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
   };
 
-
-  hardware.nvidia-jetpack = {
-    enable = true;
-    majorVersion = "6";
-    som = "orin-agx";
-    carrierBoard = "devkit";
-    container-toolkit.enable = true;
-    # modesetting.enable = true;
+  hardware = {
+    # Enable Opengl renamed to hardware.graphics.enable
+    graphics.enable = true;
+    # hardware.nvidia-container-toolkit.enable = true;
+    nvidia.open = false;
+    nvidia-jetpack = {
+      enable = true;
+      majorVersion = "6";
+      som = "orin-agx";
+      carrierBoard = "devkit";
+      container-toolkit.enable = true;
+      # modesetting.enable = true;
+    };
   };
 
   services.nvpmodel.profileNumber = 0;
-
-  # Avoid kernel crashes
-  boot.kernelParams = ["initcall_blacklist=tegra_se_module_init"];
-
-  # hardware.opengl.enable = true;
 
   time.timeZone = "America/New_York";
 }

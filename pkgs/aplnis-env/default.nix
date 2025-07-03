@@ -2,10 +2,8 @@
 {
   lib,
   writeShellApplication,
-  aplCertificate,
 }: let
-  ssl-cert-path = "${aplCertificate}/etc/ssl/certs/apl-ca.crt";
-  system-cert-path = "/etc/ssl/certs/ca-certificates.crt";
+  ssl-cert-path = ../../overlays/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt;
 
   # List of environment variables to manage
   ssl_vars = [

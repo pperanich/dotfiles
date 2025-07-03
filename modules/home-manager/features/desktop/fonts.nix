@@ -7,7 +7,7 @@
 }: let
   cfg = config.my.home.features.desktop;
 in {
-  config = lib.mkIf (cfg.fonts.enable) {
+  config = lib.mkIf cfg.fonts.enable {
     home.packages = with pkgs; [
       nerd-fonts.sauce-code-pro
       nerd-fonts.iosevka

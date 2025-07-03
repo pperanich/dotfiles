@@ -12,8 +12,7 @@
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
-  modifications = final: prev: 
-  {
+  modifications = final: prev: {
     atuin = prev.atuin.overrideAttrs (old: {
       # as cursed as doing mitigations=off in the kernel command line
       patches = [./patches/0001-make-atuin-on-zfs-fast-again.patch];

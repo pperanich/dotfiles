@@ -32,7 +32,7 @@ in {
       enable = true;
 
       # Enable Docker compatibility if requested
-      dockerCompat = cfg.dockerCompat;
+      inherit (cfg) dockerCompat;
 
       # Dual-stack networking
       defaultNetwork.settings =
@@ -42,7 +42,7 @@ in {
         // cfg.defaultNetwork.settings;
 
       # Enable cgroup v2 support
-      extraPackages = cfg.extraPackages;
+      inherit (cfg) extraPackages;
     };
 
     # Add related packages

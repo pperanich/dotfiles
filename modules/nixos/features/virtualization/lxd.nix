@@ -27,7 +27,7 @@ in {
     virtualisation.lxd = {
       enable = true;
       zfsSupport = cfg.zfsBackend;
-      preseed = cfg.preseed;
+      inherit (cfg) preseed;
     };
 
     # Add user to LXD group if module is enabled

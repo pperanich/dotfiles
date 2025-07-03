@@ -35,7 +35,7 @@ in {
         enable = true;
         dates = "weekly";
       };
-      enableNvidia = cfg.enableNvidia;
+      inherit (cfg) enableNvidia;
       daemon.settings =
         {
           storage-driver = cfg.storageDriver;

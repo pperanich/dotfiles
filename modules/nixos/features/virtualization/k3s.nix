@@ -48,9 +48,9 @@ in {
     # Basic k3s setup
     services.k3s = {
       enable = true;
-      role = cfg.role;
+      inherit (cfg) role;
       serverAddr = lib.mkIf (cfg.role == "agent") cfg.serverAddr;
-      token = cfg.token;
+      inherit (cfg) token;
 
       # Set extra arguments based on role
       extraFlags =

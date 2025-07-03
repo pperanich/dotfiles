@@ -16,8 +16,6 @@
       inputs.hardware.nixosModules.apple-t2
     ];
 
-  nixpkgs.hostPlatform = "x86_64-linux";
-
   # T2Linux-specific Nix settings
   nix.settings = {
     trusted-substituters = [
@@ -113,19 +111,21 @@
     facetimehd.enable = true; # Enable FaceTime HD camera if available
   };
 
-  services.pulseaudio.enable = false;
-
   # Enable sound via pipewire
   security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-  };
 
   # Additional services for the live CD
   services = {
+    pulseaudio.enable = false;
+    pipewire = {
+      enable = true;
+      alsa = {
+        enable = true;
+        support32Bit = true;
+      };
+      pulse.enable = true;
+    };
+
     # Enable SSH for remote help during installation
     openssh.enable = true;
 
@@ -146,38 +146,40 @@
     # tlp.enable = true;
   };
 
-  # Allow unfree packages (needed for some firmware)
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs = {
+    hostPlatform = "x86_64-linux";
+    # Allow unfree packages (needed for some firmware)
+    config.allowUnfree = true;
+    # T2Linux firmware script package
+    overlays = [
+      (final: prev: {
+        get-apple-firmware = prev.stdenvNoCC.mkDerivation (finalAttrs: {
+          pname = "get-apple-firmware";
+          version = "360156db52c013dbdac0ef9d6e2cebbca46b955b";
+          src = prev.fetchurl {
+            url = "https://raw.github.com/t2linux/wiki/${finalAttrs.version}/docs/tools/firmware.sh";
+            hash = "sha256-IL7omNdXROG402N2K9JfweretTnQujY67wKKC8JgxBo=";
+          };
 
-  # T2Linux firmware script package
-  nixpkgs.overlays = [
-    (final: prev: {
-      get-apple-firmware = prev.stdenvNoCC.mkDerivation (finalAttrs: {
-        pname = "get-apple-firmware";
-        version = "360156db52c013dbdac0ef9d6e2cebbca46b955b";
-        src = prev.fetchurl {
-          url = "https://raw.github.com/t2linux/wiki/${finalAttrs.version}/docs/tools/firmware.sh";
-          hash = "sha256-IL7omNdXROG402N2K9JfweretTnQujY67wKKC8JgxBo=";
-        };
+          dontUnpack = true;
 
-        dontUnpack = true;
+          buildPhase = ''
+            mkdir -p $out/bin
+            cp ${finalAttrs.src} $out/bin/get-apple-firmware
+            chmod +x $out/bin/get-apple-firmware
+          '';
 
-        buildPhase = ''
-          mkdir -p $out/bin
-          cp ${finalAttrs.src} $out/bin/get-apple-firmware
-          chmod +x $out/bin/get-apple-firmware
-        '';
-
-        meta = {
-          description = "A script to get needed firmware for T2linux devices";
-          homepage = "https://t2linux.org";
-          license = prev.lib.licenses.mit;
-          maintainers = with prev.lib.maintainers; [soopyc];
-          mainProgram = "get-apple-firmware";
-        };
-      });
-    })
-  ];
+          meta = {
+            description = "A script to get needed firmware for T2linux devices";
+            homepage = "https://t2linux.org";
+            license = prev.lib.licenses.mit;
+            maintainers = with prev.lib.maintainers; [soopyc];
+            mainProgram = "get-apple-firmware";
+          };
+        });
+      })
+    ];
+  };
 
   # Add additional installation tools
   environment.systemPackages = with pkgs; [

@@ -24,11 +24,6 @@ rec {
   '';
   cargoHash = "sha256-jtBw4ahSl88L0iuCXxQgZVm1EcboWRJMNtjxLVTtzts=";
 
-  buildInputs = lib.optional stdenv.isDarwin [
-    darwin.apple_sdk.frameworks.Security
-    darwin.apple_sdk.frameworks.SystemConfiguration
-  ];
-
   meta = with lib; {
     description = "Command Agent runner to accelerate production coding.";
     homepage = "https://github.com/jeremychone/rust-devai";

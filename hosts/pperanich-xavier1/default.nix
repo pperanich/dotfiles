@@ -40,9 +40,11 @@
   # Networking configuration
   networking = {
     hostName = "pperanich-xavier1";
-    wireless.enable = true;
-    wireless.userControlled.enable = true;
-    wireless.networks."VirusInfectedWifi".psk = "vacinate";
+    wireless = {
+      enable = true;
+      userControlled.enable = true;
+      networks."VirusInfectedWifi".psk = "vacinate";
+    };
     useDHCP = true;
   };
 

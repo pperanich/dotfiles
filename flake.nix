@@ -129,8 +129,8 @@
     formatter = forEachSystem (pkgs: pkgs.alejandra);
 
     # Automatically generated configurations
-    nixosConfigurations = allConfigurations.nixosConfigurations;
-    darwinConfigurations = allConfigurations.darwinConfigurations;
-    homeConfigurations = allConfigurations.homeConfigurations;
+    inherit (allConfigurations) nixosConfigurations;
+    inherit (allConfigurations) darwinConfigurations;
+    inherit (allConfigurations) homeConfigurations;
   };
 }

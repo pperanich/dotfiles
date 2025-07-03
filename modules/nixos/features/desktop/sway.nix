@@ -48,8 +48,6 @@ in {
 
     programs.light.enable = true;
 
-    services.dbus.enable = true;
-
     # XDG portal with Wayland support
     xdg.portal = {
       enable = true;
@@ -59,13 +57,17 @@ in {
 
     # Needed for screen sharing and pipewire
     security.rtkit.enable = true;
-    services.pipewire = {
-      enable = true;
-      alsa.enable = true;
-      alsa.support32Bit = true;
-      pulse.enable = true;
+
+    services = {
+      dbus.enable = true;
+      pipewire = {
+        enable = true;
+        alsa.enable = true;
+        alsa.support32Bit = true;
+        pulse.enable = true;
+      };
+      gnome.gnome-keyring.enable = true;
     };
-    services.gnome.gnome-keyring.enable = true;
 
     # kanshi systemd service
     systemd.user.services.kanshi = {

@@ -113,10 +113,27 @@
     polkit.enable = true;
   };
 
-  hardware.apple.touchBar = {
-    enable = true;
-    settings = {
-      FontTemplate = "Hurmit Nerd Font";
+  hardware = {
+    apple.touchBar = {
+      enable = true;
+      settings = {
+        FontTemplate = "Hurmit Nerd Font";
+      };
+    };
+    enableRedistributableFirmware = true;
+    apple-t2 = {
+      enableIGPU = true;
+      firmware.enable = true;
+      kernelChannel = "latest";
+    };
+    graphics = {
+      enable = true;
+      enable32Bit = true;
+
+      extraPackages = with pkgs; [
+        vaapiVdpau
+        libvdpau-va-gl
+      ];
     };
   };
 
@@ -218,24 +235,10 @@
     fwupd
   ];
 
-  hardware.enableRedistributableFirmware = true;
-  hardware.apple-t2.enableIGPU = true;
-  hardware.apple-t2.firmware.enable = true;
-  hardware.apple-t2.kernelChannel = "latest";
-  hardware.graphics = {
-    enable = true;
-    enable32Bit = true;
-
-    extraPackages = with pkgs; [
-      vaapiVdpau
-      libvdpau-va-gl
-    ];
-  };
-
   # Boot configuration
-  boot.initrd.systemd.enable = true;
-  boot.binfmt.emulatedSystems = ["aarch64-linux"];
   boot = {
+    initrd.systemd.enable = true;
+    binfmt.emulatedSystems = ["aarch64-linux"];
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;

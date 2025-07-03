@@ -38,12 +38,12 @@ in {
       # Display Manager Configuration
       displayManager = {
         # Default session configuration
-        defaultSession = cfg.defaultSession;
+        inherit (cfg) defaultSession;
 
         # Auto login configuration if enabled
         autoLogin = mkIf cfg.autoLogin.enable {
           enable = true;
-          user = cfg.autoLogin.user;
+          inherit (cfg.autoLogin) user;
         };
       };
       xserver = {

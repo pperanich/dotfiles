@@ -36,7 +36,7 @@ in {
           pushd ${config.home.homeDirectory}/dotfiles/ >/dev/null
           ${pkgs.stow}/bin/stow home
           popd >/dev/null
-          '';
+        '';
       };
     };
 

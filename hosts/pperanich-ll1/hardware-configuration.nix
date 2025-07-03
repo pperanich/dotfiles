@@ -11,26 +11,29 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  boot.initrd.availableKernelModules = ["xhci_pci" "nvme" "usbhid" "usb_storage" "sd_mod"];
-  boot.initrd.kernelModules = [];
-  boot.kernelModules = ["kvm-intel"];
-  boot.extraModulePackages = [];
-
-  fileSystems."/" = {
-    device = "/dev/disk/by-uuid/0e5b450d-9ec0-47ba-87cf-84d910258bc6";
-    fsType = "ext4";
+  boot = {
+    initrd.availableKernelModules = ["xhci_pci" "nvme" "usbhid" "usb_storage" "sd_mod"];
+    initrd.kernelModules = [];
+    kernelModules = ["kvm-intel"];
+    extraModulePackages = [];
   };
 
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/5F66-17ED";
-    fsType = "vfat";
-    options = ["fmask=0022" "dmask=0022"];
-  };
+  fileSystems = {
+    "/" = {
+      device = "/dev/disk/by-uuid/0e5b450d-9ec0-47ba-87cf-84d910258bc6";
+      fsType = "ext4";
+    };
+    "/boot" = {
+      device = "/dev/disk/by-uuid/5F66-17ED";
+      fsType = "vfat";
+      options = ["fmask=0022" "dmask=0022"];
+    };
 
-  fileSystems."/macos_share" = {
-    device = "/dev/disk/by-uuid/05D3-E79E";
-    fsType = "vfat";
-    options = ["fmask=0022" "dmask=0022"];
+    "/macos_share" = {
+      device = "/dev/disk/by-uuid/05D3-E79E";
+      fsType = "vfat";
+      options = ["fmask=0022" "dmask=0022"];
+    };
   };
 
   swapDevices = [

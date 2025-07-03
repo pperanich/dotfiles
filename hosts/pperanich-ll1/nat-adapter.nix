@@ -23,38 +23,40 @@ in {
 
   # 2. Configure the Ethernet interface connected to the Orin AGX
   # This interface needs a static IP for dnsmasq to bind to and serve as gateway.
-  networking.interfaces.${ethernetInterface}.ipv4.addresses = [
-    {
-      address = orinSubnetAddress;
-      prefixLength = orinSubnetPrefixLength;
-    }
-  ];
-  # If using NetworkManager, you might want to tell it to leave this interface alone
-  # or ensure it doesn't try to get DHCP on it.
-  # Example:
-  # networking.networkmanager.unmanaged = [ "interface-name:${ethernetInterface}" ];
-  # Or ensure useDHCP is false (often default when static IP is assigned by NixOS modules)
-  # networking.interfaces.${ethernetInterface}.useDHCP = false;
-
-  # 3. Enable NAT (Network Address Translation)
-  networking.nat = {
-    enable = true;
-    externalInterface = wifiInterface;
-    internalInterfaces = [ethernetInterface];
-  };
-  # networking.firewall.enable = false;
-  networking.firewall.interfaces.${ethernetInterface} = {
-    # Allow DHCP (Dynamic Host Configuration Protocol) requests from Orin
-    # dnsmasq listens on UDP port 67 for DHCP requests from clients (source port 68)
-    allowedUDPPorts = [
-      67 # DHCP Server port (bootps)
-      53 # DNS port (dnsmasq also serves DNS)
+  networking = {
+    interfaces.${ethernetInterface}.ipv4.addresses = [
+      {
+        address = orinSubnetAddress;
+        prefixLength = orinSubnetPrefixLength;
+      }
     ];
+    # If using NetworkManager, you might want to tell it to leave this interface alone
+    # or ensure it doesn't try to get DHCP on it.
+    # Example:
+    # networking.networkmanager.unmanaged = [ "interface-name:${ethernetInterface}" ];
+    # Or ensure useDHCP is false (often default when static IP is assigned by NixOS modules)
+    # networking.interfaces.${ethernetInterface}.useDHCP = false;
 
-    # Allow DNS over TCP as well (though UDP is more common for queries)
-    allowedTCPPorts = [
-      53 # DNS port
-    ];
+    # 3. Enable NAT (Network Address Translation)
+    nat = {
+      enable = true;
+      externalInterface = wifiInterface;
+      internalInterfaces = [ethernetInterface];
+    };
+    # networking.firewall.enable = false;
+    firewall.interfaces.${ethernetInterface} = {
+      # Allow DHCP (Dynamic Host Configuration Protocol) requests from Orin
+      # dnsmasq listens on UDP port 67 for DHCP requests from clients (source port 68)
+      allowedUDPPorts = [
+        67 # DHCP Server port (bootps)
+        53 # DNS port (dnsmasq also serves DNS)
+      ];
+
+      # Allow DNS over TCP as well (though UDP is more common for queries)
+      allowedTCPPorts = [
+        53 # DNS port
+      ];
+    };
   };
 
   # 4. Set up dnsmasq for DHCP and DNS on the Ethernet interface for Orin AGX

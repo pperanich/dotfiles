@@ -11,15 +11,28 @@ let
   ethernetInterface = "enp0s20f0u2u1"; # Ethernet interface connected to Orin
   bridgeInterface = "br0"; # Name for the new bridge interface
 in {
-  # 1. Define the bridge interface and add member interfaces
-  networking.bridges.${bridgeInterface}.interfaces = [
-    wifiInterface
-    ethernetInterface
-  ];
-
-  # 2. Configure the bridge interface to get an IP from your main network
-  #    (e.g., your home Wi-Fi router's DHCP server)
-  networking.interfaces.${bridgeInterface}.useDHCP = true;
+  networking = {
+    # 1. Define the bridge interface and add member interfaces
+    bridges.${bridgeInterface}.interfaces = [
+      wifiInterface
+      ethernetInterface
+    ];
+    # 2. Configure the bridge interface to get an IP from your main network
+    #    (e.g., your home Wi-Fi router's DHCP server)
+    interfaces.${bridgeInterface}.useDHCP = true;
+    # 7. Firewall:
+    #    - The firewall rules previously defined for `ethernetInterface` (allowing DHCP/DNS
+    #      to the NixOS machine) are no longer needed, as the NixOS machine isn't
+    #      acting as a DHCP/DNS server for the Orin anymore.
+    #    - Your main firewall (`networking.firewall.enable`) will now apply to traffic
+    #      destined for the NixOS host itself via the `br0` interface's IP address.
+    #    - Bridged traffic passes through at Layer 2 and is generally not affected by
+    #      the host's iptables rules unless you use specific physdev matchers.
+    #    - Ensure your main firewall allows DHCP client and typical traffic for the NixOS host
+    #      itself on the br0 interface.
+    firewall.enable = true; # Or false if you manage it externally/don't want it
+    firewall.trustedInterfaces = [bridgeInterface]; # Optional: if you want to simplify rules for br0
+  };
 
   # 3. Ensure member interfaces (Wi-Fi and Ethernet) do NOT have their own IP configurations.
   #    They will be part of the bridge.
@@ -62,18 +75,6 @@ in {
   #    The Orin will get DHCP and DNS from your main network's router.
   #    services.dnsmasq.enable = false; # Or simply remove the block
 
-  # 7. Firewall:
-  #    - The firewall rules previously defined for `ethernetInterface` (allowing DHCP/DNS
-  #      to the NixOS machine) are no longer needed, as the NixOS machine isn't
-  #      acting as a DHCP/DNS server for the Orin anymore.
-  #    - Your main firewall (`networking.firewall.enable`) will now apply to traffic
-  #      destined for the NixOS host itself via the `br0` interface's IP address.
-  #    - Bridged traffic passes through at Layer 2 and is generally not affected by
-  #      the host's iptables rules unless you use specific physdev matchers.
-  #    - Ensure your main firewall allows DHCP client and typical traffic for the NixOS host
-  #      itself on the br0 interface.
-  networking.firewall.enable = true; # Or false if you manage it externally/don't want it
-  networking.firewall.trustedInterfaces = [bridgeInterface]; # Optional: if you want to simplify rules for br0
   # If your firewall was previously open due to `networking.firewall.enable = false;`
   # and you want to keep it that way, you can. If you enable it, ensure necessary
   # services on the NixOS host itself are allowed. For the bridging functionality,

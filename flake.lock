@@ -353,16 +353,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1747778909,
-        "narHash": "sha256-SIBFZDUnYZm/J+y/IoHttKmwzAVSm8zNqN0GBZgoZoM=",
-        "owner": "elliotberman",
+        "lastModified": 1751481258,
+        "narHash": "sha256-VqAogrDiHjZ77tGr7Oo6E3BwOHqe2igc3POyq4iwjMA=",
+        "owner": "anduril",
         "repo": "jetpack-nixos",
-        "rev": "5c9818fe5b5101d144a1549e06139b6cb63e97ca",
+        "rev": "ddb3755766686abe88cae4342dfdc633aa0b5b86",
         "type": "github"
       },
       "original": {
-        "owner": "elliotberman",
-        "ref": "jetpack6-25.05",
+        "owner": "anduril",
         "repo": "jetpack-nixos",
         "type": "github"
       }
@@ -640,16 +639,16 @@
     },
     "nixpkgs_7": {
       "locked": {
-        "lastModified": 1750622754,
-        "narHash": "sha256-kMhs+YzV4vPGfuTpD3mwzibWUE6jotw5Al2wczI0Pv8=",
+        "lastModified": 1751557319,
+        "narHash": "sha256-JoNqf//Wn9lJdH8uye7QRVHJI9gzuNFCVxnP3mmmiWs=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "c7ab75210cb8cb16ddd8f290755d9558edde7ee1",
+        "rev": "8e06f48eff981b5724a05dd94871ddbf27ccffe3",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-25.05",
+        "ref": "release-25.05",
         "repo": "nixpkgs",
         "type": "github"
       }

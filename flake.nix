@@ -3,8 +3,7 @@
 
   inputs = {
     # Core
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
-    # nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
     hardware.url = "github:nixos/nixos-hardware";
 
     # System Management
@@ -21,11 +20,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     jetpack-nixos = {
-      # url = "github:pperanich/jetpack-nixos/jetpack6";
-      url = "github:elliotberman/jetpack-nixos/jetpack6-25.05";
-      # url = "github:anduril/jetpack-nixos";
+      url = "github:anduril/jetpack-nixos";
       inputs.nixpkgs.follows = "nixpkgs";
-      # inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     };
 
     # Disk Management
@@ -95,11 +91,9 @@
           config = {
             allowUnfree = true;
             allowBroken = true;
-            # allowUnfreePredicate = _: true;
             permittedInsecurePackages = [
               "openssl-1.1.1w"
             ];
-            # overlays = builtins.attrValues outputs.overlays ++ (import ./overlays/aplnis-overlay.nix);
             overlays = builtins.attrValues outputs.overlays;
             packageOverrides = _: {
               inherit nixcasks;
@@ -107,6 +101,12 @@
           };
         }
     );
+
+    # Generate all configurations automatically
+    allConfigurations = lib.my.mkAllConfigurations {
+      inherit inputs outputs lib darwin home-manager pkgsFor;
+      additionalUsers = ["hst" "holo" "mxwbio"];
+    };
   in {
     inherit lib;
 
@@ -128,188 +128,9 @@
     });
     formatter = forEachSystem (pkgs: pkgs.alejandra);
 
-    # System Configurations
-    nixosConfigurations = {
-      # Nvidia Orin AGX
-      "pperanich-orin1" = lib.nixosSystem {
-        modules = [
-          ./hosts/pperanich-orin1
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-      # Nvidia Xavier AGX
-      "pperanich-xavier1" = lib.nixosSystem {
-        modules = [
-          ./hosts/pperanich-xavier1
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-
-      # MacBook Pro 2019 with T2 chip
-      "pperanich-ll1" = lib.nixosSystem {
-        modules = [
-          ./hosts/pperanich-ll1
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-
-      # ISO for MacBook Pro installation
-      macbook-pro-iso = lib.nixosSystem {
-        modules = [
-          ./hosts/macbook-pro-iso
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-
-      # ISO for Apple T2 MacBook installation
-      apple-t2-iso = lib.nixosSystem {
-        modules = [
-          ./hosts/apple-t2-iso
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-
-      # Linux Desktop
-      pperanich-ld1 = lib.nixosSystem {
-        modules = [
-          ./hosts/pperanich-ld1
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-
-      # WSL Configuration
-      pperanich-wsl1 = lib.nixosSystem {
-        modules = [
-          ./hosts/pperanich-wsl1
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-
-      # Raspberry Pi
-      pperanich-raspi1 = lib.nixosSystem {
-        modules = [
-          ./hosts/pperanich-raspi1
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-
-      # Installation Media
-      narwal-ld1 = lib.nixosSystem {
-        modules = [
-          ./hosts/narwal-ld1
-        ];
-        specialArgs = {
-          inherit inputs outputs;
-        };
-      };
-    };
-
-    # Darwin Configurations
-    darwinConfigurations = {
-      # M3 Max MacBook
-      peranpl1-ml2 = darwin.lib.darwinSystem {
-        modules = [
-          ./hosts/peranpl1-ml2
-        ];
-        specialArgs = {
-          inherit inputs outputs lib;
-        };
-      };
-
-      # Intel MacBook
-      peranpl1-ml1 = darwin.lib.darwinSystem {
-        modules = [
-          ./hosts/peranpl1-ml1
-        ];
-        specialArgs = {
-          inherit inputs outputs lib;
-        };
-      };
-    };
-
-    # Home Manager Configurations
-    homeConfigurations = {
-      peranpl1 = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor.x86_64-linux;
-        modules = [
-          ./home-manager/peranpl1
-        ];
-        extraSpecialArgs = {
-          inherit inputs outputs;
-          lib = lib.extend (_: _: home-manager.lib);
-        };
-      };
-      pperanich = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor.x86_64-linux;
-        modules = [
-          ./home-manager/pperanich
-        ];
-        extraSpecialArgs = {
-          inherit inputs outputs;
-          lib = lib.extend (_: _: home-manager.lib);
-        };
-      };
-      hst = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor.x86_64-linux;
-        modules = [
-          ./home-manager/generic
-          {
-            home = {
-              username = "hst";
-            };
-          }
-        ];
-        extraSpecialArgs = {
-          inherit inputs outputs;
-          lib = lib.extend (_: _: home-manager.lib);
-        };
-      };
-      holo = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor.x86_64-linux;
-        modules = [
-          ./home-manager/generic
-          {
-            home = {
-              username = "holo";
-            };
-          }
-        ];
-        extraSpecialArgs = {
-          inherit inputs outputs;
-          lib = lib.extend (_: _: home-manager.lib);
-        };
-      };
-      mxwbio = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor.x86_64-linux;
-        modules = [
-          ./home-manager/generic
-          {
-            home = {
-              username = "mxwbio";
-            };
-          }
-        ];
-        extraSpecialArgs = {
-          inherit inputs outputs;
-          lib = lib.extend (_: _: home-manager.lib);
-        };
-      };
-    };
+    # Automatically generated configurations
+    nixosConfigurations = allConfigurations.nixosConfigurations;
+    darwinConfigurations = allConfigurations.darwinConfigurations;
+    homeConfigurations = allConfigurations.homeConfigurations;
   };
 }

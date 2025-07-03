@@ -147,7 +147,7 @@
     # The enableNvidia option is still used in jetpack-nixos while it is obsolete in nixpkgs
     # but it is still only option for nvidia-orin devices. Added extra fix for CDI to
     # make it run with docker.
-    enableNvidia = true;
+    # enableNvidia = true;
     daemon.settings.features.cdi = true;
     rootless = {
       enable = true;
@@ -177,7 +177,7 @@
     enable = true;
     # The enableNvidia option is still used in jetpack-nixos while it is obsolete in nixpkgs
     # but it is still only option for nvidia-orin devices.
-    enableNvidia = true;
+    # enableNvidia = true;
     defaultNetwork.settings.dns_enabled = true;
     # Container file and processor limits
     # daemon.settings = {
@@ -207,8 +207,10 @@
 
   hardware.nvidia-jetpack = {
     enable = true;
+    majorVersion = "6";
     som = "orin-agx";
     carrierBoard = "devkit";
+    container-toolkit.enable = true;
     # modesetting.enable = true;
   };
 

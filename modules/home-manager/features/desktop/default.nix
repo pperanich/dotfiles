@@ -54,10 +54,10 @@ in {
         m-cli # useful macOS CLI commands
         ollama # Local LLM runner
         # nixcasks.docker # Container platform
-        nixcasks.ghostty # Fast, native, feature-rich terminal emulator pushing modern features
-        nixcasks.shottr # Screenshot tool
+        # nixcasks.ghostty # Fast, native, feature-rich terminal emulator pushing modern features
+        # nixcasks.shottr # Screenshot tool
         # nixcasks.tailscale
-        nixcasks.moonlight # Game streaming client
+        # nixcasks.moonlight # Game streaming client
         # docker-desktop
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [

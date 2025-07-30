@@ -47,7 +47,7 @@
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nixgl.url = "github:guibou/nixGL";
     rust-overlay.url = "github:oxalica/rust-overlay";
-    # ghostty.url = "github:ghostty-org/ghostty";
+    ghostty.url = "github:ghostty-org/ghostty";
 
     # Additional Software
     nixcasks = {

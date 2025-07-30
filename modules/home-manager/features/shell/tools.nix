@@ -17,7 +17,7 @@ in {
         oh-my-posh # Prompt theme engine for any shell
         sheldon # Fast and configurable shell plugin manager
         act # Run github workflows locally
-        go  # Go Programming language
+        go # Go Programming language
         gh # Github CLI
         glab # Gitlab CLI
         # git

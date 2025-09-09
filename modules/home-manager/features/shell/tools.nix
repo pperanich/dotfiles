@@ -123,6 +123,7 @@ in {
         "${config.home.homeDirectory}/.pixi/bin"
         "${config.home.homeDirectory}/.rye/shims"
         "${config.home.homeDirectory}/.cargo/bin"
+        "${config.home.homeDirectory}/go/bin"
       ];
     };
   };

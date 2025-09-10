@@ -1,42 +1,44 @@
-{ pkgs, inputs, outputs, ... }: {
-  imports = [
-    ./hardware-configuration.nix
-    ../common/global
-    ../common/users/pperanich
-    ../common/features/wsl.nix
-    ../common/features/ssh.nix
-    ../common/features/tailscale.nix
-    ../common/features/couchdb.nix
-    {
-      home-manager = {
-        extraSpecialArgs = { inherit inputs outputs; };
-        useUserPackages = true;
-        users.pperanich = {
-          imports = [
-            ../../home-manager
-            # ../../home-manager/features/emacs.nix
-            ../../home-manager/features/desktop.nix
-            ../../home-manager/features/tex.nix
-            ../../home-manager/features/vscode.nix
-            # ../../home-manager/features/rust.nix
-          ];
-        };
+{
+  inputs,
+  outputs,
+  ...
+}: {
+  imports =
+    builtins.attrValues outputs.nixosModules
+    ++ [
+      ./hardware-configuration.nix
+      inputs.nixos-wsl.nixosModules.default
+    ];
+
+  nixpkgs.hostPlatform = "x86_64-linux";
+
+  my = {
+    core.enable = true;
+    users.pperanich.enable = true;
+    features.virtualization = {
+      docker.enable = true;
+      podman.enable = true;
+      qemu = {
+        enable = true;
+        enableVirtManager = true;
       };
-    }
-  ];
+    };
+  };
+
+  wsl = {
+    enable = true;
+    defaultUser = "pperanich";
+    docker-desktop.enable = true;
+    interop.register = true;
+    startMenuLaunchers = true;
+  };
 
   networking = {
     hostName = "pperanich-wsl1";
-    useDHCP = true;
     interfaces.eth0 = {
       useDHCP = true;
       wakeOnLan.enable = true;
     };
-  };
-
-  boot = {
-    kernelPackages = pkgs.linuxKernel.packages.linux_zen;
-    binfmt.emulatedSystems = [ "aarch64-linux" "i686-linux" ];
   };
 
   programs = {
@@ -46,10 +48,8 @@
   xdg.portal = {
     enable = true;
     wlr.enable = true;
-    config.common.default = "*";
+    config.shared.default = "*";
   };
 
-  services.openssh.ports = [ 2222 ];
-
-  system.stateVersion = "24.11";
+  services.openssh.ports = [2222];
 }

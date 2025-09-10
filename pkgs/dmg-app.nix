@@ -1,22 +1,21 @@
 {
   # Override these
-  pname
-, version
-, src
-, meta
+  pname,
+  version,
+  src,
+  meta,
   # Deps
-, stdenv
-, makeWrapper
-, nix-update-script
+  stdenv,
+  makeWrapper,
+  nix-update-script,
 }:
-
 stdenv.mkDerivation {
   inherit pname version src meta;
-  phases = [ "unpackPhase" "installPhase" ];
+  phases = ["unpackPhase" "installPhase"];
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [makeWrapper];
 
-  passthru.updateScript = nix-update-script { };
+  passthru.updateScript = nix-update-script {};
 
   unpackCmd = ''
     hdiutil="/usr/bin/hdiutil"

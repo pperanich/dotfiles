@@ -2,6 +2,7 @@
 ####### Shortcut Hotkeys #############
 # open terminal
 alt - a : open -n "$HOME"/Applications/Home\ Manager\ Apps/Alacritty.app
+alt - g : open -n "$HOME"/Applications/Home\ Manager\ Apps/Ghostty.app
 # alt - e : open -n "$HOME"/Applications/Home\ Manager\ Apps/Emacs.app
 alt - c : open -a "$HOME"/Applications/Home\ Manager\ Apps/Visual\ Studio\ Code.app
 alt - s : open -a "$HOME"/Applications/Home\ Manager\ Apps/Slack.app

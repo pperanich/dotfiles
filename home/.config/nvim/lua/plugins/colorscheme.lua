@@ -16,11 +16,10 @@ return {
     opts = {},
   },
 
-  -- Configure LazyVim to load gruvbox
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "modus-vivendi",
+      colorscheme = "github_dark_default",
     },
   },
 }

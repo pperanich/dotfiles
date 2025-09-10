@@ -1,9 +1,5 @@
-# Add your reusable home-manager modules to this directory, on their own file (https://nixos.wiki/wiki/Module).
-# These should be stuff you would like to share with others, not your personal configurations.
-
+# Home-manager modules index
 {
-  # List your module files here
-  # my-module = import ./my-module.nix;
-  trampoline = import ./targets/darwin/trampoline.nix;
-  sunshine = import ./services/sunshine.nix;
+  core = import ./core;
+  features = import ./features;
 }

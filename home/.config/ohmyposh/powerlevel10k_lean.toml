@@ -1,0 +1,68 @@
+version = 3
+final_space = true
+
+[[blocks]]
+type = "rprompt"
+
+[[blocks.segments]]
+foreground = "#00C5C7"
+style = "plain"
+template = " {{ .CurrentDate | date .Format }} "
+type = "time"
+
+[blocks.segments.properties]
+time_format = "15:04:05"
+
+[[blocks]]
+alignment = "left"
+type = "prompt"
+
+[[blocks.segments]]
+foreground = "#77E4F7"
+style = "plain"
+template = "{{ .Path }} "
+type = "path"
+
+[blocks.segments.properties]
+style = "full"
+
+[[blocks.segments]]
+foreground = "#FFE700"
+style = "plain"
+template = "{{ .HEAD }} "
+type = "git"
+
+
+[blocks.segments.properties]
+fetch_status = true
+fetch_upstream_icon = true
+source = "cli"
+
+[[blocks.segments]]
+foreground = "#43D426"
+style = "plain"
+template = "❯ "
+type = "text"
+
+[[blocks.segments]]
+type = "nix-shell"
+style = "powerline"
+foreground = "blue"
+background = "transparent"
+template = "(nix-{{ .Type }})"
+
+[[blocks.segments]]
+type = "rust"
+style = "powerline"
+powerline_symbol = ""
+foreground = "#193549"
+background = "#99908a"
+template = "  {{ .Full }} "
+
+[[blocks.segments]]
+type = "python"
+style = "powerline"
+powerline_symbol = ""
+foreground = "#100e23"
+background = "#906cff"
+template = "  {{ .Full }} "

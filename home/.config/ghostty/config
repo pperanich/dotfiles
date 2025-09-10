@@ -1,0 +1,27 @@
+# This is the configuration file for Ghostty.
+#
+# Run `ghostty +show-config --default --docs` to view a list of
+# all available config options and their default values.
+#
+# Additionally, each config option is also explained in detail
+# on Ghostty's website, at https://ghostty.org/docs/config.
+#
+# Reload config with: Super + Shift + ,
+
+font-family = "Iosevka Nerd Font"
+font-feature = -calt
+font-feature = -dlig
+font-feature = -liga
+
+theme = Github-Dark-Default
+# theme = tokyonight
+clipboard-read = allow
+clipboard-write = allow
+copy-on-select = clipboard
+window-colorspace = display-p3
+font-size = 20
+cursor-style = block
+cursor-style-blink = false
+shell-integration-features = no-cursor
+window-decoration = none
+keybind = shift+enter=text:\n

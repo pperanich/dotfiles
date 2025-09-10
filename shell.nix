@@ -1,56 +1,31 @@
-# Shell for bootstrapping flake-enabled nix and home-manager
-# You can enter it through 'nix develop' or (legacy) 'nix-shell'
+# Development shell configuration
+{pkgs, ...}:
+pkgs.mkShell {
+  name = "dotfiles-shell";
 
-{ pkgs ? (import ./nixpkgs.nix) { } }: {
-  default = pkgs.mkShell {
-    # Enable experimental features without having to specify the argument
-    NIX_CONFIG = "experimental-features = nix-command flakes";
-    nativeBuildInputs = with pkgs; [ nix home-manager git ];
-  };
-  rustup = pkgs.mkShell rec {
-    buildInputs = with pkgs; [
-      clang
-      # Replace llvmPackages with llvmPackages_X, where X is the latest LLVM version (at the time of writing, 16)
-      llvmPackages.bintools
-      rustup
-    ];
-    RUSTC_VERSION = pkgs.lib.readFile ./rust-toolchain.toml;
-    # https://github.com/rust-lang/rust-bindgen#environment-variables
-    LIBCLANG_PATH = pkgs.lib.makeLibraryPath [ pkgs.llvmPackages_latest.libclang.lib ];
-    shellHook = ''
-      export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
-      export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
-      '';
-    # Add precompiled library to rustc search path
-    RUSTFLAGS = builtins.map (a: ''-L ${a}/lib'') [
-      # add libraries here (e.g. pkgs.libvmi)
-    ];
-    # Add glibc, clang, glib and other headers to bindgen search path
-    BINDGEN_EXTRA_CLANG_ARGS = 
-    # Includes with normal include path
-    (builtins.map (a: ''-I"${a}/include"'') [
-      # add dev libraries here (e.g. pkgs.libvmi.dev)
-      # pkgs.glibc.dev 
-    ])
-    # Includes with special directory paths
-    ++ [
-      ''-I"${pkgs.llvmPackages_latest.libclang.lib}/lib/clang/${pkgs.llvmPackages_latest.libclang.version}/include"''
-      # ''-I"${pkgs.glib.dev}/include/glib-2.0"''
-      # ''-I${pkgs.glib.out}/lib/glib-2.0/include/''
-    ];
-  };
-  rust = pkgs.mkShell rec {
-    packages = with pkgs; [
-      rust-bin.fromRustupToolchainFile ./rust-toolchain.toml
+  NIX_CONFIG = "extra-experimental-features = nix-command flakes ca-derivations";
 
-      libusb1
-      libftdi1
-      # cargo
-      # cargo-binutils
-      # cargo-embed
-      # We want the unwrapped version, "rust-analyzer" (wrapped) comes with nixpkgs' toolchain
-      rust-analyzer-unwrapped
-    ];
-    # RUST_SRC_PATH = "${pkgs.rust-bin}/lib/rustlib/src/rust/library";
-  };
+  nativeBuildInputs = with pkgs; [
+    # Nix tools
+    nix
+    home-manager
+    alejandra
+
+    # System tools
+    git
+
+    # Secret management
+    sops
+    ssh-to-age
+    gnupg
+    age
+  ];
+
+  shellHook = ''
+    echo "Welcome to the dotfiles development shell!"
+    echo "Available flake outputs:"
+    echo " - nixosConfigurations"
+    echo " - darwinConfigurations"
+    echo " - homeConfigurations"
+  '';
 }

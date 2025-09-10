@@ -1,0 +1,6 @@
+# Due to https://github.com/astral-sh/uv/issues/3312
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge --skip -- %f
+    process = git-lfs filter-process --skip
+    required = true

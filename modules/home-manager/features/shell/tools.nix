@@ -106,7 +106,7 @@ in {
         # devai  # Command Agent runner to accelerate production coding.
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-        ghostty # Fast, native, feature-rich terminal emulator pushing modern features
+        # ghostty # Fast, native, feature-rich terminal emulator pushing modern features
         lazydocker # A simple terminal UI for both docker and docker-compose
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [

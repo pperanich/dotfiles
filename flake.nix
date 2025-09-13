@@ -32,7 +32,7 @@
 
     # Security & Utils
     sops-nix = {
-      url = "github:pperanich/sops-nix/hm-package-option";
+      url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-index-database = {

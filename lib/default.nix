@@ -19,13 +19,13 @@
   # configPath = "${config.home.homeDirectory}/dotfiles/home/";
   # mkMutableSymlink = path: config.lib.file.mkOutOfStoreSymlink (config.lib.meta.configPath + path);
 
-  # Get all host directories that contain a default.nix file
-  getHostDirs = hostsPath:
+  # Get all host directories that contain a configuration.nix file
+  getHostDirs = machinesPath:
     lib.attrNames (
       lib.attrsets.filterAttrs (
         name: type:
-          type == "directory" && builtins.pathExists (hostsPath + "/${name}/default.nix")
-      ) (builtins.readDir hostsPath)
+          type == "directory" && builtins.pathExists (machinesPath + "/${name}/configuration.nix")
+      ) (builtins.readDir machinesPath)
     );
 
   # Get all home-manager directories that contain a default.nix file
@@ -39,29 +39,29 @@
 
   # Check if a host configuration is for Darwin by examining the config file
   isDarwinHost = hostPath: let
-    configFile = builtins.readFile (hostPath + "/default.nix");
+    configFile = builtins.readFile (hostPath + "/configuration.nix");
   in
     builtins.match ".*darwinModules.*" configFile
     != null
     || builtins.match ".*aarch64-darwin.*" configFile != null
     || builtins.match ".*x86_64-darwin.*" configFile != null;
 
-  # Generate NixOS configurations from hosts directory
+  # Generate NixOS configurations from machines directory
   mkNixosConfigurations = {
-    hostsPath ? ../hosts,
+    machinesPath ? ../machines,
     inputs,
     outputs,
     lib ? lib,
     extraSpecialArgs ? {},
   }: let
-    hostDirs = lib.my.getHostDirs hostsPath;
-    nixosHosts = builtins.filter (host: !(lib.my.isDarwinHost (hostsPath + "/${host}"))) hostDirs;
+    hostDirs = lib.my.getHostDirs machinesPath;
+    nixosMachines = builtins.filter (host: !(lib.my.isDarwinHost (machinesPath + "/${host}"))) hostDirs;
   in
-    lib.genAttrs nixosHosts (
+    lib.genAttrs nixosMachines (
       hostname:
         lib.nixosSystem {
           modules = [
-            (hostsPath + "/${hostname}")
+            (machinesPath + "/${hostname}/configuration.nix")
           ];
           specialArgs =
             {
@@ -71,23 +71,23 @@
         }
     );
 
-  # Generate Darwin configurations from hosts directory
+  # Generate Darwin configurations from machines directory
   mkDarwinConfigurations = {
-    hostsPath ? ../hosts,
+    machinesPath ? ../machines,
     inputs,
     outputs,
     lib ? lib,
     darwin,
     extraSpecialArgs ? {},
   }: let
-    hostDirs = lib.my.getHostDirs hostsPath;
-    darwinHosts = builtins.filter (host: lib.my.isDarwinHost (hostsPath + "/${host}")) hostDirs;
+    hostDirs = lib.my.getHostDirs machinesPath;
+    darwinMachines = builtins.filter (host: lib.my.isDarwinHost (machinesPath + "/${host}")) hostDirs;
   in
-    lib.genAttrs darwinHosts (
+    lib.genAttrs darwinMachines (
       hostname:
         darwin.lib.darwinSystem {
           modules = [
-            (hostsPath + "/${hostname}")
+            (machinesPath + "/${hostname}")
           ];
           specialArgs =
             {
@@ -159,7 +159,7 @@
 
   # Convenience function to generate all configurations at once
   mkAllConfigurations = {
-    hostsPath ? ../hosts,
+    machinesPath ? ../machines,
     homePath ? ../home-manager,
     inputs,
     outputs,
@@ -171,11 +171,11 @@
     additionalUsers ? [],
   }: {
     nixosConfigurations = lib.my.mkNixosConfigurations {
-      inherit hostsPath inputs outputs lib extraSpecialArgs;
+      inherit machinesPath inputs outputs lib extraSpecialArgs;
     };
 
     darwinConfigurations = lib.my.mkDarwinConfigurations {
-      inherit hostsPath inputs outputs lib darwin extraSpecialArgs;
+      inherit machinesPath inputs outputs lib darwin extraSpecialArgs;
     };
 
     homeConfigurations = lib.my.mkHomeConfigurations {

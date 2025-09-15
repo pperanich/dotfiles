@@ -80,7 +80,7 @@ home/
 └── [other dotfiles]
 ```
 
-### Hosts (`/hosts`)
+### Machines (`/machines`)
 
 Host configurations define machine-specific settings:
 
@@ -91,15 +91,13 @@ Host configurations define machine-specific settings:
 Structure:
 
 ```
-hosts/
-├── darwin/          # Darwin hosts
-│   └── peranpl1-ml2/  # Specific host configuration
-│       ├── default.nix  # Main configuration
-│       └── hardware.nix # Hardware-specific settings
-└── nixos/           # NixOS hosts
-    └── example-host/   # Specific host configuration
-        ├── default.nix  # Main configuration
-        └── hardware.nix # Hardware-specific settings
+machines/
+│ └── peranpl1-ml2/  # Specific host configuration
+│     ├── default.nix  # Main configuration
+│     └── hardware.nix # Hardware-specific settings
+  └── example-host/   # Specific host configuration
+      ├── default.nix  # Main configuration
+      └── hardware.nix # Hardware-specific settings
 ```
 
 ## When to Use Each
@@ -129,7 +127,7 @@ hosts/
 - Keeping application-specific settings
 - Maintaining legacy configurations
 
-### Use Hosts When
+### Use Machines When
 
 - Defining machine-specific settings
 - Configuring hardware
@@ -170,17 +168,14 @@ Special attention is given to Darwin systems with:
 This configuration draws inspiration from several excellent Nix configurations:
 
 - [hlissner/dotfiles](https://github.com/hlissner/dotfiles)
-
   - Module organization
   - Feature separation
 
 - [LnL7/nix-darwin](https://github.com/LnL7/nix-darwin)
-
   - Darwin system management
   - macOS integration
 
 - [nix-community/home-manager](https://github.com/nix-community/home-manager)
-
   - User environment management
   - Feature organization
 

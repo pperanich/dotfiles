@@ -39,7 +39,7 @@ in {
       users.pperanich.imports = lib.flatten [
         (
           {config, ...}:
-            import (lib.my.relativeToRoot "home-manager/pperanich") {
+            import (lib.my.relativeToRoot "home-profiles/pperanich") {
               inherit pkgs inputs outputs;
             }
         )

@@ -40,7 +40,7 @@ in {
       users.peranpl1.imports = lib.flatten [
         (
           {config, ...}:
-            import (lib.my.relativeToRoot "home-manager/peranpl1") {
+            import (lib.my.relativeToRoot "home-profiles/peranpl1") {
               inherit pkgs inputs outputs;
             }
         )

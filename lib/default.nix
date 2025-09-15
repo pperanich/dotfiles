@@ -99,7 +99,7 @@
 
   # Generate Home Manager configurations from home-manager directory
   mkHomeConfigurations = {
-    homePath ? ../home-manager,
+    homePath ? ../home-profiles,
     inputs,
     outputs,
     lib ? lib,
@@ -160,7 +160,7 @@
   # Convenience function to generate all configurations at once
   mkAllConfigurations = {
     machinesPath ? ../machines,
-    homePath ? ../home-manager,
+    homePath ? ../home-profiles,
     inputs,
     outputs,
     lib ? lib,

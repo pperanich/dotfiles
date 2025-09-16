@@ -1,6 +1,7 @@
 {
   inputs,
   outputs,
+  lib,
   ...
 }: {
   imports =
@@ -9,6 +10,9 @@
       ./hardware-configuration.nix
       inputs.nixos-wsl.nixosModules.default
     ];
+
+  clan.core.networking.targetHost = lib.mkForce "root@pperanich-wsl1";
+  clan.core.networking.buildHost = "root@pperanich-wsl1";
 
   nixpkgs.hostPlatform = "x86_64-linux";
 

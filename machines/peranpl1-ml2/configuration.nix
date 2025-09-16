@@ -1,6 +1,12 @@
 # Host configuration for peranpl1-ml2
-{outputs, ...}: {
+{outputs, lib, ...}: {
   imports = builtins.attrValues outputs.darwinModules;
+
+  clan.core.networking.targetHost = lib.mkForce "root@peranpl1-ml2";
+  clan.core.networking.buildHost = "root@peranpl1-ml2";
+
+  clan.inventory.machines."peranpl1-ml2".machineClass = "darwin";
+  clan.inventory.machines."peranpl1-ml2".tags = ["laptop"];
 
   # Enable the modules
   my = {

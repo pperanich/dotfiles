@@ -19,19 +19,7 @@
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
-  # T2Linux-specific Nix settings
-  nix.settings = {
-    trusted-substituters = [
-      "https://t2linux.cachix.org"
-    ];
-    trusted-public-keys = [
-      "t2linux.cachix.org-1:P733c5Gt1qTcxsm+Bae0renWnT8OLs0u9+yfaK2Bejw="
-    ];
-    experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
-  };
+  # T2Linux-specific Nix settings are now handled by the dendritic nix-configuration module
 
   # Core system configuration
   my = {

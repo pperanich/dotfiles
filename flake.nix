@@ -1,6 +1,8 @@
 {
   description = "My nix configs";
 
+  outputs = inputs: inputs.flake-parts.lib.mkFlake {inherit inputs;} (inputs.import-tree ./modules);
+
   inputs = {
     # Core
     nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
@@ -14,6 +16,14 @@
       url = "git+https://git.clan.lol/clan/clan-core";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-parts.follows = "flake-parts";
+    };
+
+    import-tree = {
+      url = "github:vic/import-tree";
+    };
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # System Management
@@ -71,168 +81,4 @@
 
     apple-fonts.url = "github:Lyndeno/apple-fonts.nix";
   };
-
-  outputs-old = {
-    self,
-    nixpkgs,
-    systems,
-    darwin,
-    home-manager,
-    nixos-wsl,
-    nixcasks,
-    disko,
-    ...
-  } @ inputs: let
-    inherit (self) outputs;
-    lib = nixpkgs.lib.extend (self: super: {my = import ./lib {inherit (nixpkgs) lib;};});
-
-    forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-    nixcasks =
-      forEachSystem
-      (inputs.nixcasks.output {
-        osVersion = "sequoia";
-      })
-      .packages;
-
-    pkgsFor = lib.genAttrs (import systems) (
-      system:
-        import nixpkgs {
-          inherit system;
-          config = {
-            allowUnfree = true;
-            allowBroken = true;
-            permittedInsecurePackages = [
-              "openssl-1.1.1w"
-            ];
-            overlays = builtins.attrValues outputs.overlays;
-            packageOverrides = _: {
-              inherit nixcasks;
-            };
-          };
-        }
-    );
-
-    # Generate all configurations automatically
-    allConfigurations = lib.my.mkAllConfigurations {
-      inherit inputs outputs lib darwin home-manager pkgsFor;
-      additionalUsers = ["hst" "holo" "mxwbio"];
-    };
-  in {
-    inherit lib;
-
-    # Reusable modules
-    sharedModules = import ./modules/shared;
-    nixosModules = import ./modules/nixos;
-    darwinModules = import ./modules/darwin;
-    homeManagerModules = import ./modules/home-manager;
-
-    # Overlays
-    overlays = import ./overlays {inherit inputs outputs;};
-
-    # Packages & Development Shells
-    packages = forEachSystem (pkgs: import ./pkgs {inherit pkgs;});
-    devShells = forEachSystem (pkgs: {
-      default = import ./shell.nix {
-        inherit pkgs;
-      };
-    });
-    formatter = forEachSystem (pkgs: pkgs.alejandra);
-
-    # Automatically generated configurations
-    inherit (allConfigurations) nixosConfigurations;
-    inherit (allConfigurations) darwinConfigurations;
-    inherit (allConfigurations) homeConfigurations;
-  };
-
-outputs = {
-    flake-parts,
-    clan-core,
-    home-manager,
-    private-infra,
-    vars-helper,
-    ...
-  } @ inputs:
-    flake-parts.lib.mkFlake {inherit inputs;} ({config, ...}: {
-      imports = [
-        clan-core.flakeModules.default
-        home-manager.flakeModules.home-manager
-        inputs.treefmt-nix.flakeModule
-        (inputs.import-tree ./modules)
-      ];
-
-      flake.clan = import ./clan.nix;
-
-      systems = (import systems);
-
-      perSystem = {
-        pkgs,
-        system,
-        config,
-        ...
-      }: let
-        inherit (pkgs) lib;
-        # Cleaned copy of the repo for tooling checks
-        src = lib.cleanSource ./.;
-
-        nixosConfigs = config.flake.nixosConfigurations or {};
-        buildChecks = lib.mapAttrs (
-          _: cfg: cfg.config.system.build.toplevel
-        ) (lib.filterAttrs (_: cfg: (cfg.pkgs.system or null) == system) nixosConfigs);
-    in {
-        _module.args.pkgs = import inputs.nixpkgs {
-          inherit system;
-          config = {
-            allowUnfree = true;
-            allowBroken = true;
-            permittedInsecurePackages = [
-              "openssl-1.1.1w"
-            ];
-            overlays = builtins.attrValues overlays;
-            packageOverrides = _: {
-              inherit nixcasks;
-            };
-          };
-        };
-    
-        # Reusable modules
-        sharedModules = import ./modules/shared;
-        nixosModules = import ./modules/nixos;
-        darwinModules = import ./modules/darwin;
-        homeModules = import ./modules/home-manager;
-
-        # Overlays
-        overlays = import ./overlays {inherit inputs;};
-
-        treefmt = {
-          projectRootFile = "flake.nix";
-          programs.alejandra.enable = true;
-        };
-
-        formatter = config.treefmt.build.wrapper;
-
-        devShells.default = pkgs.mkShell {
-          packages = [
-            clan-core.packages.${system}.clan-cli
-            config.treefmt.build.wrapper
-            pkgs.statix
-            pkgs.deadnix
-          ];
-        };
-
-        # Flake checks: formatting, lint, dead code, and per-host builds
-        checks =
-          buildChecks
-          // {
-            statix = pkgs.runCommandLocal "statix-check" {nativeBuildInputs = [pkgs.statix];} ''
-              statix check ${src}
-              : > $out
-            '';
-
-            deadnix = pkgs.runCommandLocal "deadnix-check" {nativeBuildInputs = [pkgs.deadnix];} ''
-              deadnix --fail ${src}
-              : > $out
-            '';
-          };
-      };
-    });
 }

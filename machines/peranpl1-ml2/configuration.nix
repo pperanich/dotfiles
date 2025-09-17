@@ -1,25 +1,28 @@
 # Host configuration for peranpl1-ml2
 {
-  outputs,
   lib,
+  modules,
   ...
 }: {
-  imports = builtins.attrValues outputs.darwinModules;
+  # imports = builtins.attrValues outputs.darwinModules;
+  imports = with modules.darwin; [
+    windowManagement
+  ];
 
   clan.core.networking.targetHost = lib.mkForce "root@peranpl1-ml2";
   clan.core.networking.buildHost = "root@peranpl1-ml2";
 
   # Enable the modules
-  my = {
-    core.enable = true;
-    users.peranpl1.enable = true;
-    features = {
-      sketchybar.enable = true;
-      yabai.enable = true;
-      skhd.enable = true;
-      work.enable = true;
-    };
-  };
+  # my = {
+  #   core.enable = true;
+  #   users.peranpl1.enable = true;
+  #   features = {
+  #     sketchybar.enable = true;
+  #     yabai.enable = true;
+  #     skhd.enable = true;
+  #     work.enable = true;
+  #   };
+  # };
 
   # Host-specific configuration goes here
   networking.hostName = "peranpl1-ml2";

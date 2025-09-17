@@ -5,7 +5,8 @@
 
   inputs = {
     # Core
-    nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
+    # nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     hardware.url = "github:nixos/nixos-hardware";
 
     flake-parts = {

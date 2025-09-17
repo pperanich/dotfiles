@@ -1,10 +1,14 @@
-{inputs, ...}: {
+{inputs, config, ...}: {
   imports = [
     inputs.clan-core.flakeModules.default
   ];
 
   flake.clan = {
     meta.name = "pperanich-clan";
+
+    specialArgs = {
+      modules = config.flake.modules;
+    };
 
     inventory = {
       machines."peranpl1-ml1".machineClass = "darwin";

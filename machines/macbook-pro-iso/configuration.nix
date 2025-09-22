@@ -1,22 +1,21 @@
 {
   inputs,
-  outputs,
   config,
   pkgs,
   ...
 }: {
-  imports =
-    builtins.attrValues outputs.nixosModules
-    ++ [
-      # Use nixos-generators module
-      "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-      # T2Linux channel requirements
-      "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-      # Include the T2 security chip module from nixos-hardware
-      inputs.hardware.nixosModules.apple-t2
-    ];
-
-  # T2Linux-specific Nix settings are now handled by the dendritic nix-configuration module
+  imports = [
+    # Use nixos-generators module
+    "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+    # T2Linux channel requirements
+    "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+    # Include the T2 security chip module from nixos-hardware
+    inputs.hardware.nixosModules.apple-t2
+    # Minimal installer with essential tools
+    inputs.self.nixosModules.base
+    inputs.self.nixosModules.fileExploration
+    inputs.self.nixosModules.networkUtilities
+  ];
 
   # ISO image configuration
   isoImage = {

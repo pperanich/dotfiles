@@ -1,22 +1,19 @@
 {
   inputs,
-  outputs,
   pkgs,
   ...
 }: {
-  imports =
-    builtins.attrValues outputs.nixosModules
-    ++ [
-      inputs.disko.nixosModules.disko
-      ./disko-config.nix
-      ./hardware-configuration.nix
-      inputs.jetpack-nixos.nixosModules.default
-    ];
-
-  # Core system configuration
-  my = {
-    core.enable = true;
-    users.pperanich.enable = true; # Adjust this to your username
+  imports = [
+    inputs.disko.nixosModules.disko
+    ./disko-config.nix
+    ./hardware-configuration.nix
+    inputs.jetpack-nixos.nixosModules.default
+    # NVIDIA Jetson Xavier - AI/ML development server
+    inputs.self.nixosModules.serverBase
+    inputs.self.nixosModules.pythonDevelopment
+    inputs.self.nixosModules.kubernetesServer
+    inputs.self.nixosModules.graphics
+  ];
 
     # Desktop environment configuration
     desktop = {
@@ -85,10 +82,16 @@
     };
   };
 
-  hardware.nvidia-jetpack = {
-    enable = true;
-    som = "xavier-agx";
-    carrierBoard = "devkit";
+  hardware = {
+    graphics = {
+      enable = true;
+      forceDriver = "nvidia"; # Force NVIDIA for Jetson device
+    };
+    nvidia-jetpack = {
+      enable = true;
+      som = "xavier-agx";
+      carrierBoard = "devkit";
+    };
   };
 
   # services.nvpmodel.profileNumber = 0;

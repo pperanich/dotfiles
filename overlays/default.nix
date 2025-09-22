@@ -1,4 +1,4 @@
-{inputs, ...}: {
+{inputs}: {
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
   sops-nix = inputs.sops-nix.overlays.default;

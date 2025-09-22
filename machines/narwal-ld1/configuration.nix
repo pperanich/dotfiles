@@ -1,15 +1,11 @@
-{outputs, ...}: {
-  imports =
-    builtins.attrValues outputs.nixosModules
-    ++ [
-      ./hardware-configuration.nix
-    ];
+{inputs, ...}: {
+  imports = [
+    ./hardware-configuration.nix
+    # Basic development server
+    inputs.self.nixosModules.serverBase
+    inputs.self.nixosModules.developmentCore
+  ];
 
-  my = {
-    core.enable = true;
-    users.peranpl1.enable = true;
-  };
-
-  networking.hostName = "narwhal-ld1";
+  networking.hostName = "narwal-ld1";
   nixpkgs.hostPlatform = "x86_64-linux";
 }

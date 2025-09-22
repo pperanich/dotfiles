@@ -1,30 +1,51 @@
-# Host configuration for peranpl1-ml2
+# Host configuration for peranpl1-ml2 (macOS laptop - Apple Silicon)
 {
   lib,
   modules,
   ...
 }: {
-  # imports = builtins.attrValues outputs.darwinModules;
   imports = with modules.darwin; [
-    windowManagement
+    # Core system configuration
+    base
+
+    # User setup
+    peranpl1
+
+    # Development environment
+    rust
+
+    # Work environment
+    aplnis
   ];
+
+  home-manager.users.peranpl1 = {
+    imports = with modules.homeManager; [
+      # Core system configuration
+      base
+
+      # Desktop environment
+      fonts
+      desktopApplications
+      zsh
+
+      # Development environment
+      nvim
+      vscode
+      rust
+
+      # Network and file utilities
+      networkUtilities
+      fileExploration
+
+      # Work environment
+      aplnis
+    ];
+  };
 
   clan.core.networking.targetHost = lib.mkForce "root@peranpl1-ml2";
   clan.core.networking.buildHost = "root@peranpl1-ml2";
 
-  # Enable the modules
-  # my = {
-  #   core.enable = true;
-  #   users.peranpl1.enable = true;
-  #   features = {
-  #     sketchybar.enable = true;
-  #     yabai.enable = true;
-  #     skhd.enable = true;
-  #     work.enable = true;
-  #   };
-  # };
-
-  # Host-specific configuration goes here
+  # Host-specific configuration
   networking.hostName = "peranpl1-ml2";
   nixpkgs.hostPlatform = "aarch64-darwin";
 }

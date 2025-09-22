@@ -8,15 +8,6 @@ in {
   systems = import inputs.systems;
 
   perSystem = {system, ...}: {
-    # # Import nixcasks
-    # nixcasks =
-    #   (inputs.nixcasks.output {
-    #     osVersion = "sequoia";
-    #   })
-    #   .packages.${
-    #   system
-    # };
-
     _module.args.pkgs = import inputs.nixpkgs {
       inherit system;
       config = {
@@ -26,9 +17,6 @@ in {
           "openssl-1.1.1w"
         ];
         overlays = builtins.attrValues overlays;
-        # packageOverrides = _: {
-        #   inherit nixcasks;
-        # };
       };
     };
   };

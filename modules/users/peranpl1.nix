@@ -1,0 +1,75 @@
+{inputs, outputs, ...}: {
+  # peranpl1 user configuration - both NixOS system user and home-manager setup
+  flake.modules.nixos.peranpl1 = { config, lib, pkgs, ... }: {
+    # Create system user
+    users.users.peranpl1 = {
+      openssh.authorizedKeys.keys = [
+        (builtins.readFile ./peranpl1_id_ed25519.pub)
+        (builtins.readFile ./pperanich_id_ed25519.pub)
+      ];
+      shell = pkgs.zsh;
+      packages = [pkgs.home-manager];
+    };
+
+    # Enable zsh system-wide
+    programs.zsh = {
+      enable = true;
+      enableCompletion = false;
+    };
+
+    # Add to trusted users for nix
+    nix.settings.trusted-users = ["peranpl1"];
+
+    # Configure home-manager for this user (simplified)
+    home-manager = {
+      useUserPackages = true;
+      users.peranpl1 = {
+        # Basic user configuration - detailed setup via home modules
+        home.stateVersion = "25.05";
+        home.username = "peranpl1";
+        home.homeDirectory = "/home/peranpl1";
+      };
+    };
+  };
+
+  # Darwin system user configuration
+  flake.modules.darwin.peranpl1 = { config, lib, pkgs, ... }: {
+    # Create system user
+    users.users.peranpl1 = {
+      openssh.authorizedKeys.keys = [
+        (builtins.readFile ./peranpl1_id_ed25519.pub)
+        (builtins.readFile ./pperanich_id_ed25519.pub)
+      ];
+      shell = pkgs.zsh;
+      packages = [pkgs.home-manager];
+      home = "/Users/peranpl1";
+    };
+    
+    system.primaryUser = "peranpl1";
+
+    launchd.user.envVariables = config.home-manager.users.peranpl1.home.sessionVariables;
+
+    # Enable zsh system-wide
+    programs.zsh = {
+      enable = true;
+      enableCompletion = false;
+    };
+
+    # Add to trusted users for nix
+    nix.settings.trusted-users = ["peranpl1"];
+
+    # Configure home-manager for this user (simplified)
+    home-manager = {
+      useUserPackages = true;
+      extraSpecialArgs = {
+        inherit pkgs inputs outputs;
+      };
+      users.peranpl1 = {
+        # Basic user configuration - detailed setup via home modules
+        home.stateVersion = "25.05";
+        home.username = "peranpl1";
+        home.homeDirectory = "/Users/peranpl1";
+      };
+    };
+  };
+}

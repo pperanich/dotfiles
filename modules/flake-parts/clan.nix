@@ -1,4 +1,8 @@
-{inputs, config, ...}: {
+{
+  inputs,
+  config,
+  ...
+}: {
   imports = [
     inputs.clan-core.flakeModules.default
   ];
@@ -7,6 +11,7 @@
     meta.name = "pperanich-clan";
 
     specialArgs = {
+      inherit inputs;
       modules = config.flake.modules;
     };
 

@@ -1,50 +1,49 @@
 {
   inputs,
-  outputs,
-  config,
   lib,
-  pkgs,
   ...
 }: {
-  imports =
-    builtins.attrValues outputs.nixosModules
-    ++ [
-      ./hardware-configuration.nix
-      ./nat-adapter.nix
-      # ./bridge-adapter.nix
-      # Include the T2 security chip module from nixos-hardware
-      inputs.hardware.nixosModules.apple-t2
-      inputs.hardware.nixosModules.common-cpu-intel
-    ];
+  imports = [
+    ./hardware-configuration.nix
+    ./nat-adapter.nix
+    # Include the T2 security chip module from nixos-hardware
+    inputs.hardware.nixosModules.apple-t2
+    inputs.hardware.nixosModules.common-cpu-intel
+    # Core system configuration
+    inputs.self.modules.nixos.base
+    inputs.self.modules.homeManager.base
+
+    # User setup
+    inputs.self.modules.nixos.pperanich
+    inputs.self.modules.homeManager.pperanich
+
+    # Desktop environment
+    inputs.self.modules.homeManager.fonts
+    inputs.self.modules.homeManager.desktopApplications
+    inputs.self.modules.homeManager.zsh
+
+    # Development environment
+    inputs.self.modules.homeManager.nvim
+    inputs.self.modules.homeManager.emacs
+    inputs.self.modules.homeManager.vscode
+    inputs.self.modules.nixos.rust
+    inputs.self.modules.homeManager.rust
+    inputs.self.modules.homeManager.tex
+
+    # System utilities
+    inputs.self.modules.nixos.fileExploration
+    inputs.self.modules.homeManager.fileExploration
+    inputs.self.modules.nixos.networkUtilities
+    inputs.self.modules.homeManager.networkUtilities
+
+    # Virtualization (useful for development)
+    inputs.self.modules.nixos.docker
+    inputs.self.modules.homeManager.docker
+    inputs.self.modules.nixos.qemu
+    inputs.self.modules.homeManager.qemu
+  ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
-
-  # T2Linux-specific Nix settings are now handled by the dendritic nix-configuration module
-
-  # Core system configuration
-  my = {
-    core.enable = true;
-    users.pperanich.enable = true; # Adjust this to your username
-
-    # Desktop environment configuration
-    desktop = {
-      # Enable display manager with Sway as default
-      display-manager = {
-        enable = true;
-        manager = "sddm";
-        defaultSession = "plasma";
-        autoLogin = {
-          enable = false;
-          user = "pperanich"; # Change to your desired user
-        };
-      };
-
-      # Enable desktop environments
-      sway.enable = true;
-      # hyprland.enable = true;
-      kde.enable = true;
-    };
-  };
 
   # Networking configuration
   networking = {

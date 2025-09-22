@@ -1,22 +1,26 @@
 {
-  outputs,
+  inputs,
   pkgs,
   ...
 }: {
-  imports =
-    builtins.attrValues outputs.nixosModules
-    ++ [
-      ./hardware-configuration.nix
-    ];
+  imports = [
+    ./hardware-configuration.nix
+
+    # Core system configuration (minimal for Pi)
+    inputs.self.modules.nixos.base
+
+    # User setup
+    inputs.self.modules.nixos.pperanich
+
+    # Basic utilities
+    inputs.self.modules.nixos.fileExploration
+    inputs.self.modules.nixos.networkUtilities
+
+    # Database services
+    inputs.self.modules.nixos.couchdb
+  ];
 
   nixpkgs.hostPlatform = "aarch64-linux";
-
-  my = {
-    core.enable = true;
-    users.pperanich.enable = true;
-    features.tailscale.enable = true;
-    features.couchdb.enable = true;
-  };
 
   environment.systemPackages = with pkgs; [
     libraspberrypi

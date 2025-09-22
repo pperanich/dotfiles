@@ -1,23 +1,20 @@
 {
   inputs,
-  outputs,
   pkgs,
   lib,
   ...
 }: {
-  imports =
-    builtins.attrValues outputs.nixosModules
-    ++ [
-      inputs.disko.nixosModules.disko
-      ./disko-config.nix
-      ./hardware-configuration.nix
-      inputs.jetpack-nixos.nixosModules.default
-    ];
-
-  # Core system configuration
-  my = {
-    core.enable = true;
-    users.pperanich.enable = true; # Adjust this to your username
+  imports = [
+    inputs.disko.nixosModules.disko
+    ./disko-config.nix
+    ./hardware-configuration.nix
+    inputs.jetpack-nixos.nixosModules.default
+    # NVIDIA Jetson Orin - AI/ML development server
+    inputs.self.nixosModules.serverBase
+    inputs.self.nixosModules.pythonDevelopment
+    inputs.self.nixosModules.kubernetesServer
+    inputs.self.nixosModules.graphics
+  ];
     # virtualization.docker = {
     #   enable = true;
     #   enableNvidia = true;
@@ -207,7 +204,10 @@
 
   hardware = {
     # Enable Opengl renamed to hardware.graphics.enable
-    graphics.enable = true;
+    graphics = {
+      enable = true;
+      forceDriver = "nvidia"; # Force NVIDIA for Jetson device
+    };
     # hardware.nvidia-container-toolkit.enable = true;
     nvidia.open = false;
     nvidia-jetpack = {

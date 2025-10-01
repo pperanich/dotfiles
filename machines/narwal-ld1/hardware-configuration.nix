@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   imports = [
     # inputs.hardware.nixosModules.shared-cpu-amd
     # inputs.hardware.nixosModules.shared-ssd

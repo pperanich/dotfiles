@@ -1,11 +1,6 @@
 # Zsh shell configuration
-{...}: {
-  flake.modules.homeManager.zsh = {
-    config,
-    lib,
-    pkgs,
-    ...
-  }: {
+_: {
+  flake.modules.homeManager.zsh = _: {
     #   programs = {
     #     zsh = {
     #       enable = true;

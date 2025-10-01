@@ -2,7 +2,8 @@
   inputs,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     ./hardware-configuration.nix
 
@@ -32,7 +33,7 @@
     wireless = {
       enable = true;
       networks."VirusInfectedWifi".psk = "vacinate";
-      interfaces = ["wlan0"];
+      interfaces = [ "wlan0" ];
     };
     interfaces.eth0 = {
       useDHCP = true;
@@ -41,9 +42,9 @@
   };
 
   systemd.services.btattach = {
-    before = ["bluetooth.service"];
-    after = ["dev-ttyAMA0.device"];
-    wantedBy = ["multi-user.target"];
+    before = [ "bluetooth.service" ];
+    after = [ "dev-ttyAMA0.device" ];
+    wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       ExecStart = "${pkgs.bluez}/bin/btattach -B /dev/ttyAMA0 -P bcm -S 3000000";
     };

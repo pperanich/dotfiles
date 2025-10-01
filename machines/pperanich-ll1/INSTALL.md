@@ -84,6 +84,7 @@ cp -r /tmp/firmware/BT* /lib/firmware/brcm/
 ```
 
 3. Test WiFi and Bluetooth:
+
 ```bash
 # For WiFi
 nmcli device wifi rescan
@@ -111,6 +112,7 @@ parted -l
 ```
 
 You should see:
+
 - EFI partition (probably /dev/nvme0n1p1 or /dev/disk0s1)
 - macOS partition (/dev/nvme0n1p2 or /dev/disk0s2)
 - NixOS partition (/dev/nvme0n1p3 or /dev/disk0s3)
@@ -123,7 +125,7 @@ Now we'll format the NixOS partition and mount everything:
 
 ```bash
 # Format the NixOS APFS volume with ext4
-# Replace /dev/disk1s1 with your actual NixOS volume 
+# Replace /dev/disk1s1 with your actual NixOS volume
 sudo mkfs.ext4 -F /dev/disk1s1
 
 # Mount the root partition
@@ -220,6 +222,7 @@ Your NixOS configuration already includes optimizations for the T2 chip, but you
 If WiFi or Bluetooth don't work after installation:
 
 1. Verify the firmware files are present:
+
    ```bash
    ls -la /lib/firmware/brcm/brcmfmac4364*
    ls -la /lib/firmware/brcm/BT*
@@ -249,4 +252,4 @@ If keyboard or trackpad aren't working properly:
 ## Additional Resources
 
 - [T2Linux Wiki](https://wiki.t2linux.org/)
-- [NixOS MacBook Pro Guide](https://nixos.wiki/wiki/Apple_Macbook_Pro) 
+- [NixOS MacBook Pro Guide](https://nixos.wiki/wiki/Apple_Macbook_Pro)

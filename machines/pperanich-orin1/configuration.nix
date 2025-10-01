@@ -3,7 +3,8 @@
   pkgs,
   lib,
   ...
-}: {
+}:
+{
   imports = [
     inputs.disko.nixosModules.disko
     ./disko-config.nix
@@ -15,35 +16,35 @@
     inputs.self.nixosModules.kubernetesServer
     inputs.self.nixosModules.graphics
   ];
-    # virtualization.docker = {
-    #   enable = true;
-    #   enableNvidia = true;
-    # };
 
-    # Desktop environment configuration
-    # desktop = {
-    #   # Enable display manager with Sway as default
-    #   display-manager = {
-    #     enable = true;
-    #     manager = "sddm";
-    #     defaultSession = "plasma";
-    #     autoLogin = {
-    #       enable = false;
-    #       user = "pperanich"; # Change to your desired user
-    #     };
-    #   };
-    #
-    #   # Enable desktop environments
-    #   sway.enable = true;
-    #   kde.enable = true;
-    # };
-  };
+  # virtualization.docker = {
+  #   enable = true;
+  #   enableNvidia = true;
+  # };
+
+  # Desktop environment configuration
+  # desktop = {
+  #   # Enable display manager with Sway as default
+  #   display-manager = {
+  #     enable = true;
+  #     manager = "sddm";
+  #     defaultSession = "plasma";
+  #     autoLogin = {
+  #       enable = false;
+  #       user = "pperanich"; # Change to your desired user
+  #     };
+  #   };
+  #
+  #   # Enable desktop environments
+  #   sway.enable = true;
+  #   kde.enable = true;
+  # };
 
   # Enable the X11 windowing system.
   services = {
     xserver = {
       enable = true;
-      videoDrivers = ["nvidia"];
+      videoDrivers = [ "nvidia" ];
       displayManager.gdm.enable = true;
       desktopManager.gnome.enable = true;
       displayManager.gdm.wayland = false;
@@ -51,7 +52,9 @@
   };
 
   # Need to add gdm user to video group.
-  users.users.gdm = {extraGroups = ["video"];};
+  users.users.gdm = {
+    extraGroups = [ "video" ];
+  };
   # enable Gnome
   programs.dconf.enable = true;
 
@@ -80,7 +83,8 @@
   nixpkgs.config.allowUnfree = true;
 
   # Package configuration
-  environment.systemPackages = with pkgs;
+  environment.systemPackages =
+    with pkgs;
     [
       # Basic system utilities
       wget
@@ -147,7 +151,7 @@
       enable = true;
       setSocketVariable = true;
       daemon.settings.features.cdi = true;
-      daemon.settings.cdi-spec-dirs = ["/var/run/cdi/"];
+      daemon.settings.cdi-spec-dirs = [ "/var/run/cdi/" ];
     };
 
     # Container file and processor limits
@@ -193,7 +197,7 @@
   # Boot configuration
   boot = {
     # Avoid kernel crashes
-    kernelParams = ["initcall_blacklist=tegra_se_module_init"];
+    kernelParams = [ "initcall_blacklist=tegra_se_module_init" ];
     # Just ensure containers are enabled by boot.
     enableContainers = true;
     loader = {

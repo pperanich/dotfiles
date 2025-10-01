@@ -1,9 +1,9 @@
 # Generic home configuration for additional users
 {
   outputs,
-  pkgs,
   ...
-}: {
+}:
+{
   imports = with outputs.homeManagerModules; [
     # Core
     base

@@ -2,7 +2,8 @@
   inputs,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     inputs.disko.nixosModules.disko
     ./disko-config.nix
@@ -15,23 +16,22 @@
     inputs.self.nixosModules.graphics
   ];
 
-    # Desktop environment configuration
-    desktop = {
-      # Enable display manager with Sway as default
-      display-manager = {
-        enable = true;
-        manager = "sddm";
-        defaultSession = "plasma";
-        autoLogin = {
-          enable = false;
-          user = "pperanich"; # Change to your desired user
-        };
+  # Desktop environment configuration
+  desktop = {
+    # Enable display manager with Sway as default
+    display-manager = {
+      enable = true;
+      manager = "sddm";
+      defaultSession = "plasma";
+      autoLogin = {
+        enable = false;
+        user = "pperanich"; # Change to your desired user
       };
-
-      # Enable desktop environments
-      sway.enable = true;
-      kde.enable = true;
     };
+
+    # Enable desktop environments
+    sway.enable = true;
+    kde.enable = true;
   };
 
   # Networking configuration
@@ -97,7 +97,7 @@
   # services.nvpmodel.profileNumber = 0;
 
   # Avoid kernel crashes
-  boot.kernelParams = ["initcall_blacklist=tegra_se_module_init"];
+  boot.kernelParams = [ "initcall_blacklist=tegra_se_module_init" ];
 
   # hardware.opengl.enable = true;
 

@@ -10,12 +10,20 @@
   nix-update-script,
 }:
 stdenv.mkDerivation {
-  inherit pname version src meta;
-  phases = ["unpackPhase" "installPhase"];
+  inherit
+    pname
+    version
+    src
+    meta
+    ;
+  phases = [
+    "unpackPhase"
+    "installPhase"
+  ];
 
-  nativeBuildInputs = [makeWrapper];
+  nativeBuildInputs = [ makeWrapper ];
 
-  passthru.updateScript = nix-update-script {};
+  passthru.updateScript = nix-update-script { };
 
   unpackCmd = ''
     hdiutil="/usr/bin/hdiutil"

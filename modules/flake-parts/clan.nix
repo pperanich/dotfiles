@@ -2,7 +2,8 @@
   inputs,
   config,
   ...
-}: {
+}:
+{
   imports = [
     inputs.clan-core.flakeModules.default
   ];
@@ -12,15 +13,15 @@
 
     specialArgs = {
       inherit inputs;
-      modules = config.flake.modules;
+      inherit (config.flake) modules;
     };
 
     inventory = {
       machines."peranpl1-ml1".machineClass = "darwin";
-      machines."peranpl1-ml1".tags = ["laptop"];
+      machines."peranpl1-ml1".tags = [ "laptop" ];
 
       machines."peranpl1-ml2".machineClass = "darwin";
-      machines."peranpl1-ml2".tags = ["laptop"];
+      machines."peranpl1-ml2".tags = [ "laptop" ];
 
       instances = {
         clan-cache = {
@@ -28,30 +29,30 @@
             name = "trusted-nix-caches";
             input = "clan-core";
           };
-          roles.default.tags.nixos = {};
+          roles.default.tags.nixos = { };
         };
         sshd-basic = {
           module = {
             name = "sshd";
             input = "clan-core";
           };
-          roles.server.tags.nixos = {};
-          roles.client.tags.nixos = {};
+          roles.server.tags.nixos = { };
+          roles.client.tags.nixos = { };
         };
         user-pperanich = {
           module = {
             name = "users";
             input = "clan-core";
           };
-          roles.default.tags.nixos = {};
+          roles.default.tags.nixos = { };
           roles.default.settings = {
             user = "pperanich";
             prompt = true;
           };
         };
         admin = {
-          roles.default.tags.nixos = {};
-          roles.default.settings = {};
+          roles.default.tags.nixos = { };
+          roles.default.settings = { };
         };
         emergency-access = {
           module = {
@@ -59,7 +60,7 @@
             input = "clan-core";
           };
 
-          roles.default.tags.nixos = {};
+          roles.default.tags.nixos = { };
         };
       };
     };

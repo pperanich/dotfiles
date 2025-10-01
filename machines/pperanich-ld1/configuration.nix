@@ -1,5 +1,6 @@
 # Host configuration for pperanich-ld1 (Linux desktop)
-{inputs, ...}: {
+{ inputs, ... }:
+{
   imports = [
     ./hardware-configuration.nix
 

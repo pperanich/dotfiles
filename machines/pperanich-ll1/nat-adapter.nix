@@ -1,8 +1,8 @@
 {
-  config,
   pkgs,
   ...
-}: let
+}:
+let
   # Define your interfaces
   wifiInterface = "wlp5s0"; # Change if your Wi-Fi interface is different
   ethernetInterface = "enp0s20f0u2u1"; # Change if your Ethernet interface for Orin is different
@@ -17,7 +17,8 @@
   # Define a local domain name for the Orin network
   localDomainName = "orin.lan";
   nixosRouterHostname = "nixos-gw"; # Hostname for your NixOS machine on this local LAN
-in {
+in
+{
   # 1. Enable IP Forwarding
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
@@ -41,7 +42,7 @@ in {
     nat = {
       enable = true;
       externalInterface = wifiInterface;
-      internalInterfaces = [ethernetInterface];
+      internalInterfaces = [ ethernetInterface ];
     };
     # networking.firewall.enable = false;
     firewall.interfaces.${ethernetInterface} = {

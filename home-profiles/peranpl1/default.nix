@@ -1,9 +1,9 @@
 # Home configuration for peranpl1
 {
   outputs,
-  pkgs,
   ...
-}: {
+}:
+{
   imports = with outputs.homeManagerModules; [
     # Core
     base

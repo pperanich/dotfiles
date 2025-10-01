@@ -1,5 +1,6 @@
 # Host configuration for peranpl1-ml1 (macOS laptop)
-{inputs, ...}: {
+{ inputs, ... }:
+{
   imports = [
     # Core system configuration
     inputs.self.modules.darwin.base

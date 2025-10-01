@@ -1,14 +1,14 @@
 #!/usr/bin/env zsh -f
 
 update() {
-  source "$CONFIG_DIR/colors.sh"
+  source "$CONFIG_DIR/colors.zsh"
   COLOR=$BACKGROUND_2
   if [ "$SELECTED" = "true" ]; then
     COLOR=$GREY
   fi
   sketchybar --set $NAME icon.highlight=$SELECTED \
-                         label.highlight=$SELECTED \
-                         background.border_color=$COLOR
+    label.highlight=$SELECTED \
+    background.border_color=$COLOR
 }
 
 set_space_label() {
@@ -35,8 +35,10 @@ mouse_clicked() {
 }
 
 case "$SENDER" in
-  "mouse.clicked") mouse_clicked
+"mouse.clicked")
+  mouse_clicked
   ;;
-  *) update
+*)
+  update
   ;;
 esac

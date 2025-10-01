@@ -6,16 +6,23 @@
   lib,
   modulesPath,
   ...
-}: {
+}:
+{
   imports = [
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
   boot = {
-    initrd.availableKernelModules = ["xhci_pci" "nvme" "usbhid" "usb_storage" "sd_mod"];
-    initrd.kernelModules = [];
-    kernelModules = ["kvm-intel"];
-    extraModulePackages = [];
+    initrd.availableKernelModules = [
+      "xhci_pci"
+      "nvme"
+      "usbhid"
+      "usb_storage"
+      "sd_mod"
+    ];
+    initrd.kernelModules = [ ];
+    kernelModules = [ "kvm-intel" ];
+    extraModulePackages = [ ];
   };
 
   fileSystems = {
@@ -26,18 +33,24 @@
     "/boot" = {
       device = "/dev/disk/by-uuid/5F66-17ED";
       fsType = "vfat";
-      options = ["fmask=0022" "dmask=0022"];
+      options = [
+        "fmask=0022"
+        "dmask=0022"
+      ];
     };
 
     "/macos_share" = {
       device = "/dev/disk/by-uuid/05D3-E79E";
       fsType = "vfat";
-      options = ["fmask=0022" "dmask=0022"];
+      options = [
+        "fmask=0022"
+        "dmask=0022"
+      ];
     };
   };
 
   swapDevices = [
-    {device = "/dev/disk/by-uuid/7334d697-97a8-49ea-a581-69424d2a9afc";}
+    { device = "/dev/disk/by-uuid/7334d697-97a8-49ea-a581-69424d2a9afc"; }
   ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking

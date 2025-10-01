@@ -3,7 +3,8 @@
   config,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     # Use nixos-generators module
     "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
@@ -139,7 +140,7 @@
     config.allowUnfree = true;
     # T2Linux firmware script package
     overlays = [
-      (final: prev: {
+      (_final: prev: {
         get-apple-firmware = prev.stdenvNoCC.mkDerivation (finalAttrs: {
           pname = "get-apple-firmware";
           version = "360156db52c013dbdac0ef9d6e2cebbca46b955b";
@@ -160,7 +161,7 @@
             description = "A script to get needed firmware for T2linux devices";
             homepage = "https://t2linux.org";
             license = prev.lib.licenses.mit;
-            maintainers = with prev.lib.maintainers; [soopyc];
+            maintainers = with prev.lib.maintainers; [ soopyc ];
             mainProgram = "get-apple-firmware";
           };
         });
@@ -200,7 +201,11 @@
   # Configure the default live CD user
   users.users.nixos = {
     isNormalUser = true;
-    extraGroups = ["wheel" "networkmanager" "video"];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+      "video"
+    ];
     # Allow password-less sudo for the live user
     initialPassword = "";
   };

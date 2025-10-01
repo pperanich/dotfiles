@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh -f
 
 update() {
-  source "$CONFIG_DIR/icons.sh"
-  INFO="$(/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport -I | awk -F ' SSID: '  '/ SSID: / {print $2}')"
+  source "$CONFIG_DIR/icons.zsh"
+  INFO="$(/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport -I | awk -F ' SSID: ' '/ SSID: / {print $2}')"
   LABEL="$INFO ($(ipconfig getifaddr en0))"
   ICON="$([ -n "$INFO" ] && echo "$WIFI_CONNECTED" || echo "$WIFI_DISCONNECTED")"
 
@@ -21,8 +21,10 @@ click() {
 }
 
 case "$SENDER" in
-  "wifi_change") update
+"wifi_change")
+  update
   ;;
-  "mouse.clicked") click
+"mouse.clicked")
+  click
   ;;
 esac

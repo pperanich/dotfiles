@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh -f
 
 window_state() {
-  source "$CONFIG_DIR/colors.sh"
-  source "$CONFIG_DIR/icons.sh"
+  source "$CONFIG_DIR/colors.zsh"
+  source "$CONFIG_DIR/icons.zsh"
 
   WINDOW=$(yabai -m query --windows --window)
   STACK_INDEX=$(echo "$WINDOW" | jq '.["stack-index"]')
@@ -28,15 +28,14 @@ window_state() {
 
   args=(--bar border_color=$COLOR --animate sin 10 --set $NAME icon.color=$COLOR)
 
-  [ -z "$LABEL" ] && args+=(label.width=0) \
-                  || args+=(label="$LABEL" label.width=40)
+  [ -z "$LABEL" ] && args+=(label.width=0) ||
+    args+=(label="$LABEL" label.width=40)
 
-  [ -z "$ICON" ] && args+=(icon.width=0) \
-                 || args+=(icon="$ICON" icon.width=30)
+  [ -z "$ICON" ] && args+=(icon.width=0) ||
+    args+=(icon="$ICON" icon.width=30)
 
   sketchybar -m "${args[@]}"
 }
-
 
 mouse_clicked() {
   yabai -m window --toggle float
@@ -44,8 +43,10 @@ mouse_clicked() {
 }
 
 case "$SENDER" in
-  "mouse.clicked") mouse_clicked
+"mouse.clicked")
+  mouse_clicked
   ;;
-  "window_focus") window_state 
+"window_focus")
+  window_state
   ;;
 esac

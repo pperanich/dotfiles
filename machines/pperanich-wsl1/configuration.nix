@@ -1,9 +1,9 @@
 {
   inputs,
-  outputs,
   lib,
   ...
-}: {
+}:
+{
   imports = [
     ./hardware-configuration.nix
     inputs.nixos-wsl.nixosModules.default
@@ -60,5 +60,5 @@
     config.shared.default = "*";
   };
 
-  services.openssh.ports = [2222];
+  services.openssh.ports = [ 2222 ];
 }

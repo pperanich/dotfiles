@@ -3,21 +3,34 @@
   config,
   withSystem,
   ...
-}: let
-  lib = config.flake.lib;
+}:
+let
+  inherit (config.flake) lib;
   outputs = config.flake;
-in {
+in
+{
   # Export homeManagerModules from flake.modules.homeManager
-  flake.homeManagerModules = config.flake.modules.homeManager or {};
+  flake.homeManagerModules = config.flake.modules.homeManager or { };
 
   # Auto-generate homeConfigurations from home-profiles/
   # Uses pkgs from perSystem (defined in nixpkgs.nix) to avoid duplication
-  flake.homeConfigurations = withSystem "x86_64-linux" ({pkgs, ...}:
+  flake.homeConfigurations = withSystem "x86_64-linux" (
+    { pkgs, ... }:
     lib.my.mkHomeConfigurations {
       homePath = ../../home-profiles;
-      inherit inputs pkgs outputs lib;
-      home-manager = inputs.home-manager;
-      extraSpecialArgs = {};
-      additionalUsers = ["hst" "holo" "mxwbio"];
-    });
+      inherit
+        inputs
+        pkgs
+        outputs
+        lib
+        ;
+      inherit (inputs) home-manager;
+      extraSpecialArgs = { };
+      additionalUsers = [
+        "hst"
+        "holo"
+        "mxwbio"
+      ];
+    }
+  );
 }

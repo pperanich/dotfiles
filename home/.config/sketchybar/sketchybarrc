@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh -f
 export PATH=$(eval echo $PATH)
 
-source "$CONFIG_DIR/colors.sh" # Loads all defined colors
-source "$CONFIG_DIR/icons.sh"  # Loads all defined icons
+source "$CONFIG_DIR/colors.zsh" # Loads all defined colors
+source "$CONFIG_DIR/icons.zsh"  # Loads all defined icons
 
 ITEM_DIR="$CONFIG_DIR/items"     # Directory where the items are configured
 PLUGIN_DIR="$CONFIG_DIR/plugins" # Directory where all the plugin scripts are stored
@@ -67,24 +67,24 @@ defaults=(
 sketchybar --default "${defaults[@]}"
 
 # Left
-source "$ITEM_DIR/apple.sh"
-source "$ITEM_DIR/spaces.sh"
-source "$ITEM_DIR/yabai.sh"
-source "$ITEM_DIR/front_app.sh"
+source "$ITEM_DIR/apple.zsh"
+source "$ITEM_DIR/spaces.zsh"
+source "$ITEM_DIR/yabai.zsh"
+source "$ITEM_DIR/front_app.zsh"
 
 # Center
-# source "$ITEM_DIR/spotify.sh"
-# source "$ITEM_DIR/media.sh"
+# source "$ITEM_DIR/spotify.zsh"
+# source "$ITEM_DIR/media.zsh"
 
 # Right
-source "$ITEM_DIR/calendar.sh"
-# source "$ITEM_DIR/brew.sh"
-# source "$ITEM_DIR/github.sh"
-source "$ITEM_DIR/wifi.sh"
-source "$ITEM_DIR/battery.sh"
-source "$ITEM_DIR/volume.sh"
-source "$ITEM_DIR/cpu.sh"
-# source "$ITEM_DIR/svim.sh"
+source "$ITEM_DIR/calendar.zsh"
+# source "$ITEM_DIR/brew.zsh"
+# source "$ITEM_DIR/github.zsh"
+source "$ITEM_DIR/wifi.zsh"
+source "$ITEM_DIR/battery.zsh"
+source "$ITEM_DIR/volume.zsh"
+source "$ITEM_DIR/cpu.zsh"
+# source "$ITEM_DIR/svim.zsh"
 
 sketchybar --hotload on
 

@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   ...
@@ -10,7 +9,8 @@ let
   wifiInterface = "wlp5s0"; # Your Wi-Fi interface
   ethernetInterface = "enp0s20f0u2u1"; # Ethernet interface connected to Orin
   bridgeInterface = "br0"; # Name for the new bridge interface
-in {
+in
+{
   networking = {
     # 1. Define the bridge interface and add member interfaces
     bridges.${bridgeInterface}.interfaces = [
@@ -31,7 +31,7 @@ in {
     #    - Ensure your main firewall allows DHCP client and typical traffic for the NixOS host
     #      itself on the br0 interface.
     firewall.enable = true; # Or false if you manage it externally/don't want it
-    firewall.trustedInterfaces = [bridgeInterface]; # Optional: if you want to simplify rules for br0
+    firewall.trustedInterfaces = [ bridgeInterface ]; # Optional: if you want to simplify rules for br0
   };
 
   # 3. Ensure member interfaces (Wi-Fi and Ethernet) do NOT have their own IP configurations.

@@ -3,7 +3,8 @@
   lib,
   modules,
   ...
-}: {
+}:
+{
   imports = with modules.darwin; [
     # Core system configuration
     base

@@ -1,10 +1,9 @@
 {
   inputs,
-  config,
   pkgs,
-  lib,
   ...
-}: {
+}:
+{
   imports = [
     # Use minimal installation module
     "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
@@ -28,7 +27,7 @@
     # };
     firewall = {
       enable = true;
-      allowedTCPPorts = [22]; # Open SSH port
+      allowedTCPPorts = [ 22 ]; # Open SSH port
     };
   };
 
@@ -47,7 +46,7 @@
     config.allowUnfree = true;
     # T2Linux firmware script package
     overlays = [
-      (final: prev: {
+      (_final: prev: {
         get-apple-firmware = prev.stdenvNoCC.mkDerivation (finalAttrs: {
           pname = "get-apple-firmware";
           version = "360156db52c013dbdac0ef9d6e2cebbca46b955b";
@@ -68,7 +67,7 @@
             description = "A script to get needed firmware for T2linux devices";
             homepage = "https://t2linux.org";
             license = prev.lib.licenses.mit;
-            maintainers = with prev.lib.maintainers; [soopyc];
+            maintainers = with prev.lib.maintainers; [ soopyc ];
             mainProgram = "get-apple-firmware";
           };
         });

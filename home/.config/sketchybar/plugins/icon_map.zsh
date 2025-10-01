@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh -f
+
 case "$1" in
 "WhatsApp")
   icon_result=":whats_app:"

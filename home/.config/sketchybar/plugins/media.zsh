@@ -13,6 +13,7 @@ update_media() {
 }
 
 case "$SENDER" in
-  "media_change") update_media
+"media_change")
+  update_media
   ;;
 esac

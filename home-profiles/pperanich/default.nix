@@ -1,9 +1,9 @@
 # Home configuration for pperanich
 {
   outputs,
-  pkgs,
   ...
-}: {
+}:
+{
   imports = with outputs.homeManagerModules; [
     # Core
     base

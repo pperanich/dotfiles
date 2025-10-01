@@ -2,7 +2,8 @@
 {
   lib,
   writeShellApplication,
-}: let
+}:
+let
   ssl-cert-path = ../../overlays/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt;
 
   # List of environment variables to manage
@@ -16,65 +17,65 @@
     "CURL_CA_BUNDLE"
   ];
 in
-  writeShellApplication {
-    name = "aplnis-env";
+writeShellApplication {
+  name = "aplnis-env";
 
-    runtimeInputs = ["ripgrep"];
+  runtimeInputs = [ "ripgrep" ];
 
-    text = ''
-      set +o errexit
-      set +o nounset
-      set +o pipefail
+  text = ''
+    set +o errexit
+    set +o nounset
+    set +o pipefail
 
-      is_darwin() {
-        [ "$(uname -s)" = "Darwin" ]
-      }
+    is_darwin() {
+      [ "$(uname -s)" = "Darwin" ]
+    }
 
-      usage() {
-        echo "Usage: $0 <on|off>"
-        echo "  on  - Enable APLNIS certificate and environment"
-        echo "  off - Disable APLNIS certificate and environment"
-        exit 1
-      }
+    usage() {
+      echo "Usage: $0 <on|off>"
+      echo "  on  - Enable APLNIS certificate and environment"
+      echo "  off - Disable APLNIS certificate and environment"
+      exit 1
+    }
 
-      set_vars() {
-        local cert_path="$1"
-        for var in ${toString ssl_vars}; do
-          export "$var=$cert_path"
-        done
-      }
+    set_vars() {
+      local cert_path="$1"
+      for var in ${toString ssl_vars}; do
+        export "$var=$cert_path"
+      done
+    }
 
-      unset_vars() {
-        for var in ${toString ssl_vars}; do
-          unset "$var"
-        done
-      }
+    unset_vars() {
+      for var in ${toString ssl_vars}; do
+        unset "$var"
+      done
+    }
 
-      main() {
-        case "$1" in
-          "on")
-            set_vars "${ssl-cert-path}"
-            ;;
-          "off")
-            unset_vars
-            ;;
-          *)
-            usage
-            ;;
-        esac
-      }
+    main() {
+      case "$1" in
+        "on")
+          set_vars "${ssl-cert-path}"
+          ;;
+        "off")
+          unset_vars
+          ;;
+        *)
+          usage
+          ;;
+      esac
+    }
 
-      if [ $# -eq 0 ]; then
-        usage
-      else
-        main "$1"
-      fi
-    '';
-  }
-  // {
-    meta = with lib; {
-      description = "APLNIS environment helper script";
-      license = licenses.mit;
-      platforms = platforms.all;
-    };
-  }
+    if [ $# -eq 0 ]; then
+      usage
+    else
+      main "$1"
+    fi
+  '';
+}
+// {
+  meta = with lib; {
+    description = "APLNIS environment helper script";
+    license = licenses.mit;
+    platforms = platforms.all;
+  };
+}

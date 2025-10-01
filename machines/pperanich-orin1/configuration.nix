@@ -1,5 +1,6 @@
 {
   inputs,
+  modules,
   pkgs,
   lib,
   ...
@@ -10,12 +11,14 @@
     ./disko-config.nix
     ./hardware-configuration.nix
     inputs.jetpack-nixos.nixosModules.default
+  ]
+  ++ (with modules.nixos; [
     # NVIDIA Jetson Orin - AI/ML development server
-    inputs.self.nixosModules.serverBase
-    inputs.self.nixosModules.pythonDevelopment
-    inputs.self.nixosModules.kubernetesServer
-    inputs.self.nixosModules.graphics
-  ];
+    serverBase
+    pythonDevelopment
+    kubernetesServer
+    graphics
+  ]);
 
   # virtualization.docker = {
   #   enable = true;

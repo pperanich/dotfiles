@@ -1,5 +1,6 @@
 {
   inputs,
+  modules,
   ...
 }:
 {
@@ -9,39 +10,55 @@
     # Include the T2 security chip module from nixos-hardware
     inputs.hardware.nixosModules.apple-t2
     inputs.hardware.nixosModules.common-cpu-intel
+  ]
+  ++ (with modules.nixos; [
     # Core system configuration
-    inputs.self.modules.nixos.base
-    inputs.self.modules.homeManager.base
+    base
 
     # User setup
-    inputs.self.modules.nixos.pperanich
-    inputs.self.modules.homeManager.pperanich
-
-    # Desktop environment
-    inputs.self.modules.homeManager.fonts
-    inputs.self.modules.homeManager.desktopApplications
-    inputs.self.modules.homeManager.zsh
+    pperanich
 
     # Development environment
-    inputs.self.modules.homeManager.nvim
-    inputs.self.modules.homeManager.emacs
-    inputs.self.modules.homeManager.vscode
-    inputs.self.modules.nixos.rust
-    inputs.self.modules.homeManager.rust
-    inputs.self.modules.homeManager.tex
+    rust
 
     # System utilities
-    inputs.self.modules.nixos.fileExploration
-    inputs.self.modules.homeManager.fileExploration
-    inputs.self.modules.nixos.networkUtilities
-    inputs.self.modules.homeManager.networkUtilities
+    fileExploration
+    networkUtilities
 
     # Virtualization (useful for development)
-    inputs.self.modules.nixos.docker
-    inputs.self.modules.homeManager.docker
-    inputs.self.modules.nixos.qemu
-    inputs.self.modules.homeManager.qemu
-  ];
+    docker
+    qemu
+  ]);
+
+  home-manager.users.pperanich = {
+    imports = with modules.homeManager; [
+      # Core system configuration
+      base
+
+      # User setup
+      pperanich
+
+      # Desktop environment
+      fonts
+      desktopApplications
+      zsh
+
+      # Development environment
+      nvim
+      emacs
+      vscode
+      rust
+      tex
+
+      # System utilities
+      fileExploration
+      networkUtilities
+
+      # Virtualization (useful for development)
+      docker
+      qemu
+    ];
+  };
 
   nixpkgs.hostPlatform = "x86_64-linux";
 

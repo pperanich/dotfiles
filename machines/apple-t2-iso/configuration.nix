@@ -1,6 +1,8 @@
 {
   inputs,
+  modules,
   pkgs,
+  lib,
   ...
 }:
 {
@@ -11,20 +13,19 @@
     "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
     # Include the T2 security chip module from nixos-hardware
     inputs.hardware.nixosModules.apple-t2
+  ]
+  ++ (with modules.nixos; [
     # Minimal installer with essential tools
-    inputs.self.modules.nixos.base
-    inputs.self.modules.nixos.fileExploration
-    inputs.self.modules.nixos.networkUtilities
-  ];
+    base
+    fileExploration
+    networkUtilities
+  ]);
 
-  # Enable WIFI support in the ISO
+  # Network configuration for ISO
   networking = {
-    wireless.enable = true; # Disable wpa_supplicant
+    wireless.enable = true; # Enable wpa_supplicant for WiFi
     wireless.userControlled.enable = true;
-    # networkmanager = {
-    #   enable = true; # Use NetworkManager for easier command-line network management
-    # #   wifi.backend = "iwd"; # Use iwd backend for better wireless support
-    # };
+    networkmanager.enable = lib.mkForce false; # Disable NetworkManager to avoid conflict
     firewall = {
       enable = true;
       allowedTCPPorts = [ 22 ]; # Open SSH port
@@ -35,8 +36,8 @@
   services.openssh = {
     enable = true;
     settings = {
-      PermitRootLogin = "yes"; # Allow root login for installation
-      PasswordAuthentication = true;
+      PermitRootLogin = lib.mkForce "yes";
+      PasswordAuthentication = lib.mkForce true;
     };
   };
 

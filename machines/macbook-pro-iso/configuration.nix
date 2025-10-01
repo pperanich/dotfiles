@@ -1,5 +1,6 @@
 {
   inputs,
+  modules,
   config,
   pkgs,
   ...
@@ -12,11 +13,13 @@
     "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
     # Include the T2 security chip module from nixos-hardware
     inputs.hardware.nixosModules.apple-t2
+  ]
+  ++ (with modules.nixos; [
     # Minimal installer with essential tools
-    inputs.self.nixosModules.base
-    inputs.self.nixosModules.fileExploration
-    inputs.self.nixosModules.networkUtilities
-  ];
+    base
+    fileExploration
+    networkUtilities
+  ]);
 
   # ISO image configuration
   isoImage = {

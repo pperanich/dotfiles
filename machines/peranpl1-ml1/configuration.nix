@@ -1,36 +1,45 @@
 # Host configuration for peranpl1-ml1 (macOS laptop)
-{ inputs, ... }:
 {
-  imports = [
+  modules,
+  ...
+}:
+{
+  imports = with modules.darwin; [
     # Core system configuration
-    inputs.self.modules.darwin.base
-    inputs.self.modules.homeManager.base
+    base
 
     # User setup
-    inputs.self.modules.darwin.peranpl1
-    inputs.self.modules.homeManager.peranpl1
-
-    # Desktop environment
-    inputs.self.modules.homeManager.fonts
-    inputs.self.modules.homeManager.desktopApplications
-    inputs.self.modules.homeManager.zsh
+    peranpl1
 
     # Development environment
-    inputs.self.modules.homeManager.nvim
-    inputs.self.modules.homeManager.emacs
-    inputs.self.modules.homeManager.vscode
-    inputs.self.modules.darwin.rust
-    inputs.self.modules.homeManager.rust
-    inputs.self.modules.homeManager.tex
-
-    # Network and file utilities
-    inputs.self.modules.homeManager.networkUtilities
-    inputs.self.modules.homeManager.fileExploration
+    rust
 
     # Work environment
-    inputs.self.modules.darwin.aplnis
-    inputs.self.modules.homeManager.aplnis
+    aplnis
   ];
+
+  home-manager.users.peranpl1 = {
+    imports = with modules.homeManager; [
+      # Core system configuration
+      base
+
+      # Desktop environment
+      fonts
+      desktopApplications
+      zsh
+
+      # Development environment
+      nvim
+      emacs
+      vscode
+      rust
+      tex
+
+      # Network and file utilities
+      networkUtilities
+      fileExploration
+    ];
+  };
 
   # Host-specific configuration
   networking.hostName = "peranpl1-ml1";

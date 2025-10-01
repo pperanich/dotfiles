@@ -1,25 +1,26 @@
 {
-  inputs,
+  modules,
   pkgs,
   ...
 }:
 {
   imports = [
     ./hardware-configuration.nix
-
+  ]
+  ++ (with modules.nixos; [
     # Core system configuration (minimal for Pi)
-    inputs.self.modules.nixos.base
+    base
 
     # User setup
-    inputs.self.modules.nixos.pperanich
+    pperanich
 
     # Basic utilities
-    inputs.self.modules.nixos.fileExploration
-    inputs.self.modules.nixos.networkUtilities
+    fileExploration
+    networkUtilities
 
     # Database services
-    inputs.self.modules.nixos.couchdb
-  ];
+    couchdb
+  ]);
 
   nixpkgs.hostPlatform = "aarch64-linux";
 

@@ -1,5 +1,6 @@
 {
   inputs,
+  modules,
   lib,
   ...
 }:
@@ -7,27 +8,40 @@
   imports = [
     ./hardware-configuration.nix
     inputs.nixos-wsl.nixosModules.default
-
+  ]
+  ++ (with modules.nixos; [
     # Core system configuration
-    inputs.self.modules.nixos.base
-    inputs.self.modules.homeManager.base
+    base
 
     # User setup
-    inputs.self.modules.nixos.pperanich
-    inputs.self.modules.homeManager.pperanich
+    pperanich
 
     # Development environment (minimal for WSL)
-    inputs.self.modules.homeManager.nvim
-    inputs.self.modules.homeManager.zsh
-    inputs.self.modules.nixos.rust
-    inputs.self.modules.homeManager.rust
+    rust
 
     # System utilities
-    inputs.self.modules.nixos.fileExploration
-    inputs.self.modules.homeManager.fileExploration
-    inputs.self.modules.nixos.networkUtilities
-    inputs.self.modules.homeManager.networkUtilities
-  ];
+    fileExploration
+    networkUtilities
+  ]);
+
+  home-manager.users.pperanich = {
+    imports = with modules.homeManager; [
+      # Core system configuration
+      base
+
+      # User setup
+      pperanich
+
+      # Development environment (minimal for WSL)
+      nvim
+      zsh
+      rust
+
+      # System utilities
+      fileExploration
+      networkUtilities
+    ];
+  };
 
   clan.core.networking.targetHost = lib.mkForce "root@pperanich-wsl1";
   clan.core.networking.buildHost = "root@pperanich-wsl1";

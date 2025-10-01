@@ -1,39 +1,59 @@
 # Host configuration for pperanich-ld1 (Linux desktop)
-{ inputs, ... }:
+{
+  modules,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
-
+  ]
+  ++ (with modules.nixos; [
     # Core system configuration
-    inputs.self.modules.nixos.base
-    inputs.self.modules.homeManager.base
+    base
 
     # User setup
-    inputs.self.modules.nixos.pperanich
-    inputs.self.modules.homeManager.pperanich
+    pperanich
 
     # System utilities
-    inputs.self.modules.nixos.fileExploration
-    inputs.self.modules.homeManager.fileExploration
-    inputs.self.modules.nixos.networkUtilities
-    inputs.self.modules.homeManager.networkUtilities
+    fileExploration
+    networkUtilities
 
     # Development environment
-    inputs.self.modules.homeManager.nvim
-    inputs.self.modules.homeManager.zsh
-    inputs.self.modules.nixos.rust
-    inputs.self.modules.homeManager.rust
+    rust
 
     # Database services
-    inputs.self.modules.nixos.couchdb
-    inputs.self.modules.homeManager.couchdb
+    couchdb
 
     # Virtualization
-    inputs.self.modules.nixos.docker
-    inputs.self.modules.homeManager.docker
-    inputs.self.modules.nixos.podman
-    inputs.self.modules.homeManager.podman
-  ];
+    docker
+    podman
+  ]);
+
+  home-manager.users.pperanich = {
+    imports = with modules.homeManager; [
+      # Core system configuration
+      base
+
+      # User setup
+      pperanich
+
+      # System utilities
+      fileExploration
+      networkUtilities
+
+      # Development environment
+      nvim
+      zsh
+      rust
+
+      # Database services
+      couchdb
+
+      # Virtualization
+      docker
+      podman
+    ];
+  };
 
   nixpkgs.hostPlatform = "x86_64-linux";
   networking.hostName = "pperanich-ld1";

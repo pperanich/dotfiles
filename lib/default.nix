@@ -3,48 +3,6 @@
   # Use path relative to the root of the project
   relativeToRoot = lib.path.append ../.;
 
-  # Create system-specific package set with common configuration
-  mkPkgs = {
-    nixpkgs,
-    system,
-    config ? {},
-  }:
-    import nixpkgs {
-      inherit system;
-      config =
-        {
-          allowUnfree = true;
-          allowBroken = true;
-          permittedInsecurePackages = [
-            "openssl-1.1.1w"
-          ];
-        }
-        // config;
-    };
-
-  # Create package sets for all supported systems
-  mkPkgsFor = {nixpkgs}: let
-    mkPkgs = {
-      system,
-      config ? {},
-    }:
-      import nixpkgs {
-        inherit system;
-        config =
-          {
-            allowUnfree = true;
-            allowBroken = true;
-            permittedInsecurePackages = [
-              "openssl-1.1.1w"
-            ];
-          }
-          // config;
-      };
-  in
-    lib.genAttrs
-    ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"]
-    (system: mkPkgs {inherit system;});
-
   # Get all home-manager directories that contain a default.nix file
   getHomeDirs = homePath:
     lib.attrNames (
@@ -61,7 +19,7 @@
     outputs,
     lib ? lib,
     home-manager,
-    pkgsFor,
+    pkgs,
     extraSpecialArgs ? {},
     # Additional users to create for generic configuration
     additionalUsers ? [],
@@ -74,7 +32,7 @@
       (builtins.filter (name: name != "generic") homeDirs)
       (username:
         home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgsFor.x86_64-linux;
+          inherit pkgs;
           modules = [
             (homePath + "/${username}")
           ];
@@ -93,7 +51,7 @@
         lib.genAttrs additionalUsers (
           username:
             home-manager.lib.homeManagerConfiguration {
-              pkgs = pkgsFor.x86_64-linux;
+              inherit pkgs;
               modules = [
                 (homePath + "/generic")
                 {

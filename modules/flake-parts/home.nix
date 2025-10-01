@@ -1,30 +1,23 @@
 {
   inputs,
-  lib,
   config,
+  withSystem,
   ...
 }: let
-  # Import custom library functions
-  myLib = import ../../lib {inherit lib;};
-
-  # Extend lib with custom functions
-  extendedLib = lib.extend (_: _: {my = myLib;});
-
-  # Create package sets for all systems
-  pkgsFor = extendedLib.my.mkPkgsFor {nixpkgs = inputs.nixpkgs;};
+  lib = config.flake.lib;
+  outputs = config.flake;
 in {
   # Export homeManagerModules from flake.modules.homeManager
   flake.homeManagerModules = config.flake.modules.homeManager or {};
 
   # Auto-generate homeConfigurations from home-profiles/
-  flake.homeConfigurations = extendedLib.my.mkHomeConfigurations {
-    homePath = ../../home-profiles;
-    inherit inputs;
-    outputs = config.flake;
-    lib = extendedLib;
-    home-manager = inputs.home-manager;
-    inherit pkgsFor;
-    extraSpecialArgs = {};
-    additionalUsers = ["hst" "holo" "mxwbio"];
-  };
+  # Uses pkgs from perSystem (defined in nixpkgs.nix) to avoid duplication
+  flake.homeConfigurations = withSystem "x86_64-linux" ({pkgs, ...}:
+    lib.my.mkHomeConfigurations {
+      homePath = ../../home-profiles;
+      inherit inputs pkgs outputs lib;
+      home-manager = inputs.home-manager;
+      extraSpecialArgs = {};
+      additionalUsers = ["hst" "holo" "mxwbio"];
+    });
 }

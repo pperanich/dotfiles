@@ -1,6 +1,15 @@
-{inputs, outputs, ...}: {
+{
+  inputs,
+  outputs,
+  ...
+}: {
   # peranpl1 user configuration - both NixOS system user and home-manager setup
-  flake.modules.nixos.peranpl1 = { config, lib, pkgs, ... }: {
+  flake.modules.nixos.peranpl1 = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     # Create system user
     users.users.peranpl1 = {
       openssh.authorizedKeys.keys = [
@@ -33,7 +42,12 @@
   };
 
   # Darwin system user configuration
-  flake.modules.darwin.peranpl1 = { config, lib, pkgs, ... }: {
+  flake.modules.darwin.peranpl1 = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     # Create system user
     users.users.peranpl1 = {
       openssh.authorizedKeys.keys = [
@@ -44,7 +58,7 @@
       packages = [pkgs.home-manager];
       home = "/Users/peranpl1";
     };
-    
+
     system.primaryUser = "peranpl1";
 
     launchd.user.envVariables = config.home-manager.users.peranpl1.home.sessionVariables;
@@ -69,6 +83,42 @@
         home.stateVersion = "25.05";
         home.username = "peranpl1";
         home.homeDirectory = "/Users/peranpl1";
+      };
+    };
+  };
+
+  flake.modules.homeManager.peranpl1 = {
+    config,
+    lib,
+    pkgs,
+    self,
+    ...
+  }: {
+    homeConfigurations = {
+      peranpl1 = inputs.home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        extraSpecialArgs = {inherit inputs;};
+        modules = with self.flake.modules.homeManager; [
+          # Core system configuration
+          base
+
+          # Desktop environment
+          fonts
+          desktopApplications
+          zsh
+
+          # Development environment
+          nvim
+          vscode
+          rust
+
+          # Network and file utilities
+          networkUtilities
+          fileExploration
+
+          # Work environment
+          aplnis
+        ];
       };
     };
   };

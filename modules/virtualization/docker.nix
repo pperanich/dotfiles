@@ -1,6 +1,11 @@
 {...}: {
   # NixOS system-level Docker configuration
-  flake.modules.nixos.docker = { config, lib, pkgs, ... }: let
+  flake.modules.nixos.docker = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
     cfg = config.features.docker;
   in {
     options.features.docker = {
@@ -35,12 +40,14 @@
           dates = "weekly";
         };
         inherit (cfg) enableNvidia;
-        daemon.settings = {
-          storage-driver = cfg.storageDriver;
-        } // lib.optionalAttrs (cfg.extraOptions != "") {
-          # Parse extra options if they exist
-          exec-opts = [cfg.extraOptions];
-        };
+        daemon.settings =
+          {
+            storage-driver = cfg.storageDriver;
+          }
+          // lib.optionalAttrs (cfg.extraOptions != "") {
+            # Parse extra options if they exist
+            exec-opts = [cfg.extraOptions];
+          };
       };
 
       # Ensure required kernel modules are loaded
@@ -57,17 +64,17 @@
   };
 
   # Home Manager user-level Docker tools
-  flake.modules.homeManager.docker = { pkgs, ... }: {
+  flake.modules.homeManager.docker = {pkgs, ...}: {
     home.packages = with pkgs; [
       # Container management and development tools
       lazydocker
-      dive          # Explore Docker image layers
-      ctop          # Container top
-      docker-ls     # List Docker images and containers
+      dive # Explore Docker image layers
+      ctop # Container top
+      docker-ls # List Docker images and containers
 
       # Development tools that work with Docker
-      kubectl       # Kubernetes CLI
-      k9s           # Kubernetes TUI
+      kubectl # Kubernetes CLI
+      k9s # Kubernetes TUI
     ];
   };
 }

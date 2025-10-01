@@ -1,6 +1,10 @@
 # Desktop applications configuration
 {...}: {
-  flake.modules.homeManager.desktopApplications = { lib, pkgs, ... }: {
+  flake.modules.homeManager.desktopApplications = {
+    lib,
+    pkgs,
+    ...
+  }: {
     # Common desktop packages
     home.packages = with pkgs;
       [

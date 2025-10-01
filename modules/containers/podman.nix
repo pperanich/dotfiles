@@ -1,6 +1,11 @@
 {...}: {
   # NixOS system-level Podman configuration
-  flake.modules.nixos.podman = { config, lib, pkgs, ... }: let
+  flake.modules.nixos.podman = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
     cfg = config.features.podman;
   in {
     options.features.podman = {
@@ -34,18 +39,22 @@
         inherit (cfg) dockerCompat;
 
         # Dual-stack networking with DNS support
-        defaultNetwork.settings = {
-          dns_enabled = true;
-        } // cfg.defaultNetwork.settings;
+        defaultNetwork.settings =
+          {
+            dns_enabled = true;
+          }
+          // cfg.defaultNetwork.settings;
 
         # Additional packages from configuration
         inherit (cfg) extraPackages;
       };
 
       # Add essential container management packages
-      environment.systemPackages = with pkgs; [
-        podman-compose
-      ] ++ cfg.extraPackages;
+      environment.systemPackages = with pkgs;
+        [
+          podman-compose
+        ]
+        ++ cfg.extraPackages;
 
       # Ensure rootless operation is configured properly
       boot.kernelModules = ["overlay"];
@@ -56,18 +65,18 @@
   };
 
   # Home Manager user-level container tools
-  flake.modules.homeManager.podman = { pkgs, ... }: {
+  flake.modules.homeManager.podman = {pkgs, ...}: {
     home.packages = with pkgs; [
       # Container management and development tools
       lazydocker
-      dive          # Explore Docker/Podman image layers
-      podman-tui    # Terminal UI for Podman
-      buildah       # Container build tool
-      skopeo        # Container image operations
+      dive # Explore Docker/Podman image layers
+      podman-tui # Terminal UI for Podman
+      buildah # Container build tool
+      skopeo # Container image operations
 
       # Development tools that work with containers
-      kubectl       # Kubernetes CLI
-      k9s           # Kubernetes TUI
+      kubectl # Kubernetes CLI
+      k9s # Kubernetes TUI
     ];
   };
 }

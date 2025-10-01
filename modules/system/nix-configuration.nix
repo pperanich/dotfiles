@@ -7,10 +7,10 @@
     config,
     ...
   }: {
-      imports = [ 
-        inputs.home-manager.nixosModules.home-manager 
-        inputs.nix-index-database.nixosModules.nix-index
-      ];
+    imports = [
+      inputs.home-manager.nixosModules.home-manager
+      inputs.nix-index-database.nixosModules.nix-index
+    ];
     nix = {
       settings = {
         # Trust configuration
@@ -61,7 +61,7 @@
         allowUnfreePredicate = _: true;
         allowBroken = true;
       };
-      overlays = builtins.attrValues (import ../../overlays {inherit inputs; });
+      overlays = builtins.attrValues (import ../../overlays {inherit inputs;});
     };
   };
 
@@ -72,12 +72,12 @@
     config,
     ...
   }: {
-      imports = [ 
-        inputs.home-manager.darwinModules.home-manager 
-        inputs.mac-app-util.darwinModules.default
-        inputs.nix-index-database.darwinModules.nix-index
-      ];
-      system.stateVersion = 6;
+    imports = [
+      inputs.home-manager.darwinModules.home-manager
+      inputs.mac-app-util.darwinModules.default
+      inputs.nix-index-database.darwinModules.nix-index
+    ];
+    system.stateVersion = 6;
 
     # We are using the Determinate daemon
     nix.enable = false;
@@ -118,7 +118,6 @@
     };
     homebrew.enable = true;
 
-
     # Darwin Nix configuration
     nix = {
       settings = {
@@ -150,7 +149,7 @@
         allowUnfreePredicate = _: true;
         allowBroken = true;
       };
-      overlays = builtins.attrValues (import ../../overlays {inherit inputs; });
+      overlays = builtins.attrValues (import ../../overlays {inherit inputs;});
     };
   };
 
@@ -161,9 +160,9 @@
     config,
     ...
   }: {
-      imports = [
-        inputs.nix-index-database.homeModules.nix-index
-      ];
+    imports = [
+      inputs.nix-index-database.homeModules.nix-index
+    ];
     # User-level Nix configuration via Home Manager
     # Note: This configures the user's environment, not the system daemon
 
@@ -180,7 +179,7 @@
         allowUnfreePredicate = _: true;
         allowBroken = true;
       };
-      overlays = builtins.attrValues (import ../../overlays {inherit inputs; });
+      overlays = builtins.attrValues (import ../../overlays {inherit inputs;});
     };
 
     # User session variables for Nix

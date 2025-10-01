@@ -1,7 +1,11 @@
 # Rust development environment
 {...}: {
-  flake.modules.homeManager.rust = { config, lib, pkgs, ... }:
-  let
+  flake.modules.homeManager.rust = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
     inherit (config.home) homeDirectory;
     toolchain = pkgs.rust-bin.nightly.latest.default.override {
       extensions = ["rust-src" "rustfmt" "llvm-tools" "cargo" "rust-analyzer"];
@@ -30,30 +34,33 @@
       ];
     };
   in {
-    home.packages = with pkgs; [
-      # Rust toolchain
-      toolchain
+    home.packages = with pkgs;
+      [
+        # Rust toolchain
+        toolchain
 
-      # Cargo tools
-      cargo-edit
-      cargo-watch
-      cargo-audit
-      cargo-outdated
-      cargo-release
-      cargo-bloat
+        # Cargo tools
+        cargo-edit
+        cargo-watch
+        cargo-audit
+        cargo-outdated
+        cargo-release
+        cargo-bloat
 
-      # Build dependencies
-      pkg-config
+        # Build dependencies
+        pkg-config
 
-      # Debug tools
-      lldb
-    ] ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-      # macOS-specific packages
-      darwin.libiconv
-    ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-      # Linux-specific packages
-      systemd
-    ];
+        # Debug tools
+        lldb
+      ]
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+        # macOS-specific packages
+        darwin.libiconv
+      ]
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+        # Linux-specific packages
+        systemd
+      ];
 
     # Environment setup
     home = {
@@ -65,18 +72,18 @@
   };
 
   # System-level packages for cross-compilation and debugging
-  flake.modules.nixos.rust = { pkgs, ... }: {
+  flake.modules.nixos.rust = {pkgs, ...}: {
     environment.systemPackages = with pkgs; [
       lldb
       gdb
     ];
 
     # Enable cross-compilation for embedded development
-    boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+    boot.binfmt.emulatedSystems = ["aarch64-linux"];
   };
 
   # macOS-specific system configuration
-  flake.modules.darwin.rust = { pkgs, ... }: {
+  flake.modules.darwin.rust = {pkgs, ...}: {
     environment.systemPackages = with pkgs; [
       libiconv
     ];

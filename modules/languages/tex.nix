@@ -1,18 +1,20 @@
 # TeX/LaTeX development environment
 {...}: {
-  flake.modules.homeManager.tex = { pkgs, ... }: {
+  flake.modules.homeManager.tex = {pkgs, ...}: {
     programs.texlive = {
       enable = true;
       # Add comprehensive LaTeX packages
       extraPackages = tpkgs: {
-        inherit (tpkgs)
+        inherit
+          (tpkgs)
           scheme-full
           collection-latexextra
           collection-fontsextra
           collection-bibtexextra
           # collection-mathextra
           collection-formatsextra
-          collection-context;
+          collection-context
+          ;
       };
     };
 
@@ -30,7 +32,7 @@
   };
 
   # System-level packages for LaTeX development
-  flake.modules.nixos.tex = { pkgs, ... }: {
+  flake.modules.nixos.tex = {pkgs, ...}: {
     environment.systemPackages = with pkgs; [
       # System-wide LaTeX installation for build servers
       texlive.combined.scheme-full
@@ -42,7 +44,7 @@
   };
 
   # macOS-specific packages
-  flake.modules.darwin.tex = { pkgs, ... }: {
+  flake.modules.darwin.tex = {pkgs, ...}: {
     environment.systemPackages = with pkgs; [
       # macOS-specific document tools
       texlive.combined.scheme-full
@@ -50,8 +52,8 @@
 
     # Homebrew casks for macOS GUI applications
     homebrew.casks = [
-      "skim"        # PDF viewer with LaTeX support
-      "texshop"     # LaTeX editor
+      "skim" # PDF viewer with LaTeX support
+      "texshop" # LaTeX editor
     ];
   };
 }

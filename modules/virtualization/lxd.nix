@@ -1,6 +1,11 @@
 {...}: {
   # NixOS system-level LXD configuration
-  flake.modules.nixos.lxd = { config, lib, pkgs, ... }: let
+  flake.modules.nixos.lxd = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
     cfg = config.features.lxd;
   in {
     options.features.lxd = {
@@ -56,13 +61,13 @@
   };
 
   # Home Manager user-level LXD tools
-  flake.modules.homeManager.lxd = { pkgs, ... }: {
+  flake.modules.homeManager.lxd = {pkgs, ...}: {
     home.packages = with pkgs; [
       # LXD management tools
-      distrobox     # Use any Linux distribution inside a container
+      distrobox # Use any Linux distribution inside a container
 
       # General container utilities that work with LXD
-      dive          # Explore container layers
+      dive # Explore container layers
     ];
   };
 }

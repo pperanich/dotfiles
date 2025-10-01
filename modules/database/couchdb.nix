@@ -1,5 +1,10 @@
 {...}: {
-  flake.modules.nixos.couchdb = { config, lib, pkgs, ... }: let
+  flake.modules.nixos.couchdb = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
     cfg = config.features.couchdb;
   in {
     options.features.couchdb = {
@@ -40,11 +45,11 @@
   };
 
   # Add home-manager module for CouchDB client tools
-  flake.modules.homeManager.couchdb = { pkgs, ... }: {
+  flake.modules.homeManager.couchdb = {pkgs, ...}: {
     home.packages = with pkgs; [
       # CouchDB administration and interaction tools
-      curl  # For HTTP API interactions
-      jq    # For JSON processing
+      curl # For HTTP API interactions
+      jq # For JSON processing
     ];
   };
 }

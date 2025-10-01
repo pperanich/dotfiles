@@ -1,29 +1,24 @@
-{outputs, ...}: {
-  imports = builtins.attrValues outputs.homeManagerModules;
+# Generic home configuration for additional users
+{
+  outputs,
+  pkgs,
+  ...
+}: {
+  imports = with outputs.homeManagerModules; [
+    # Core
+    base
 
-  my.home = {
-    enable = true;
-    sops.enable = false;
+    # Shell
+    zsh
 
-    features = {
-      shell.enable = true;
-      shell.bash.enable = false;
-      work.enable = true;
-      development = {
-        enable = true;
+    # Editors
+    nvim
+    vscode
 
-        editors = {
-          enable = true;
-          neovim.enable = true;
-          vscode.enable = true;
-          emacs.enable = false;
-        };
-      };
+    # Utilities
+    fonts
+  ];
 
-      desktop = {
-        enable = false;
-        fonts.enable = true;
-      };
-    };
-  };
+  # State version set by mkHomeConfigurations
+  home.stateVersion = "25.05";
 }

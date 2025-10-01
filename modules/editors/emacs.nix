@@ -1,6 +1,11 @@
 # Emacs editor configuration
 {...}: {
-  flake.modules.homeManager.emacs = { config, pkgs, lib, ... }: let
+  flake.modules.homeManager.emacs = {
+    config,
+    pkgs,
+    lib,
+    ...
+  }: let
     inherit (config.home) homeDirectory;
 
     # Fetch the repositories
@@ -69,19 +74,21 @@
 
     home.sessionPath = ["${homeDirectory}/.config/emacs-doom/bin"];
 
-    home.packages = with pkgs; [
-      # Common dependencies for modern text editing
-      ripgrep # Required for modern text search
-      fd # Required for file finding
-      fzf # Fuzzy finder
-      # Emacs-specific dependencies
-      pyright
-      jansson
-      djvulibre
-    ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-      qpdfview
-      libvterm
-    ];
+    home.packages = with pkgs;
+      [
+        # Common dependencies for modern text editing
+        ripgrep # Required for modern text search
+        fd # Required for file finding
+        fzf # Fuzzy finder
+        # Emacs-specific dependencies
+        pyright
+        jansson
+        djvulibre
+      ]
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+        qpdfview
+        libvterm
+      ];
 
     programs.emacs = {
       enable = true;

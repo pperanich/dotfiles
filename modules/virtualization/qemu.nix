@@ -1,6 +1,11 @@
 {...}: {
   # NixOS system-level QEMU/KVM configuration
-  flake.modules.nixos.qemu = { config, lib, pkgs, ... }: let
+  flake.modules.nixos.qemu = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
     cfg = config.features.qemu;
   in {
     options.features.qemu = {
@@ -45,15 +50,19 @@
       };
 
       # Add virtualization packages to the system environment
-      environment.systemPackages = with pkgs; [
-        virtiofsd
-      ] ++ lib.optionals cfg.enableVirtManager [
-        virt-manager
-      ] ++ lib.optionals cfg.enableSpiceSupport [
-        spice
-        spice-gtk
-        spice-protocol
-      ] ++ cfg.extraPackages;
+      environment.systemPackages = with pkgs;
+        [
+          virtiofsd
+        ]
+        ++ lib.optionals cfg.enableVirtManager [
+          virt-manager
+        ]
+        ++ lib.optionals cfg.enableSpiceSupport [
+          spice
+          spice-gtk
+          spice-protocol
+        ]
+        ++ cfg.extraPackages;
 
       # QEMU guest agent for VMs running NixOS
       services.qemuGuest.enable = cfg.enableGuestAgent;
@@ -70,15 +79,15 @@
   };
 
   # Home Manager user-level virtualization tools
-  flake.modules.homeManager.qemu = { pkgs, ... }: {
+  flake.modules.homeManager.qemu = {pkgs, ...}: {
     home.packages = with pkgs; [
       # VM management and utilities
-      virt-viewer    # SPICE/VNC client for VMs
-      virt-top       # Top-like utility for VMs
-      guestfs-tools  # Guest filesystem tools
+      virt-viewer # SPICE/VNC client for VMs
+      virt-top # Top-like utility for VMs
+      guestfs-tools # Guest filesystem tools
 
       # Development and testing tools
-      vagrant        # Development environment management
+      vagrant # Development environment management
     ];
   };
 }

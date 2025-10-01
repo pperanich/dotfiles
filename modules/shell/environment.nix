@@ -1,6 +1,6 @@
 # Core shell environment configuration
 {...}: {
-  flake.modules.homeManager.shellEnvironment = { pkgs, ... }: {
+  flake.modules.homeManager.shellEnvironment = {pkgs, ...}: {
     # Basic shell environment
     home.sessionVariables = {
       SHELL = "${pkgs.zsh}/bin/zsh";

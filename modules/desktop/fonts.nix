@@ -1,6 +1,6 @@
 # Desktop fonts configuration
 {...}: {
-  flake.modules.homeManager.fonts = { pkgs, ... }: {
+  flake.modules.homeManager.fonts = {pkgs, ...}: {
     home.packages = with pkgs; [
       nerd-fonts.sauce-code-pro
       nerd-fonts.iosevka

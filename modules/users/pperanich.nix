@@ -1,6 +1,11 @@
 {...}: {
   # pperanich user configuration - both NixOS system user and home-manager setup
-  flake.modules.nixos.pperanich = { config, lib, pkgs, ... }: {
+  flake.modules.nixos.pperanich = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     # Create system user
     users.users.pperanich = {
       openssh.authorizedKeys.keys = [
@@ -38,7 +43,12 @@
   };
 
   # Darwin system user configuration
-  flake.modules.darwin.pperanich = { config, lib, pkgs, ... }: {
+  flake.modules.darwin.pperanich = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     # Create system user
     users.users.pperanich = {
       openssh.authorizedKeys.keys = [

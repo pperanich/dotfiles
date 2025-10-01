@@ -163,7 +163,7 @@ System-Only Modules:
 
   For User-Only Modules:
   {\_}: {
-  flake.modules.homeModules.moduleName = { config, pkgs, ... }: {
+  flake.modules.home.moduleName = { config, pkgs, ... }: {
 
   # Home Manager configuration
 
@@ -180,7 +180,7 @@ System-Only Modules:
 
   };
 
-  flake.modules.homeModules.moduleName = { pkgs, ... }: {
+  flake.modules.home.moduleName = { pkgs, ... }: {
 
   # User-level packages and configuration
 
@@ -216,7 +216,7 @@ System-Only Modules:
 
   New Pattern (Conditional Logic):
   {\_}: {
-  flake.modules.homeModules.someFeature = { pkgs, ... }: {
+  flake.modules.home.someFeature = { pkgs, ... }: {
   home.packages = with pkgs; [
 
   # Cross-platform packages
@@ -272,7 +272,7 @@ System-Only Modules:
   # modules/file-tools.nix
 
   {\_}: {
-  flake.modules.homeModules.fileTools = { pkgs, ... }: {
+  flake.modules.home.fileTools = { pkgs, ... }: {
   home.packages = [ pkgs.bat pkgs.fd pkgs.ripgrep ];
   };
   }
@@ -313,7 +313,7 @@ System-Only Modules:
 
   };
 
-  flake.modules.homeModules.rust = { pkgs, ... }: {
+  flake.modules.home.rust = { pkgs, ... }: {
   home.packages = with pkgs; [
   (rust-bin.nightly.latest.default.override {
   extensions = ["rust-src" "rustfmt" "rust-analyzer"];
@@ -388,7 +388,7 @@ System-Only Modules:
 
   };
 
-  flake.modules.homeModules.containers = { pkgs, ... }: {
+  flake.modules.home.containers = { pkgs, ... }: {
   home.packages = [ pkgs.kubectl pkgs.lazydocker ];
   programs.vscode.extensions = [
   vscode-extensions.ms-vscode-remote.remote-containers
@@ -438,7 +438,7 @@ System-Only Modules:
 
   };
 
-  flake.modules.homeModules.windowManagement = { ... }: {
+  flake.modules.home.windowManagement = { ... }: {
   xdg.configFile = {
   "yabai/yabairc".source = ./config/yabai;
   "skhd/skhdrc".source = ./config/skhd;

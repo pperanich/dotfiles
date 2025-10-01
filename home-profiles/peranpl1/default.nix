@@ -1,42 +1,40 @@
 # Home configuration for peranpl1
-{outputs, ...}: {
-  imports = builtins.attrValues outputs.homeManagerModules;
+{
+  outputs,
+  pkgs,
+  ...
+}: {
+  imports = with outputs.homeManagerModules; [
+    # Core
+    base
 
-  my.home = {
-    enable = true;
+    # Shell
+    zsh
 
-    features = {
-      shell.enable = true;
-      shell.bash.enable = false;
-      work.enable = true;
-      development = {
-        enable = true;
-        containers.enable = false;
+    # Desktop
+    fonts
+    desktopApplications
 
-        editors = {
-          enable = true;
-          neovim.enable = true;
-          emacs.enable = false;
-          vscode.enable = true;
-        };
+    # Editors
+    nvim
+    vscode
 
-        languages = {
-          enable = true;
-          rust.enable = true;
-          # python.enable = true;
-          tex.enable = true;
-        };
-      };
+    # Languages
+    rust
+    tex
 
-      desktop = {
-        enable = true;
-        fonts.enable = true;
-      };
-    };
-  };
+    # Utilities
+    networkUtilities
+    fileExploration
+
+    # Work
+    aplnis
+  ];
 
   # User identity
   home = {
     username = "peranpl1";
+    homeDirectory = "/home/peranpl1";
+    stateVersion = "25.05";
   };
 }

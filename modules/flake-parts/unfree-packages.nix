@@ -14,7 +14,7 @@
     in {
       nixos.base.nixpkgs.config.allowUnfreePredicate = predicate;
 
-      home.base = _args: {
+      homeManager.base = _args: {
         nixpkgs.config = {
           allowUnfreePredicate = predicate;
         };

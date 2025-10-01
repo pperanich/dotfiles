@@ -1,6 +1,6 @@
 # Neovim editor configuration
 {...}: {
-  flake.modules.homeManager.nvim = { pkgs, ... }: {
+  flake.modules.homeManager.nvim = {pkgs, ...}: {
     home.sessionVariables = {
       EDITOR = "nvim";
     };

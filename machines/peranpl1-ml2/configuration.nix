@@ -17,6 +17,11 @@
 
     # Work environment
     aplnis
+
+    # Window management
+    yabai
+    skhd
+    sketchybar
   ];
 
   home-manager.users.peranpl1 = {

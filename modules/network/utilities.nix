@@ -5,7 +5,7 @@ _: {
     {
       home.packages = with pkgs; [
         # HTTP clients - traditional
-        curl # Command line tool for transferring data with URL syntax
+        my-curl # Command line tool for transferring data with URL syntax
         wget # Tool for retrieving files using HTTP, HTTPS, and FTP
 
         # HTTP clients - modern alternatives

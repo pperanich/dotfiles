@@ -183,10 +183,18 @@
       # User-level Nix configuration via Home Manager
       # Note: This configures the user's environment, not the system daemon
 
-      # Enable direnv for per-project Nix environments
-      programs.direnv = {
-        enable = true;
-        nix-direnv.enable = true;
+      xdg.enable = true;
+
+      # Default programs
+      programs = {
+        home-manager.enable = true;
+        pandoc.enable = true;
+        gpg.enable = true;
+        dircolors.enable = true;
+        direnv.enable = true;
+        atuin.enable = true;
+        zoxide.enable = true;
+        nix-index-database.comma.enable = true;
       };
 
       # Configure user nixpkgs

@@ -115,6 +115,7 @@
             rust
 
             # Network and file utilities
+            tools
             networkUtilities
             fileExploration
 

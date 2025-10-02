@@ -1,15 +1,11 @@
 final: prev: {
-  # aplCertificate = final.runCommand "apl-certificate" {} ''
-  #   mkdir -p $out/etc/ssl/certs
-  #   cp ${./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt} $out/etc/ssl/certs/apl-ca.crt
-  # '';
   cacert-apl = prev.cacert.override {
     extraCertificateFiles = [ ./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt ];
   };
-  curl-openssl_1_1 = prev.curl.override { openssl = prev.openssl_1_1; };
-  git-openssl_1_1 = prev.git.override {
+  my-curl = prev.curl.override { openssl = prev.openssl_1_1; };
+  my-git = prev.git.override {
     openssl = prev.openssl_1_1;
-    curl = final.curl-openssl_1_1;
+    curl = final.my-curl;
   };
   buildPackages = prev.buildPackages // {
     openssl = prev.openssl_1_1;

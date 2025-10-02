@@ -39,8 +39,8 @@ in
       # APLNIS-specific packages
       home.packages = with pkgs; [
         openssl_1_1
-        git-openssl_1_1
-        curl-openssl_1_1
+        # git-openssl_1_1
+        # curl-openssl_1_1
         aplnis-env # Small shell script to set and unset environment variables to work around VPN.
       ];
     };

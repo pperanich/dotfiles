@@ -43,6 +43,9 @@
       networkUtilities
       fileExploration
 
+      # General cli tools
+      tools
+
       # Work environment
       aplnis
     ];

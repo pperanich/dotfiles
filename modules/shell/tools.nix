@@ -53,7 +53,6 @@ _: {
           # System Monitoring
           bottom # System viewer
           btop # Monitor of resources
-          usbtop # Top utility that shows an estimated instantaneous bandwidth on USB buses and devices
 
           # File Management & Sync
           atool # Easier packing and unpacking of archives
@@ -123,20 +122,16 @@ _: {
           tealdeer # A very fast implementation of tldr in Rust
           update-display # Re-export DISPLAY in tmux shells.
         ]
-        ++ (
-          if _class == "darwin" then
-            [
-              reattach-to-user-namespace # A wrapper that provides access to the Mac OS X pasteboard service
-              pam-reattach # Reattach to the user's GUI session on macOS during authentication (for Touch ID support in tmux)
-              # xquartz  # Version of the X.Org X Window System that runs on macOS
-              glibtool # GNU Libtool, a generic library support script. Needed to compile libvterm on Mac
-            ]
-          else
-            [
-              # ghostty # Fast, native, feature-rich terminal emulator pushing modern features
-              lazydocker # A simple terminal UI for both docker and docker-compose
-              isd # TUI to interactively work with systemd units
-            ]
-        );
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+          reattach-to-user-namespace # A wrapper that provides access to the Mac OS X pasteboard service
+          pam-reattach # Reattach to the user's GUI session on macOS during authentication (for Touch ID support in tmux)
+          # xquartz  # Version of the X.Org X Window System that runs on macOS
+          glibtool # GNU Libtool, a generic library support script. Needed to compile libvterm on Mac
+        ]
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          # ghostty # Fast, native, feature-rich terminal emulator pushing modern features
+          lazydocker # A simple terminal UI for both docker and docker-compose
+          isd # TUI to interactively work with systemd units
+        ];
     };
 }

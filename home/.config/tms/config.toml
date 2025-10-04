@@ -1,7 +1,7 @@
 [[search_dirs]]
 path = '~/dotfiles'
-depth = 10
+depth = 1
 
 [[search_dirs]]
 path = '~/Documents/repos'
-depth = 10
+depth = 2

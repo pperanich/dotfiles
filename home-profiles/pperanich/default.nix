@@ -1,10 +1,10 @@
 # Home configuration for pperanich
 {
-  outputs,
+  homeManager,
   ...
 }:
 {
-  imports = with outputs.homeManagerModules; [
+  imports = with homeManager; [
     # Core
     base
 

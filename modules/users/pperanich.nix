@@ -1,4 +1,5 @@
-_: {
+{ config, ... }:
+{
   # pperanich user configuration - both NixOS system user and home-manager setup
   flake.modules.nixos.pperanich =
     {
@@ -37,6 +38,7 @@ _: {
             _:
             import (lib.my.relativeToRoot "home-profiles/pperanich") {
               inherit pkgs;
+              inherit (config.flake.modules) homeManager;
             }
           )
         ];

@@ -24,25 +24,6 @@
     networkUtilities
   ]);
 
-  home-manager.users.pperanich = {
-    imports = with modules.homeManager; [
-      # Core system configuration
-      base
-
-      # User setup
-      pperanich
-
-      # Development environment (minimal for WSL)
-      nvim
-      zsh
-      rust
-
-      # System utilities
-      fileExploration
-      networkUtilities
-    ];
-  };
-
   clan.core.networking.targetHost = lib.mkForce "root@pperanich-wsl1";
   clan.core.networking.buildHost = "root@pperanich-wsl1";
 

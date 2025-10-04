@@ -13,7 +13,8 @@
 
     specialArgs = {
       inherit inputs;
-      inherit (config.flake) modules;
+      inherit (config.flake) modules lib;
+
     };
 
     inventory = {

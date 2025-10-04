@@ -85,11 +85,19 @@
         inputs.home-manager.darwinModules.home-manager
         inputs.mac-app-util.darwinModules.default
         inputs.nix-index-database.darwinModules.nix-index
+        inputs.determinate.darwinModules.default
       ];
       system.stateVersion = 6;
 
       # We are using the Determinate daemon
       nix.enable = false;
+      # Custom settings written to /etc/nix/nix.custom.conf
+      determinate-nix.customSettings = {
+        eval-cores = 0;
+        extra-experimental-features = "external-builders";
+        external-builders = "[{\"systems\":[\"aarch64-linux\",\"x86_64-linux\"],\"program\":\"/usr/local/bin/determinate-nixd\",\"args\":[\"builder\"]}]";
+      };
+
       programs.zsh.enableCompletion = false;
       programs.zsh.enableBashCompletion = false;
 
@@ -126,37 +134,6 @@
         reattach = true;
       };
       homebrew.enable = true;
-
-      # Darwin Nix configuration
-      nix = {
-        settings = {
-          # Trust configuration
-          trusted-users = [
-            "root"
-            "@admin"
-          ];
-          experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
-          warn-dirty = false;
-
-          # Disable global flake registry
-          flake-registry = "";
-
-          # Substituters
-          substituters = [
-            "https://cache.nixos.org/"
-            "https://nix-community.cachix.org"
-            "https://t2linux.cachix.org" # T2Linux support for MacBooks
-          ];
-          trusted-public-keys = [
-            "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-            "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-            "t2linux.cachix.org-1:P733c5Gt1qTcxsm+Bae0renWnT8OLs0u9+yfaK2Bejw=" # T2Linux support
-          ];
-        };
-      };
 
       nixpkgs = {
         config = {

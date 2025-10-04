@@ -1,6 +1,7 @@
 {
   inputs,
   modules,
+  pkgs,
   ...
 }:
 {
@@ -247,11 +248,6 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
-
-    # Enable APFS support (for accessing macOS partitions)
-    extraModulePackages = with config.boot.kernelPackages; [
-      # apfs
-    ];
 
     # Add kernel parameters for better hibernation support
     kernelParams = [

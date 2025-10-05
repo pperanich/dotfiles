@@ -16,11 +16,17 @@ in
   flake.modules.nixos.aplnis = _: {
     # System-level APLNIS configuration
     inherit nixpkgs;
+    environment.variables = {
+      DETSYS_IDS_TELEMETRY = "disabled";
+    };
   };
 
   flake.modules.darwin.aplnis = _: {
     # Darwin-specific APLNIS configuration
     inherit nixpkgs;
+    environment.variables = {
+      DETSYS_IDS_TELEMETRY = "disabled";
+    };
   };
 
   flake.modules.homeManager.aplnis =
@@ -34,6 +40,7 @@ in
         POETRY_REQUEST_TIMEOUT = "600";
         PIP_DEFAULT_TIMEOUT = "600";
         UV_HTTP_TIMEOUT = "600";
+        DETSYS_IDS_TELEMETRY = "disabled";
       };
 
       # APLNIS-specific packages

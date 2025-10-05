@@ -94,7 +94,7 @@
       # Custom settings written to /etc/nix/nix.custom.conf
       determinate-nix.customSettings = {
         eval-cores = 0;
-        extra-experimental-features = "external-builders";
+        extra-experimental-features = "external-builders parallel-eval";
         external-builders = "[{\"systems\":[\"aarch64-linux\",\"x86_64-linux\"],\"program\":\"/usr/local/bin/determinate-nixd\",\"args\":[\"builder\"]}]";
       };
 

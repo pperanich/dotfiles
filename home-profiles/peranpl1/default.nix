@@ -1,12 +1,13 @@
 # Home configuration for peranpl1
 {
-  outputs,
+  homeManager,
   ...
 }:
 {
-  imports = with outputs.homeManagerModules; [
+  imports = with homeManager; [
     # Core
     base
+    sops
 
     # Shell
     zsh
@@ -21,7 +22,6 @@
 
     # Languages
     rust
-    tex
 
     # Utilities
     networkUtilities
@@ -35,9 +35,5 @@
   ];
 
   # User identity
-  home = {
-    username = "peranpl1";
-    homeDirectory = "/home/peranpl1";
-    stateVersion = "25.05";
-  };
+  home.username = "peranpl1";
 }

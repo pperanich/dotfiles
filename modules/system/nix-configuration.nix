@@ -10,60 +10,62 @@
       imports = [
         inputs.home-manager.nixosModules.home-manager
         inputs.nix-index-database.nixosModules.nix-index
+        inputs.determinate.nixosModules.default
       ];
-      nix = {
-        settings = {
-          # Trust configuration
-          trusted-users = [
-            "root"
-            "@wheel"
-          ];
-          experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
-          warn-dirty = false;
-          system-features = [
-            "kvm"
-            "big-parallel"
-            "nixos-test"
-          ];
 
-          # Disable global flake registry
-          flake-registry = "";
-
-          # Substituters - include common ones that might be used across machines
-          substituters = [
-            "https://cache.nixos.org/"
-            "https://nix-community.cachix.org"
-            "https://t2linux.cachix.org" # T2Linux support for MacBooks
-          ];
-          trusted-public-keys = [
-            "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-            "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-            "t2linux.cachix.org-1:P733c5Gt1qTcxsm+Bae0renWnT8OLs0u9+yfaK2Bejw=" # T2Linux support
-          ];
-        };
-
-        # Garbage collection
-        gc = {
-          automatic = true;
-          dates = "weekly";
-          options = "--delete-older-than 7d";
-        };
-
-        # Store optimization
-        optimise = {
-          automatic = true;
-          dates = [ "03:45" ];
-        };
-
-        # Registry will be configured by the flake itself
-        # No need to configure inputs here since they're not available
-      };
+      # nix = {
+      #   settings = {
+      #     # Trust configuration
+      #     trusted-users = [
+      #       "root"
+      #       "@wheel"
+      #     ];
+      #     experimental-features = [
+      #       "nix-command"
+      #       "flakes"
+      #     ];
+      #     warn-dirty = false;
+      #     system-features = [
+      #       "kvm"
+      #       "big-parallel"
+      #       "nixos-test"
+      #     ];
+      #
+      #     # Disable global flake registry
+      #     flake-registry = "";
+      #
+      #     # Substituters - include common ones that might be used across machines
+      #     substituters = [
+      #       "https://cache.nixos.org/"
+      #       "https://nix-community.cachix.org"
+      #       "https://t2linux.cachix.org" # T2Linux support for MacBooks
+      #     ];
+      #     trusted-public-keys = [
+      #       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      #       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      #       "t2linux.cachix.org-1:P733c5Gt1qTcxsm+Bae0renWnT8OLs0u9+yfaK2Bejw=" # T2Linux support
+      #     ];
+      #   };
+      #
+      #   # Garbage collection
+      #   gc = {
+      #     automatic = true;
+      #     dates = "weekly";
+      #     options = "--delete-older-than 7d";
+      #   };
+      #
+      #   # Store optimization
+      #   optimise = {
+      #     automatic = true;
+      #     dates = [ "03:45" ];
+      #   };
+      #
+      #   # Registry will be configured by the flake itself
+      #   # No need to configure inputs here since they're not available
+      # };
 
       # System auto-upgrade (NixOS specific) - disabled by default
-      system.autoUpgrade.enable = false;
+      # system.autoUpgrade.enable = false;
 
       nixpkgs = {
         config = {
@@ -153,6 +155,9 @@
       config,
       ...
     }:
+    let
+      homePrefix = if pkgs.stdenv.hostPlatform.isDarwin then "Users" else "home";
+    in
     {
       imports = [
         inputs.nix-index-database.homeModules.nix-index
@@ -190,6 +195,8 @@
         FLAKE = "${config.home.homeDirectory}/dotfiles/";
       };
       home.enableNixpkgsReleaseCheck = false;
+      home.stateVersion = "25.05";
+      home.homeDirectory = "/${homePrefix}/peranpl1";
 
       home.activation = {
         stowHome = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

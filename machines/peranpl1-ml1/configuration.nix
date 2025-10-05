@@ -18,29 +18,6 @@
     aplnis
   ];
 
-  home-manager.users.peranpl1 = {
-    imports = with modules.homeManager; [
-      # Core system configuration
-      base
-
-      # Desktop environment
-      fonts
-      desktopApplications
-      zsh
-
-      # Development environment
-      nvim
-      emacs
-      vscode
-      rust
-      tex
-
-      # Network and file utilities
-      networkUtilities
-      fileExploration
-    ];
-  };
-
   # Host-specific configuration
   networking.hostName = "peranpl1-ml1";
   nixpkgs.hostPlatform = "x86_64-darwin";

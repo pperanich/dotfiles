@@ -1,13 +1,10 @@
-{
-  inputs,
-  outputs,
-  ...
-}:
-{
+_: {
   # peranpl1 user configuration - both NixOS system user and home-manager setup
   flake.modules.nixos.peranpl1 =
     {
       pkgs,
+      lib,
+      config,
       ...
     }:
     {
@@ -30,15 +27,21 @@
       # Add to trusted users for nix
       nix.settings.trusted-users = [ "peranpl1" ];
 
-      # Configure home-manager for this user (simplified)
+      # Configure home-manager for this user
       home-manager = {
         useUserPackages = true;
-        users.peranpl1 = {
-          # Basic user configuration - detailed setup via home modules
-          home.stateVersion = "25.05";
-          home.username = "peranpl1";
-          home.homeDirectory = "/home/peranpl1";
+        extraSpecialArgs = {
+          inherit pkgs;
         };
+        users.peranpl1.imports = lib.flatten [
+          (
+            _:
+            import (lib.my.relativeToRoot "home-profiles/peranpl1") {
+              inherit pkgs;
+              inherit (config.flake.modules) homeManager;
+            }
+          )
+        ];
       };
     };
 
@@ -47,6 +50,8 @@
     {
       config,
       pkgs,
+      lib,
+      modules,
       ...
     }:
     {
@@ -65,64 +70,24 @@
 
       launchd.user.envVariables = config.home-manager.users.peranpl1.home.sessionVariables;
 
-      # Enable zsh system-wide
-      programs.zsh = {
-        enable = true;
-        enableCompletion = false;
-      };
-
       # Add to trusted users for nix
       nix.settings.trusted-users = [ "peranpl1" ];
 
-      # Configure home-manager for this user (simplified)
+      # Configure home-manager for this user
       home-manager = {
         useUserPackages = true;
         extraSpecialArgs = {
-          inherit pkgs inputs outputs;
-        };
-        users.peranpl1 = {
-          # Basic user configuration - detailed setup via home modules
-          home.stateVersion = "25.05";
-          home.username = "peranpl1";
-          home.homeDirectory = "/Users/peranpl1";
-        };
-      };
-    };
-
-  flake.modules.homeManager.peranpl1 =
-    {
-      pkgs,
-      self,
-      ...
-    }:
-    {
-      homeConfigurations = {
-        peranpl1 = inputs.home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-          extraSpecialArgs = { inherit inputs; };
-          modules = with self.flake.modules.homeManager; [
-            # Core system configuration
-            base
-
-            # Desktop environment
-            fonts
-            desktopApplications
-            zsh
-
-            # Development environment
-            nvim
-            vscode
-            rust
-
-            # Network and file utilities
-            tools
-            networkUtilities
-            fileExploration
-
-            # Work environment
-            aplnis
-          ];
         };
+        users.peranpl1.imports = lib.flatten [
+          (
+            _:
+            import (lib.my.relativeToRoot "home-profiles/peranpl1") {
+              inherit pkgs;
+              inherit (modules) homeManager;
+            }
+          )
+        ];
       };
     };
 }

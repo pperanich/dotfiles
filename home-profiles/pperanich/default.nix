@@ -7,6 +7,7 @@
   imports = with homeManager; [
     # Core
     base
+    sops
 
     # Shell
     zsh
@@ -21,7 +22,6 @@
 
     # Languages
     rust
-    tex
 
     # Utilities
     networkUtilities
@@ -29,9 +29,5 @@
   ];
 
   # User identity
-  home = {
-    username = "pperanich";
-    homeDirectory = "/home/pperanich";
-    stateVersion = "25.05";
-  };
+  home.username = "pperanich";
 }

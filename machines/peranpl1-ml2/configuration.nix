@@ -24,33 +24,6 @@
     sketchybar
   ];
 
-  home-manager.users.peranpl1 = {
-    imports = with modules.homeManager; [
-      # Core system configuration
-      base
-
-      # Desktop environment
-      fonts
-      desktopApplications
-      zsh
-
-      # Development environment
-      nvim
-      vscode
-      rust
-
-      # Network and file utilities
-      networkUtilities
-      fileExploration
-
-      # General cli tools
-      tools
-
-      # Work environment
-      aplnis
-    ];
-  };
-
   clan.core.networking.targetHost = lib.mkForce "root@peranpl1-ml2";
   clan.core.networking.buildHost = "root@peranpl1-ml2";
 

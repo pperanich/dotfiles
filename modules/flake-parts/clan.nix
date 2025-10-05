@@ -17,6 +17,11 @@
 
     };
 
+    secrets.age.plugins = [
+      "age-plugin-yubikey"
+      "age-plugin-fido2-hmac"
+    ];
+
     inventory = {
       machines."peranpl1-ml1".machineClass = "darwin";
       machines."peranpl1-ml1".tags = [ "laptop" ];
@@ -40,6 +45,17 @@
           roles.server.tags.nixos = { };
           roles.client.tags.nixos = { };
         };
+        users-root = {
+          module.name = "users";
+          module.input = "clan-core";
+          roles.default.tags.nixos = { };
+          roles.default.settings = {
+            user = "root";
+            share = true;
+            prompt = false; # Set to true if you want to be prompted
+            groups = [ ];
+          };
+        };
         user-pperanich = {
           module = {
             name = "users";
@@ -48,8 +64,10 @@
           roles.default.tags.nixos = { };
           roles.default.settings = {
             user = "pperanich";
-            prompt = true;
+            share = true;
+            prompt = true; # Set to true if you want to be prompted
           };
+          # roles.default.extraModules = [ config.flake.modules.nixos.pperanich ];
         };
         admin = {
           roles.default.tags.nixos = { };

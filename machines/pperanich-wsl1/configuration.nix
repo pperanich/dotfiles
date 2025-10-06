@@ -12,6 +12,7 @@
   ++ (with modules.nixos; [
     # Core system configuration
     base
+    sops
 
     # User setup
     pperanich
@@ -35,13 +36,15 @@
     docker-desktop.enable = true;
     interop.register = true;
     startMenuLaunchers = true;
+    # usbip.enable = true;
+    wslConf.network.generateResolvConf = true;
   };
 
   networking = {
     hostName = "pperanich-wsl1";
     interfaces.eth0 = {
       useDHCP = true;
-      wakeOnLan.enable = true;
+      # wakeOnLan.enable = true;
     };
   };
 
@@ -56,4 +59,5 @@
   };
 
   services.openssh.ports = [ 2222 ];
+  services.resolved.enable = false;
 }

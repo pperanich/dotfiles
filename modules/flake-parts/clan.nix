@@ -69,10 +69,6 @@
           };
           # roles.default.extraModules = [ config.flake.modules.nixos.pperanich ];
         };
-        admin = {
-          roles.default.tags.nixos = { };
-          roles.default.settings = { };
-        };
         emergency-access = {
           module = {
             name = "emergency-access";

@@ -196,7 +196,7 @@
       };
       home.enableNixpkgsReleaseCheck = false;
       home.stateVersion = "25.05";
-      home.homeDirectory = "/${homePrefix}/peranpl1";
+      home.homeDirectory = "/${homePrefix}/${config.home.username}";
 
       home.activation = {
         stowHome = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

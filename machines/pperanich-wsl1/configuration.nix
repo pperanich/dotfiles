@@ -70,6 +70,7 @@
     config.shared.default = "*";
   };
 
-  services.openssh.ports = [ 2222 ];
   services.resolved.enable = false;
+  clan.core.enableRecommendedDefaults = false;
+  clan.core.deployment.requireExplicitUpdate = true;
 }

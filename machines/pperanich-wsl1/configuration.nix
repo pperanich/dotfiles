@@ -36,7 +36,7 @@
     docker-desktop.enable = true;
     interop.register = true;
     startMenuLaunchers = true;
-    # usbip.enable = true;
+    usbip.enable = true;
     wslConf.network.generateResolvConf = true;
   };
 
@@ -44,7 +44,19 @@
     hostName = "pperanich-wsl1";
     interfaces.eth0 = {
       useDHCP = true;
-      # wakeOnLan.enable = true;
+      wakeOnLan.enable = true;
+    };
+    interfaces.eth1 = {
+      useDHCP = true;
+      wakeOnLan.enable = true;
+    };
+    interfaces.eth2 = {
+      useDHCP = true;
+      wakeOnLan.enable = true;
+    };
+    interfaces.eth3 = {
+      useDHCP = true;
+      wakeOnLan.enable = true;
     };
   };
 

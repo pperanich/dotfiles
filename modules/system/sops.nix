@@ -28,7 +28,7 @@ in
   flake.modules.darwin.sops =
     { pkgs, ... }:
     {
-      imports = [ inputs.sops-nix.darwinModules.sops ];
+      # imports = [ inputs.sops-nix.darwinModules.sops ];
       inherit sops;
       environment.systemPackages = [ pkgs.sops ];
     };

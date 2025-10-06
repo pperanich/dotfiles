@@ -8,6 +8,7 @@
   imports = with modules.darwin; [
     # Core system configuration
     base
+    sops
 
     # User setup
     peranpl1

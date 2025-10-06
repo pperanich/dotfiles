@@ -1,6 +1,6 @@
 _: {
   flake.modules.homeManager.tools =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     {
       home.packages =
         with pkgs;
@@ -133,5 +133,15 @@ _: {
           lazydocker # A simple terminal UI for both docker and docker-compose
           isd # TUI to interactively work with systemd units
         ];
+      home = {
+        sessionPath = [
+          "${config.home.homeDirectory}/.npm-global/bin"
+          "${config.home.homeDirectory}/dotfiles/bin"
+          "${config.home.homeDirectory}/.pixi/bin"
+          "${config.home.homeDirectory}/.rye/shims"
+          "${config.home.homeDirectory}/.cargo/bin"
+          "${config.home.homeDirectory}/go/bin"
+        ];
+      };
     };
 }

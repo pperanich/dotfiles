@@ -13,6 +13,8 @@
         inputs.determinate.nixosModules.default
       ];
 
+      system.stateVersion = "25.11";
+
       # nix = {
       #   settings = {
       #     # Trust configuration

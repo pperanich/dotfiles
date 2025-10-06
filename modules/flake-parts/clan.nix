@@ -66,6 +66,9 @@
             user = "pperanich";
             share = true;
             prompt = true; # Set to true if you want to be prompted
+            groups = [
+              "admin"
+            ];
           };
           # roles.default.extraModules = [ config.flake.modules.nixos.pperanich ];
         };

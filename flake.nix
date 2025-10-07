@@ -101,6 +101,11 @@
       url = "github:jacekszymanski/nixcasks";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    omarchy-nix = {
+      url = "github:henrysipp/omarchy-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
 
     # Development Tools
     nil = {

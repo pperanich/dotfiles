@@ -2,19 +2,21 @@
   inputs,
   modules,
   pkgs,
+  lib,
   ...
 }:
 {
   imports = [
     ./hardware-configuration.nix
-    ./nat-adapter.nix
     # Include the T2 security chip module from nixos-hardware
     inputs.hardware.nixosModules.apple-t2
     inputs.hardware.nixosModules.common-cpu-intel
+    inputs.omarchy-nix.nixosModules.default
   ]
   ++ (with modules.nixos; [
     # Core system configuration
     base
+    sops
 
     # User setup
     pperanich
@@ -26,53 +28,45 @@
     fileExploration
     networkUtilities
 
-    # Virtualization (useful for development)
-    docker
-    qemu
+    # # Virtualization (useful for development)
+    # docker
+    # qemu
   ]);
 
-  home-manager.users.pperanich = {
-    imports = with modules.homeManager; [
-      # Core system configuration
-      base
-
-      # User setup
-      pperanich
-
-      # Desktop environment
-      fonts
-      desktopApplications
-      zsh
-
-      # Development environment
-      nvim
-      emacs
-      vscode
-      rust
-      tex
-
-      # System utilities
-      fileExploration
-      networkUtilities
-
-      # Virtualization (useful for development)
-      docker
-      qemu
+  # T2Linux-specific Nix settings
+  nix.settings = {
+    trusted-substituters = [
+      "https://t2linux.cachix.org"
+    ];
+    trusted-public-keys = [
+      "t2linux.cachix.org-1:P733c5Gt1qTcxsm+Bae0renWnT8OLs0u9+yfaK2Bejw="
+    ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
     ];
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
+  # clan.core.networking.targetHost = lib.mkForce "root@pperanich-ll1";
+  # clan.core.networking.buildHost = "root@pperanich-ll1";
+  clan.core.networking.targetHost = lib.mkForce "pperanich@192.168.0.184";
+  clan.core.networking.buildHost = "pperanich@192.168.0.184";
+
+  # Configure omarchy
+  omarchy = {
+    full_name = "Preston Peranich";
+    email_address = "pperanich@gmail.com";
+    theme = "tokyo-night";
+  };
+  home-manager = {
+    users.pperanich = {
+      imports = [ inputs.omarchy-nix.homeManagerModules.default ];
+    };
+  };
 
   # Networking configuration
-  networking = {
-    hostName = "pperanich-ll1";
-    # wireless.enable = true;
-    # wireless.userControlled.enable = true;
-    networkmanager.enable = true; # Use NetworkManager instead
-    # wireless.networks."VirusInfectedWifi".psk = "vacinate";
-    # wireless.networks."#DCA Free WiFi" = {};
-    # useDHCP = true;
-  };
+  networking.hostName = "pperanich-ll1";
 
   systemd = {
     services.tiny-dfr = {
@@ -90,21 +84,6 @@
     enable = true;
     powertop.enable = true;
     cpuFreqGovernor = "powersave";
-
-    # Add sleep-specific settings
-    # scsiLinkPolicy = "med_power_with_dipm"; # Better SCSI/SATA power management
-    # powerDownCommands = ''
-    #   # Turn off all USB devices except those needed for waking
-    #   echo 'auto' > /sys/bus/usb/devices/*/power/control || true
-    #   # Force PCIe power management
-    #   for i in /sys/bus/pci/devices/*/power/control; do echo 'auto' > $i || true; done
-    # '';
-    # resumeCommands = ''
-    #   # Turn USB devices back on
-    #   echo 'on' > /sys/bus/usb/devices/*/power/control || true
-    #   # Reset PCIe power management
-    #   for i in /sys/bus/pci/devices/*/power/control; do echo 'on' > $i || true; done
-    # '';
   };
 
   xdg.portal = {
@@ -129,7 +108,7 @@
     apple-t2 = {
       enableIGPU = true;
       firmware.enable = true;
-      kernelChannel = "latest";
+      kernelChannel = "stable";
     };
     graphics = {
       enable = true;
@@ -144,12 +123,6 @@
 
   # Additional services
   services = {
-    # Enable SSH
-    openssh.enable = true;
-
-    # Enable printing
-    printing.enable = true;
-
     thermald.enable = true;
     power-profiles-daemon.enable = false;
     auto-cpufreq = {
@@ -168,49 +141,10 @@
 
     # Configure systemd hibernate service
     logind = {
-      # extraConfig = ''
-      #   HandlePowerKey=suspend
-      #   HandleLidSwitch=suspend
-      #   HandleLidSwitchDocked=ignore
-      #   IdleAction=suspend
-      #   IdleActionSec=30min
-      #   SuspendKeyIgnoreInhibited=yes
-      #   SuspendDelaySec=0
-      # '';
       lidSwitch = "suspend";
       lidSwitchDocked = "ignore";
       lidSwitchExternalPower = "suspend";
     };
-
-    # tlp = {
-    #   enable = true;
-    #   settings = {
-    #     CPU_SCALING_GOVERNOR_ON_AC = "performance";
-    #     CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
-    #
-    #     CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
-    #     CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
-    #
-    #     CPU_MIN_PERF_ON_AC = 0;
-    #     CPU_MAX_PERF_ON_AC = 100;
-    #     CPU_MIN_PERF_ON_BAT = 0;
-    #     CPU_MAX_PERF_ON_BAT = 20;
-    #
-    #     # Optional helps save long term battery health
-    #     # START_CHARGE_THRESH_BAT0 = 40; # 40 and below it starts to charge
-    #     # STOP_CHARGE_THRESH_BAT0 = 80; # 80 and above it stops charging
-    #   };
-    # };
-
-    # Enable Touchpad support
-    # libinput = {
-    #   enable = true;
-    #   touchpad = {
-    #     naturalScrolling = true;
-    #     tapping = true;
-    #     disableWhileTyping = true;
-    #   };
-    # };
   };
 
   # Allow unfree packages (needed for some firmware)
@@ -253,16 +187,9 @@
     kernelParams = [
       "usbcore.autosuspend=-1"
       "mem_sleep_default=s2idle"
-      # "acpi_osi=Darwin"           # Better ACPI compatibility for MacBooks
-      # "acpi_force"                # Force ACPI
-      # "acpi_enforce_resources=lax" # More lenient ACPI resource checking
-      # "mem_sleep_default=deep"     # Enable deep sleep states
-      # "pcie_aspm=force"           # Force PCIe Active State Power Management
-      # "pcie_port_pm=force"        # Force PCIe port power management
-      # "nvme.noacpi=1"             # Disable ACPI for NVMe - can help with sleep
-      # "intel_idle.max_cstate=4"   # Limit C-states for better stability
     ];
   };
+
   systemd.services = {
     tune-usb-autosuspend = {
       description = "Disable USB autosuspend";

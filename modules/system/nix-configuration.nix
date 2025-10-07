@@ -15,6 +15,8 @@
 
       system.stateVersion = "25.11";
 
+      home-manager.backupFileExtension = "hm-back";
+
       # nix = {
       #   settings = {
       #     # Trust configuration
@@ -200,13 +202,13 @@
       home.stateVersion = "25.05";
       home.homeDirectory = "/${homePrefix}/${config.home.username}";
 
-      home.activation = {
-        stowHome = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          pushd ${config.home.homeDirectory}/dotfiles/ >/dev/null
-          ${pkgs.stow}/bin/stow home
-          popd >/dev/null
-        '';
-      };
+      # home.activation = {
+      #   stowHome = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      #     pushd ${config.home.homeDirectory}/dotfiles/ >/dev/null
+      #     ${pkgs.stow}/bin/stow home
+      #     popd >/dev/null
+      #   '';
+      # };
 
       # User-level packages that enhance Nix experience
       home.packages = with pkgs; [

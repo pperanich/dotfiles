@@ -39,6 +39,7 @@
           ];
           extraSpecialArgs = {
             inherit inputs outputs;
+            inherit (outputs.modules) homeManager;
             lib = lib.extend (_: _: home-manager.lib);
           }
           // extraSpecialArgs;
@@ -63,6 +64,7 @@
               ];
               extraSpecialArgs = {
                 inherit inputs outputs;
+                inherit (outputs.modules) homeManager;
                 lib = lib.extend (_: _: home-manager.lib);
               }
               // extraSpecialArgs;

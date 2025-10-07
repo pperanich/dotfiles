@@ -19,6 +19,7 @@
           pkgs.age-plugin-se
 
           inputs'.clan-core.packages.clan-cli
+          inputs'.home-manager.packages.home-manager
 
           # treefmt with config defined in fmt.nix
           config.treefmt.build.wrapper

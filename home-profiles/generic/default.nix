@@ -15,6 +15,13 @@
     nvim
     vscode
 
+    # General cli tools
+    tools
+
+    # Utilities
+    networkUtilities
+    fileExploration
+
     # Utilities
     fonts
   ];

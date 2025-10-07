@@ -30,6 +30,7 @@ in
         "hst"
         "holo"
         "mxwbio"
+        "prest"
       ];
     }
   );

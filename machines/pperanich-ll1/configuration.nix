@@ -3,15 +3,22 @@
   modules,
   pkgs,
   lib,
+  config,
   ...
 }:
+let
+  t2-apple-audio-dsp = builtins.fetchGit {
+    url = "https://github.com/lemmyg/t2-apple-audio-dsp";
+    rev = "3f9ad7b738ffad22b713a4d5e11fbfdddefcddb9";
+  };
+in
 {
   imports = [
     ./hardware-configuration.nix
     # Include the T2 security chip module from nixos-hardware
     inputs.hardware.nixosModules.apple-t2
     inputs.hardware.nixosModules.common-cpu-intel
-    # inputs.omarchy-nix.nixosModules.default
+    "${t2-apple-audio-dsp}/nixos/pipewire_sink_conf.nix"
   ]
   ++ (with modules.nixos; [
     # Core system configuration
@@ -50,19 +57,6 @@
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pperanich-ll1";
   clan.core.networking.buildHost = "root@pperanich-ll1";
-
-  # Configure omarchy
-  # omarchy = {
-  #   full_name = "Preston Peranich";
-  #   email_address = "pperanich@gmail.com";
-  #   theme = "tokyo-night";
-  # };
-
-  # home-manager = {
-  #   users.pperanich = {
-  #     imports = [ inputs.omarchy-nix.homeManagerModules.default ];
-  #   };
-  # };
 
   # Enable the login manager
   services.displayManager.cosmic-greeter.enable = true;
@@ -178,6 +172,12 @@
 
     # Firmware updates
     fwupd
+
+    ghostty
+
+    ladspaPlugins
+    calf
+    lsp-plugins
   ];
 
   # Boot configuration
@@ -193,6 +193,9 @@
     kernelParams = [
       "usbcore.autosuspend=-1"
       "mem_sleep_default=s2idle"
+      "intel_iommu=on"
+      "iommu=pt"
+      "pcie_ports=compat"
     ];
   };
 
@@ -209,4 +212,10 @@
       '';
     };
   };
+
+  systemd.user.services.pipewire.environment = {
+    LADSPA_PATH = "${pkgs.ladspaPlugins}/lib/ladspa";
+    # LV2_PATH = "${config.system.path}/lib/lv2";
+  };
+
 }

@@ -35,7 +35,7 @@
             name = "trusted-nix-caches";
             input = "clan-core";
           };
-          roles.default.tags.nixos = { };
+          roles.default.tags.all = { };
         };
         sshd-basic = {
           module = {
@@ -48,7 +48,7 @@
         users-root = {
           module.name = "users";
           module.input = "clan-core";
-          roles.default.tags.nixos = { };
+          roles.default.tags.all = { };
           roles.default.settings = {
             user = "root";
             share = true;
@@ -61,7 +61,7 @@
             name = "users";
             input = "clan-core";
           };
-          roles.default.tags.nixos = { };
+          roles.default.tags.all = { };
           roles.default.machines.pperanich-ll1 = { };
           roles.default.settings = {
             user = "pperanich";
@@ -90,7 +90,7 @@
             input = "clan-core";
           };
 
-          roles.default.tags.nixos = { };
+          roles.default.tags.all = { };
         };
       };
     };

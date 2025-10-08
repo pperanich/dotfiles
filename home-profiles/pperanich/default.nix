@@ -23,9 +23,7 @@
     # Languages
     rust
 
-    # Utilities
-    networkUtilities
-    fileExploration
+    tools
   ];
 
   # User identity

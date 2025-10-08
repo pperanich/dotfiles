@@ -24,6 +24,9 @@
 
     # Utilities
     fonts
+
+    # Work profile
+    aplnis
   ];
 
   # State version set by mkHomeConfigurations

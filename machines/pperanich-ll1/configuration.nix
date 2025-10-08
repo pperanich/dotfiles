@@ -11,7 +11,7 @@
     # Include the T2 security chip module from nixos-hardware
     inputs.hardware.nixosModules.apple-t2
     inputs.hardware.nixosModules.common-cpu-intel
-    inputs.omarchy-nix.nixosModules.default
+    # inputs.omarchy-nix.nixosModules.default
   ]
   ++ (with modules.nixos; [
     # Core system configuration
@@ -48,22 +48,28 @@
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  # clan.core.networking.targetHost = lib.mkForce "root@pperanich-ll1";
-  # clan.core.networking.buildHost = "root@pperanich-ll1";
-  clan.core.networking.targetHost = lib.mkForce "pperanich@192.168.0.184";
-  clan.core.networking.buildHost = "pperanich@192.168.0.184";
+  clan.core.networking.targetHost = lib.mkForce "root@pperanich-ll1";
+  clan.core.networking.buildHost = "root@pperanich-ll1";
 
   # Configure omarchy
-  omarchy = {
-    full_name = "Preston Peranich";
-    email_address = "pperanich@gmail.com";
-    theme = "tokyo-night";
-  };
-  home-manager = {
-    users.pperanich = {
-      imports = [ inputs.omarchy-nix.homeManagerModules.default ];
-    };
-  };
+  # omarchy = {
+  #   full_name = "Preston Peranich";
+  #   email_address = "pperanich@gmail.com";
+  #   theme = "tokyo-night";
+  # };
+
+  # home-manager = {
+  #   users.pperanich = {
+  #     imports = [ inputs.omarchy-nix.homeManagerModules.default ];
+  #   };
+  # };
+
+  # Enable the login manager
+  services.displayManager.cosmic-greeter.enable = true;
+  # Enable the COSMIC DE itself
+  services.desktopManager.cosmic.enable = true;
+  # Enable XWayland support in COSMIC
+  services.desktopManager.cosmic.xwayland.enable = true;
 
   # Networking configuration
   networking.hostName = "pperanich-ll1";

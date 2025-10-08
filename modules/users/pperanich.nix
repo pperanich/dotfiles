@@ -60,6 +60,23 @@
           (builtins.readFile ./peranpl1_id_ed25519.pub)
         ];
         shell = pkgs.zsh;
+        hashedPasswordFile = config.sops.secrets.pperanich-password.path;
+        isNormalUser = true;
+        extraGroups = [
+          "wheel"
+          "video"
+          "audio"
+          "dialout"
+        ]
+        ++ (builtins.filter (group: builtins.hasAttr group config.users.groups) [
+          "network"
+          "wireshark"
+          "i2c"
+          "mysql"
+          "docker"
+          "podman"
+          "git"
+        ]);
       };
 
       # Enable zsh system-wide

@@ -42,8 +42,8 @@
             name = "sshd";
             input = "clan-core";
           };
-          roles.server.tags.nixos = { };
-          roles.client.tags.nixos = { };
+          roles.server.tags.all = { };
+          roles.client.tags.all = { };
         };
         users-root = {
           module.name = "users";
@@ -62,12 +62,24 @@
             input = "clan-core";
           };
           roles.default.tags.nixos = { };
+          roles.default.machines.pperanich-ll1 = { };
           roles.default.settings = {
             user = "pperanich";
             share = true;
             prompt = true; # Set to true if you want to be prompted
             groups = [
               "admin"
+              "wheel"
+              "video"
+              "audio"
+              "dialout"
+              "network"
+              "wireshark"
+              "i2c"
+              "mysql"
+              "docker"
+              "podman"
+              "git"
             ];
           };
           # roles.default.extraModules = [ config.flake.modules.nixos.pperanich ];

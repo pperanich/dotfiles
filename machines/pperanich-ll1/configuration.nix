@@ -68,23 +68,23 @@ in
   # Networking configuration
   networking.hostName = "pperanich-ll1";
 
-  systemd = {
-    services.tiny-dfr = {
-      wantedBy = [
-        "post-resume.target"
-        "dev-tiny_dfr_display.device"
-        "dev-tiny_dfr_backlight.device"
-        "dev-tiny_dfr_display_backlight.device"
-      ];
-      after = [ "post-resume.target" ];
-    };
-  };
+  # systemd = {
+  #   services.tiny-dfr = {
+  #     wantedBy = [
+  #       "post-resume.target"
+  #       "dev-tiny_dfr_display.device"
+  #       "dev-tiny_dfr_backlight.device"
+  #       "dev-tiny_dfr_display_backlight.device"
+  #     ];
+  #     after = [ "post-resume.target" ];
+  #   };
+  # };
 
-  powerManagement = {
-    enable = true;
-    powertop.enable = true;
-    cpuFreqGovernor = "powersave";
-  };
+  # powerManagement = {
+  #   enable = true;
+  #   powertop.enable = true;
+  #   cpuFreqGovernor = "powersave";
+  # };
 
   xdg.portal = {
     enable = true;
@@ -106,7 +106,7 @@ in
     };
     enableRedistributableFirmware = true;
     apple-t2 = {
-      enableIGPU = true;
+      enableIGPU = false;
       firmware.enable = true;
       kernelChannel = "stable";
     };
@@ -122,30 +122,30 @@ in
   };
 
   # Additional services
-  services = {
-    thermald.enable = true;
-    power-profiles-daemon.enable = false;
-    auto-cpufreq = {
-      enable = true;
-      settings = {
-        battery = {
-          governor = "powersave";
-          turbo = "never";
-        };
-        charger = {
-          governor = "powersave";
-          turbo = "auto";
-        };
-      };
-    };
-
-    # Configure systemd hibernate service
-    logind = {
-      lidSwitch = "suspend";
-      lidSwitchDocked = "ignore";
-      lidSwitchExternalPower = "suspend";
-    };
-  };
+  # services = {
+  #   thermald.enable = true;
+  #   power-profiles-daemon.enable = false;
+  #   auto-cpufreq = {
+  #     enable = true;
+  #     settings = {
+  #       battery = {
+  #         governor = "powersave";
+  #         turbo = "never";
+  #       };
+  #       charger = {
+  #         governor = "powersave";
+  #         turbo = "auto";
+  #       };
+  #     };
+  #   };
+  #
+  #   # Configure systemd hibernate service
+  #   logind = {
+  #     lidSwitch = "suspend";
+  #     lidSwitchDocked = "ignore";
+  #     lidSwitchExternalPower = "suspend";
+  #   };
+  # };
 
   # Allow unfree packages (needed for some firmware)
   nixpkgs.config.allowUnfree = true;
@@ -178,6 +178,9 @@ in
     ladspaPlugins
     calf
     lsp-plugins
+
+    system76-power
+    power-profiles-daemon
   ];
 
   # Boot configuration
@@ -193,37 +196,36 @@ in
     kernelParams = [
       "usbcore.autosuspend=-1"
       "mem_sleep_default=s2idle"
-      "intel_iommu=on"
-      "iommu=pt"
-      "pcie_ports=compat"
     ];
   };
 
-  systemd.services = {
-    tune-usb-autosuspend = {
-      description = "Disable USB autosuspend";
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-      };
-      unitConfig.RequiresMountsFor = "/sys";
-      script = ''
-        echo -1 > /sys/module/usbcore/parameters/autosuspend
-      '';
-    };
-  };
+  # systemd.services = {
+  #   tune-usb-autosuspend = {
+  #     description = "Disable USB autosuspend";
+  #     wantedBy = [ "multi-user.target" ];
+  #     serviceConfig = {
+  #       Type = "oneshot";
+  #     };
+  #     unitConfig.RequiresMountsFor = "/sys";
+  #     script = ''
+  #       echo -1 > /sys/module/usbcore/parameters/autosuspend
+  #     '';
+  #   };
+  # };
 
   systemd.user.services.pipewire.environment = {
     LADSPA_PATH = "${pkgs.ladspaPlugins}/lib/ladspa";
-    # LV2_PATH = "${config.system.path}/lib/lv2";
+    LV2_PATH = lib.mkForce "${config.system.path}/lib/lv2";
   };
+
+  hardware.system76.power-daemon.enable = true;
 
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
+    audio.enable = true;
     alsa.enable = true;
     alsa.support32Bit = true;
-    pulse.enable = true;
+    jack.enable = true;
   };
-
 }

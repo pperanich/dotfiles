@@ -11,6 +11,7 @@
         inputs.home-manager.nixosModules.home-manager
         inputs.nix-index-database.nixosModules.nix-index
         inputs.determinate.nixosModules.default
+        inputs.nix-ld.nixosModules.nix-ld
       ];
 
       system.stateVersion = "25.11";
@@ -79,6 +80,7 @@
         };
         overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
       };
+      programs.nix-ld.dev.enable = true;
     };
 
   # Darwin Nix configuration

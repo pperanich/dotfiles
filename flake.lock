@@ -860,6 +860,26 @@
         "type": "github"
       }
     },
+    "nix-ld": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1759739024,
+        "narHash": "sha256-cJmHXccjpUH0AQsFcts+OZ/lUzdeaxF7oMft0VQOnoA=",
+        "owner": "Mic92",
+        "repo": "nix-ld",
+        "rev": "d4c51086457b3f4b631dfa26f2c982d1acd98374",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "nix-ld",
+        "type": "github"
+      }
+    },
     "nix-select": {
       "locked": {
         "lastModified": 1755887746,
@@ -1103,6 +1123,7 @@
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nil": "nil",
         "nix-index-database": "nix-index-database",
+        "nix-ld": "nix-ld",
         "nixcasks": "nixcasks",
         "nixgl": "nixgl",
         "nixos-wsl": "nixos-wsl",

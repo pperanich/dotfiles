@@ -41,6 +41,7 @@ in
         PIP_DEFAULT_TIMEOUT = "600";
         UV_HTTP_TIMEOUT = "600";
         DETSYS_IDS_TELEMETRY = "disabled";
+        GODEBUG = "x509negativeserial=1";
       };
 
       # APLNIS-specific packages

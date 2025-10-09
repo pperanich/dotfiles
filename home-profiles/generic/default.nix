@@ -27,6 +27,8 @@
 
     # Work profile
     aplnis
+
+    shellEnvironment
   ];
 
   # State version set by mkHomeConfigurations

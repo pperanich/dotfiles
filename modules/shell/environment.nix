@@ -16,7 +16,7 @@ _: {
 
       # Basic shell configuration
       programs = {
-        bash.enable = true;
+        # bash.enable = true;
         atuin.enable = true;
       };
     };

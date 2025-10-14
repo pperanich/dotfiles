@@ -13,7 +13,7 @@ font-feature = -calt
 font-feature = -dlig
 font-feature = -liga
 
-theme = light:modus-operandi,dark:modus-vivendi
+theme = catppuccin-mocha
 # theme = Github-Dark-Default
 # theme = tokyonight
 clipboard-read = allow

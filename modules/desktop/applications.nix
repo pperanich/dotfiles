@@ -31,11 +31,13 @@ _: {
           bitwarden # Password manager
           vlc # Media player
           protonvpn-gui # VPN client
+          ghostty # Fast, native, feature-rich terminal emulator pushing modern features
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           # logseq # Knowledge management tool
           m-cli # useful macOS CLI commands
           ollama # Local LLM runner
+          ghostty-bin # Fast, native, feature-rich terminal emulator pushing modern features
           # nixcasks.docker # Container platform
           # nixcasks.ghostty # Fast, native, feature-rich terminal emulator pushing modern features
           # nixcasks.shottr # Screenshot tool

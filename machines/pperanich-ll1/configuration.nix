@@ -108,9 +108,14 @@ in
     };
     enableRedistributableFirmware = true;
     apple-t2 = {
-      enableIGPU = false;
+      enableIGPU = true;
       firmware.enable = true;
       kernelChannel = "stable";
+    };
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+      package = pkgs.bluez;
     };
     graphics = {
       enable = true;
@@ -174,6 +179,7 @@ in
 
     # Firmware updates
     fwupd
+    linux-firmware
 
     ghostty
 
@@ -198,6 +204,8 @@ in
     kernelParams = [
       "usbcore.autosuspend=-1"
       "mem_sleep_default=s2idle"
+      # Suppress Bluetooth advertising packet warnings
+      "bluetooth.disable_ertm=1"
     ];
   };
 

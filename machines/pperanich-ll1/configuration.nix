@@ -65,6 +65,8 @@ in
   # Enable XWayland support in COSMIC
   services.desktopManager.cosmic.xwayland.enable = true;
 
+  # programs.waybar.enable = true;
+
   # Networking configuration
   networking.hostName = "pperanich-ll1";
 

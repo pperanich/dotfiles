@@ -13,7 +13,7 @@ _: {
         fd # Required for file finding
         fzf # Fuzzy finder
         pkg-config # Required for some nvim plugins
-        gcc
+        # gcc
       ];
 
       programs.neovim = {

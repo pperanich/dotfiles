@@ -13,8 +13,8 @@ font-feature = -calt
 font-feature = -dlig
 font-feature = -liga
 
-theme = Catppuccin Mocha
-# theme = catppuccin-mocha
+# theme = Catppuccin Mocha
+theme = catppuccin-mocha
 # theme = Github-Dark-Default
 # theme = tokyonight
 clipboard-read = allow

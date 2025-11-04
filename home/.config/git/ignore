@@ -1,3 +1,6 @@
 .cursor/
 memory-bank/
 **/.claude/settings.local.json
+
+CLAUDE.md
+.mcp.json

@@ -52,6 +52,7 @@ in
 
         secrets = {
           "api_keys/opal_api_key" = { };
+          "api_keys/openai_enterprise_api_key" = { };
           "api_keys/openai_api_key" = { };
           "api_keys/assemblyai_api_key" = { };
           "api_keys/hugging_face_hub_token" = { };

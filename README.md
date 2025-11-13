@@ -16,6 +16,7 @@ This configuration leverages modern Nix tooling to create a highly modular and m
 The dendritic pattern uses automatic module discovery via `import-tree`, where all `.nix` files under `/modules` are automatically imported and made available. Each module exports itself by defining attributes on `flake.modules.<platform>.<moduleName>`, creating a tree-like structure that grows organically.
 
 **Key benefits:**
+
 - No manual module imports required
 - Self-organizing module structure
 - Platform-specific module segregation (nixos, darwin, homeManager)
@@ -67,6 +68,7 @@ modules/
 
 **Module Structure:**
 Each module exports itself by defining flake attributes:
+
 ```nix
 # Example: modules/shell/zsh.nix
 _: {
@@ -88,6 +90,7 @@ home-profiles/
 ```
 
 Profiles automatically generate `homeConfigurations` via the `lib.my.mkHomeConfigurations` function, which:
+
 - Auto-discovers profile directories
 - Generates configurations for each user
 - Supports additional users via the `generic` profile
@@ -111,6 +114,7 @@ machines/
 ```
 
 Machine configurations import modules by referencing:
+
 ```nix
 imports = [ ] ++ (with modules.nixos; [
   base           # Core system config
@@ -131,6 +135,7 @@ home/
 ```
 
 These are automatically stowed to `$HOME` via home-manager activation:
+
 ```nix
 home.activation.stowHome = lib.hm.dag.entryAfter ["writeBoundary"] ''
   ${pkgs.stow}/bin/stow home
@@ -159,12 +164,14 @@ The flake entry point delegates all configuration to flake-parts modules:
 ```
 
 **How it works:**
+
 1. `import-tree` recursively imports all `.nix` files in `/modules`
 2. Each file can define flake-parts configuration
 3. Files under `modules/flake-parts/` wire together the complete system
 4. Modules export themselves into `flake.modules.<platform>.<name>`
 
 **Key flake-parts modules:**
+
 - `nixpkgs.nix`: Configures nixpkgs with overlays, extends lib with custom functions
 - `clan.nix`: Defines machine inventory and clan-core deployment settings
 - `home.nix`: Auto-generates homeConfigurations from profiles
@@ -180,6 +187,7 @@ Machine deployment and management is handled by [clan-core](https://docs.clan.lo
 - **Remote deployment**: Standardized deployment workflows
 
 **Configuration** (`modules/flake-parts/clan.nix`):
+
 ```nix
 flake.clan = {
   meta.name = "pperanich-clan";
@@ -203,18 +211,19 @@ flake.clan = {
 
 ### When to Use Each Component
 
-| Component | Use For |
-|-----------|---------|
-| **Modules (NixOS)** | System services, hardware config, system-wide settings |
-| **Modules (Darwin)** | macOS system preferences, homebrew, system services |
-| **Modules (homeManager)** | User packages, application configs, dev environments |
-| **Home Profiles** | Complete user environment definitions |
-| **Machines** | Host-specific configuration, hardware settings |
-| **Home (dotfiles)** | Configs not yet nixified, legacy dotfiles |
+| Component                 | Use For                                                |
+| ------------------------- | ------------------------------------------------------ |
+| **Modules (NixOS)**       | System services, hardware config, system-wide settings |
+| **Modules (Darwin)**      | macOS system preferences, homebrew, system services    |
+| **Modules (homeManager)** | User packages, application configs, dev environments   |
+| **Home Profiles**         | Complete user environment definitions                  |
+| **Machines**              | Host-specific configuration, hardware settings         |
+| **Home (dotfiles)**       | Configs not yet nixified, legacy dotfiles              |
 
 ### Adding a New Module
 
 1. Create a file in the appropriate category under `/modules`:
+
    ```nix
    # modules/editors/helix.nix
    _: {
@@ -235,6 +244,7 @@ flake.clan = {
 ### Adding a New Machine
 
 1. Create machine directory and configuration:
+
    ```nix
    # machines/new-host/configuration.nix
    { modules, ... }: {
@@ -244,6 +254,7 @@ flake.clan = {
    ```
 
 2. Add to clan inventory:
+
    ```nix
    # modules/flake-parts/clan.nix
    inventory.machines."new-host".machineClass = "nixos";
@@ -310,12 +321,14 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ### Initial Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/pperanich/dotfiles.git ~/dotfiles
    cd ~/dotfiles
    ```
 
 2. **For NixOS:**
+
    ```bash
    # First time (may need to bootstrap minimal config first)
    sudo nixos-rebuild switch --flake .#your-hostname
@@ -325,6 +338,7 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
    ```
 
 3. **For Darwin (macOS):**
+
    ```bash
    # Install nix-darwin
    nix run nix-darwin -- switch --flake .#your-hostname
@@ -334,6 +348,7 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
    ```
 
 4. **Home-manager standalone:**
+
    ```bash
    # First time
    nix run home-manager/release-25.05 -- switch --flake .#your-username
@@ -376,6 +391,7 @@ sops secrets/example.yaml
 ```
 
 **Supported age plugins:**
+
 - `age-plugin-yubikey` - Hardware key storage
 - `age-plugin-fido2-hmac` - FIDO2 authentication
 
@@ -411,21 +427,25 @@ sops secrets/example.yaml
 ### Common Issues
 
 **Module not found:**
+
 - Ensure the module file exports to the correct `flake.modules.<platform>` namespace
 - Check that the file is in the `/modules` directory (auto-imported)
 - Verify the module name matches what you're importing
 
 **Build failures:**
+
 - Check `nix flake check` for errors
 - Review flake inputs are up to date: `nix flake update`
 - Verify no conflicts in overlays or module options
 
 **Home-manager activation fails:**
+
 - Check for file conflicts: `home-manager switch --flake . --show-trace`
 - Review stow conflicts in `/home` directory
 - Ensure state version matches
 
 **Clan deployment issues:**
+
 - Verify SSH access to target machine
 - Check machine is in clan inventory
 - Review clan configuration: `clan machines show <hostname>`
@@ -441,6 +461,7 @@ This configuration draws inspiration from:
 - **[nix-community/home-manager](https://github.com/nix-community/home-manager)** - User environment management
 
 **Documentation:**
+
 - [Flake-parts documentation](https://flake.parts/)
 - [Clan-core documentation](https://docs.clan.lol/)
 - [NixOS manual](https://nixos.org/manual/nixos/stable/)

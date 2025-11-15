@@ -10,6 +10,7 @@
       availableKernelModules = [ "virtio_pci" ];
       kernelModules = [ ];
     };
+    supportedFilesystems = [ "f2fs" ];
     kernelModules = [ "kvm-amd" ];
     extraModulePackages = [ ];
     kernelPackages = pkgs.linuxKernel.packages.linux_zen;

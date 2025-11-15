@@ -2,6 +2,7 @@
   inputs,
   modules,
   lib,
+  pkgs,
   ...
 }:
 {
@@ -69,6 +70,9 @@
     wlr.enable = true;
     config.shared.default = "*";
   };
+
+  # configuration.nix or flake
+  environment.systemPackages = [ pkgs.f2fs-tools ];
 
   services.resolved.enable = false;
   clan.core.enableRecommendedDefaults = false;

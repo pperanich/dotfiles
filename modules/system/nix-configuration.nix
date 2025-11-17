@@ -86,6 +86,7 @@
   # Darwin Nix configuration
   flake.modules.darwin.base =
     {
+      pkgs,
       ...
     }:
     {
@@ -142,6 +143,15 @@
         reattach = true;
       };
       homebrew.enable = true;
+      homebrew.casks = [
+        "skim" # PDF viewer with LaTeX support
+        "texshop" # LaTeX editor
+        "xcode-build-server"
+        "xcbeautify"
+        "wojciech-kulik/tap/xcp"
+      ];
+
+      environment.packages = with pkgs.python313Packages; [ pymobiledevice3 ];
 
       nixpkgs = {
         config = {

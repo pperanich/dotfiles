@@ -14,7 +14,6 @@ _: {
           feh # Fast image viewer
           libsecret # Secret service API library
           glib # Low-level core library for GNOME
-          gimp # GNU Image Manipulation Program
           inkscape # Vector graphics editor
           alacritty # GPU-accelerated terminal emulator
           brave # Privacy-focused web browser
@@ -32,6 +31,7 @@ _: {
           vlc # Media player
           protonvpn-gui # VPN client
           ghostty # Fast, native, feature-rich terminal emulator pushing modern features
+          gimp # GNU Image Manipulation Program
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           # logseq # Knowledge management tool

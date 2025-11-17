@@ -151,7 +151,10 @@
         "wojciech-kulik/tap/xcp"
       ];
 
-      environment.packages = with pkgs.python313Packages; [ pymobiledevice3 ];
+      environment.systemPackages = with pkgs; [
+        python313Packages.pymobiledevice3
+        swiftformat
+      ];
 
       nixpkgs = {
         config = {

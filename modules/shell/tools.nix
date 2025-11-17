@@ -35,7 +35,7 @@ _: {
           # Version Control
           my-git # Use "custom" git so we can override with openssl1 if needed.
           git-lfs
-          gitui # Blazing fast terminal-ui for Git written in Rust
+          # gitui # Blazing fast terminal-ui for Git written in Rust
           git-filter-repo # Quickly rewrite git repository history
           lazygit # A simple terminal UI for git commands
           delta # Syntax-highlighting pager for git
@@ -72,7 +72,7 @@ _: {
           # deno # A modern runtime for JavaScript and TypeScript.
 
           # Development - Python/Package Managers
-          micromamba # Reimplementation of the conda package manager
+          # micromamba # Reimplementation of the conda package manager
           pixi # Package management made easy
           python-launcher # An implementation of the `py` command for Unix-based platforms
 

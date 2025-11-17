@@ -113,6 +113,32 @@ machines/
 └── pperanich-raspi1/        # Raspberry Pi
 ```
 
+**Naming Convention:**
+
+Machine names follow the pattern: `{identifier}-{OS}{device-type}{number}`
+
+- **Identifier**: Username or owner identifier (e.g., `pperanich`, `peranpl1`)
+- **OS**: Operating system indicator
+  - `l` - Linux (NixOS)
+  - `m` - macOS (Darwin)
+  - `w` - Windows
+  - `wsl` - Windows Subsystem for Linux
+- **Device Type**: Form factor or device category
+  - `d` - Desktop
+  - `l` - Laptop
+  - `m` - Mini PC
+  - `raspi` - Raspberry Pi
+  - `wsl` - WSL instance
+- **Number**: Sequential number for multiple devices of the same type (1, 2, 3, ...)
+
+Examples:
+
+- `pperanich-ll1` → pperanich, Linux Laptop 1
+- `pperanich-ld1` → pperanich, Linux Desktop 1
+- `pperanich-lm1` → pperanich, Linux Mini 1
+- `peranpl1-ml1` → peranpl1, macOS Laptop 1
+- `pperanich-wsl1` → pperanich, WSL 1
+
 Machine configurations import modules by referencing:
 
 ```nix

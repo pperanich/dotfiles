@@ -29,6 +29,12 @@
       machines."peranpl1-ml2".machineClass = "darwin";
       machines."peranpl1-ml2".tags = [ "laptop" ];
 
+      machines."pperanich-lm1".machineClass = "nixos";
+      machines."pperanich-lm1".tags = [
+        "mini"
+        "nixos"
+      ];
+
       instances = {
         clan-cache = {
           module = {
@@ -63,6 +69,7 @@
           };
           roles.default.tags.all = { };
           roles.default.machines.pperanich-ll1 = { };
+          roles.default.machines.pperanich-lm1 = { };
           roles.default.settings = {
             user = "pperanich";
             share = true;

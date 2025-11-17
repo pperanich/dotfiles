@@ -27,7 +27,6 @@
         "baseURL": "https://aigateway.jhuapl.edu/v1"
       },
       "models": {
-        // https://github.com/sst/opencode/issues/2758
         "gpt-5-codex": {
           "name": "gpt-5-codex"
         },

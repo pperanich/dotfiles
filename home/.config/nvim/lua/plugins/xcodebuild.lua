@@ -1,5 +1,7 @@
 return {
   "wojciech-kulik/xcodebuild.nvim",
+  -- Lazy-load on Swift/ObjC filetypes - plugin handles project detection internally
+  ft = { "swift", "objc", "objcpp" },
   dependencies = {
     "ibhagwan/fzf-lua",
     "folke/snacks.nvim", -- (optional) to show previews
@@ -51,7 +53,7 @@ return {
       "folke/trouble.nvim",
       dependencies = { "nvim-tree/nvim-web-devicons" },
       init = function()
-        -- Open Trouble’s quickfix after Xcodebuild failures; close it on success
+        -- Open Trouble's quickfix after Xcodebuild failures; close it on success
         vim.api.nvim_create_autocmd("User", {
           pattern = { "XcodebuildBuildFinished", "XcodebuildTestsFinished" },
           callback = function(ev)
@@ -74,6 +76,80 @@ return {
             end
           end,
         })
+      end,
+    },
+    {
+      "j-hui/fidget.nvim",
+      opts = {
+        notification = {
+          window = {
+            winblend = 0,
+          },
+        },
+      },
+    },
+    {
+      "nvim-lualine/lualine.nvim",
+      opts = function(_, opts)
+        -- Add Xcode status components to lualine
+        local xcode_device = {
+          function()
+            if vim.g.xcodebuild_device_name then
+              return " " .. vim.g.xcodebuild_device_name
+            end
+            return ""
+          end,
+          cond = function()
+            return vim.g.xcodebuild_device_name ~= nil
+          end,
+          color = { fg = "#a6e3a1", gui = "bold" },
+        }
+
+        local xcode_os = {
+          function()
+            if vim.g.xcodebuild_os then
+              return vim.g.xcodebuild_os
+            end
+            return ""
+          end,
+          cond = function()
+            return vim.g.xcodebuild_os ~= nil
+          end,
+          color = { fg = "#89b4fa" },
+        }
+
+        local xcode_scheme = {
+          function()
+            if vim.g.xcodebuild_scheme then
+              return " " .. vim.g.xcodebuild_scheme
+            end
+            return ""
+          end,
+          cond = function()
+            return vim.g.xcodebuild_scheme ~= nil
+          end,
+          color = { fg = "#f9e2af", gui = "bold" },
+        }
+
+        local xcode_test_plan = {
+          function()
+            if vim.g.xcodebuild_test_plan then
+              return "󰙨 " .. vim.g.xcodebuild_test_plan
+            end
+            return ""
+          end,
+          cond = function()
+            return vim.g.xcodebuild_test_plan ~= nil
+          end,
+          color = { fg = "#cba6f7" },
+        }
+
+        -- Insert Xcode components into the right side of lualine
+        -- These will only show when the variables are set (i.e., in Xcode projects)
+        table.insert(opts.sections.lualine_x, 1, xcode_test_plan)
+        table.insert(opts.sections.lualine_x, 1, xcode_scheme)
+        table.insert(opts.sections.lualine_x, 1, xcode_os)
+        table.insert(opts.sections.lualine_x, 1, xcode_device)
       end,
     },
     {
@@ -110,41 +186,78 @@ return {
     },
   },
   keys = {
-    { "<leader>X", "<cmd>XcodebuildPicker<CR>", desc = "Show Xcodebuild Actions" },
-    { "<leader>xf", "<cmd>XcodebuildProjectManager<CR>", desc = "Show Project Manager Actions" },
+    { "<leader>XA", "<cmd>XcodebuildPicker<CR>", desc = "Show Xcodebuild Actions" },
+    { "<leader>Xf", "<cmd>XcodebuildProjectManager<CR>", desc = "Show Project Manager Actions" },
 
-    { "<leader>xb", "<cmd>XcodebuildBuild<CR>", desc = "Build Project" },
-    { "<leader>xB", "<cmd>XcodebuildBuildForTesting<CR>", desc = "Build For Testing" },
-    { "<leader>xr", "<cmd>XcodebuildBuildRun<CR>", desc = "Build & Run Project" },
+    { "<leader>Xb", "<cmd>XcodebuildBuild<CR>", desc = "Build Project" },
+    { "<leader>XB", "<cmd>XcodebuildBuildForTesting<CR>", desc = "Build For Testing" },
+    { "<leader>Xr", "<cmd>XcodebuildBuildRun<CR>", desc = "Build & Run Project" },
 
-    { "<leader>xt", "<cmd>XcodebuildTest<CR>", desc = "Run Tests" },
+    { "<leader>Xt", "<cmd>XcodebuildTest<CR>", desc = "Run Tests" },
     {
-      "<leader>xt",
+      "<leader>Xt",
       "<cmd>XcodebuildTestSelected<CR>",
       mode = "v",
       desc = "Run Selected Tests",
     },
-    { "<leader>xT", "<cmd>XcodebuildTestClass<CR>", desc = "Run Current Test Class" },
-    { "<leader>x.", "<cmd>XcodebuildTestRepeat<CR>", desc = "Repeat Last Test Run" },
+    { "<leader>XT", "<cmd>XcodebuildTestClass<CR>", desc = "Run Current Test Class" },
+    { "<leader>X.", "<cmd>XcodebuildTestRepeat<CR>", desc = "Repeat Last Test Run" },
 
-    { "<leader>xl", "<cmd>XcodebuildToggleLogs<CR>", desc = "Toggle Xcodebuild Logs" },
-    { "<leader>xc", "<cmd>XcodebuildToggleCodeCoverage<CR>", desc = "Toggle Code Coverage" },
-    { "<leader>xC", "<cmd>XcodebuildShowCodeCoverageReport<CR>", desc = "Show Code Coverage Report" },
-    { "<leader>xe", "<cmd>XcodebuildTestExplorerToggle<CR>", desc = "Toggle Test Explorer" },
-    { "<leader>xs", "<cmd>XcodebuildFailingSnapshots<CR>", desc = "Show Failing Snapshots" },
+    { "<leader>Xl", "<cmd>XcodebuildToggleLogs<CR>", desc = "Toggle Xcodebuild Logs" },
+    { "<leader>Xc", "<cmd>XcodebuildToggleCodeCoverage<CR>", desc = "Toggle Code Coverage" },
+    { "<leader>XC", "<cmd>XcodebuildShowCodeCoverageReport<CR>", desc = "Show Code Coverage Report" },
+    { "<leader>Xe", "<cmd>XcodebuildTestExplorerToggle<CR>", desc = "Toggle Test Explorer" },
+    { "<leader>Xs", "<cmd>XcodebuildFailingSnapshots<CR>", desc = "Show Failing Snapshots" },
 
-    { "<leader>xp", "<cmd>XcodebuildPreviewGenerateAndShow<CR>", desc = "Generate Preview" },
-    { "<leader>x<CR>", "<cmd>XcodebuildPreviewToggle<CR>", desc = "Toggle Preview" },
+    { "<leader>Xp", "<cmd>XcodebuildPreviewGenerateAndShow<CR>", desc = "Generate Preview" },
+    { "<leader>X<CR>", "<cmd>XcodebuildPreviewToggle<CR>", desc = "Toggle Preview" },
 
-    { "<leader>xd", "<cmd>XcodebuildSelectDevice<CR>", desc = "Select Device" },
-    { "<leader>xq", "<cmd>Telescope quickfix<CR>", desc = "Show QuickFix List" },
+    { "<leader>Xd", "<cmd>XcodebuildSelectDevice<CR>", desc = "Select Device" },
+    { "<leader>Xq", "<cmd>Telescope quickfix<CR>", desc = "Show QuickFix List" },
 
-    { "<leader>xx", "<cmd>XcodebuildQuickfixLine<CR>", desc = "Quickfix Line" },
-    { "<leader>xa", "<cmd>XcodebuildCodeActions<CR>", desc = "Show Code Actions" },
+    { "<leader>Xx", "<cmd>XcodebuildQuickfixLine<CR>", desc = "Quickfix Line" },
+    { "<leader>Xa", "<cmd>XcodebuildCodeActions<CR>", desc = "Show Code Actions" },
   },
   config = function()
     require("xcodebuild").setup({
-      -- put some options here or leave it empty to use default settings
+      -- Enable code coverage
+      code_coverage = {
+        enabled = true,
+      },
+      -- File tree integrations - automatically guess target for new files
+      integrations = {
+        nvim_tree = {
+          guess_target = true,
+        },
+        oil_nvim = {
+          guess_target = true,
+        },
+        -- Enable iOS 17+ debugging support
+        -- Requires pymobiledevice3 setup:
+        --   1. Install: pip3 install pymobiledevice3
+        --   2. Secure remote_debugger script from project root:
+        --      sudo chmod 700 .nvim/xcodebuild/remote_debugger.py
+        --      sudo chown root:wheel .nvim/xcodebuild/remote_debugger.py
+        --   This prevents repeated password prompts when debugging on iOS 17+ physical devices
+        pymobiledevice = {
+          enabled = true,
+        },
+      },
+      -- Fidget integration for build/test progress notifications
+      logs = {
+        notify = function(message, severity)
+          local fidget = require("fidget")
+          if fidget then
+            fidget.notify(message, severity)
+          end
+        end,
+        notify_progress = function(message)
+          local fidget = require("fidget")
+          if fidget then
+            fidget.notify(message, vim.log.levels.INFO)
+          end
+        end,
+      },
     })
   end,
 }

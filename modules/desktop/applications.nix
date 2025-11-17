@@ -28,7 +28,7 @@ _: {
           # zoom-us # Video conferencing
           # hdfview
           firefox # Web browser
-          bitwarden # Password manager
+          bitwarden-desktop # Password manager
           vlc # Media player
           protonvpn-gui # VPN client
           ghostty # Fast, native, feature-rich terminal emulator pushing modern features

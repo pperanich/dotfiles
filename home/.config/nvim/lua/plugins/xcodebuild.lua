@@ -1,6 +1,5 @@
 return {
   "wojciech-kulik/xcodebuild.nvim",
-  ft = { "sourcekit" },
   dependencies = {
     "ibhagwan/fzf-lua",
     "folke/snacks.nvim", -- (optional) to show previews
@@ -9,6 +8,35 @@ return {
     "nvim-tree/nvim-tree.lua", -- (optional) to manage project files
     "stevearc/oil.nvim", -- (optional) to manage project files
     "nvim-treesitter/nvim-treesitter", -- (optional) for Quick tests support (required Swift parser)
+    {
+      "mfussenegger/nvim-lint",
+      opts = {
+        linters_by_ft = {
+          swift = { "swiftlint" },
+        },
+        linters = {
+          swiftlint = {
+            cmd = "swiftlint",
+            stdin = false,
+            args = { "lint", "--force-exclude", "--quiet" },
+            stream = "stdout",
+            ignore_exitcode = true,
+            parser = require("lint.parser").from_pattern(
+              "([^:]+):(%d+):(%d+): (%a+): (.+)",
+              { "file", "lnum", "col", "severity", "message" },
+              {
+                warning = vim.diagnostic.severity.WARN,
+                error = vim.diagnostic.severity.ERROR,
+              }
+            ),
+            -- Skip linting .swiftinterface files (Swift module interfaces)
+            condition = function(ctx)
+              return not vim.endswith(ctx.filename, ".swiftinterface")
+            end,
+          },
+        },
+      },
+    },
     {
       "neovim/nvim-lspconfig",
       opts = {
@@ -57,41 +85,27 @@ return {
       opts = function()
         local dap = require("dap")
 
-        -- Hook Xcodebuild <-> DAP integration (no keymaps here)
+        -- Hook Xcodebuild <-> DAP integration
         local ok, xcdap = pcall(require, "xcodebuild.integrations.dap")
         if ok then
           xcdap.setup()
+
+          -- Set Xcode-specific keymaps here to avoid overwriting LazyVim's DAP keys
+          -- These are additive and only load for Swift/ObjC filetypes
+          vim.keymap.set("n", "<leader>dd", xcdap.build_and_debug, { desc = "Xcode: Build & Debug" })
+          vim.keymap.set("n", "<leader>dD", xcdap.debug_without_build, { desc = "Xcode: Debug (No Build)" })
+          vim.keymap.set("n", "<leader>dA", xcdap.debug_tests, { desc = "Xcode: Debug Tests" })
+          vim.keymap.set("n", "<leader>dT", xcdap.debug_class_tests, { desc = "Xcode: Debug Class Tests" })
+          vim.keymap.set(
+            "n",
+            "<leader>dL",
+            xcdap.toggle_message_breakpoint,
+            { desc = "Xcode: Toggle Message Breakpoint" }
+          )
         end
 
         -- Small QoL tweak; LazyVim doesn't set this
         dap.defaults.fallback.switchbuf = "usetab,uselast"
-      end,
-
-      -- Only add non-conflicting keys. We rely on LazyVim's default <leader>d* for stepping, continue, etc.
-      keys = function()
-        local has_xc, xcdap = pcall(require, "xcodebuild.integrations.dap")
-        if not has_xc then
-          return {}
-        end
-
-        -- Optional: gate keys on presence of an Xcode project/workspace in the root
-        -- local has_project = false
-        -- local root = (vim.fs.find({ "*.xcodeproj", "*.xcworkspace" }, { upward = true }) or {})[1]
-        -- if root and #root > 0 then
-        --   has_project = true
-        -- end
-        -- if not has_project then
-        --   return {}
-        -- end
-
-        return {
-          { "<leader>dd", xcdap.build_and_debug, desc = "Xcode: Build & Debug" },
-          { "<leader>dD", xcdap.debug_without_build, desc = "Xcode: Debug (No Build)" },
-          { "<leader>dA", xcdap.debug_tests, desc = "Xcode: Debug Tests" },
-          { "<leader>dT", xcdap.debug_class_tests, desc = "Xcode: Debug Class Tests" },
-          -- LazyVim already has: <leader>db (toggle), <leader>dB (conditional)
-          { "<leader>dL", xcdap.toggle_message_breakpoint, desc = "Xcode: Toggle Message Breakpoint" },
-        }
       end,
     },
   },

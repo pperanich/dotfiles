@@ -154,6 +154,7 @@
       environment.systemPackages = with pkgs; [
         python313Packages.pymobiledevice3
         swiftformat
+        swiftlint
       ];
 
       nixpkgs = {

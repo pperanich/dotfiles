@@ -142,14 +142,14 @@
         touchIdAuth = true;
         reattach = true;
       };
-      homebrew.enable = true;
-      homebrew.casks = [
-        "skim" # PDF viewer with LaTeX support
-        "texshop" # LaTeX editor
-        "xcode-build-server"
-        "xcbeautify"
-        "wojciech-kulik/tap/xcp"
-      ];
+      homebrew = {
+        enable = true;
+        brews = [
+          "xcode-build-server"
+          "xcbeautify"
+          "wojciech-kulik/tap/xcp"
+        ];
+      };
 
       environment.systemPackages = with pkgs; [
         python313Packages.pymobiledevice3

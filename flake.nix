@@ -14,6 +14,10 @@
       url = "github:DeterminateSystems/determinate";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos-facter-modules = {
+      url = "github:nix-community/nixos-facter-modules";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     flake-parts = {
       url = "github:hercules-ci/flake-parts";

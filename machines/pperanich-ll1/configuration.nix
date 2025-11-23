@@ -82,11 +82,11 @@ in
   #   };
   # };
 
-  # powerManagement = {
-  #   enable = true;
-  #   powertop.enable = true;
-  #   cpuFreqGovernor = "powersave";
-  # };
+  powerManagement = {
+    enable = true;
+    # powertop.enable = true;
+    # cpuFreqGovernor = "powersave";
+  };
 
   xdg.portal = {
     enable = true;
@@ -122,8 +122,8 @@ in
       enable32Bit = true;
 
       extraPackages = with pkgs; [
-        vaapiVdpau
         libvdpau-va-gl
+        libva-vdpau-driver
       ];
     };
   };

@@ -7,9 +7,11 @@
 }:
 {
   imports = [
-    ./hardware-configuration.nix
+    inputs.nixos-facter-modules.nixosModules.facter
+    # { config.facter.reportPath = ./facter.json; }
+    # ./hardware-configuration.nix
     # Include common Intel CPU optimizations
-    inputs.hardware.nixosModules.common-cpu-intel
+    # inputs.hardware.nixosModules.common-cpu-intel
   ]
   ++ (with modules.nixos; [
     # Core system configuration
@@ -38,12 +40,14 @@
   # Networking configuration
   networking.hostName = "pperanich-lm1";
 
-  # Enable the login manager
-  services.displayManager.cosmic-greeter.enable = true;
-  # Enable the COSMIC DE itself
-  services.desktopManager.cosmic.enable = true;
-  # Enable XWayland support in COSMIC
-  services.desktopManager.cosmic.xwayland.enable = true;
+  services = {
+    # Enable the login manager
+    displayManager.cosmic-greeter.enable = true;
+    # Enable the COSMIC DE itself
+    desktopManager.cosmic.enable = true;
+    # Enable XWayland support in COSMIC
+    desktopManager.cosmic.xwayland.enable = true;
+  };
 
   xdg.portal = {
     enable = true;
@@ -68,8 +72,8 @@
       enable32Bit = true;
 
       extraPackages = with pkgs; [
-        vaapiVdpau
         libvdpau-va-gl
+        libva-vdpau-driver
       ];
     };
   };

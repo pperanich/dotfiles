@@ -16,7 +16,6 @@
     };
     nixos-facter-modules = {
       url = "github:nix-community/nixos-facter-modules";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     flake-parts = {

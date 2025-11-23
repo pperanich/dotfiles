@@ -105,14 +105,14 @@
   ];
 
   # Boot configuration
-  boot = {
-    initrd.systemd.enable = true;
-    binfmt.emulatedSystems = [ "aarch64-linux" ];
-    loader = {
-      systemd-boot.enable = true;
-      efi.canTouchEfiVariables = true;
-    };
-  };
+  # boot = {
+  #   initrd.systemd.enable = true;
+  #   binfmt.emulatedSystems = [ "aarch64-linux" ];
+  #   loader = {
+  #     systemd-boot.enable = true;
+  #     efi.canTouchEfiVariables = true;
+  #   };
+  # };
 
   security.rtkit.enable = true;
   services.pipewire = {

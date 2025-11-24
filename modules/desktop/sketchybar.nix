@@ -11,6 +11,12 @@ _: {
         ];
       };
 
+      environment.systemPackages = [
+        (pkgs.lua5_4.withPackages (_: [
+          pkgs.sbarlua
+        ]))
+      ];
+
       fonts.packages = [
         pkgs.sketchybar-app-font
       ];

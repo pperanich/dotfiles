@@ -1,19 +1,16 @@
 #!/usr/bin/env zsh -f
 
-SPACE_ICONS=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12")
+# Add aerospace workspace change event
+sketchybar --add event aerospace_workspace_change
 
-# Destroy space on right click, focus space on left click.
-# New space by left clicking separator (>)
+# Get all workspaces from aerospace
+workspaces=($(aerospace list-workspaces --all))
 
-sid=0
-spaces=()
-for i in "${(@k)SPACE_ICONS}"
+# Create a space item for each workspace
+for sid in "${workspaces[@]}"
 do
-  sid=$i
-
   space=(
-    space=$sid
-    icon="${SPACE_ICONS[i]}"
+    icon="$sid"
     icon.padding_left=10
     icon.padding_right=10
     padding_left=2
@@ -26,26 +23,11 @@ do
     label.y_offset=-1
     background.color=$BACKGROUND_1
     background.border_color=$BACKGROUND_2
-    script="$PLUGIN_DIR/space.zsh"
+    script="$PLUGIN_DIR/aerospace.zsh"
+    click_script="aerospace workspace $sid"
   )
 
-  sketchybar --add space space.$sid left    \
+  sketchybar --add item space.$sid left    \
              --set space.$sid "${space[@]}" \
-             --subscribe space.$sid mouse.clicked
+             --subscribe space.$sid aerospace_workspace_change mouse.clicked
 done
-
-space_creator=(
-  icon=􀆊
-  icon.font="$FONT:Heavy:16.0"
-  padding_left=10
-  padding_right=8
-  label.drawing=off
-  display=active
-  click_script='yabai -m space --create'
-  script="$PLUGIN_DIR/space_windows.zsh"
-  icon.color=$WHITE
-)
-
-sketchybar --add item space_creator left               \
-           --set space_creator "${space_creator[@]}"   \
-           --subscribe space_creator space_windows_change

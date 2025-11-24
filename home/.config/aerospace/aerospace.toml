@@ -21,7 +21,7 @@ default-root-container-orientation = 'auto'
 accordion-padding = 30
 
 # Automatically unhide hidden macOS apps when focusing them
-automatically-unhide-macos-hidden-apps = false
+automatically-unhide-macos-hidden-apps = true
 
 # Mouse follows focus (inverted from yabai's focus_follows_mouse)
 # This moves the mouse to the center of the focused window
@@ -29,6 +29,14 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # Commands to run after AeroSpace starts
 after-startup-command = []
+
+# Trigger SketchyBar when workspace changes
+# Using full path to sketchybar to avoid timing issues
+exec-on-workspace-change = [
+  '/bin/bash',
+  '-c',
+  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+]
 
 # ========================================
 # GAPS CONFIGURATION
@@ -44,7 +52,7 @@ outer.left = 6
 outer.bottom = 6
 outer.right = 6
 
-# Top gap for sketchybar: height + (y_offset * 2) = 36 + (3 * 2) = 42
+# Top gap for sketchybar: height + margin*2 + y_offset*2 = 36 + (3 * 2) + (3 * 2) = 48
 outer.top = 42
 
 # ========================================
@@ -58,8 +66,8 @@ preset = 'qwerty'
 # WORKSPACE DEFINITIONS
 # ========================================
 
-# Define named workspaces (matching yabai space labels)
-# Workspaces: mail, slack, web, term, code, notes, social, zoom
+# Define numbered workspaces with functional labels
+# 1: mail, 2: slack, 3: web, 4: term, 5: ide, 6: notes, 7: zoom, 8: social
 
 [workspace-to-monitor-force-assignment]
 # If you have multiple monitors, you can force workspaces to specific monitors
@@ -125,34 +133,34 @@ cmd-right = 'workspace next'
 
 # Back and forth between recent workspaces (like i3)
 alt-b = 'workspace-back-and-forth'
-alt-tab = 'workspace-back-and-forth'  # Alternative (from default config)
+alt-tab = 'workspace-back-and-forth' # Alternative (from default config)
 
 # Move workspace to next monitor
 alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
 # Direct workspace access (cmd + number)
-cmd-1 = 'workspace mail'
-cmd-2 = 'workspace slack'
-cmd-3 = 'workspace web'
-cmd-4 = 'workspace term'
-cmd-5 = 'workspace code'
-cmd-6 = 'workspace notes'
-cmd-7 = 'workspace social'
-cmd-8 = 'workspace zoom'
+cmd-1 = 'workspace 1'  # mail
+cmd-2 = 'workspace 2'  # slack
+cmd-3 = 'workspace 3'  # web
+cmd-4 = 'workspace 4'  # term
+cmd-5 = 'workspace 5'  # ide
+cmd-6 = 'workspace 6'  # notes
+cmd-7 = 'workspace 7'  # zoom
+cmd-8 = 'workspace 8'  # social
 cmd-9 = 'workspace 9'
 cmd-0 = 'workspace 10'
 
 # ----------------------------------------
 # Move Window to Workspace
 # ----------------------------------------
-alt-shift-1 = 'move-node-to-workspace mail'
-alt-shift-2 = 'move-node-to-workspace slack'
-alt-shift-3 = 'move-node-to-workspace web'
-alt-shift-4 = 'move-node-to-workspace term'
-alt-shift-5 = 'move-node-to-workspace code'
-alt-shift-6 = 'move-node-to-workspace notes'
-alt-shift-7 = 'move-node-to-workspace social'
-alt-shift-8 = 'move-node-to-workspace zoom'
+alt-shift-1 = 'move-node-to-workspace 1' # mail
+alt-shift-2 = 'move-node-to-workspace 2' # slack
+alt-shift-3 = 'move-node-to-workspace 3' # web
+alt-shift-4 = 'move-node-to-workspace 4' # term
+alt-shift-5 = 'move-node-to-workspace 5' # ide
+alt-shift-6 = 'move-node-to-workspace 6' # notes
+alt-shift-7 = 'move-node-to-workspace 7' # zoom
+alt-shift-8 = 'move-node-to-workspace 8' # social
 alt-shift-9 = 'move-node-to-workspace 9'
 
 # Move to recent workspace and follow
@@ -165,12 +173,12 @@ alt-shift-9 = 'move-node-to-workspace 9'
 # Layout Management
 # ----------------------------------------
 # Toggle between layouts
-alt-slash = 'layout tiles horizontal vertical'   # Quick layout toggle (from default)
-alt-comma = 'layout accordion horizontal vertical'  # Accordion layout toggle (from default)
+alt-slash = 'layout tiles horizontal vertical'     # Quick layout toggle (from default)
+alt-comma = 'layout accordion horizontal vertical' # Accordion layout toggle (from default)
 
 # Explicit layout commands
-alt-e = 'layout tiles'        # BSP-like layout
-alt-r = 'layout floating'     # Floating mode
+alt-e = 'layout tiles'    # BSP-like layout
+alt-r = 'layout floating' # Floating mode
 
 # Balance window sizes in workspace
 alt-shift-0 = 'balance-sizes'
@@ -180,8 +188,8 @@ alt-minus = 'resize smart -50'
 alt-equal = 'resize smart +50'
 
 # Mirror workspace tree
-alt-shift-y = 'layout h_accordion'  # Approximate y-axis mirror with accordion
-alt-shift-x = 'layout v_accordion'  # Approximate x-axis mirror with accordion
+alt-shift-y = 'layout h_accordion' # Approximate y-axis mirror with accordion
+alt-shift-x = 'layout v_accordion' # Approximate x-axis mirror with accordion
 
 # Flatten workspace tree (remove all splits)
 alt-shift-slash = 'flatten-workspace-tree'
@@ -288,7 +296,7 @@ esc = 'mode main'
 # Access with alt-shift-semicolon
 esc = ['reload-config', 'mode main']
 r = ['flatten-workspace-tree', 'mode main']
-f = ['layout floating tiling', 'mode main']  # Toggle between floating and tiling
+f = ['layout floating tiling', 'mode main']                # Toggle between floating and tiling
 backspace = ['close-all-windows-but-current', 'mode main']
 
 # Join windows (from default config)
@@ -300,7 +308,7 @@ alt-shift-l = ['join-with right', 'mode main']
 # Volume controls (from default config)
 down = 'volume down'
 up = 'volume up'
-shift-down = ['volume set 0', 'mode main']  # Mute
+shift-down = ['volume set 0', 'mode main'] # Mute
 
 # Return to main mode
 enter = 'mode main'
@@ -331,61 +339,61 @@ run = 'layout floating'
 # App-to-Workspace Assignments
 # ----------------------------------------
 
-# Mail workspace
+# Workspace 1: Mail
 [[on-window-detected]]
 if.app-id = 'com.microsoft.Outlook'
-run = 'move-node-to-workspace mail'
+run = 'move-node-to-workspace 1'
 
-# Slack workspace
+# Workspace 2: Slack
 [[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
-run = 'move-node-to-workspace slack'
+run = 'move-node-to-workspace 2'
 
-# Web workspace
+# Workspace 3: Web
 [[on-window-detected]]
 if.app-id = 'com.apple.Safari'
-run = 'move-node-to-workspace web'
+run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
 if.app-id = 'com.brave.Browser'
-run = 'move-node-to-workspace web'
+run = 'move-node-to-workspace 3'
 
-# Term workspace
+# Workspace 4: Term
 [[on-window-detected]]
 if.app-id = 'org.alacritty'
-run = 'move-node-to-workspace term'
+run = 'move-node-to-workspace 4'
 
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
-run = 'move-node-to-workspace term'
+run = 'move-node-to-workspace 4'
 
-# Code workspace
+# Workspace 5: IDE
 [[on-window-detected]]
 if.app-id = 'com.microsoft.VSCode'
-run = 'move-node-to-workspace code'
+run = 'move-node-to-workspace 5'
 
-# Notes workspace
+# Workspace 6: Notes
 [[on-window-detected]]
 if.app-id = 'md.obsidian'
-run = 'move-node-to-workspace notes'
+run = 'move-node-to-workspace 6'
 
-# Social workspace
+# Workspace 7: Zoom
+[[on-window-detected]]
+if.app-id = 'us.zoom.xos'
+run = 'move-node-to-workspace 7'
+
+# Workspace 8: Social
 [[on-window-detected]]
 if.app-id = 'com.apple.MobileSMS'
-run = 'move-node-to-workspace social'
+run = 'move-node-to-workspace 8'
 
 [[on-window-detected]]
 if.app-id = 'com.hnc.Discord'
-run = 'move-node-to-workspace social'
+run = 'move-node-to-workspace 8'
 
 [[on-window-detected]]
 if.app-id = 'im.riot.app'
-run = 'move-node-to-workspace social'
-
-# Zoom workspace
-[[on-window-detected]]
-if.app-id = 'us.zoom.xos'
-run = 'move-node-to-workspace zoom'
+run = 'move-node-to-workspace 8'
 
 # ========================================
 # ENVIRONMENT VARIABLES

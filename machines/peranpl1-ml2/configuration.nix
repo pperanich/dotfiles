@@ -20,10 +20,18 @@
     aplnis
 
     # Window management
-    yabai
-    skhd
+    # yabai
+    # skhd
     sketchybar
   ];
+
+  # services.aerospace.enable = true;
+  homebrew = {
+    casks = [
+      "nikitabobko/tap/aerospace"
+      "leader-key"
+    ];
+  };
 
   clan.core.networking.targetHost = lib.mkForce "root@peranpl1-ml2";
   clan.core.networking.buildHost = "root@peranpl1-ml2";

@@ -1,7 +1,7 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/mmc-DV4064_0x3bf0b832" 
+# mainDisk = "/dev/disk/by-id/mmc-DV4064_0x3bf0b832"
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine

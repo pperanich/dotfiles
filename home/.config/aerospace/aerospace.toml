@@ -30,13 +30,12 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 # Commands to run after AeroSpace starts
 after-startup-command = []
 
-# Trigger SketchyBar when workspace changes
-# Using full path to sketchybar to avoid timing issues
 exec-on-workspace-change = [
   '/bin/bash',
   '-c',
-  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
-]
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+] # Trigger SketchyBar when workspace changes
+# Using bash to properly handle the command and environment variable
 
 # ========================================
 # GAPS CONFIGURATION
@@ -403,5 +402,5 @@ run = 'move-node-to-workspace 8'
 inherit-env-vars = true
 
 [exec.env-vars]
-# Ensure Homebrew paths are available for GUI apps
-PATH = '/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}'
+# Ensure Homebrew and NixOS paths are available for GUI apps
+PATH = '/run/current-system/sw/bin:/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}'

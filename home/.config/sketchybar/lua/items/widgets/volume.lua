@@ -50,7 +50,6 @@ local volume_bracket = sbar.add("bracket", "widgets.volume.bracket", {
         border_width = 1,
         height = 30,
         corner_radius = 15,
-        blur_radius = 2,
     },
     popup = { align = "center" },
 })
@@ -155,9 +154,9 @@ local function volume_toggle_details(env)
                         click_script = 'SwitchAudioSource -s "'
                             .. device
                             .. '" && sketchybar --set /volume.device\\.*/ label.color='
-                            .. colors.grey
+                            .. string.format("0x%08X", colors.grey)
                             .. " --set $NAME label.color="
-                            .. colors.white,
+                            .. string.format("0x%08X", colors.white),
                     })
                     counter = counter + 1
                 end

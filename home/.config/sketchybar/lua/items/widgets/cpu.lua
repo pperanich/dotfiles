@@ -71,7 +71,6 @@ sbar.add("bracket", "widgets.cpu.bracket", { cpu.name }, {
         border_width = 1,
         height = 30,
         corner_radius = 15,
-        blur_radius = 2,
     },
 })
 

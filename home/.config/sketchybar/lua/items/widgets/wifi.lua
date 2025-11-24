@@ -82,7 +82,6 @@ local wifi_bracket = sbar.add("bracket", "widgets.wifi.bracket", {
         border_width = 1,
         height = 30,
         corner_radius = 15,
-        blur_radius = 2,
     },
     popup = { align = "center", height = 30 },
 })

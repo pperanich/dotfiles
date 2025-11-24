@@ -7,10 +7,24 @@ _: {
     }:
     let
       cfg = config.features.router;
+      fwCfg = cfg.firewall;
       internal = cfg._internal;
       lanSubnet = internal.lanSubnet;
       wan = cfg.wan.interface;
       lanDevice = internal.lanDevice;
+
+      # Build trusted interface rules
+      trustedInputRules = lib.concatMapStringsSep "\n" (iface: ''
+        iifname "${iface}" accept'') fwCfg.trustedInterfaces;
+
+      trustedForwardRules = lib.concatMapStringsSep "\n" (iface: ''
+        iifname "${iface}" oifname "${lanDevice}" accept
+        iifname "${lanDevice}" oifname "${iface}" accept
+        iifname "${iface}" oifname "${wan}" accept'') fwCfg.trustedInterfaces;
+
+      # Build open ports rules
+      tcpPortsStr = lib.concatMapStringsSep ", " toString fwCfg.openPorts.tcp;
+      udpPortsStr = lib.concatMapStringsSep ", " toString fwCfg.openPorts.udp;
 
       # Build port forward rules from machines
       machinesByName = lib.listToAttrs (
@@ -42,6 +56,28 @@ _: {
       );
     in
     {
+      options.features.router.firewall = {
+        trustedInterfaces = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "zt0" "wg0" ];
+          description = "Additional trusted interfaces (VPN, etc.)";
+        };
+        openPorts = {
+          tcp = lib.mkOption {
+            type = lib.types.listOf lib.types.port;
+            default = [ 80 443 ];
+            description = "TCP ports to open on WAN";
+          };
+          udp = lib.mkOption {
+            type = lib.types.listOf lib.types.port;
+            default = [ ];
+            example = [ 51820 ];
+            description = "UDP ports to open on WAN";
+          };
+        };
+      };
+
       config = lib.mkIf cfg.enable {
         networking.nftables = {
           enable = true;
@@ -53,15 +89,18 @@ _: {
                   type filter hook input priority 0; policy drop;
                   iifname "lo" accept
                   iifname "${lanDevice}" accept
+                  ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
                   iifname "${wan}" ip protocol icmp accept
-                  iifname "${wan}" tcp dport { 80, 443 } accept comment "HTTP/HTTPS"
+                  ${lib.optionalString (fwCfg.openPorts.tcp != []) ''iifname "${wan}" tcp dport { ${tcpPortsStr} } accept comment "Open TCP ports"''}
+                  ${lib.optionalString (fwCfg.openPorts.udp != []) ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''}
                 }
                 chain forward {
                   type filter hook forward priority 0; policy drop;
                   iifname "${lanDevice}" oifname "${wan}" accept
                   iifname "${lanDevice}" oifname "${lanDevice}" accept
                   iifname "${wan}" oifname "${lanDevice}" ct state established,related accept
+                  ${trustedForwardRules}
                   ${forwardRules}
                 }
               '';
@@ -86,6 +125,7 @@ _: {
                   type filter hook input priority 0; policy drop;
                   iifname "lo" accept
                   iifname "${lanDevice}" accept
+                  ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
                   iifname "${wan}" icmpv6 type {
                     destination-unreachable, packet-too-big, time-exceeded,
@@ -98,6 +138,7 @@ _: {
                   type filter hook forward priority 0; policy drop;
                   iifname "${lanDevice}" oifname "${wan}" accept
                   iifname "${wan}" oifname "${lanDevice}" ct state established,related accept
+                  ${trustedForwardRules}
                 }
               '';
             };

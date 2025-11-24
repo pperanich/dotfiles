@@ -1,11 +1,7 @@
--- Simplified aerospace workspace implementation
+-- Aerospace workspace implementation
 local app_icons = require("lua.helpers.app_icons")
 local colors = require("lua.colors")
-local icons = require("lua.icons")
 local settings = require("lua.settings")
-
--- Add the custom aerospace workspace change event
--- sbar.add("event", "aerospace_workspace_change")
 
 local spaces = {}
 local focused_workspace = nil
@@ -13,7 +9,6 @@ local focused_workspace = nil
 -- Dynamically get the list of workspaces from aerospace
 local function get_aerospace_workspaces()
 	local workspaces = {}
-	-- local handle = io.popen("/opt/homebrew/bin/aerospace list-workspaces --all")
 	local handle = io.popen("/opt/homebrew/bin/aerospace list-workspaces --all")
 	if handle then
 		for line in handle:lines() do
@@ -32,7 +27,6 @@ local workspace_list = get_aerospace_workspaces()
 
 -- Fallback to a reasonable default if aerospace is not available
 if #workspace_list == 0 then
-	print("Warning: Could not get workspaces from aerospace, using default 1-10")
 	for i = 1, 10 do
 		table.insert(workspace_list, tostring(i))
 	end
@@ -132,8 +126,6 @@ local space_window_observer = sbar.add("item", {
 
 -- Update app icons when windows change
 local function update_space_icons()
-	print("In update_space_icons")
-	-- Get all windows and group by workspace
 	sbar.exec("/opt/homebrew/bin/aerospace list-windows --all --format '%{app-name}|%{workspace}'", function(result)
 		if not result or result == "" then
 			return
@@ -146,31 +138,25 @@ local function update_space_icons()
 			end
 		end
 
-		-- Parse output and group apps by workspace
+		-- Parse output and group apps by workspace (using sets for O(1) deduplication)
 		local workspace_apps = {}
+		local workspace_app_sets = {}
 		for line in result:gmatch("[^\r\n]+") do
 			local app, workspace = line:match("([^|]+)|([^|]+)")
 			if app and workspace then
-				-- Trim whitespace from app name and workspace
 				app = app:match("^%s*(.-)%s*$")
 				workspace = workspace:match("^%s*(.-)%s*$")
 
 				if app ~= "" and workspace ~= "" then
-					-- Try to convert to number for consistency with space keys
 					local workspace_key = tonumber(workspace) or workspace
 
 					if not workspace_apps[workspace_key] then
 						workspace_apps[workspace_key] = {}
+						workspace_app_sets[workspace_key] = {}
 					end
-					-- Only add unique apps
-					local found = false
-					for _, existing_app in ipairs(workspace_apps[workspace_key]) do
-						if existing_app == app then
-							found = true
-							break
-						end
-					end
-					if not found then
+					-- O(1) deduplication using set
+					if not workspace_app_sets[workspace_key][app] then
+						workspace_app_sets[workspace_key][app] = true
 						table.insert(workspace_apps[workspace_key], app)
 					end
 				end
@@ -180,14 +166,13 @@ local function update_space_icons()
 		-- Update labels with app icons
 		for workspace_key, apps in pairs(workspace_apps) do
 			if spaces[workspace_key] then
-				local icon_line = ""
 				table.sort(apps)
+				local icons_list = {}
 				for _, app in ipairs(apps) do
 					local lookup = app_icons[app]
-					local icon = ((lookup == nil) and app_icons["Default"] or lookup)
-					icon_line = icon_line .. " " .. icon
+					icons_list[#icons_list + 1] = lookup or app_icons["Default"]
 				end
-				spaces[workspace_key]:set({ label = icon_line })
+				spaces[workspace_key]:set({ label = " " .. table.concat(icons_list, " ") })
 			end
 		end
 	end)
@@ -200,5 +185,13 @@ space_window_observer:subscribe("aerospace_workspace_change", update_space_icons
 space_window_observer:subscribe("front_app_switched", update_space_icons)
 space_window_observer:subscribe("space_windows_change", update_space_icons)
 
--- Initial update
+-- Initial update: get current focused workspace and trigger event to highlight it
+sbar.exec("/opt/homebrew/bin/aerospace list-workspaces --focused", function(result)
+	if result then
+		local ws = result:match("^%s*(.-)%s*$")
+		if ws and ws ~= "" then
+			sbar.trigger("aerospace_workspace_change", { FOCUSED_WORKSPACE = ws })
+		end
+	end
+end)
 update_space_icons()

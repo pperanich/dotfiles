@@ -1,101 +1,64 @@
 local colors = require("lua.colors")
-local icons = require("lua.icons")
 local settings = require("lua.settings")
-local weather_config = require("lua.weather_config")
 
--- WeatherAPI condition codes to weather conditions mapping
-local function get_weather_emoji(code)
-    local WEATHER_API_CONDITIONS = {
-        -- Map WeatherAPI condition codes to weather descriptions
-        [1000] = "Sunny", -- Sunny / Clear
-        [1003] = "PartlyCloudy", -- Partly cloudy
-        [1006] = "Cloudy", -- Cloudy
-        [1009] = "VeryCloudy", -- Overcast
-        [1030] = "Fog", -- Mist
-        [1063] = "LightShowers", -- Patchy rain possible
-        [1066] = "LightSnow", -- Patchy snow possible
-        [1069] = "LightSleet", -- Patchy sleet possible
-        [1072] = "LightSleet", -- Patchy freezing drizzle possible
-        [1087] = "ThunderyShowers", -- Thundery outbreaks possible
-        [1114] = "HeavySnow", -- Blowing snow
-        [1117] = "HeavySnow", -- Blizzard
-        [1135] = "Fog", -- Fog
-        [1147] = "Fog", -- Freezing fog
-        [1150] = "LightRain", -- Patchy light drizzle
-        [1153] = "LightRain", -- Light drizzle
-        [1168] = "LightSleet", -- Freezing drizzle
-        [1171] = "LightSleet", -- Heavy freezing drizzle
-        [1180] = "LightRain", -- Patchy light rain
-        [1183] = "LightRain", -- Light rain
-        [1186] = "HeavyRain", -- Moderate rain at times
-        [1189] = "HeavyRain", -- Moderate rain
-        [1192] = "HeavyRain", -- Heavy rain at times
-        [1195] = "HeavyRain", -- Heavy rain
-        [1198] = "LightSleet", -- Light freezing rain
-        [1201] = "LightSleet", -- Moderate or heavy freezing rain
-        [1204] = "LightSleet", -- Light sleet
-        [1207] = "LightSleet", -- Moderate or heavy sleet
-        [1210] = "LightSnow", -- Patchy light snow
-        [1213] = "LightSnow", -- Light snow
-        [1216] = "HeavySnow", -- Patchy moderate snow
-        [1219] = "HeavySnow", -- Moderate snow
-        [1222] = "HeavySnow", -- Patchy heavy snow
-        [1225] = "HeavySnow", -- Heavy snow
-        [1237] = "LightSleet", -- Ice pellets
-        [1240] = "LightShowers", -- Light rain shower
-        [1243] = "HeavyShowers", -- Moderate or heavy rain shower
-        [1246] = "HeavyShowers", -- Torrential rain shower
-        [1249] = "LightSleetShowers", -- Light sleet showers
-        [1252] = "LightSleetShowers", -- Moderate or heavy sleet showers
-        [1255] = "LightSnowShowers", -- Light snow showers
-        [1258] = "HeavySnowShowers", -- Moderate or heavy snow showers
-        [1261] = "LightSleetShowers", -- Light showers of ice pellets
-        [1264] = "LightSleetShowers", -- Moderate or heavy showers of ice pellets
-        [1273] = "ThunderyShowers", -- Patchy light rain with thunder
-        [1276] = "ThunderyHeavyRain", -- Moderate or heavy rain with thunder
-        [1279] = "ThunderySnowShowers", -- Patchy light snow with thunder
-        [1282] = "HeavySnowShowers", -- Moderate or heavy snow with thunder
-    }
+-- Configuration from environment variables
+-- WEATHER_LATLON format: "lat,lon" e.g., "37.7749,-122.4194"
+local latlon = os.getenv("WEATHER_LATLON")
+local update_freq = tonumber(os.getenv("WEATHER_UPDATE_FREQ")) or 1800
 
-    local WEATHER_SYMBOLS = {
-        ["Unknown"] = "􀿩 ",
-        ["Sunny"] = "􀆮 ",
-        ["PartlyCloudy"] = "􀇕 ",
-        ["Cloudy"] = "􀇃 ",
-        ["VeryCloudy"] = "􀇣 ",
-        ["Fog"] = "􀇋 ",
-        ["LightRain"] = "􀇗 ",
-        ["HeavyRain"] = "􀇇 ",
-        ["LightShowers"] = "􀇗 ",
-        ["HeavyShowers"] = "􀇇 ",
-        ["LightSleet"] = "􀇑 ",
-        ["LightSleetShowers"] = "􀇏",
-        ["LightSnow"] = "􀇏 ",
-        ["HeavySnow"] = "􀇥 ",
-        ["LightSnowShowers"] = "􀇏 ",
-        ["HeavySnowShowers"] = "􀇥 ",
-        ["ThunderyShowers"] = "􀇙 ",
-        ["ThunderyHeavyRain"] = "􀇟 ",
-        ["ThunderySnowShowers"] = "􀇟 ",
-    }
+-- NWS API requires User-Agent header
+local user_agent = "sketchybar-weather/1.0"
 
-    local condition = WEATHER_API_CONDITIONS[code]
-    return WEATHER_SYMBOLS[condition] or WEATHER_SYMBOLS["Unknown"]
+-- Store current coordinates for click handler
+local current_lat, current_lon = nil, nil
+
+local function open_weather_com()
+    if current_lat and current_lon then
+        sbar.exec(string.format("open 'https://weather.com/weather/today/l/%s,%s'", current_lat, current_lon))
+    else
+        sbar.exec("open 'https://weather.com'")
+    end
 end
 
-local weather_high = sbar.add("item", "widgets.weather_high", {
+-- Weather condition to SF Symbol mapping based on NWS icon keywords
+local function get_weather_icon(forecast_short)
+    local text = forecast_short:lower()
+
+    if text:match("thunder") or text:match("storm") then
+        return "􀇟 "
+    elseif text:match("snow") or text:match("blizzard") then
+        return "􀇥 "
+    elseif text:match("sleet") or text:match("freezing") or text:match("ice") then
+        return "􀇑 "
+    elseif text:match("rain") or text:match("shower") or text:match("drizzle") then
+        return "􀇇 "
+    elseif text:match("fog") or text:match("mist") or text:match("haze") then
+        return "􀇋 "
+    elseif text:match("cloudy") or text:match("overcast") then
+        return "􀇃 "
+    elseif text:match("partly") then
+        return "􀇕 "
+    elseif text:match("sunny") or text:match("clear") then
+        return "􀆮 "
+    else
+        return "􀇕 "
+    end
+end
+
+local weather_high = sbar.add("item", "widgets.weather1", {
     position = "right",
-    update_freq = weather_config.update_freq,
+    update_freq = update_freq,
     padding_left = -8,
     width = 0,
     icon = {
         padding_right = 0,
+        padding_left = 0,
         font = {
             style = settings.font.style_map["Bold"],
             size = 9.0,
         },
         color = colors.orange,
-        string = icons.wifi.upload,
+        string = "􀄨",  -- up arrow
     },
     label = {
         font = {
@@ -109,16 +72,17 @@ local weather_high = sbar.add("item", "widgets.weather_high", {
     y_offset = 4,
 })
 
-local weather_low = sbar.add("item", "widgets.weather_low", {
+local weather_low = sbar.add("item", "widgets.weather2", {
     position = "right",
     padding_left = -8,
     icon = {
         padding_right = 0,
+        padding_left = 0,
         font = {
             style = settings.font.style_map["Bold"],
             size = 9.0,
         },
-        string = icons.wifi.download,
+        string = "􀄩",  -- down arrow
         color = colors.blue,
     },
     label = {
@@ -133,86 +97,145 @@ local weather_low = sbar.add("item", "widgets.weather_low", {
     y_offset = -4,
 })
 
-local weather_current = sbar.add("item", "widgets.weather_current", {
+local weather_padding = sbar.add("item", "widgets.weather.padding", {
+    position = "right",
+    label = { drawing = false },
+    icon = {
+        padding_left = 12,
+        padding_right = 12,
+    },
+})
+
+local weather_current = sbar.add("item", "widgets.weather3", {
     position = "right",
     icon = {
-        string = " ",
+        string = "􀇕 ",
+        padding_left = 12,
+        padding_right = 0,
         font = {
             style = settings.font.style_map["Regular"],
             size = 17.0,
         },
     },
-    label = { font = { family = settings.font.numbers }, string = "??°" },
+    label = {
+        font = { family = settings.font.numbers },
+        string = "??°",
+        padding_right = 12,
+    },
 })
 
-weather_high:subscribe({ "forced", "routine", "system_woke" }, function(_)
-    weather_current:set({
-        label = {
-            string = "...",
-        },
-    })
+-- Background around the weather items
+local weather_bracket = sbar.add("bracket", "widgets.weather.bracket", {
+    weather_current.name,
+    weather_padding.name,
+    weather_high.name,
+    weather_low.name,
+}, {
+    background = {
+        color = colors.bg1,
+        border_color = colors.transparent,
+        border_width = 1,
+        height = 30,
+        corner_radius = 15,
+    },
+})
 
-    -- Check if API key is configured
-    if not weather_config.api_key then
-        print("Error: WeatherAPI key not configured in weather_config.lua")
-        weather_current:set({
-            label = { string = "ERR" },
-            icon = { string = "⚠️ " },
-        })
-        weather_high:set({ label = { string = "ERR" } })
-        weather_low:set({ label = { string = "ERR" } })
-        return
-    end
+sbar.add("item", { position = "right", width = settings.group_paddings })
 
-    -- Get current date for history API (today)
-    local today = os.date("%Y-%m-%d")
+-- Function to fetch weather once we have coordinates
+local function fetch_weather(lat, lon)
+    -- Store coordinates for click handler
+    current_lat, current_lon = lat, lon
 
-    -- Construct the weather API commands
-    local history_cmd = string.format(
-        "curl -s -X GET 'https://api.weatherapi.com/v1/history.json?key=%s&q=%s&dt=%s'",
-        weather_config.api_key,
-        weather_config.location,
-        today
-    )
-    print(history_cmd)
+    weather_current:set({ label = { string = "..." } })
 
-    local current_cmd = string.format(
-        "curl -s -X GET 'https://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no'",
-        weather_config.api_key,
-        weather_config.location
+    -- Step 1: Get the grid point info from coordinates
+    local points_cmd = string.format(
+        "curl -s -A '%s' 'https://api.weather.gov/points/%s,%s'",
+        user_agent,
+        lat,
+        lon
     )
 
-    -- Execute history command first for high/low temps
-    sbar.exec(history_cmd, function(history_res)
-        print("getting it")
-        if
-            history_res
-            and history_res.forecast.forecastday[1].day.maxtemp_c
-            and history_res.forecast.forecastday[1].day.mintemp_c
-        then
-            local high_str = string.format("%d°", math.floor(history_res.forecast.forecastday[1].day.maxtemp_c))
-            local low_str = string.format("%d°", math.floor(history_res.forecast.forecastday[1].day.mintemp_c))
-            weather_high:set({
-                label = { string = string.format("%04s", high_str) },
-            })
-            weather_low:set({
-                label = { string = string.format("%04s", low_str) },
-            })
+    sbar.exec(points_cmd, function(points_res)
+        if not points_res or not points_res.properties or not points_res.properties.forecast then
+            weather_current:set({ label = { string = "ERR" }, icon = { string = "⚠️ " } })
+            return
         end
 
-        sbar.exec(current_cmd, function(current_res)
-            if current_res and current_res.current.temp_c and current_res.current.condition.code then
-                local current_str = string.format("%d°", math.floor(current_res.current.temp_c))
+        local forecast_url = points_res.properties.forecast
+
+        -- Step 2: Get the forecast
+        local forecast_cmd = string.format("curl -s -A '%s' '%s'", user_agent, forecast_url)
+
+        sbar.exec(forecast_cmd, function(forecast_res)
+            if not forecast_res or not forecast_res.properties or not forecast_res.properties.periods then
+                weather_current:set({ label = { string = "ERR" }, icon = { string = "⚠️ " } })
+                return
+            end
+
+            local periods = forecast_res.properties.periods
+            local current = periods[1]
+            local today_high, today_low
+
+            -- Find today's high and low from the periods
+            for _, period in ipairs(periods) do
+                if period.isDaytime and not today_high then
+                    today_high = period.temperature
+                elseif not period.isDaytime and not today_low then
+                    today_low = period.temperature
+                end
+                if today_high and today_low then
+                    break
+                end
+            end
+
+            -- Update current temperature and icon
+            if current and current.temperature then
                 weather_current:set({
-                    label = { string = string.format("%s", current_str) },
-                    icon = { string = get_weather_emoji(current_res.current.condition.code) },
+                    label = { string = current.temperature .. "°" },
+                    icon = { string = get_weather_icon(current.shortForecast or "") },
                 })
-            else
-                weather_current:set({
-                    label = { string = " ERR" },
-                    icon = { string = "⚠️ " },
-                })
+            end
+
+            -- Update high/low
+            if today_high then
+                weather_high:set({ label = { string = string.format("%4s", today_high .. "°") } })
+            end
+            if today_low then
+                weather_low:set({ label = { string = string.format("%4s", today_low .. "°") } })
             end
         end)
     end)
+end
+
+weather_high:subscribe({ "forced", "routine", "system_woke" }, function(_)
+    if latlon and latlon ~= "" then
+        -- Use provided coordinates
+        local lat, lon = latlon:match("([^,]+),([^,]+)")
+        if lat and lon then
+            fetch_weather(lat, lon)
+        else
+            print("[weather] Invalid WEATHER_LATLON format, expected 'lat,lon'")
+        end
+    else
+        -- Auto-detect location via IP geolocation
+        sbar.exec("curl -s 'https://ipinfo.io/loc'", function(loc)
+            if loc and loc ~= "" then
+                local lat, lon = loc:match("([^,]+),([^,]+)")
+                if lat and lon then
+                    fetch_weather(lat:gsub("%s+", ""), lon:gsub("%s+", ""))
+                end
+            else
+                print("[weather] Could not auto-detect location")
+                weather_current:set({ label = { string = "ERR" }, icon = { string = "⚠️ " } })
+            end
+        end)
+    end
 end)
+
+-- Click handlers to open weather.com
+weather_current:subscribe("mouse.clicked", open_weather_com)
+weather_high:subscribe("mouse.clicked", open_weather_com)
+weather_low:subscribe("mouse.clicked", open_weather_com)
+weather_padding:subscribe("mouse.clicked", open_weather_com)

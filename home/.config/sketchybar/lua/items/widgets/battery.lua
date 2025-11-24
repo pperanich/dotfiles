@@ -2,30 +2,34 @@ local colors = require("lua.colors")
 local icons = require("lua.icons")
 local settings = require("lua.settings")
 
+-- Battery widget (red border)
 local battery = sbar.add("item", "widgets.battery", {
     position = "right",
     icon = {
-        font = {
-            style = settings.font.style_map["Regular"],
-            size = 17.0,
-        },
+        string = icons.battery._100,
+        color = colors.red,
         padding_left = 12,
         padding_right = 4,
+        font = { family = settings.font.text, style = settings.font.style_map["Regular"], size = 17.0 },
     },
     label = {
-        font = { family = settings.font.numbers },
+        string = "--%",
+        color = colors.white,
         padding_right = 12,
+        font = { family = settings.font.numbers, style = settings.font.style_map["Bold"], size = 14.0 },
     },
-    update_freq = 180,
+    update_freq = 60,
     popup = { align = "center" },
     background = {
         color = colors.bg1,
-        border_color = colors.transparent,
+        border_color = colors.red,
         border_width = 1,
         height = 30,
         corner_radius = 15,
     },
 })
+
+sbar.add("item", { position = "right", width = settings.group_paddings })
 
 local remaining_time = sbar.add("item", {
     position = "popup." .. battery.name,
@@ -43,8 +47,8 @@ local remaining_time = sbar.add("item", {
 
 battery:subscribe({ "routine", "power_source_change", "system_woke" }, function()
     sbar.exec("pmset -g batt", function(batt_info)
-        local icon = "!"
-        local label = "?"
+        local icon = icons.battery._100
+        local label = "?%"
 
         local found, _, charge = batt_info:find("(%d+)%%")
         if found then
@@ -52,10 +56,12 @@ battery:subscribe({ "routine", "power_source_change", "system_woke" }, function(
             label = charge .. "%"
         end
 
-        local color = colors.green
-        local charging, _, _ = batt_info:find("AC Power")
+        local charging = batt_info:find("AC Power")
 
-        if found and charge > 80 then
+        -- Select icon based on charge level
+        if charging then
+            icon = icons.battery.charging
+        elseif found and charge > 80 then
             icon = icons.battery._100
         elseif found and charge > 60 then
             icon = icons.battery._75
@@ -63,32 +69,18 @@ battery:subscribe({ "routine", "power_source_change", "system_woke" }, function(
             icon = icons.battery._50
         elseif found and charge > 20 then
             icon = icons.battery._25
-            color = colors.orange
         else
             icon = icons.battery._0
-            color = colors.red
-        end
-
-        if charging then
-            icon = icons.battery.charging
-        end
-
-        local lead = ""
-        if found and charge < 10 then
-            lead = "0"
         end
 
         battery:set({
-            icon = {
-                string = icon,
-                color = color,
-            },
-            label = { string = lead .. label, font = { family = settings.font.text } },
+            icon = { string = icon },
+            label = label,
         })
     end)
 end)
 
-battery:subscribe("mouse.clicked", function(env)
+battery:subscribe("mouse.clicked", function()
     local drawing = battery:query().popup.drawing
     battery:set({ popup = { drawing = "toggle" } })
 
@@ -100,18 +92,3 @@ battery:subscribe("mouse.clicked", function(env)
         end)
     end
 end)
-
-sbar.add("bracket", "widgets.battery.bracket", { battery.name }, {
-    background = {
-        color = colors.transparent,
-        border_color = colors.transparent,
-        border_width = 1,
-        height = 32,
-        corner_radius = 16,
-    },
-})
-
-sbar.add("item", "widgets.battery.padding", {
-    position = "right",
-    width = settings.group_paddings,
-})

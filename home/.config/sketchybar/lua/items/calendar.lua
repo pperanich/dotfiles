@@ -1,48 +1,74 @@
 local colors = require("lua.colors")
 local settings = require("lua.settings")
 
--- Padding item required because of bracket
-sbar.add("item", { position = "right", width = settings.group_paddings })
-
-local cal = sbar.add("item", {
+-- Time widget (blue border)
+local time = sbar.add("item", "widgets.time", {
     icon = {
-        color = colors.white,
+        string = "􀐫",  -- clock.fill
+        color = colors.blue,
         padding_left = 12,
-        font = { family = settings.font.text, style = settings.font.style_map["Bold"], size = 14.0 },
+        padding_right = 4,
+        font = { family = settings.font.text, style = settings.font.style_map["Regular"], size = 17.0 },
     },
     label = {
         color = colors.white,
         padding_right = 12,
-        align = "right",
-        font = { family = settings.font.text, style = settings.font.style_map["Bold"], size = 14.0 },
+        font = { family = settings.font.numbers, style = settings.font.style_map["Bold"], size = 14.0 },
     },
     position = "right",
-    update_freq = 30,
-    padding_left = 0,
-    padding_right = 0,
+    update_freq = 1,
     background = {
         color = colors.bg1,
-        border_color = colors.transparent,
+        border_color = colors.blue,
         border_width = 1,
         height = 30,
         corner_radius = 15,
     },
 })
 
--- Double border for calendar using a single item bracket
-sbar.add("bracket", { cal.name }, {
+sbar.add("item", { position = "right", width = settings.group_paddings })
+
+-- Date widget (green border)
+local date = sbar.add("item", "widgets.date", {
+    icon = {
+        string = "􀉉",  -- calendar
+        color = colors.green,
+        padding_left = 12,
+        padding_right = 4,
+        font = { family = settings.font.text, style = settings.font.style_map["Regular"], size = 17.0 },
+    },
+    label = {
+        color = colors.white,
+        padding_right = 12,
+        font = { family = settings.font.text, style = settings.font.style_map["Bold"], size = 14.0 },
+    },
+    position = "right",
+    update_freq = 60,
     background = {
-        color = colors.transparent,
-        height = 32,
-        border_color = colors.transparent,
+        color = colors.bg1,
+        border_color = colors.green,
         border_width = 1,
-        corner_radius = 16,
+        height = 30,
+        corner_radius = 15,
     },
 })
 
--- Padding item required because of bracket
 sbar.add("item", { position = "right", width = settings.group_paddings })
 
-cal:subscribe({ "forced", "routine", "system_woke" }, function(env)
-    cal:set({ icon = os.date("􀉉  %B %d %a"), label = os.date("􀐫  %H:%M") })
+-- Update handlers
+time:subscribe({ "forced", "routine", "system_woke" }, function()
+    time:set({ label = os.date("%I:%M %p") })
+end)
+
+date:subscribe({ "forced", "routine", "system_woke" }, function()
+    date:set({ label = os.date("%a %b %d") })
+end)
+
+-- Click to open Calendar app
+time:subscribe("mouse.clicked", function()
+    sbar.exec("open -a Calendar")
+end)
+
+date:subscribe("mouse.clicked", function()
+    sbar.exec("open -a Calendar")
 end)

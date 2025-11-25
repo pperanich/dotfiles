@@ -9,13 +9,14 @@ _: {
       cfg = config.features.router;
       fwCfg = cfg.firewall;
       internal = cfg._internal;
-      lanSubnet = internal.lanSubnet;
+      inherit (internal) lanSubnet;
       wan = cfg.wan.interface;
-      lanDevice = internal.lanDevice;
+      inherit (internal) lanDevice;
 
       # Build trusted interface rules
-      trustedInputRules = lib.concatMapStringsSep "\n" (iface: ''
-        iifname "${iface}" accept'') fwCfg.trustedInterfaces;
+      trustedInputRules = lib.concatMapStringsSep "\n" (
+        iface: ''iifname "${iface}" accept''
+      ) fwCfg.trustedInterfaces;
 
       trustedForwardRules = lib.concatMapStringsSep "\n" (iface: ''
         iifname "${iface}" oifname "${lanDevice}" accept
@@ -27,9 +28,7 @@ _: {
       udpPortsStr = lib.concatMapStringsSep ", " toString fwCfg.openPorts.udp;
 
       # Build port forward rules from machines
-      machinesByName = lib.listToAttrs (
-        map (m: lib.nameValuePair m.name m) cfg.machines
-      );
+      machinesByName = lib.listToAttrs (map (m: lib.nameValuePair m.name m) cfg.machines);
 
       forwardRules = lib.concatStringsSep "\n" (
         lib.mapAttrsToList (
@@ -60,13 +59,19 @@ _: {
         trustedInterfaces = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
-          example = [ "zt0" "wg0" ];
+          example = [
+            "zt0"
+            "wg0"
+          ];
           description = "Additional trusted interfaces (VPN, etc.)";
         };
         openPorts = {
           tcp = lib.mkOption {
             type = lib.types.listOf lib.types.port;
-            default = [ 80 443 ];
+            default = [
+              80
+              443
+            ];
             description = "TCP ports to open on WAN";
           };
           udp = lib.mkOption {
@@ -92,8 +97,12 @@ _: {
                   ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
                   iifname "${wan}" ip protocol icmp accept
-                  ${lib.optionalString (fwCfg.openPorts.tcp != []) ''iifname "${wan}" tcp dport { ${tcpPortsStr} } accept comment "Open TCP ports"''}
-                  ${lib.optionalString (fwCfg.openPorts.udp != []) ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''}
+                  ${lib.optionalString (
+                    fwCfg.openPorts.tcp != [ ]
+                  ) ''iifname "${wan}" tcp dport { ${tcpPortsStr} } accept comment "Open TCP ports"''}
+                  ${lib.optionalString (
+                    fwCfg.openPorts.udp != [ ]
+                  ) ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''}
                 }
                 chain forward {
                   type filter hook forward priority 0; policy drop;

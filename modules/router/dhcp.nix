@@ -9,12 +9,12 @@ _: {
       cfg = config.features.router;
       dhcpCfg = cfg.dhcp;
       internal = cfg._internal;
-      lanSubnet = internal.lanSubnet;
-      lanCidr = internal.lanCidr;
-      routerIp = internal.routerIp;
-      dhcpStart = internal.dhcpStart;
-      dhcpEnd = internal.dhcpEnd;
-      lanDevice = internal.lanDevice;
+      inherit (internal) lanSubnet;
+      inherit (internal) lanCidr;
+      inherit (internal) routerIp;
+      inherit (internal) dhcpStart;
+      inherit (internal) dhcpEnd;
+      inherit (internal) lanDevice;
       inherit (cfg) machines;
       enabled = cfg.enable && dhcpCfg.enable;
     in

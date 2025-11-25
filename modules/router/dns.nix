@@ -9,10 +9,10 @@ _: {
       cfg = config.features.router;
       dnsCfg = cfg.dns;
       internal = cfg._internal;
-      lanSubnet = internal.lanSubnet;
-      lanCidr = internal.lanCidr;
-      routerIp = internal.routerIp;
-      ulaPrefix = cfg.ipv6.ulaPrefix;
+      inherit (internal) lanSubnet;
+      inherit (internal) lanCidr;
+      inherit (internal) routerIp;
+      inherit (cfg.ipv6) ulaPrefix;
       inherit (cfg) machines services;
       enabled = cfg.enable && dnsCfg.enable;
     in
@@ -43,13 +43,15 @@ _: {
                 "127.0.0.1"
                 "::1"
                 routerIp
-              ] ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1";
+              ]
+              ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1";
 
               access-control = [
                 "127.0.0.0/8 allow"
                 "::1 allow"
                 "${lanCidr} allow"
-              ] ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::/64 allow"
+              ]
+              ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::/64 allow"
               ++ [
                 "0.0.0.0/0 refuse"
                 "::0/0 refuse"
@@ -65,17 +67,14 @@ _: {
 
               # Local zone for LAN
               local-zone = "\"${dnsCfg.localZone}\" static";
-              local-data =
-                [
-                  "\"${cfg.hostname}.${dnsCfg.localZone} IN A ${routerIp}\""
-                ]
-                ++ lib.optional cfg.ipv6.enable
-                  "\"${cfg.hostname}.${dnsCfg.localZone} IN AAAA ${ulaPrefix}::1\""
-                ++ map (
-                  machine:
-                  "\"${machine.name}.${dnsCfg.localZone} IN A ${lanSubnet}.${toString machine.ip}\""
-                ) machines
-                ++ map (service: "\"${service.name} IN A ${service.target}\"") services;
+              local-data = [
+                "\"${cfg.hostname}.${dnsCfg.localZone} IN A ${routerIp}\""
+              ]
+              ++ lib.optional cfg.ipv6.enable "\"${cfg.hostname}.${dnsCfg.localZone} IN AAAA ${ulaPrefix}::1\""
+              ++ map (
+                machine: "\"${machine.name}.${dnsCfg.localZone} IN A ${lanSubnet}.${toString machine.ip}\""
+              ) machines
+              ++ map (service: "\"${service.name} IN A ${service.target}\"") services;
             };
             forward-zone = [
               {

@@ -9,10 +9,10 @@ _: {
       cfg = config.features.router;
       internal = cfg._internal;
       wan = cfg.wan.interface;
-      lanDevice = internal.lanDevice;
-      useBridge = internal.useBridge;
-      routerIp = internal.routerIp;
-      ulaPrefix = cfg.ipv6.ulaPrefix;
+      inherit (internal) lanDevice;
+      inherit (internal) useBridge;
+      inherit (internal) routerIp;
+      inherit (cfg.ipv6) ulaPrefix;
     in
     {
       config = lib.mkIf cfg.enable {
@@ -21,9 +21,11 @@ _: {
           "net.ipv4.conf.all.forwarding" = true;
           "net.ipv4.conf.default.rp_filter" = 2;
           "net.ipv4.conf.${wan}.rp_filter" = 2;
-        } // lib.optionalAttrs useBridge {
+        }
+        // lib.optionalAttrs useBridge {
           "net.ipv4.conf.br-lan.rp_filter" = 2;
-        } // lib.optionalAttrs cfg.ipv6.enable {
+        }
+        // lib.optionalAttrs cfg.ipv6.enable {
           "net.ipv6.conf.all.forwarding" = true;
           "net.ipv6.conf.all.accept_ra" = 0;
           "net.ipv6.conf.all.autoconf" = 0;
@@ -52,57 +54,54 @@ _: {
             };
           };
 
-          networks =
-            {
-              # WAN interface
-              "20-wan" = {
-                matchConfig.Name = wan;
-                networkConfig = {
-                  DHCP = if cfg.wan.useDHCP then "yes" else "no";
-                  IPv4Forwarding = true;
-                  IPv6Forwarding = cfg.ipv6.enable;
-                  IPv6AcceptRA = cfg.ipv6.enable;
-                };
-                linkConfig.RequiredForOnline = "routable";
+          networks = {
+            # WAN interface
+            "20-wan" = {
+              matchConfig.Name = wan;
+              networkConfig = {
+                DHCP = if cfg.wan.useDHCP then "yes" else "no";
+                IPv4Forwarding = true;
+                IPv6Forwarding = cfg.ipv6.enable;
+                IPv6AcceptRA = cfg.ipv6.enable;
               };
+              linkConfig.RequiredForOnline = "routable";
+            };
 
-              # LAN bridge or interface
-              "10-lan" = {
-                matchConfig.Name = lanDevice;
-                address =
-                  [ "${routerIp}/24" ]
-                  ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1/64";
-                networkConfig = {
-                  ConfigureWithoutCarrier = true;
-                  DHCPPrefixDelegation = cfg.ipv6.enable;
-                  IPv6SendRA = cfg.ipv6.enable;
-                  IPv6AcceptRA = false;
-                };
-                ipv6Prefixes = lib.mkIf cfg.ipv6.enable [
-                  {
-                    AddressAutoconfiguration = true;
-                    OnLink = true;
-                    Prefix = "${ulaPrefix}::/64";
-                  }
-                ];
-                linkConfig.RequiredForOnline = "no";
+            # LAN bridge or interface
+            "10-lan" = {
+              matchConfig.Name = lanDevice;
+              address = [ "${routerIp}/24" ] ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1/64";
+              networkConfig = {
+                ConfigureWithoutCarrier = true;
+                DHCPPrefixDelegation = cfg.ipv6.enable;
+                IPv6SendRA = cfg.ipv6.enable;
+                IPv6AcceptRA = false;
               };
-            }
-            # Add bridge member configs if using bridge
-            // lib.optionalAttrs useBridge (
-              lib.listToAttrs (
-                map (
-                  iface:
-                  lib.nameValuePair "30-${iface}-lan" {
-                    matchConfig.Name = iface;
-                    networkConfig = {
-                      Bridge = "br-lan";
-                      ConfigureWithoutCarrier = true;
-                    };
-                  }
-                ) cfg.lan.interfaces
-              )
-            );
+              ipv6Prefixes = lib.mkIf cfg.ipv6.enable [
+                {
+                  AddressAutoconfiguration = true;
+                  OnLink = true;
+                  Prefix = "${ulaPrefix}::/64";
+                }
+              ];
+              linkConfig.RequiredForOnline = "no";
+            };
+          }
+          # Add bridge member configs if using bridge
+          // lib.optionalAttrs useBridge (
+            lib.listToAttrs (
+              map (
+                iface:
+                lib.nameValuePair "30-${iface}-lan" {
+                  matchConfig.Name = iface;
+                  networkConfig = {
+                    Bridge = "br-lan";
+                    ConfigureWithoutCarrier = true;
+                  };
+                }
+              ) cfg.lan.interfaces
+            )
+          );
         };
 
         # Ensure nftables starts before network

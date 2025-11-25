@@ -19,6 +19,7 @@
           jsonfmt.enable = true;
           nixfmt.enable = true;
           prettier.enable = true;
+          stylua.enable = true;
           shfmt.enable = true;
           statix.enable = true;
           yamlfmt.enable = true;

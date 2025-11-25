@@ -29,19 +29,24 @@ _: {
             description = "MAC address for DHCP reservation (format: XX:XX:XX:XX:XX:XX)";
           };
           portForwards = mkOption {
-            type = types.listOf (types.submodule {
-              options = {
-                port = mkOption {
-                  type = portType;
-                  description = "Port to forward (1-65535)";
+            type = types.listOf (
+              types.submodule {
+                options = {
+                  port = mkOption {
+                    type = portType;
+                    description = "Port to forward (1-65535)";
+                  };
+                  protocol = mkOption {
+                    type = types.enum [
+                      "tcp"
+                      "udp"
+                    ];
+                    default = "tcp";
+                    description = "Protocol to forward";
+                  };
                 };
-                protocol = mkOption {
-                  type = types.enum [ "tcp" "udp" ];
-                  default = "tcp";
-                  description = "Protocol to forward";
-                };
-              };
-            });
+              }
+            );
             default = [ ];
             description = "Port forwarding rules for this machine";
           };
@@ -93,7 +98,10 @@ _: {
           interfaces = mkOption {
             type = types.listOf types.str;
             default = [ ];
-            example = [ "enp2s0" "enp3s0" ];
+            example = [
+              "enp2s0"
+              "enp3s0"
+            ];
             description = "LAN interfaces to bridge (empty = no bridge, use single interface)";
           };
           interface = mkOption {
@@ -157,8 +165,7 @@ _: {
           dhcpStart = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.start}";
           dhcpEnd = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.end}";
           useBridge = cfg.lan.interfaces != [ ];
-          lanDevice =
-            if cfg.lan.interfaces != [ ] then "br-lan" else cfg.lan.interface;
+          lanDevice = if cfg.lan.interfaces != [ ] then "br-lan" else cfg.lan.interface;
         };
 
         # Assertions for configuration validation

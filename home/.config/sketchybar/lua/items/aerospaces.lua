@@ -91,7 +91,7 @@ for _, workspace_id in ipairs(workspace_list) do
 		space:set({
 			icon = { highlight = selected },
 			label = { highlight = selected },
-			background = { border_color = selected and colors.pink or colors.transparent },
+			background = { border_color = selected and colors.peach or colors.transparent },
 		})
 		space_bracket:set({
 			background = { border_color = selected and colors.light_border or colors.transparent },

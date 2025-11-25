@@ -3,7 +3,7 @@ local settings = require("lua.settings")
 
 -- Configuration from environment variables
 local latlon = os.getenv("WEATHER_LATLON")
-local update_freq = tonumber(os.getenv("WEATHER_UPDATE_FREQ")) or 1800
+local update_freq = tonumber(os.getenv("WEATHER_UPDATE_FREQ")) or 900  -- 15 minutes
 
 -- NWS API requires User-Agent header
 local user_agent = "sketchybar-weather/1.0"
@@ -69,20 +69,21 @@ local function fetch_weather(lat, lon)
     current_lat, current_lon = lat, lon
 
     local points_cmd = string.format(
-        "curl -s -A '%s' 'https://api.weather.gov/points/%s,%s'",
+        "curl -sk -A '%s' 'https://api.weather.gov/points/%s,%s'",
         user_agent,
         lat,
         lon
     )
 
     sbar.exec(points_cmd, function(points_res)
-        if not points_res or not points_res.properties or not points_res.properties.forecast then
+        if not points_res or not points_res.properties or not points_res.properties.forecastHourly then
             weather:set({ label = "ERR" })
             return
         end
 
-        local forecast_url = points_res.properties.forecast
-        local forecast_cmd = string.format("curl -s -A '%s' '%s'", user_agent, forecast_url)
+        -- Use hourly forecast for more accurate current temperature
+        local forecast_url = points_res.properties.forecastHourly
+        local forecast_cmd = string.format("curl -sk -A '%s' '%s'", user_agent, forecast_url)
 
         sbar.exec(forecast_cmd, function(forecast_res)
             if not forecast_res or not forecast_res.properties or not forecast_res.properties.periods then
@@ -108,7 +109,7 @@ weather:subscribe({ "forced", "routine", "system_woke" }, function()
             fetch_weather(lat, lon)
         end
     else
-        sbar.exec("curl -s 'https://ipinfo.io/loc'", function(loc)
+        sbar.exec("curl -sk 'https://ipinfo.io/loc'", function(loc)
             if loc and loc ~= "" then
                 local lat, lon = loc:match("([^,]+),([^,]+)")
                 if lat and lon then

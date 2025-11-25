@@ -8,77 +8,42 @@ sbar.exec(
     "killall cpu_load >/dev/null; " .. base_dir .. "/helpers/event_providers/cpu_load/bin/cpu_load cpu_update 2.0"
 )
 
-local cpu = sbar.add("graph", "widgets.cpu", 42, {
+-- CPU widget (magenta border)
+local cpu = sbar.add("item", "widgets.cpu", {
     position = "right",
-    graph = { color = colors.blue },
-    background = {
-        height = 22,
-        color = { alpha = 0 },
-        border_color = { alpha = 0 },
-        drawing = true,
-    },
     icon = {
         string = icons.cpu,
+        color = colors.magenta,
         padding_left = 12,
         padding_right = 4,
+        font = { family = settings.font.text, style = settings.font.style_map["Regular"], size = 17.0 },
     },
     label = {
-        string = "cpu ??%",
-        font = {
-            family = settings.font.numbers,
-            style = settings.font.style_map["Bold"],
-            size = 9.0,
-        },
-        align = "right",
+        string = "--%",
+        color = colors.white,
         padding_right = 12,
-        width = 0,
-        y_offset = 4,
+        font = { family = settings.font.numbers, style = settings.font.style_map["Bold"], size = 14.0 },
     },
-    padding_right = 0,
-})
-
-cpu:subscribe("cpu_update", function(env)
-    -- Also available: env.user_load, env.sys_load
-    local load = tonumber(env.total_load)
-    if not load or load < 0 or load > 100 then
-        return
-    end
-
-    cpu:push({ load / 100. })
-
-    local color = colors.blue
-    if load > 30 then
-        if load < 60 then
-            color = colors.yellow
-        elseif load < 80 then
-            color = colors.orange
-        else
-            color = colors.red
-        end
-    end
-
-    cpu:set({
-        graph = { color = color },
-        label = "cpu " .. env.total_load .. "%",
-    })
-end)
-
-cpu:subscribe("mouse.clicked", function(env)
-    sbar.exec("open -a 'Activity Monitor'")
-end)
-
--- Background around the cpu item
-sbar.add("bracket", "widgets.cpu.bracket", { cpu.name }, {
     background = {
         color = colors.bg1,
-        border_color = colors.transparent,
+        border_color = colors.magenta,
         border_width = 1,
         height = 30,
         corner_radius = 15,
     },
 })
 
-sbar.add("item", "widgets.cpu.padding", {
-    position = "right",
-    width = settings.group_paddings,
-})
+sbar.add("item", { position = "right", width = settings.group_paddings })
+
+cpu:subscribe("cpu_update", function(env)
+    local load = tonumber(env.total_load)
+    if not load or load < 0 or load > 100 then
+        return
+    end
+
+    cpu:set({ label = env.total_load .. "%" })
+end)
+
+cpu:subscribe("mouse.clicked", function()
+    sbar.exec("open -a 'Activity Monitor'")
+end)

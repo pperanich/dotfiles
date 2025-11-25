@@ -1,7 +1,7 @@
 require("lua.items.apple")
 -- require("lua.items.menus")
--- require("lua.items.front_app")
 require("lua.items.aerospaces")
+require("lua.items.front_app")
 -- require("lua.items.spaces")
 require("lua.items.calendar")
 require("lua.items.widgets")

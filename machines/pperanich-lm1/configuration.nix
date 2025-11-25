@@ -8,10 +8,6 @@
 {
   imports = [
     inputs.nixos-facter-modules.nixosModules.facter
-    # { config.facter.reportPath = ./facter.json; }
-    # ./hardware-configuration.nix
-    # Include common Intel CPU optimizations
-    # inputs.hardware.nixosModules.common-cpu-intel
   ]
   ++ (with modules.nixos; [
     # Core system configuration
@@ -72,8 +68,10 @@
       enable32Bit = true;
 
       extraPackages = with pkgs; [
+        vaapiIntel
         libvdpau-va-gl
         libva-vdpau-driver
+        intel-media-driver
       ];
     };
   };
@@ -102,17 +100,9 @@
     linux-firmware
 
     ghostty
-  ];
 
-  # Boot configuration
-  # boot = {
-  #   initrd.systemd.enable = true;
-  #   binfmt.emulatedSystems = [ "aarch64-linux" ];
-  #   loader = {
-  #     systemd-boot.enable = true;
-  #     efi.canTouchEfiVariables = true;
-  #   };
-  # };
+    stdenv
+  ];
 
   security.rtkit.enable = true;
   services.pipewire = {

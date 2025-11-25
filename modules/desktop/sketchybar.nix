@@ -1,4 +1,4 @@
-# Sketchybar status bar
+# Sketchybar status bar and jankyborders
 _: {
   flake.modules.darwin.sketchybar =
     { pkgs, ... }:
@@ -9,6 +9,16 @@ _: {
         extraPackages = [
           pkgs.switchaudio-osx
         ];
+      };
+
+      services.jankyborders = {
+        enable = true;
+        width = 1.0; # Matches workspace border_width
+        hidpi = true;
+        order = "above";
+        active_color = "0xFFfab387"; # Catppuccin peach (matches active workspace)
+        inactive_color = "0xFF45475a"; # Catppuccin surface1
+        style = "round";
       };
 
       environment.systemPackages = [

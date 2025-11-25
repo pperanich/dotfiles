@@ -15,8 +15,6 @@ font-feature = -liga
 
 # theme = Catppuccin Mocha
 theme = catppuccin-mocha
-# theme = Github-Dark-Default
-# theme = tokyonight
 clipboard-read = allow
 clipboard-write = allow
 copy-on-select = clipboard
@@ -25,5 +23,7 @@ font-size = 20
 cursor-style = block
 cursor-style-blink = false
 shell-integration-features = no-cursor
-window-decoration = none
+window-decoration = auto
 keybind = shift+enter=text:\n
+macos-titlebar-style = hidden
+window-padding-y = 0

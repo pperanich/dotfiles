@@ -47,7 +47,12 @@ inner.vertical = 6
 outer.left = 6
 outer.bottom = 6
 outer.right = 6
-outer.top = 9
+# Top gap is bar height 32px + 2 * y_offset 4px = 40
+# Notch on M3 Macbook Pro 16in = 64 physical px / 2 = 32 points (logical pixels)
+# Add 1 for janky borders width
+# => gap should be 41 - 32 = 8
+# => just 41 on all other monitors
+outer.top = [{ monitor."built-in" = 9 }, 41]
 
 # ========================================
 # KEYBOARD MAPPING

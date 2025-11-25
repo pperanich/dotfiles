@@ -1,6 +1,4 @@
 # AeroSpace Configuration
-# Migration from yabai+skhd with improvements
-# https://nikitabobko.github.io/AeroSpace/guide
 
 # ========================================
 # CORE SETTINGS
@@ -35,7 +33,6 @@ exec-on-workspace-change = [
   '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ] # Trigger SketchyBar when workspace changes
-# Using bash to properly handle the command and environment variable
 
 # ========================================
 # GAPS CONFIGURATION
@@ -50,8 +47,6 @@ inner.vertical = 6
 outer.left = 6
 outer.bottom = 6
 outer.right = 6
-
-# Top gap for sketchybar: height + margin*2 + y_offset*2 = 36 + (3 * 2) + (3 * 2) = 48
 outer.top = 42
 
 # ========================================
@@ -129,6 +124,8 @@ alt-shift-right = 'move right'
 # Navigate to previous/next workspace
 cmd-left = 'workspace prev'
 cmd-right = 'workspace next'
+cmd-h = 'workspace prev'
+cmd-l = 'workspace next'
 
 # Back and forth between recent workspaces (like i3)
 alt-b = 'workspace-back-and-forth'

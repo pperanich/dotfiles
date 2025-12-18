@@ -114,7 +114,7 @@ alt + e                 : komorebic workspace-layout bsp
 alt + r                 : komorebic toggle-float
 
 # Cycle through layouts (similar to macOS Alt+/)
-alt + slash             : komorebic cycle-layout next
+alt + oem_2             : komorebic cycle-layout next
 
 # Flip layout orientation
 alt + x                 : komorebic flip-layout horizontal
@@ -160,7 +160,7 @@ alt + shift + 8         : komorebic move-to-workspace 7
 alt + shift + 9         : komorebic move-to-workspace 8
 
 # Move to recent workspace (similar to macOS Alt+Shift+B)
-alt + shift + b         : komorebic move-to-workspace-last
+alt + shift + b         : komorebic move-to-last-workspace
 
 # ----------------------------------------------------------------
 # Monitor Management
@@ -188,7 +188,7 @@ alt + shift + tab       : komorebic move-workspace-to-monitor next
 # ----------------------------------------------------------------
 
 # Set insertion point (join-with equivalent)
-alt + ctrl + shift + h  : komorebic stack-window left
-alt + ctrl + shift + j  : komorebic stack-window down
-alt + ctrl + shift + k  : komorebic stack-window up
-alt + ctrl + shift + l  : komorebic stack-window right
+alt + ctrl + shift + h  : komorebic stack left
+alt + ctrl + shift + j  : komorebic stack down
+alt + ctrl + shift + k  : komorebic stack up
+alt + ctrl + shift + l  : komorebic stack right

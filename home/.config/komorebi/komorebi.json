@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/LGUG2Z/komorebi/master/schema.json",
-  "app_specific_configuration_path": "$Env:USERPROFILE/.config/komorebi/applications.yaml",
+  "app_specific_configuration_path": "$Env:USERPROFILE/.config/komorebi/applications.json",
   "window_hiding_behaviour": "Cloak",
   "cross_monitor_move_behaviour": "Insert",
   "default_workspace_padding": 6,
@@ -9,73 +9,40 @@
   "border_width": 8,
   "border_offset": -1,
   "mouse_follows_focus": true,
-  "focus_follows_mouse": "None",
   "monitors": [
     {
       "workspaces": [
-        {
-          "name": "1-mail",
-          "layout": "BSP"
-        },
-        {
-          "name": "2-slack",
-          "layout": "BSP"
-        },
-        {
-          "name": "3-web",
-          "layout": "BSP"
-        },
-        {
-          "name": "4-term",
-          "layout": "BSP"
-        },
-        {
-          "name": "5-ide",
-          "layout": "BSP"
-        },
-        {
-          "name": "6-notes",
-          "layout": "BSP"
-        },
-        {
-          "name": "7-zoom",
-          "layout": "BSP"
-        },
-        {
-          "name": "8-social",
-          "layout": "BSP"
-        },
-        {
-          "name": "9",
-          "layout": "BSP"
-        },
-        {
-          "name": "10",
-          "layout": "BSP"
-        }
+        { "name": "1", "layout": "BSP" },
+        { "name": "2", "layout": "BSP" },
+        { "name": "3", "layout": "BSP" },
+        { "name": "4", "layout": "BSP" },
+        { "name": "5", "layout": "BSP" },
+        { "name": "6", "layout": "BSP" },
+        { "name": "7", "layout": "BSP" },
+        { "name": "8", "layout": "BSP" }
       ]
     }
   ],
-  "float_rules": [
+  "ignore_rules": [
     {
       "kind": "Title",
       "id": "Settings",
-      "matching_strategy": "Substring"
+      "matching_strategy": "Contains"
     },
     {
       "kind": "Title",
       "id": "Preferences",
-      "matching_strategy": "Substring"
+      "matching_strategy": "Contains"
     },
     {
       "kind": "Title",
       "id": "Properties",
-      "matching_strategy": "Substring"
+      "matching_strategy": "Contains"
     },
     {
       "kind": "Title",
       "id": "Task Manager",
-      "matching_strategy": "Substring"
+      "matching_strategy": "Contains"
     }
   ],
   "workspace_rules": [

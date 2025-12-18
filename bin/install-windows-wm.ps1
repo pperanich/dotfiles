@@ -117,7 +117,6 @@ function New-ConfigDirectories {
     $dirs = @(
         "$env:USERPROFILE\.config",
         "$env:USERPROFILE\.config\komorebi",
-        "$env:USERPROFILE\.config\whkd",
         "$env:USERPROFILE\.config\alacritty"
     )
 
@@ -145,7 +144,7 @@ function Deploy-Configs {
     # Config destination paths
     $komorebiDest = "$env:USERPROFILE\.config\komorebi\komorebi.json"
     $komorebiBarDest = "$env:USERPROFILE\.config\komorebi\komorebi.bar.json"
-    $whkdDest = "$env:USERPROFILE\.config\whkd\whkdrc"
+    $whkdDest = "$env:USERPROFILE\.config\whkdrc"
     $alacrittyDest = "$env:USERPROFILE\.config\alacritty\alacritty.toml"
 
     # Check if source files exist
@@ -201,6 +200,28 @@ function Deploy-Configs {
     }
     catch {
         Write-ErrorLog "Failed to deploy configs: $_"
+        return $false
+    }
+}
+
+function Set-KomorebiConfigHome {
+    Write-InfoLog "Setting KOMOREBI_CONFIG_HOME environment variable..."
+
+    $configPath = "$env:USERPROFILE\.config\komorebi"
+
+    try {
+        # Set for current session
+        $env:KOMOREBI_CONFIG_HOME = $configPath
+
+        # Set persistent user environment variable
+        [Environment]::SetEnvironmentVariable("KOMOREBI_CONFIG_HOME", $configPath, "User")
+
+        Write-InfoLog "KOMOREBI_CONFIG_HOME set to: $configPath"
+        return $true
+    }
+    catch {
+        Write-WarnLog "Failed to set KOMOREBI_CONFIG_HOME: $_"
+        Write-WarnLog "You can manually set it with: [Environment]::SetEnvironmentVariable('KOMOREBI_CONFIG_HOME', '$configPath', 'User')"
         return $false
     }
 }
@@ -318,6 +339,9 @@ function Main {
         Write-ErrorLog "Failed to deploy configuration files"
         exit 1
     }
+
+    # Set KOMOREBI_CONFIG_HOME to point to .config/komorebi
+    Set-KomorebiConfigHome
 
     # Download application-specific configuration
     Get-ApplicationConfig

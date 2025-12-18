@@ -1,6 +1,6 @@
 # ================================================================
 # Windows Window Manager Installation Script
-# Installs komorebi and whkd on Windows
+# Installs komorebi, whkd, Alacritty, and Windows Terminal config
 # ================================================================
 
 # Set strict error handling
@@ -42,6 +42,12 @@ function Get-WindowsVersion {
     $os = Get-CimInstance Win32_OperatingSystem
     return [version]$os.Version
 }
+
+# ----------------------------------------------------------------
+# Path Constants
+# ----------------------------------------------------------------
+
+$WINDOWS_TERMINAL_SETTINGS_PATH = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
 
 # ----------------------------------------------------------------
 # Installation Functions
@@ -125,6 +131,87 @@ function New-ConfigDirectories {
             New-Item -ItemType Directory -Path $dir -Force | Out-Null
             Write-InfoLog "Created directory: $dir"
         }
+    }
+}
+
+function Deploy-WindowsTerminalConfig {
+    Write-InfoLog "Deploying Windows Terminal configuration..."
+
+    # Determine dotfiles path
+    $scriptPath = Split-Path -Parent $PSCommandPath
+    $dotfilesPath = Split-Path -Parent $scriptPath
+
+    # Source paths
+    $wtSource = Join-Path $dotfilesPath "home\.config\windows-terminal\settings.json"
+    $wtIconsSource = Join-Path $dotfilesPath "home\.config\windows-terminal\icons"
+
+    # Destination paths
+    $wtDest = $WINDOWS_TERMINAL_SETTINGS_PATH
+    $wtLocalStatePath = Split-Path -Parent $wtDest
+    $wtRoamingStatePath = $wtLocalStatePath -replace 'LocalState$', 'RoamingState'
+
+    # Check if Windows Terminal is installed
+    if (-not (Test-Path $wtLocalStatePath)) {
+        Write-WarnLog "Windows Terminal LocalState folder not found at: $wtLocalStatePath"
+        Write-WarnLog "Is Windows Terminal installed? Skipping Windows Terminal config..."
+        return $true
+    }
+
+    # Check if source file exists
+    if (-not (Test-Path $wtSource)) {
+        Write-WarnLog "Windows Terminal config not found in dotfiles at: $wtSource"
+        Write-WarnLog "Skipping Windows Terminal config..."
+        return $true
+    }
+
+    try {
+        # Deploy icons to RoamingState folder
+        if (Test-Path $wtIconsSource) {
+            Write-InfoLog "Deploying Windows Terminal icons..."
+            if (-not (Test-Path $wtRoamingStatePath)) {
+                New-Item -ItemType Directory -Path $wtRoamingStatePath -Force | Out-Null
+            }
+            $icons = Get-ChildItem -Path $wtIconsSource -File
+            foreach ($icon in $icons) {
+                $destIcon = Join-Path $wtRoamingStatePath $icon.Name
+                Copy-Item -Path $icon.FullName -Destination $destIcon -Force
+                Write-InfoLog "  Copied icon: $($icon.Name)"
+            }
+        }
+
+        # Backup existing config if it exists and isn't a symlink
+        if ((Test-Path $wtDest) -and -not ((Get-Item $wtDest).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            $backupPath = "$wtDest.backup.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            Write-InfoLog "Backing up existing Windows Terminal config to: $backupPath"
+            Copy-Item -Path $wtDest -Destination $backupPath -Force
+        }
+
+        if (Test-IsAdmin) {
+            Write-InfoLog "Creating symbolic link for Windows Terminal config (admin mode)..."
+
+            # Remove existing file/link
+            if (Test-Path $wtDest) { Remove-Item $wtDest -Force }
+
+            # Create symlink
+            New-Item -ItemType SymbolicLink -Path $wtDest -Target $wtSource -Force | Out-Null
+            Write-InfoLog "Windows Terminal config symlink created successfully"
+        }
+        else {
+            Write-WarnLog "Not running as admin, copying Windows Terminal config instead of creating symlink..."
+
+            # Remove existing file
+            if (Test-Path $wtDest) { Remove-Item $wtDest -Force }
+
+            Copy-Item -Path $wtSource -Destination $wtDest -Force
+            Write-InfoLog "Windows Terminal config copied successfully"
+            Write-WarnLog "Note: Changes to dotfiles won't auto-sync. Re-run this script as admin for symlinks."
+        }
+
+        return $true
+    }
+    catch {
+        Write-ErrorLog "Failed to deploy Windows Terminal config: $_"
+        return $false
     }
 }
 
@@ -285,7 +372,8 @@ function Test-Installation {
 function Main {
     Write-Host ""
     Write-Host "================================================================" -ForegroundColor Cyan
-    Write-Host "  komorebi + whkd + Alacritty Installation for Windows" -ForegroundColor Cyan
+    Write-Host "  Windows Dev Environment Setup" -ForegroundColor Cyan
+    Write-Host "  komorebi + whkd + Alacritty + Windows Terminal" -ForegroundColor Cyan
     Write-Host "================================================================" -ForegroundColor Cyan
     Write-Host ""
 
@@ -340,6 +428,9 @@ function Main {
         exit 1
     }
 
+    # Deploy Windows Terminal configuration
+    Deploy-WindowsTerminalConfig
+
     # Set KOMOREBI_CONFIG_HOME to point to .config/komorebi
     Set-KomorebiConfigHome
 
@@ -361,15 +452,16 @@ function Main {
     Write-Host "  Installation Complete!" -ForegroundColor Green
     Write-Host "================================================================" -ForegroundColor Green
     Write-Host ""
-    Write-InfoLog "Configuration files deployed to: $env:USERPROFILE\.config"
+    Write-InfoLog "Configuration files deployed:"
+    Write-Host "  - komorebi, whkd, alacritty: $env:USERPROFILE\.config\" -ForegroundColor Gray
+    Write-Host "  - Windows Terminal: $WINDOWS_TERMINAL_SETTINGS_PATH" -ForegroundColor Gray
     Write-Host ""
     Write-InfoLog "Next steps:"
     Write-Host "  1. Restart your terminal (or source your profile)" -ForegroundColor Cyan
-    Write-Host "  2. Launch Alacritty terminal (with Catppuccin Mocha theme)" -ForegroundColor Cyan
+    Write-Host "  2. Launch Alacritty or Windows Terminal (with Catppuccin Mocha theme)" -ForegroundColor Cyan
     Write-Host "  3. Start komorebi with status bar: komorebic start --whkd --bar" -ForegroundColor Cyan
     Write-Host "     Or without status bar: komorebic start --whkd" -ForegroundColor Cyan
     Write-Host "  4. Test keybindings (see ~/.config/whkd/whkdrc)" -ForegroundColor Cyan
-    Write-Host "  5. Customize configs in: $env:USERPROFILE\.config\" -ForegroundColor Cyan
     Write-Host ""
     Write-InfoLog "Keybinding highlights:"
     Write-Host "  - Win + 1-9/0        : Switch workspace" -ForegroundColor Cyan
@@ -386,6 +478,7 @@ function Main {
     Write-Host "  - https://lgug2z.github.io/komorebi/" -ForegroundColor Cyan
     Write-Host "  - https://github.com/LGUG2Z/whkd" -ForegroundColor Cyan
     Write-Host "  - https://alacritty.org/" -ForegroundColor Cyan
+    Write-Host "  - https://aka.ms/terminal-documentation" -ForegroundColor Cyan
     Write-Host ""
 }
 

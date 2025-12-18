@@ -8,6 +8,12 @@
   "border": true,
   "border_width": 8,
   "border_offset": -1,
+  "border_colours": {
+    "single": "#fab387",
+    "stack": "#94e2d5",
+    "monocle": "#cba6f7",
+    "unfocused": "#45475a"
+  },
   "mouse_follows_focus": true,
   "monitors": [
     {

@@ -26,10 +26,31 @@
     networkUtilities
   ]);
 
-  clan.core.networking.targetHost = lib.mkForce "root@pperanich-wsl1";
-  clan.core.networking.buildHost = "root@pperanich-wsl1";
+  clan.core = {
+    networking = {
+      targetHost = lib.mkForce "root@pperanich-wsl1";
+      buildHost = "root@pperanich-wsl1";
+    };
+    enableRecommendedDefaults = false;
+    deployment.requireExplicitUpdate = true;
+  };
 
   nixpkgs.hostPlatform = "x86_64-linux";
+
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+
+    extraPackages = with pkgs; [
+      libva-vdpau-driver
+      libvdpau-va-gl
+    ];
+  };
+
+  environment.systemPackages = with pkgs; [
+    stdenv
+    f2fs-tools
+  ];
 
   wsl = {
     enable = true;
@@ -43,21 +64,23 @@
 
   networking = {
     hostName = "pperanich-wsl1";
-    interfaces.eth0 = {
-      useDHCP = true;
-      wakeOnLan.enable = true;
-    };
-    interfaces.eth1 = {
-      useDHCP = true;
-      wakeOnLan.enable = true;
-    };
-    interfaces.eth2 = {
-      useDHCP = true;
-      wakeOnLan.enable = true;
-    };
-    interfaces.eth3 = {
-      useDHCP = true;
-      wakeOnLan.enable = true;
+    interfaces = {
+      # eth0 = {
+      #   useDHCP = true;
+      #   wakeOnLan.enable = true;
+      # };
+      # eth1 = {
+      #   useDHCP = true;
+      #   wakeOnLan.enable = true;
+      # };
+      # eth2 = {
+      #   useDHCP = true;
+      #   wakeOnLan.enable = true;
+      # };
+      # eth3 = {
+      #   useDHCP = true;
+      #   wakeOnLan.enable = true;
+      # };
     };
   };
 
@@ -71,10 +94,5 @@
     config.shared.default = "*";
   };
 
-  # configuration.nix or flake
-  environment.systemPackages = [ pkgs.f2fs-tools ];
-
-  services.resolved.enable = false;
-  clan.core.enableRecommendedDefaults = false;
-  clan.core.deployment.requireExplicitUpdate = true;
+  # services.resolved.enable = false;
 }

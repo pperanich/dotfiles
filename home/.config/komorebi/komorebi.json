@@ -1,0 +1,167 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LGUG2Z/komorebi/master/schema.json",
+  "app_specific_configuration_path": "$Env:USERPROFILE/.config/komorebi/applications.yaml",
+  "window_hiding_behaviour": "Cloak",
+  "cross_monitor_move_behaviour": "Insert",
+  "default_workspace_padding": 6,
+  "default_container_padding": 6,
+  "border": true,
+  "border_width": 8,
+  "border_offset": -1,
+  "mouse_follows_focus": true,
+  "focus_follows_mouse": "None",
+  "monitors": [
+    {
+      "workspaces": [
+        {
+          "name": "1-mail",
+          "layout": "BSP"
+        },
+        {
+          "name": "2-slack",
+          "layout": "BSP"
+        },
+        {
+          "name": "3-web",
+          "layout": "BSP"
+        },
+        {
+          "name": "4-term",
+          "layout": "BSP"
+        },
+        {
+          "name": "5-ide",
+          "layout": "BSP"
+        },
+        {
+          "name": "6-notes",
+          "layout": "BSP"
+        },
+        {
+          "name": "7-zoom",
+          "layout": "BSP"
+        },
+        {
+          "name": "8-social",
+          "layout": "BSP"
+        },
+        {
+          "name": "9",
+          "layout": "BSP"
+        },
+        {
+          "name": "10",
+          "layout": "BSP"
+        }
+      ]
+    }
+  ],
+  "float_rules": [
+    {
+      "kind": "Title",
+      "id": "Settings",
+      "matching_strategy": "Substring"
+    },
+    {
+      "kind": "Title",
+      "id": "Preferences",
+      "matching_strategy": "Substring"
+    },
+    {
+      "kind": "Title",
+      "id": "Properties",
+      "matching_strategy": "Substring"
+    },
+    {
+      "kind": "Title",
+      "id": "Task Manager",
+      "matching_strategy": "Substring"
+    }
+  ],
+  "workspace_rules": [
+    {
+      "exe": "OUTLOOK.EXE",
+      "workspace": 0
+    },
+    {
+      "exe": "slack.exe",
+      "workspace": 1
+    },
+    {
+      "exe": "Teams.exe",
+      "workspace": 1
+    },
+    {
+      "exe": "ms-teams.exe",
+      "workspace": 1
+    },
+    {
+      "exe": "chrome.exe",
+      "workspace": 2
+    },
+    {
+      "exe": "msedge.exe",
+      "workspace": 2
+    },
+    {
+      "exe": "firefox.exe",
+      "workspace": 2
+    },
+    {
+      "exe": "brave.exe",
+      "workspace": 2
+    },
+    {
+      "exe": "WindowsTerminal.exe",
+      "workspace": 3
+    },
+    {
+      "exe": "powershell.exe",
+      "workspace": 3
+    },
+    {
+      "exe": "pwsh.exe",
+      "workspace": 3
+    },
+    {
+      "exe": "alacritty.exe",
+      "workspace": 3
+    },
+    {
+      "exe": "Code.exe",
+      "workspace": 4
+    },
+    {
+      "exe": "devenv.exe",
+      "workspace": 4
+    },
+    {
+      "exe": "idea64.exe",
+      "workspace": 4
+    },
+    {
+      "exe": "ONENOTE.EXE",
+      "workspace": 5
+    },
+    {
+      "exe": "Notion.exe",
+      "workspace": 5
+    },
+    {
+      "exe": "Obsidian.exe",
+      "workspace": 5
+    },
+    {
+      "exe": "Zoom.exe",
+      "workspace": 6
+    },
+    {
+      "exe": "Discord.exe",
+      "workspace": 7
+    },
+    {
+      "exe": "Element.exe",
+      "workspace": 7
+    }
+  ]
+}

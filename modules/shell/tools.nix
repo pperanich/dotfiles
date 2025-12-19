@@ -76,6 +76,8 @@ _: {
           pixi # Package management made easy
           python-launcher # An implementation of the `py` command for Unix-based platforms
 
+          julia-bin # High-level performance-oriented dynamical language for technical computing
+
           # Development - Build Tools & Frameworks
           cmake # Cross-platform, open-source build system generator
           gnumake # Tool to control the generation of non-source files from sources

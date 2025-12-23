@@ -23,6 +23,9 @@
     ];
 
     inventory = {
+      machines."pperanich-ml1".machineClass = "darwin";
+      machines."pperanich-ml1".tags = [ "laptop" ];
+
       machines."peranpl1-ml1".machineClass = "darwin";
       machines."peranpl1-ml1".tags = [ "laptop" ];
 

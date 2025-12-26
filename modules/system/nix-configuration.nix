@@ -109,7 +109,6 @@
     {
       imports = [
         inputs.home-manager.darwinModules.home-manager
-        inputs.mac-app-util.darwinModules.default
         inputs.nix-index-database.darwinModules.nix-index
         inputs.determinate.darwinModules.default
       ];

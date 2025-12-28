@@ -76,7 +76,7 @@ _: {
           pixi # Package management made easy
           python-launcher # An implementation of the `py` command for Unix-based platforms
 
-          julia-bin # High-level performance-oriented dynamical language for technical computing
+          # julia-bin # High-level performance-oriented dynamical language for technical computing
 
           # Development - Build Tools & Frameworks
           cmake # Cross-platform, open-source build system generator
@@ -137,11 +137,13 @@ _: {
         ];
       home = {
         sessionPath = [
+          "${config.home.homeDirectory}/.local/bin"
           "${config.home.homeDirectory}/.npm-global/bin"
           "${config.home.homeDirectory}/dotfiles/bin"
           "${config.home.homeDirectory}/.pixi/bin"
           "${config.home.homeDirectory}/.rye/shims"
           "${config.home.homeDirectory}/.cargo/bin"
+          "${config.home.homeDirectory}/.opencode/bin"
           "${config.home.homeDirectory}/go/bin"
         ];
       };

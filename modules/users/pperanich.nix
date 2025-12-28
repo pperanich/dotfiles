@@ -1,10 +1,12 @@
-{ config, ... }:
+_:
 {
   # pperanich user configuration - both NixOS system user and home-manager setup
   flake.modules.nixos.pperanich =
     {
+      config,
       lib,
       pkgs,
+      modules,
       ...
     }:
     {
@@ -38,7 +40,7 @@
             _:
             import (lib.my.relativeToRoot "home-profiles/pperanich") {
               inherit pkgs;
-              inherit (config.flake.modules) homeManager;
+              inherit (modules) homeManager;
             }
           )
         ];
@@ -48,8 +50,10 @@
   # Darwin system user configuration
   flake.modules.darwin.pperanich =
     {
+      config,
       lib,
       pkgs,
+      modules,
       ...
     }:
     {
@@ -60,30 +64,36 @@
           (builtins.readFile ./peranpl1_id_ed25519.pub)
         ];
         shell = pkgs.zsh;
-        hashedPasswordFile = config.sops.secrets.pperanich-password.path;
-        isNormalUser = true;
-        extraGroups = [
-          "wheel"
-          "video"
-          "audio"
-          "dialout"
-        ]
-        ++ (builtins.filter (group: builtins.hasAttr group config.users.groups) [
-          "network"
-          "wireshark"
-          "i2c"
-          "mysql"
-          "docker"
-          "podman"
-          "git"
-        ]);
+        packages = [ pkgs.home-manager ];
+        home = "/Users/pperanich";
+        # hashedPasswordFile = config.sops.secrets.pperanich-password.path;
+        # isNormalUser = true;
+        # extraGroups = [
+        #   "wheel"
+        #   "video"
+        #   "audio"
+        #   "dialout"
+        # ]
+        # ++ (builtins.filter (group: builtins.hasAttr group config.users.groups) [
+        #   "network"
+        #   "wireshark"
+        #   "i2c"
+        #   "mysql"
+        #   "docker"
+        #   "podman"
+        #   "git"
+        # ]);
       };
 
+      system.primaryUser = "pperanich";
+
+      launchd.user.envVariables = config.home-manager.users.pperanich.home.sessionVariables;
+
       # Enable zsh system-wide
-      programs.zsh = {
-        enable = true;
-        enableCompletion = false;
-      };
+      # programs.zsh = {
+      #   enable = true;
+      #   enableCompletion = false;
+      # };
 
       # Add to trusted users for nix
       nix.settings.trusted-users = [ "pperanich" ];
@@ -99,6 +109,7 @@
             _:
             import (lib.my.relativeToRoot "home-profiles/pperanich") {
               inherit pkgs;
+              inherit (modules) homeManager;
             }
           )
         ];

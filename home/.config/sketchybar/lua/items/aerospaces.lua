@@ -59,9 +59,9 @@ for _, workspace_id in ipairs(workspace_list) do
 		background = {
 			color = colors.bg1,
 			border_width = 1,
-			height = 30,
+			height = settings.item.height,
 			border_color = colors.transparent,
-			corner_radius = 15,
+			corner_radius = settings.item.corner_radius,
 		},
 		click_script = "/opt/homebrew/bin/aerospace workspace " .. i,
 	})
@@ -73,9 +73,9 @@ for _, workspace_id in ipairs(workspace_list) do
 		background = {
 			color = colors.transparent,
 			border_color = colors.transparent,
-			height = 32,
+			height = settings.bracket.height,
 			border_width = 1,
-			corner_radius = 16,
+			corner_radius = settings.bracket.corner_radius,
 		},
 	})
 
@@ -195,3 +195,43 @@ sbar.exec("/opt/homebrew/bin/aerospace list-workspaces --focused", function(resu
 	end
 end)
 update_space_icons()
+
+-- Register custom event for mode changes
+sbar.add("event", "aerospace_mode_change")
+
+-- Mode indicator (only shown when not in main mode)
+local mode_indicator = sbar.add("item", "aerospace.mode", {
+	icon = {
+		string = "",
+		padding_left = 0,
+		padding_right = 0,
+	},
+	label = {
+		string = "",
+		font = { family = settings.font.text, style = settings.font.style_map["Bold"], size = 12.0 },
+		color = colors.base,
+		padding_left = 8,
+		padding_right = 8,
+	},
+	background = {
+		color = colors.peach,
+		corner_radius = settings.mode.corner_radius,
+		height = settings.mode.height,
+	},
+	padding_left = 8,
+	padding_right = 0,
+	drawing = false,
+	updates = true,
+})
+
+mode_indicator:subscribe("aerospace_mode_change", function(env)
+	local mode = env.MODE
+	if mode and mode ~= "" then
+		mode_indicator:set({
+			label = { string = mode:upper() },
+			drawing = true,
+		})
+	else
+		mode_indicator:set({ drawing = false })
+	end
+end)

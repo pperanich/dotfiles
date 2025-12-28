@@ -57,8 +57,8 @@ local weather = sbar.add("item", "widgets.weather", {
 		color = colors.bg1,
 		border_color = colors.orange,
 		border_width = 1,
-		height = 30,
-		corner_radius = 15,
+		height = settings.item.height,
+		corner_radius = settings.item.corner_radius,
 	},
 })
 

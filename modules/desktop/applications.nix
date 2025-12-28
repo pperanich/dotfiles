@@ -18,6 +18,7 @@ _: {
           alacritty # GPU-accelerated terminal emulator
           brave # Privacy-focused web browser
           wireshark # Network protocol analyzer
+          discord # Chat and voice communication
           # reaper        # Digital audio workstation
           # vlc # Media player
           # postman
@@ -46,12 +47,11 @@ _: {
           # docker-desktop
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
-          discord # Chat and voice communication
           slack # Team communication platform
         ]
         ++ lib.optionals (!(pkgs.stdenv.hostPlatform.isAarch64 && pkgs.stdenv.hostPlatform.isLinux)) [
           zotero # Reference manager
-          spotify # Music streaming client
+          # spotify # Music streaming client
         ];
     };
 }

@@ -37,9 +37,9 @@ in
       imports = [ inputs.sops-nix.homeManagerModules.sops ];
       home.packages = [ pkgs.sops ];
       sops = {
-        package = pkgs.sops-install-secrets.overrideAttrs (_old: {
-          env.GODEBUG = "x509negativeserial=1";
-        });
+        # package = pkgs.sops-install-secrets.overrideAttrs (_old: {
+        #   env.GODEBUG = "x509negativeserial=1";
+        # });
         # This is the location of the host specific age-key and will to have been extracted to this location via hosts/shared/core/sops.nix on the host
         age = {
           keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";

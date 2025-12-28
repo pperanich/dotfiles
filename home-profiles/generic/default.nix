@@ -32,5 +32,5 @@
   ];
 
   # State version set by mkHomeConfigurations
-  home.stateVersion = "25.05";
+  home.stateVersion = "25.11";
 }

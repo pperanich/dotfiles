@@ -13,8 +13,8 @@ font-feature = -calt
 font-feature = -dlig
 font-feature = -liga
 
-# theme = Catppuccin Mocha
-theme = catppuccin-mocha
+theme = Catppuccin Mocha
+#theme = catppuccin-mocha
 clipboard-read = allow
 clipboard-write = allow
 copy-on-select = clipboard

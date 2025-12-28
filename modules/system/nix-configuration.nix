@@ -163,7 +163,7 @@
         brews = [
           "xcode-build-server"
           "xcbeautify"
-          "wojciech-kulik/tap/xcp"
+          #"wojciech-kulik/tap/xcp"
         ];
       };
 
@@ -231,7 +231,7 @@
         FLAKE = "${config.home.homeDirectory}/dotfiles/";
       };
       home.enableNixpkgsReleaseCheck = false;
-      home.stateVersion = "25.05";
+      home.stateVersion = "25.11";
       home.homeDirectory = "/${homePrefix}/${config.home.username}";
 
       home.activation = {

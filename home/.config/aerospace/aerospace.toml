@@ -26,7 +26,14 @@ automatically-unhide-macos-hidden-apps = true
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # Commands to run after AeroSpace starts
-after-startup-command = []
+after-startup-command = [
+  'workspace 7',
+  'layout accordion',
+  'workspace-back-and-forth',
+  'workspace 8',
+  'layout accordion',
+  'workspace-back-and-forth',
+]
 
 exec-on-workspace-change = [
   '/bin/bash',
@@ -50,7 +57,7 @@ outer.right = 6
 # Top gap is bar height 32px + 2 * y_offset 4px = 40
 # Notch on M3 Macbook Pro 16in = 64 physical px / 2 = 32 points (logical pixels)
 # Add 1 for janky borders width
-# => gap should be 41 - 32 = 8
+# => gap should be 41 - 32 = 9
 # => just 41 on all other monitors
 outer.top = [{ monitor."built-in" = 9 }, 41]
 
@@ -66,7 +73,7 @@ preset = 'qwerty'
 # ========================================
 
 # Define numbered workspaces with functional labels
-# 1: mail, 2: slack, 3: web, 4: term, 5: ide, 6: notes, 7: zoom, 8: social
+# 1: term, 2: web, 3: notes, 4: ide, 5: slack, 6: mail, 7: zoom, 8: social
 
 [workspace-to-monitor-force-assignment]
 # If you have multiple monitors, you can force workspaces to specific monitors
@@ -140,29 +147,29 @@ alt-tab = 'workspace-back-and-forth' # Alternative (from default config)
 alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
 # Direct workspace access (cmd + number)
-cmd-1 = 'workspace 1'  # mail
-cmd-2 = 'workspace 2'  # slack
-cmd-3 = 'workspace 3'  # web
-cmd-4 = 'workspace 4'  # term
-cmd-5 = 'workspace 5'  # ide
-cmd-6 = 'workspace 6'  # notes
-cmd-7 = 'workspace 7'  # zoom
-cmd-8 = 'workspace 8'  # social
-cmd-9 = 'workspace 9'
-cmd-0 = 'workspace 10'
+cmd-1 = 'workspace 1' # term
+cmd-2 = 'workspace 2' # web
+cmd-3 = 'workspace 3' # notes
+cmd-4 = 'workspace 4' # ide
+cmd-5 = 'workspace 5' # slack
+cmd-6 = 'workspace 6' # mail
+cmd-7 = 'workspace 7' # zoom
+cmd-8 = 'workspace 8' # social
+# cmd-9 = 'workspace 9'
+# cmd-0 = 'workspace 10'
 
 # ----------------------------------------
 # Move Window to Workspace
 # ----------------------------------------
-alt-shift-1 = 'move-node-to-workspace 1' # mail
-alt-shift-2 = 'move-node-to-workspace 2' # slack
-alt-shift-3 = 'move-node-to-workspace 3' # web
-alt-shift-4 = 'move-node-to-workspace 4' # term
-alt-shift-5 = 'move-node-to-workspace 5' # ide
-alt-shift-6 = 'move-node-to-workspace 6' # notes
+alt-shift-1 = 'move-node-to-workspace 1' # term
+alt-shift-2 = 'move-node-to-workspace 2' # web
+alt-shift-3 = 'move-node-to-workspace 3' # notes
+alt-shift-4 = 'move-node-to-workspace 4' # ide
+alt-shift-5 = 'move-node-to-workspace 5' # slack
+alt-shift-6 = 'move-node-to-workspace 6' # mail
 alt-shift-7 = 'move-node-to-workspace 7' # zoom
 alt-shift-8 = 'move-node-to-workspace 8' # social
-alt-shift-9 = 'move-node-to-workspace 9'
+# alt-shift-9 = 'move-node-to-workspace 9'
 
 # Move to recent workspace and follow
 # NOTE: AeroSpace's move-node-to-workspace doesn't support --workspace-back-and-forth flag
@@ -250,13 +257,40 @@ alt-ctrl-3 = 'focus-monitor 3'
 # ----------------------------------------
 # Enter resize mode (IMPROVEMENT: modal resizing like i3)
 # Using ctrl-alt-r to avoid conflict with alt-r (layout floating)
-ctrl-alt-r = 'mode resize'
+ctrl-alt-r = [
+  'mode resize',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=resize',
+]
 
 # ----------------------------------------
 # Service Mode
 # ----------------------------------------
 # Enter service mode for administrative tasks
-alt-shift-semicolon = 'mode service'
+alt-shift-semicolon = [
+  'mode service',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=service',
+]
+
+# ----------------------------------------
+# Passthrough Mode
+# ----------------------------------------
+# Disable all AeroSpace keybindings (press esc to return)
+alt-shift-p = [
+  'mode passthrough',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=passthrough',
+]
+
+# ========================================
+# PASSTHROUGH MODE
+# ========================================
+# Disables all keybindings except esc to return to main mode
+# Useful when you need all keys to pass through to the active application
+
+[mode.passthrough.binding]
+esc = [
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
 
 # ========================================
 # RESIZE MODE (IMPROVEMENT)
@@ -286,8 +320,14 @@ shift-up = 'resize height +20'
 shift-right = 'resize width -20'
 
 # Exit resize mode
-enter = 'mode main'
-esc = 'mode main'
+enter = [
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
+esc = [
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
 
 # ========================================
 # SERVICE MODE (IMPROVEMENT)
@@ -295,24 +335,63 @@ esc = 'mode main'
 
 [mode.service.binding]
 # Access with alt-shift-semicolon
-esc = ['reload-config', 'mode main']
-r = ['flatten-workspace-tree', 'mode main']
-f = ['layout floating tiling', 'mode main']                # Toggle between floating and tiling
-backspace = ['close-all-windows-but-current', 'mode main']
+esc = [
+  'reload-config',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
+r = [
+  'flatten-workspace-tree',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
+f = [
+  'layout floating tiling',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
+backspace = [
+  'close-all-windows-but-current',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
 
 # Join windows (from default config)
-alt-shift-h = ['join-with left', 'mode main']
-alt-shift-j = ['join-with down', 'mode main']
-alt-shift-k = ['join-with up', 'mode main']
-alt-shift-l = ['join-with right', 'mode main']
+alt-shift-h = [
+  'join-with left',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
+alt-shift-j = [
+  'join-with down',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
+alt-shift-k = [
+  'join-with up',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
+alt-shift-l = [
+  'join-with right',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
 
 # Volume controls (from default config)
 down = 'volume down'
 up = 'volume up'
-shift-down = ['volume set 0', 'mode main'] # Mute
+shift-down = [
+  'volume set 0',
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
 
 # Return to main mode
-enter = 'mode main'
+enter = [
+  'mode main',
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=',
+]
 
 # ========================================
 # WINDOW RULES & AUTO-ASSIGNMENTS
@@ -340,42 +419,46 @@ run = 'layout floating'
 # App-to-Workspace Assignments
 # ----------------------------------------
 
-# Workspace 1: Mail
-[[on-window-detected]]
-if.app-id = 'com.microsoft.Outlook'
-run = 'move-node-to-workspace 1'
-
-# Workspace 2: Slack
-[[on-window-detected]]
-if.app-id = 'com.tinyspeck.slackmacgap'
-run = 'move-node-to-workspace 2'
-
-# Workspace 3: Web
-[[on-window-detected]]
-if.app-id = 'com.apple.Safari'
-run = 'move-node-to-workspace 3'
-
-[[on-window-detected]]
-if.app-id = 'com.brave.Browser'
-run = 'move-node-to-workspace 3'
-
-# Workspace 4: Term
+# Workspace 1: Term
 [[on-window-detected]]
 if.app-id = 'org.alacritty'
-run = 'move-node-to-workspace 4'
+run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
-run = 'move-node-to-workspace 4'
+run = 'move-node-to-workspace 1'
 
-# Workspace 5: IDE
+# Workspace 2: Web
 [[on-window-detected]]
-if.app-id = 'com.microsoft.VSCode'
-run = 'move-node-to-workspace 5'
+if.app-id = 'com.apple.Safari'
+run = 'move-node-to-workspace 2'
 
-# Workspace 6: Notes
+[[on-window-detected]]
+if.app-id = 'com.brave.Browser'
+run = 'move-node-to-workspace 2'
+
+# Workspace 3: Notes
 [[on-window-detected]]
 if.app-id = 'md.obsidian'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.Notes'
+run = 'move-node-to-workspace 3'
+
+# Workspace 4: IDE
+[[on-window-detected]]
+if.app-id = 'com.microsoft.VSCode'
+run = 'move-node-to-workspace 4'
+
+# Workspace 5: Slack
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 5'
+
+# Workspace 6: Mail
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Outlook'
 run = 'move-node-to-workspace 6'
 
 # Workspace 7: Zoom

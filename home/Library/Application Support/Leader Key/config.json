@@ -1,39 +1,122 @@
 {
   "type": "group",
   "actions": [
-    { "key": "t", "type": "application", "value": "/Applications/Ghostty.app" },
-    { "key": "b", "type": "application", "value": "/Applications/Brave Browser.app" },
-    { "key": "c", "type": "application", "value": "/Users/pperanich/Applications/Home Manager Apps/Visual Studio Code.app" },
-    { "key": "f", "type": "application", "value": "/System/Library/CoreServices/Finder.app" },
-    { "key": "m", "type": "application", "value": "/System/Applications/Messages.app" },
-    { "key": "n", "type": "application", "value": "/System/Applications/Notes.app" },
-    { "key": "s", "type": "application", "value": "/Applications/Slack.app" },
-    { "key": "d", "type": "application", "value": "/Users/pperanich/Applications/Home Manager Apps/Discord.app" },
-    { "key": "z", "type": "application", "value": "/Applications/zoom.us.app" },
-    { "key": "e", "type": "application", "value": "/Applications/Microsoft Outlook.app" },
-    { "key": "l", "type": "command", "value": "pmset displaysleepnow" },
+    {
+      "key": "t",
+      "type": "application",
+      "value": "/Applications/Ghostty.app"
+    },
+    {
+      "key": "b",
+      "type": "application",
+      "value": "/Applications/Brave Browser.app"
+    },
+    {
+      "key": "c",
+      "type": "application",
+      "value": "/Users/pperanich/Applications/Home Manager Apps/Visual Studio Code.app"
+    },
+    {
+      "key": "f",
+      "type": "application",
+      "value": "/System/Library/CoreServices/Finder.app"
+    },
+    {
+      "key": "m",
+      "type": "application",
+      "value": "/System/Applications/Messages.app"
+    },
+    {
+      "key": "n",
+      "type": "application",
+      "value": "/System/Applications/Notes.app"
+    },
+    {
+      "key": "s",
+      "type": "application",
+      "value": "/Applications/Slack.app"
+    },
+    {
+      "key": "d",
+      "type": "application",
+      "value": "/Users/pperanich/Applications/Home Manager Apps/Discord.app"
+    },
+    {
+      "key": "z",
+      "type": "application",
+      "value": "/Applications/zoom.us.app"
+    },
+    {
+      "key": "e",
+      "type": "application",
+      "value": "/Applications/Microsoft Outlook.app"
+    },
+    {
+      "key": "l",
+      "type": "command",
+      "value": "pmset displaysleepnow"
+    },
     {
       "key": "o",
       "type": "group",
       "actions": [
-        { "key": "s", "type": "application", "value": "/Applications/Safari.app" },
-        { "key": "u", "type": "application", "value": "/System/Applications/Music.app" },
-        { "key": "p", "type": "application", "value": "/System/Applications/System Settings.app" },
-        { "key": "a", "type": "application", "value": "/System/Applications/Utilities/Activity Monitor.app" }
+        {
+          "key": "s",
+          "type": "application",
+          "value": "/Applications/Safari.app"
+        },
+        {
+          "key": "u",
+          "type": "application",
+          "value": "/System/Applications/Music.app"
+        },
+        {
+          "key": "p",
+          "type": "application",
+          "value": "/System/Applications/System Settings.app"
+        },
+        {
+          "key": "a",
+          "type": "application",
+          "value": "/System/Applications/Utilities/Activity Monitor.app"
+        }
       ]
     },
     {
       "key": "w",
       "type": "group",
       "actions": [
-        { "key": "f", "type": "command", "value": "/opt/homebrew/bin/aerospace layout floating" },
-        { "key": "t", "type": "command", "value": "/opt/homebrew/bin/aerospace layout tiling" },
-        { "key": "c", "type": "command", "value": "/opt/homebrew/bin/aerospace layout floating && /opt/homebrew/bin/aerospace resize smart 800" },
-        { "key": "m", "type": "command", "value": "/opt/homebrew/bin/aerospace fullscreen" },
-        { "key": "n", "type": "command", "value": "/opt/homebrew/bin/aerospace macos-native-fullscreen" },
-        { "key": "b", "type": "command", "value": "/opt/homebrew/bin/aerospace balance-sizes" }
+        {
+          "key": "f",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace layout floating"
+        },
+        {
+          "key": "t",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace layout tiling"
+        },
+        {
+          "key": "c",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace layout floating && /opt/homebrew/bin/aerospace resize smart 800"
+        },
+        {
+          "key": "m",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace fullscreen"
+        },
+        {
+          "key": "n",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace macos-native-fullscreen"
+        },
+        {
+          "key": "b",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace balance-sizes"
+        }
       ]
     }
   ]
 }
-

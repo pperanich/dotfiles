@@ -127,11 +127,38 @@
       programs.zsh.enableBashCompletion = false;
 
       system.defaults = {
+        spaces.spans-displays = false;
+        universalaccess.reduceMotion = true;
         dock = {
           autohide = true;
           showhidden = true;
           mru-spaces = false;
           launchanim = false;
+          persistent-apps = [
+            # Workspace 1: Term
+            "/Applications/Ghostty.app"
+            # Workspace 2: Web
+            "/Applications/Brave Browser.app"
+            # "/Applications/Safari.app"
+            # Workspace 3: Notes
+            "/Applications/Obsidian.app"
+            "/System/Applications/Notes.app"
+            # Workspace 4: IDE
+            # Note: VS Code is installed via Home Manager
+            "/Users/pperanich/Applications/Home Manager Apps/Visual Studio Code.app"
+            # Workspace 5: Slack
+            "/Applications/Slack.app"
+            # Workspace 6: Mail
+            "/Applications/Microsoft Outlook.app"
+            # Workspace 7: Zoom
+            "/Applications/zoom.us.app"
+            # Workspace 8: Social
+            "/System/Applications/Messages.app"
+            # Note: Discord is installed via Home Manager
+            "/Users/pperanich/Applications/Home Manager Apps/Discord.app"
+            # Utils
+            "/System/Applications/System Settings.app"
+          ];
         };
         finder = {
           AppleShowAllExtensions = true;
@@ -160,11 +187,27 @@
       };
       homebrew = {
         enable = true;
+        greedyCasks = true;
+        taps = [
+          "nikitabobko/tap"
+        ];
         brews = [
           "xcode-build-server"
           "xcbeautify"
-          #"wojciech-kulik/tap/xcp"
+          "xcp"
         ];
+        casks = [
+          "slack"
+          "microsoft-outlook"
+          "zoom"
+          "obsidian"
+          "aerospace"
+          "leader-key"
+        ];
+        onActivation = {
+          autoUpdate = true;
+          upgrade = true;
+        };
       };
 
       environment.systemPackages = with pkgs; [

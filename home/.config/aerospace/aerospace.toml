@@ -30,6 +30,9 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # Commands to run after AeroSpace starts
 after-startup-command = [
+  'workspace 3',
+  'layout accordion',
+  'workspace-back-and-forth',
   'workspace 7',
   'layout accordion',
   'workspace-back-and-forth',

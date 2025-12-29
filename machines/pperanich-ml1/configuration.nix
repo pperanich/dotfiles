@@ -20,14 +20,6 @@
     sketchybar
   ];
 
-  # services.aerospace.enable = true;
-  homebrew = {
-    casks = [
-      "nikitabobko/tap/aerospace"
-      "leader-key"
-    ];
-  };
-
   clan.core.networking.targetHost = lib.mkForce "root@pperanich-ml1";
   clan.core.networking.buildHost = "root@pperanich-ml1";
 

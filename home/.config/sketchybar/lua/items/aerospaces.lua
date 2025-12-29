@@ -4,7 +4,26 @@ local colors = require("lua.colors")
 local settings = require("lua.settings")
 
 local spaces = {}
+local space_brackets = {}
+local space_paddings = {}
 local focused_workspace = nil
+
+-- Get workspace-to-monitor mapping using NSScreen IDs (maps to SketchyBar display)
+local function get_workspace_monitor_mapping()
+	local mapping = {}
+	local handle = io.popen("/opt/homebrew/bin/aerospace list-workspaces --all --format '%{workspace}|%{monitor-appkit-nsscreen-screens-id}'")
+	if handle then
+		for line in handle:lines() do
+			local ws, display = line:match("([^|]+)|([^|]+)")
+			if ws and display then
+				ws = ws:match("^%s*(.-)%s*$")
+				mapping[ws] = tonumber(display)
+			end
+		end
+		handle:close()
+	end
+	return mapping
+end
 
 -- Dynamically get the list of workspaces from aerospace
 local function get_aerospace_workspaces()
@@ -32,10 +51,39 @@ if #workspace_list == 0 then
 	end
 end
 
+-- Get initial workspace-monitor mapping
+local workspace_displays = get_workspace_monitor_mapping()
+
+-- Update all workspace display assignments (called on display_change and workspace moves)
+local function update_workspace_displays()
+	sbar.exec("/opt/homebrew/bin/aerospace list-workspaces --all --format '%{workspace}|%{monitor-appkit-nsscreen-screens-id}'", function(result)
+		if not result then return end
+		for line in result:gmatch("[^\r\n]+") do
+			local ws, disp = line:match("([^|]+)|([^|]+)")
+			if ws and disp then
+				ws = ws:match("^%s*(.-)%s*$")
+				local key = tonumber(ws) or ws
+				local new_display = tonumber(disp)
+				if spaces[key] then
+					spaces[key]:set({ display = new_display })
+				end
+				if space_brackets[key] then
+					space_brackets[key]:set({ display = new_display })
+				end
+				if space_paddings[key] then
+					space_paddings[key]:set({ display = new_display })
+				end
+			end
+		end
+	end)
+end
+
 -- Create workspace items for each configured workspace
 for _, workspace_id in ipairs(workspace_list) do
 	local i = tonumber(workspace_id) or workspace_id
+	local display_id = workspace_displays[workspace_id] or 1
 	local space = sbar.add("item", "space." .. i, {
+		display = display_id,
 		icon = {
 			font = { family = settings.font.text, style = settings.font.style_map["Bold"], size = 14.0 },
 			string = i,
@@ -70,6 +118,7 @@ for _, workspace_id in ipairs(workspace_list) do
 
 	-- Single item bracket for space items to achieve double border on highlight
 	local space_bracket = sbar.add("bracket", "bracket." .. i, { space.name }, {
+		display = display_id,
 		background = {
 			color = colors.transparent,
 			border_color = colors.transparent,
@@ -79,10 +128,15 @@ for _, workspace_id in ipairs(workspace_list) do
 		},
 	})
 
+	space_brackets[i] = space_bracket
+
 	-- Padding space
-	sbar.add("item", "space.padding." .. i, {
+	local space_padding = sbar.add("item", "space.padding." .. i, {
+		display = display_id,
 		width = settings.group_paddings,
 	})
+
+	space_paddings[i] = space_padding
 
 	-- Subscribe to aerospace_workspace_change event
 	space:subscribe("aerospace_workspace_change", function(env)
@@ -97,6 +151,7 @@ for _, workspace_id in ipairs(workspace_list) do
 			background = { border_color = selected and colors.light_border or colors.transparent },
 		})
 	end)
+
 
 	-- Mouse hover effects
 	space:subscribe("mouse.entered", function(env)
@@ -181,9 +236,16 @@ end
 -- Subscribe to various events to update app icons
 -- The individual space items handle their own highlight updates via aerospace_workspace_change
 -- This observer handles updating the app icons for all workspaces when windows change
-space_window_observer:subscribe("aerospace_workspace_change", update_space_icons)
+space_window_observer:subscribe("aerospace_workspace_change", function()
+	update_space_icons()
+	update_workspace_displays() -- Also handles manual workspace-to-monitor moves
+end)
 space_window_observer:subscribe("front_app_switched", update_space_icons)
 space_window_observer:subscribe("space_windows_change", update_space_icons)
+space_window_observer:subscribe("display_change", function()
+	update_workspace_displays()
+	update_space_icons()
+end)
 
 -- Initial update: get current focused workspace and trigger event to highlight it
 sbar.exec("/opt/homebrew/bin/aerospace list-workspaces --focused", function(result)
@@ -198,6 +260,10 @@ update_space_icons()
 
 -- Register custom event for mode changes
 sbar.add("event", "aerospace_mode_change")
+
+-- Register custom event for window moves (triggered from aerospace keybindings)
+sbar.add("event", "aerospace_window_move")
+space_window_observer:subscribe("aerospace_window_move", update_space_icons)
 
 -- Mode indicator (only shown when not in main mode)
 local mode_indicator = sbar.add("item", "aerospace.mode", {
@@ -226,7 +292,8 @@ local mode_indicator = sbar.add("item", "aerospace.mode", {
 
 mode_indicator:subscribe("aerospace_mode_change", function(env)
 	local mode = env.MODE
-	if mode and mode ~= "" then
+	-- Hide indicator for main mode (default) or empty mode
+	if mode and mode ~= "" and mode ~= "main" then
 		mode_indicator:set({
 			label = { string = mode:upper() },
 			drawing = true,

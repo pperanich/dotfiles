@@ -1,4 +1,4 @@
-require("lua.items.apple")
+-- require("lua.items.apple")
 -- require("lua.items.menus")
 require("lua.items.aerospaces")
 -- require("lua.items.front_app")

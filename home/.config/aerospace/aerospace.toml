@@ -47,7 +47,9 @@ exec-on-workspace-change = [
 
 # Trigger SketchyBar when mode changes (v0.20+)
 # This replaces manual triggers in each mode binding
-on-mode-changed = ['exec-and-forget sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)']
+on-mode-changed = [
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)',
+]
 
 # Keep workspaces alive even when empty - important for stable multi-monitor assignments
 persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8']
@@ -95,16 +97,16 @@ preset = 'qwerty'
 # Override for specific displays by adding monitor name first, e.g.: ['C27F398', 'secondary', 'main']
 #
 # Primary workspaces on main display:
-1 = ['main', 'built-in']                  # term
-4 = ['main', 'built-in']                  # ide
-5 = ['main', 'built-in']                  # slack
+1 = ['main', 'built-in'] # term
+4 = ['main', 'built-in'] # ide
+5 = ['main', 'built-in'] # slack
 #
 # Secondary workspaces on external when available:
-2 = ['secondary', 'main', 'built-in']     # web
-3 = ['secondary', 'main', 'built-in']     # notes
-6 = ['secondary', 'main', 'built-in']     # mail
-7 = ['secondary', 'main', 'built-in']     # zoom
-8 = ['secondary', 'main', 'built-in']     # social
+2 = ['secondary', 'main', 'built-in'] # web
+3 = ['secondary', 'main', 'built-in'] # notes
+6 = ['secondary', 'main', 'built-in'] # mail
+7 = ['secondary', 'main', 'built-in'] # zoom
+8 = ['secondary', 'main', 'built-in'] # social
 
 # ========================================
 # MODES
@@ -159,11 +161,15 @@ alt-shift-right = 'move right'
 # ----------------------------------------
 # Workspace Navigation
 # ----------------------------------------
-# Navigate to previous/next workspace
-cmd-left = 'workspace prev'
-cmd-right = 'workspace next'
-cmd-h = 'workspace prev'
-cmd-l = 'workspace next'
+# Navigate to previous/next workspace (wraps across monitors)
+# cmd-left = 'workspace --wrap-around prev'
+# cmd-right = 'workspace --wrap-around next'
+cmd-left = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin prev'
+cmd-right = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin next'
+# cmd-h = 'workspace --wrap-around prev'
+# cmd-l = 'workspace --wrap-around next'
+cmd-h = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin prev'
+cmd-l = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin next'
 
 # Back and forth between recent workspaces (like i3)
 alt-b = 'workspace-back-and-forth'
@@ -188,14 +194,38 @@ cmd-8 = 'workspace 8' # social
 # Move Window to Workspace
 # ----------------------------------------
 # Each binding triggers sketchybar to update app icons after moving
-alt-shift-1 = ['move-node-to-workspace 1', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # term
-alt-shift-2 = ['move-node-to-workspace 2', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # web
-alt-shift-3 = ['move-node-to-workspace 3', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # notes
-alt-shift-4 = ['move-node-to-workspace 4', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # ide
-alt-shift-5 = ['move-node-to-workspace 5', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # slack
-alt-shift-6 = ['move-node-to-workspace 6', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # mail
-alt-shift-7 = ['move-node-to-workspace 7', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # zoom
-alt-shift-8 = ['move-node-to-workspace 8', 'exec-and-forget sketchybar --trigger aerospace_window_move'] # social
+alt-shift-1 = [
+  'move-node-to-workspace 1',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # term
+alt-shift-2 = [
+  'move-node-to-workspace 2',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # web
+alt-shift-3 = [
+  'move-node-to-workspace 3',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # notes
+alt-shift-4 = [
+  'move-node-to-workspace 4',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # ide
+alt-shift-5 = [
+  'move-node-to-workspace 5',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # slack
+alt-shift-6 = [
+  'move-node-to-workspace 6',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # mail
+alt-shift-7 = [
+  'move-node-to-workspace 7',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # zoom
+alt-shift-8 = [
+  'move-node-to-workspace 8',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # social
 # alt-shift-9 = ['move-node-to-workspace 9', 'exec-and-forget sketchybar --trigger aerospace_window_move']
 
 # Move to recent workspace and follow
@@ -350,10 +380,14 @@ f = ['layout floating tiling', 'mode main']
 backspace = ['close-all-windows-but-current', 'mode main']
 
 # Reassign workspaces to configured monitors
-m = ['exec-and-forget ~/.config/aerospace/scripts/reassign-workspaces.sh', 'mode main']
+# NOTE: Disabled because workspace-to-monitor-force-assignment prevents manual moves
+# m = ['exec-and-forget ~/.config/aerospace/scripts/reassign-workspaces.sh', 'mode main']
 
 # Reassign windows to configured workspaces
-a = ['exec-and-forget ~/.config/aerospace/scripts/reassign-windows.sh', 'mode main']
+a = [
+  'exec-and-forget ~/.config/aerospace/scripts/reassign-windows.sh',
+  'mode main',
+]
 
 # Join windows (from default config)
 alt-shift-h = ['join-with left', 'mode main']

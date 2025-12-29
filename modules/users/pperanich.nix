@@ -1,9 +1,7 @@
-_:
-{
+_: {
   # pperanich user configuration - both NixOS system user and home-manager setup
   flake.modules.nixos.pperanich =
     {
-      config,
       lib,
       pkgs,
       modules,

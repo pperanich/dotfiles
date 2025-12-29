@@ -11,7 +11,9 @@ local focused_workspace = nil
 -- Get workspace-to-monitor mapping using NSScreen IDs (maps to SketchyBar display)
 local function get_workspace_monitor_mapping()
 	local mapping = {}
-	local handle = io.popen("/opt/homebrew/bin/aerospace list-workspaces --all --format '%{workspace}|%{monitor-appkit-nsscreen-screens-id}'")
+	local handle = io.popen(
+		"/opt/homebrew/bin/aerospace list-workspaces --all --format '%{workspace}|%{monitor-appkit-nsscreen-screens-id}'"
+	)
 	if handle then
 		for line in handle:lines() do
 			local ws, display = line:match("([^|]+)|([^|]+)")
@@ -56,26 +58,31 @@ local workspace_displays = get_workspace_monitor_mapping()
 
 -- Update all workspace display assignments (called on display_change and workspace moves)
 local function update_workspace_displays()
-	sbar.exec("/opt/homebrew/bin/aerospace list-workspaces --all --format '%{workspace}|%{monitor-appkit-nsscreen-screens-id}'", function(result)
-		if not result then return end
-		for line in result:gmatch("[^\r\n]+") do
-			local ws, disp = line:match("([^|]+)|([^|]+)")
-			if ws and disp then
-				ws = ws:match("^%s*(.-)%s*$")
-				local key = tonumber(ws) or ws
-				local new_display = tonumber(disp)
-				if spaces[key] then
-					spaces[key]:set({ display = new_display })
-				end
-				if space_brackets[key] then
-					space_brackets[key]:set({ display = new_display })
-				end
-				if space_paddings[key] then
-					space_paddings[key]:set({ display = new_display })
+	sbar.exec(
+		"/opt/homebrew/bin/aerospace list-workspaces --all --format '%{workspace}|%{monitor-appkit-nsscreen-screens-id}'",
+		function(result)
+			if not result then
+				return
+			end
+			for line in result:gmatch("[^\r\n]+") do
+				local ws, disp = line:match("([^|]+)|([^|]+)")
+				if ws and disp then
+					ws = ws:match("^%s*(.-)%s*$")
+					local key = tonumber(ws) or ws
+					local new_display = tonumber(disp)
+					if spaces[key] then
+						spaces[key]:set({ display = new_display })
+					end
+					if space_brackets[key] then
+						space_brackets[key]:set({ display = new_display })
+					end
+					if space_paddings[key] then
+						space_paddings[key]:set({ display = new_display })
+					end
 				end
 			end
 		end
-	end)
+	)
 end
 
 -- Create workspace items for each configured workspace
@@ -151,7 +158,6 @@ for _, workspace_id in ipairs(workspace_list) do
 			background = { border_color = selected and colors.light_border or colors.transparent },
 		})
 	end)
-
 
 	-- Mouse hover effects
 	space:subscribe("mouse.entered", function(env)

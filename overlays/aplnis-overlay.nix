@@ -26,4 +26,7 @@ final: prev: {
       };
     };
   };
+  sops-install-secrets = prev.sops-install-secrets.overrideAttrs (_old: {
+    env.GODEBUG = "x509negativeserial=1";
+  });
 }

@@ -33,10 +33,13 @@ after-startup-command = [
   'workspace 3',
   'layout accordion',
   'workspace-back-and-forth',
-  'workspace 7',
+  'workspace 5',
   'layout accordion',
   'workspace-back-and-forth',
-  'workspace 8',
+  'workspace 6',
+  'layout accordion',
+  'workspace-back-and-forth',
+  'workspace 7',
   'layout accordion',
   'workspace-back-and-forth',
 ]
@@ -89,7 +92,7 @@ preset = 'qwerty'
 # ========================================
 
 # Define numbered workspaces with functional labels
-# 1: term, 2: web, 3: notes, 4: ide, 5: slack, 6: mail, 7: zoom, 8: social
+# 1: term, 2: web, 3: notes, 4: ide, 5: comms, 6: creative, 7: social, 8: flex
 
 [workspace-to-monitor-force-assignment]
 # Force workspaces to specific monitors using patterns (first match wins)
@@ -186,10 +189,10 @@ cmd-1 = 'workspace 1' # term
 cmd-2 = 'workspace 2' # web
 cmd-3 = 'workspace 3' # notes
 cmd-4 = 'workspace 4' # ide
-cmd-5 = 'workspace 5' # slack
-cmd-6 = 'workspace 6' # mail
-cmd-7 = 'workspace 7' # zoom
-cmd-8 = 'workspace 8' # social
+cmd-5 = 'workspace 5' # comms
+cmd-6 = 'workspace 6' # creative
+cmd-7 = 'workspace 7' # social
+cmd-8 = 'workspace 8' # flex
 # cmd-9 = 'workspace 9'
 # cmd-0 = 'workspace 10'
 
@@ -216,19 +219,19 @@ alt-shift-4 = [
 alt-shift-5 = [
   'move-node-to-workspace 5',
   'exec-and-forget sketchybar --trigger aerospace_window_move',
-] # slack
+] # comms
 alt-shift-6 = [
   'move-node-to-workspace 6',
   'exec-and-forget sketchybar --trigger aerospace_window_move',
-] # mail
+] # creative
 alt-shift-7 = [
   'move-node-to-workspace 7',
   'exec-and-forget sketchybar --trigger aerospace_window_move',
-] # zoom
+] # social
 alt-shift-8 = [
   'move-node-to-workspace 8',
   'exec-and-forget sketchybar --trigger aerospace_window_move',
-] # social
+] # flex
 # alt-shift-9 = ['move-node-to-workspace 9', 'exec-and-forget sketchybar --trigger aerospace_window_move']
 
 # Move to recent workspace and follow
@@ -464,33 +467,44 @@ run = 'move-node-to-workspace 3'
 if.app-id = 'com.microsoft.VSCode'
 run = 'move-node-to-workspace 4'
 
-# Workspace 5: Slack
+# Workspace 5: Comms (Slack, Mail, Zoom)
 [[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
 run = 'move-node-to-workspace 5'
 
-# Workspace 6: Mail
 [[on-window-detected]]
 if.app-id = 'com.microsoft.Outlook'
-run = 'move-node-to-workspace 6'
+run = 'move-node-to-workspace 5'
 
-# Workspace 7: Zoom
 [[on-window-detected]]
 if.app-id = 'us.zoom.xos'
-run = 'move-node-to-workspace 7'
+run = 'move-node-to-workspace 5'
 
-# Workspace 8: Social
+# Workspace 6: Creative (GIMP, Blender, Reaper)
+[[on-window-detected]]
+if.app-id = 'org.gimp.gimp-2.10'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'org.blender.blender'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.cockos.reaper'
+run = 'move-node-to-workspace 6'
+
+# Workspace 7: Social
 [[on-window-detected]]
 if.app-id = 'com.apple.MobileSMS'
-run = 'move-node-to-workspace 8'
+run = 'move-node-to-workspace 7'
 
 [[on-window-detected]]
 if.app-id = 'com.hnc.Discord'
-run = 'move-node-to-workspace 8'
+run = 'move-node-to-workspace 7'
 
 [[on-window-detected]]
 if.app-id = 'im.riot.app'
-run = 'move-node-to-workspace 8'
+run = 'move-node-to-workspace 7'
 
 # ========================================
 # ENVIRONMENT VARIABLES

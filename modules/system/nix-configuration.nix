@@ -128,7 +128,7 @@
 
       system.defaults = {
         spaces.spans-displays = false;
-        universalaccess.reduceMotion = true;
+        # universalaccess.reduceMotion = true;
         dock = {
           autohide = true;
           showhidden = true;
@@ -139,23 +139,23 @@
             "/Applications/Ghostty.app"
             # Workspace 2: Web
             "/Applications/Brave Browser.app"
-            # "/Applications/Safari.app"
             # Workspace 3: Notes
             "/Applications/Obsidian.app"
             "/System/Applications/Notes.app"
             # Workspace 4: IDE
-            # Note: VS Code is installed via Home Manager
-            "/Users/pperanich/Applications/Home Manager Apps/Visual Studio Code.app"
-            # Workspace 5: Slack
+            "/Applications/Visual Studio Code.app"
+            # Workspace 5: Comms
             "/Applications/Slack.app"
-            # Workspace 6: Mail
             "/Applications/Microsoft Outlook.app"
-            # Workspace 7: Zoom
             "/Applications/zoom.us.app"
-            # Workspace 8: Social
+            # Workspace 6: Creative
+            "/Applications/GIMP.app"
+            "/Applications/Blender.app"
+            # "/Applications/REAPER.app"
+            # Workspace 7: Social
             "/System/Applications/Messages.app"
-            # Note: Discord is installed via Home Manager
-            "/Users/pperanich/Applications/Home Manager Apps/Discord.app"
+            "/Applications/Discord.app"
+            "/Applications/Element.app"
             # Utils
             "/System/Applications/System Settings.app"
           ];
@@ -198,8 +198,16 @@
         ];
         casks = [
           "slack"
-          "microsoft-outlook"
-          "zoom"
+          "ghostty"
+          "discord"
+          "element"
+          "visual-studio-code"
+          "reaper"
+          "blender"
+          "gimp"
+          "xquartz"
+          # "microsoft-outlook"
+          # "zoom"
           "obsidian"
           "aerospace"
           "leader-key"

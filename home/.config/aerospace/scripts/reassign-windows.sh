@@ -19,17 +19,14 @@ get_workspace() {
   com.microsoft.VSCode)
     echo 4
     ;; # ide
-  com.tinyspeck.slackmacgap)
+  com.tinyspeck.slackmacgap | com.microsoft.Outlook | us.zoom.xos)
     echo 5
-    ;; # slack
-  com.microsoft.Outlook)
+    ;; # comms
+  org.gimp.gimp-2.10 | org.blender.blender | com.cockos.reaper)
     echo 6
-    ;; # mail
-  us.zoom.xos)
-    echo 7
-    ;; # zoom
+    ;; # creative
   com.apple.MobileSMS | com.hnc.Discord | im.riot.app)
-    echo 8
+    echo 7
     ;; # social
   *)
     echo ""

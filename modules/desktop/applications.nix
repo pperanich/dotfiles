@@ -10,7 +10,7 @@ _: {
       # Common desktop packages
       home.packages =
         with pkgs;
-        [
+        lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           feh # Fast image viewer
           libsecret # Secret service API library
           glib # Low-level core library for GNOME
@@ -23,8 +23,6 @@ _: {
           # vlc # Media player
           # postman
           # kicad
-        ]
-        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           # zoom-us # Video conferencing
           # hdfview
           firefox # Web browser
@@ -33,25 +31,6 @@ _: {
           protonvpn-gui # VPN client
           ghostty # Fast, native, feature-rich terminal emulator pushing modern features
           gimp # GNU Image Manipulation Program
-        ]
-        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-          # logseq # Knowledge management tool
-          m-cli # useful macOS CLI commands
-          ollama # Local LLM runner
-          ghostty-bin # Fast, native, feature-rich terminal emulator pushing modern features
-          # nixcasks.docker # Container platform
-          # nixcasks.ghostty # Fast, native, feature-rich terminal emulator pushing modern features
-          # nixcasks.shottr # Screenshot tool
-          # nixcasks.tailscale
-          # nixcasks.moonlight # Game streaming client
-          # docker-desktop
-        ]
-        ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
-          slack # Team communication platform
-        ]
-        ++ lib.optionals (!(pkgs.stdenv.hostPlatform.isAarch64 && pkgs.stdenv.hostPlatform.isLinux)) [
-          zotero # Reference manager
-          # spotify # Music streaming client
         ];
     };
 }

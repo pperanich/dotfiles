@@ -375,7 +375,7 @@ enter = 'mode main'
 esc = 'mode main'
 
 # ========================================
-# SERVICE MODE (IMPROVEMENT)
+# SERVICE MODE
 # ========================================
 
 [mode.service.binding]
@@ -384,6 +384,12 @@ esc = ['reload-config', 'mode main']
 r = ['flatten-workspace-tree', 'mode main']
 f = ['layout floating tiling', 'mode main']
 backspace = ['close-all-windows-but-current', 'mode main']
+
+# Reset all workspace layouts to configured defaults (tiles/accordion)
+l = [
+  'exec-and-forget ~/.config/aerospace/scripts/reset-layouts.sh',
+  'mode main',
+]
 
 # Reassign workspaces to configured monitors
 # NOTE: Disabled because workspace-to-monitor-force-assignment prevents manual moves

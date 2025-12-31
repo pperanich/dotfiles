@@ -1,7 +1,7 @@
 #!/bin/bash
 # Reassign all workspaces to their configured monitors
 # Mirrors the workspace-to-monitor-force-assignment config
-# 1: term, 2: web, 3: notes, 4: ide, 5: comms, 6: creative, 7: social, 8: flex
+# 1: term, 2: web, 3: notes, 4: ide, 5: comms, 6: creative, 7: social, 8: office
 
 aerospace=/opt/homebrew/bin/aerospace
 

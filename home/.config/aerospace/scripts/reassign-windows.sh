@@ -22,12 +22,15 @@ get_workspace() {
   com.tinyspeck.slackmacgap | com.microsoft.Outlook | us.zoom.xos)
     echo 5
     ;; # comms
-  org.gimp.gimp-2.10 | org.blender.blender | com.cockos.reaper)
+  org.gimp.gimp | org.blender.blender | com.cockos.reaper | com.spotify.client)
     echo 6
     ;; # creative
   com.apple.MobileSMS | com.hnc.Discord | im.riot.app)
     echo 7
     ;; # social
+  com.microsoft.Word | com.microsoft.Excel | com.microsoft.Powerpoint | com.microsoft.rdc.macos)
+    echo 8
+    ;; # office
   *)
     echo ""
     ;; # no assignment

@@ -42,6 +42,9 @@ after-startup-command = [
   'workspace 7',
   'layout accordion',
   'workspace-back-and-forth',
+  'workspace 8',
+  'layout accordion',
+  'workspace-back-and-forth',
 ]
 
 # Trigger SketchyBar when workspace changes
@@ -92,7 +95,7 @@ preset = 'qwerty'
 # ========================================
 
 # Define numbered workspaces with functional labels
-# 1: term, 2: web, 3: notes, 4: ide, 5: comms, 6: creative, 7: social, 8: flex
+# 1: term, 2: web, 3: notes, 4: ide, 5: comms, 6: creative, 7: social, 8: office
 
 [workspace-to-monitor-force-assignment]
 # Force workspaces to specific monitors using patterns (first match wins)
@@ -192,7 +195,7 @@ cmd-4 = 'workspace 4' # ide
 cmd-5 = 'workspace 5' # comms
 cmd-6 = 'workspace 6' # creative
 cmd-7 = 'workspace 7' # social
-cmd-8 = 'workspace 8' # flex
+cmd-8 = 'workspace 8' # office
 # cmd-9 = 'workspace 9'
 # cmd-0 = 'workspace 10'
 
@@ -231,7 +234,7 @@ alt-shift-7 = [
 alt-shift-8 = [
   'move-node-to-workspace 8',
   'exec-and-forget sketchybar --trigger aerospace_window_move',
-] # flex
+] # office
 # alt-shift-9 = ['move-node-to-workspace 9', 'exec-and-forget sketchybar --trigger aerospace_window_move']
 
 # Move to recent workspace and follow
@@ -486,9 +489,9 @@ run = 'move-node-to-workspace 5'
 if.app-id = 'us.zoom.xos'
 run = 'move-node-to-workspace 5'
 
-# Workspace 6: Creative (GIMP, Blender, Reaper)
+# Workspace 6: Creative (GIMP, Blender, Reaper, Spotify)
 [[on-window-detected]]
-if.app-id = 'org.gimp.gimp-2.10'
+if.app-id = 'org.gimp.gimp'
 run = 'move-node-to-workspace 6'
 
 [[on-window-detected]]
@@ -497,6 +500,10 @@ run = 'move-node-to-workspace 6'
 
 [[on-window-detected]]
 if.app-id = 'com.cockos.reaper'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'
 run = 'move-node-to-workspace 6'
 
 # Workspace 7: Social
@@ -511,6 +518,23 @@ run = 'move-node-to-workspace 7'
 [[on-window-detected]]
 if.app-id = 'im.riot.app'
 run = 'move-node-to-workspace 7'
+
+# Workspace 8: Office (Microsoft Office apps)
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Word'
+run = 'move-node-to-workspace 8'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Excel'
+run = 'move-node-to-workspace 8'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Powerpoint'
+run = 'move-node-to-workspace 8'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.rdc.macos'
+run = 'move-node-to-workspace 8'
 
 # ========================================
 # ENVIRONMENT VARIABLES

@@ -103,6 +103,7 @@ return {
 	["System Settings"] = ":gear:",
 	["系统设置"] = ":gear:",
 	["Réglages Système"] = ":gear:",
+	["GIMP"] = ":gimp:",
 	["GitHub Desktop"] = ":git_hub:",
 	["Godot"] = ":godot:",
 	["GoLand"] = ":goland:",

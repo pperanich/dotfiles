@@ -145,9 +145,9 @@
             # Workspace 4: IDE
             "/Applications/Visual Studio Code.app"
             # Workspace 5: Comms
-            "/Applications/Slack.app"
-            "/Applications/Microsoft Outlook.app"
-            "/Applications/zoom.us.app"
+            # "/Applications/Slack.app"
+            # "/Applications/Microsoft Outlook.app"
+            # "/Applications/zoom.us.app"
             # Workspace 6: Creative
             "/Applications/GIMP.app"
             "/Applications/Blender.app"
@@ -206,8 +206,6 @@
           "blender"
           "gimp"
           "xquartz"
-          # "microsoft-outlook"
-          # "zoom"
           "obsidian"
           "aerospace"
           "leader-key"

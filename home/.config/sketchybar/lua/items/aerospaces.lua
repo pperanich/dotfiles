@@ -8,7 +8,31 @@ local space_brackets = {}
 local space_paddings = {}
 local focused_workspace = nil
 
--- Get workspace-to-monitor mapping using NSScreen IDs (maps to SketchyBar display)
+-- Build NSScreen-to-sketchybar display mapping dynamically
+-- This runs once at startup to correlate screen positions
+local nsscreen_to_sbar = {}
+local function build_display_mapping()
+	local config_dir = os.getenv("HOME") .. "/.config/sketchybar"
+	local handle = io.popen(config_dir .. "/lua/helpers/display_mapping.sh 2>/dev/null")
+	if handle then
+		for line in handle:lines() do
+			local ns_id, sbar_id = line:match("(%d+)|(%d+)")
+			if ns_id and sbar_id then
+				nsscreen_to_sbar[tonumber(ns_id)] = tonumber(sbar_id)
+			end
+		end
+		handle:close()
+	end
+	-- Fallback: identity mapping if script fails
+	if next(nsscreen_to_sbar) == nil then
+		for i = 1, 10 do
+			nsscreen_to_sbar[i] = i
+		end
+	end
+end
+build_display_mapping()
+
+-- Get workspace-to-display mapping using aerospace NSScreen IDs
 local function get_workspace_monitor_mapping()
 	local mapping = {}
 	local handle = io.popen(
@@ -16,10 +40,11 @@ local function get_workspace_monitor_mapping()
 	)
 	if handle then
 		for line in handle:lines() do
-			local ws, display = line:match("([^|]+)|([^|]+)")
-			if ws and display then
+			local ws, nsscreen_id = line:match("([^|]+)|([^|]+)")
+			if ws and nsscreen_id then
 				ws = ws:match("^%s*(.-)%s*$")
-				mapping[ws] = tonumber(display)
+				local ns_id = tonumber(nsscreen_id)
+				mapping[ws] = nsscreen_to_sbar[ns_id] or 1
 			end
 		end
 		handle:close()
@@ -65,11 +90,12 @@ local function update_workspace_displays()
 				return
 			end
 			for line in result:gmatch("[^\r\n]+") do
-				local ws, disp = line:match("([^|]+)|([^|]+)")
-				if ws and disp then
+				local ws, nsscreen_id = line:match("([^|]+)|([^|]+)")
+				if ws and nsscreen_id then
 					ws = ws:match("^%s*(.-)%s*$")
 					local key = tonumber(ws) or ws
-					local new_display = tonumber(disp)
+					local ns_id = tonumber(nsscreen_id)
+					local new_display = nsscreen_to_sbar[ns_id] or 1
 					if spaces[key] then
 						spaces[key]:set({ display = new_display })
 					end

@@ -30,6 +30,9 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # Commands to run after AeroSpace starts
 after-startup-command = [
+  # Assign workspaces to monitors based on current display configuration
+  'exec-and-forget ~/.config/aerospace/scripts/assign-workspaces-to-monitors.sh',
+  # Set accordion layout for specific workspaces
   'workspace 3',
   'layout accordion',
   'workspace-back-and-forth',
@@ -97,25 +100,29 @@ preset = 'qwerty'
 # Define numbered workspaces with functional labels
 # 1: term, 2: web, 3: notes, 4: ide, 5: comms, 6: creative, 7: social, 8: office
 
-[workspace-to-monitor-force-assignment]
-# Force workspaces to specific monitors using patterns (first match wins)
-# Patterns can be: monitor index (1, 2), 'main', 'secondary', 'built-in', or regex like 'dell.*'
-# Use an array for fallbacks: ['preferred', 'fallback1', 'fallback2']
+# [workspace-to-monitor-force-assignment]
+# DISABLED: Using script-based assignment instead (service mode 'm')
+# Force-assignment prevents manual moves and is unreliable across reconnects.
+# Run ~/.config/aerospace/scripts/assign-workspaces-to-monitors.sh to assign workspaces.
 #
 # To find your monitor names run: aerospace list-monitors --format '%{monitor-id}|%{monitor-name}'
-# Override for specific displays by adding monitor name first, e.g.: ['C27F398', 'secondary', 'main']
 #
-# Primary workspaces on main display:
-1 = ['main', 'built-in'] # term
-4 = ['main', 'built-in'] # ide
-5 = ['main', 'built-in'] # slack
+# Known monitor serial numbers (decimal):
+#   DELL U2719D (1): 825373527
+#   DELL U2719D (2): 892875607
+#   Built-in: 4251086178
 #
-# Secondary workspaces on external when available:
-2 = ['secondary', 'main', 'built-in'] # web
-3 = ['secondary', 'main', 'built-in'] # notes
-6 = ['secondary', 'main', 'built-in'] # mail
-7 = ['secondary', 'main', 'built-in'] # zoom
-8 = ['secondary', 'main', 'built-in'] # social
+# # Primary workspaces on main display:
+# 1 = ['main', 'built-in'] # term
+# 4 = ['main', 'built-in'] # ide
+# 5 = ['main', 'built-in'] # slack
+# #
+# # Secondary workspaces on external when available:
+# 2 = ['secondary', 'main', 'built-in'] # web
+# 3 = ['secondary', 'main', 'built-in'] # notes
+# 6 = ['secondary', 'main', 'built-in'] # mail
+# 7 = ['secondary', 'main', 'built-in'] # zoom
+# 8 = ['secondary', 'main', 'built-in'] # social
 
 # ========================================
 # MODES
@@ -394,9 +401,12 @@ l = [
   'mode main',
 ]
 
-# Reassign workspaces to configured monitors
-# NOTE: Disabled because workspace-to-monitor-force-assignment prevents manual moves
-# m = ['exec-and-forget ~/.config/aerospace/scripts/reassign-workspaces.sh', 'mode main']
+# Reassign workspaces to monitors based on current display configuration
+# Uses serial numbers to identify monitors reliably across reconnects
+m = [
+  'exec-and-forget ~/.config/aerospace/scripts/assign-workspaces-to-monitors.sh',
+  'mode main',
+]
 
 # Reassign windows to configured workspaces
 a = [

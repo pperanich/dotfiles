@@ -1,0 +1,95 @@
+# Workspace-to-Monitor Layout Configuration
+#
+# Define monitor setups and their workspace assignments.
+# Monitors are identified by serial number (stable across reconnects).
+#
+# To find monitor serial numbers, run:
+#   system_profiler SPDisplaysDataType -json | grep serial
+# Then convert hex to decimal: python3 -c "print(int('HEX_VALUE', 16))"
+
+# Known monitors (for reference)
+[monitors]
+dell_1 = { serial = "825373527", name = "DELL U2719D (1)" }
+dell_2 = { serial = "892875607", name = "DELL U2719D (2)" }
+builtin = { serial = "4251086178", name = "Built-in Retina Display" }
+
+# ============================================================
+# LAYOUTS
+# ============================================================
+# Each layout defines:
+#   - requires: list of monitor serial numbers that must be present
+#   - priority: higher priority layouts are checked first (optional, default 0)
+#   - assignments: workspace -> monitor_serial mapping
+
+# Dual DELL + Built-in (full docked setup)
+[[layouts]]
+name = "Dual DELL Docked"
+priority = 10
+requires = ["825373527", "892875607"] # Both DELLs must be present
+
+[layouts.assignments]
+# Primary workspaces on main DELL (whichever is set as main in System Preferences)
+1 = "main" # term
+4 = "main" # ide
+
+# Secondary workspaces on the other DELL (non-main external)
+2 = "secondary" # web
+3 = "secondary" # notes
+6 = "secondary" # creative
+7 = "secondary" # social
+8 = "secondary" # office
+
+# Workspaces to place on built-in display
+5 = "builtin" # comms
+
+# Single DELL (1) + Built-in
+[[layouts]]
+name = "DELL (1) + Built-in"
+priority = 5
+requires = ["825373527"]     # DELL (1) present, DELL (2) absent
+excludes = ["892875607"]     # Explicitly exclude DELL (2)
+
+[layouts.assignments]
+# Primary on DELL
+1 = "825373527"
+4 = "825373527"
+5 = "825373527"
+# Secondary on built-in
+2 = "builtin"
+3 = "builtin"
+6 = "builtin"
+7 = "builtin"
+8 = "builtin"
+
+# Single DELL (2) + Built-in
+[[layouts]]
+name = "DELL (2) + Built-in"
+priority = 5
+requires = ["892875607"]
+excludes = ["825373527"]
+
+[layouts.assignments]
+1 = "892875607"
+4 = "892875607"
+5 = "892875607"
+2 = "builtin"
+3 = "builtin"
+6 = "builtin"
+7 = "builtin"
+8 = "builtin"
+
+# Laptop only (fallback)
+[[layouts]]
+name = "Laptop Only"
+priority = 0
+requires = []        # No external monitors required
+
+[layouts.assignments]
+1 = "builtin"
+2 = "builtin"
+3 = "builtin"
+4 = "builtin"
+5 = "builtin"
+6 = "builtin"
+7 = "builtin"
+8 = "builtin"

@@ -185,6 +185,7 @@
         touchIdAuth = true;
         reattach = true;
       };
+      services.openssh.enable = true;
       homebrew = {
         enable = true;
         greedyCasks = true;
@@ -225,8 +226,6 @@
 
       environment.systemPackages = with pkgs; [
         python313Packages.pymobiledevice3
-        swiftformat
-        swiftlint
       ];
 
       nixpkgs = {

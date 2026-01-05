@@ -102,15 +102,17 @@
 
           roles.default.tags.all = { };
         };
-        zerotier-home = {
-          module = {
-            name = "zerotier";
-            input = "clan-core";
-          };
-          roles.peer.machines.pperanich-lm1 = { };
-          roles.peer.machines.peranpl1-ml1 = { };
-          roles.peer.machines.peranpl1-ml2 = { };
-        };
+        # TODO: Re-enable after first deploy and run: clan vars generate --generator zerotier
+        # zerotier-home = {
+        #   module = {
+        #     name = "zerotier";
+        #     input = "clan-core";
+        #   };
+        #   roles.controller.machines.pperanich-lm1 = { };
+        #   roles.peer.machines.pperanich-lm1 = { };
+        #   roles.peer.machines.peranpl1-ml1 = { };
+        #   roles.peer.machines.peranpl1-ml2 = { };
+        # };
       };
     };
   };

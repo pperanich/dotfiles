@@ -4,6 +4,7 @@ keys:
     - &pperanich age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
     - &peranpl1-ed25519 age17atxvh6d40tzvn80z6xp4gzckp6c9e8m2ypr52muljc623qrtp7qpr56y8
     - &pperanich-ed25519 age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
+    - &pperanich-pperanich-ml1 age10djyw5sv5m367smak0nav6scdp9mr9sncs7dlv6f7z2xkf4w7efszmhqww
   - &hosts:
     - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
     - &pperanich-wsl1 age1pfappspcu2kdx33gxjpxapltx70qenl5dlwx00ugcghpvxg2t3aqfx53cz
@@ -19,6 +20,7 @@ creation_rules:
           - *peranpl1
           - *peranpl1-ed25519
           - *pperanich
+          - *pperanich-pperanich-ml1
           - *pperanich-ml1
           - *pperanich-ed25519
           - *peranpl1-ml2

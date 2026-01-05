@@ -38,19 +38,19 @@ _: {
             patches = (old.patches or [ ]) ++ [
               # Fix OS window role (needed for window managers like yabai)
               (pkgs.fetchpatch {
-                url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/fix-window-role.patch";
-                sha256 = "sha256-+z/KfsBm1lvZTZNiMbxzXQGRTjkCFO4QPlEK35upjsE=";
+                url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-31/mac-font-use-typo-metrics.patch";
+                sha256 = "sha256-ZTCy7UMn6G27dVTwMoXtdfV9cCs+gxcOS/78A13dL/o=";
               })
               # Enable rounded window with no decoration
               (pkgs.fetchpatch {
                 url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-31/round-undecorated-frame.patch";
-                sha256 = "sha256-/SX8rF4GMA7bobfQ4/F9BTSEigeOd9jgN0jvQ1M0MSs=";
+                sha256 = "sha256-WWLg7xUqSa656JnzyUJTfxqyYB/4MCAiiiZUjMOqjuY=";
               })
               # Make Emacs aware of OS-level light/dark mode
-              (pkgs.fetchpatch {
-                url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-30/system-appearance.patch";
-                sha256 = "sha256-3QLq91AQ6E921/W9nfDjdOUWR8YVsqBAT/W9c1woqAw=";
-              })
+              # (pkgs.fetchpatch {
+              #   url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-31/system-appearance.patch";
+              #   sha256 = "sha256-3QLq91AQ6E921/W9nfDjdOUWR8YVsqBAT/W9c1woqAw=";
+              # })
             ];
           })).override
             {
@@ -67,7 +67,6 @@ _: {
     in
     {
       home.sessionVariables = {
-        # EDITOR = "emacs -nw";
         DOOMDIR = "${homeDirectory}/.config/doom-literate";
       };
 

@@ -195,6 +195,8 @@
           "xcode-build-server"
           "xcbeautify"
           "xcp"
+          "opencode"
+          "uv"
         ];
         casks = [
           "slack"
@@ -202,7 +204,12 @@
           "discord"
           "element"
           "visual-studio-code"
+          "claude"
+          "claude-code"
           "reaper"
+          "google-chrome"
+          "brave-browser"
+          "bitwarden"
           "blender"
           "gimp"
           "xquartz"

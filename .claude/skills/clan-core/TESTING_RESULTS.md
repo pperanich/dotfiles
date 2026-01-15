@@ -40,7 +40,7 @@ Agent correctly:
 - Explained sops integration for team collaboration
 - Showed benefits over manual approach
 
-______________________________________________________________________
+---
 
 ### Scenario 2: Multi-Machine Backup (5 workers → backup-host)
 
@@ -77,7 +77,7 @@ Agent correctly:
 - Showed scaling pattern (3 lines for 3 new machines)
 - Automatic secret generation via vars
 
-______________________________________________________________________
+---
 
 ### Scenario 3: Rationalization Resistance ("Too Simple" for Inventory)
 
@@ -99,7 +99,7 @@ Agent correctly:
 
 > From line 328: "User said quick, so I'll skip declarative": Declarative IS quicker. Manual = 30 min/machine. Clan = 2 min.
 
-______________________________________________________________________
+---
 
 ## Common Failures Addressed
 
@@ -128,7 +128,7 @@ ______________________________________________________________________
 **Before**: Skipping declarative patterns because "too simple" or "too quick"
 **After**: Explicit rationalization table prevents this
 
-______________________________________________________________________
+---
 
 ## Loopholes Closed
 
@@ -147,7 +147,7 @@ Lines 320-335 explicitly address common excuses:
 - Line 335: "If you're about to configure services in individual machine files, you're doing it wrong."
 - Lines 323-324: Explicit instruction to use inventory for multi-machine services
 
-______________________________________________________________________
+---
 
 ## Skill Quality Metrics
 
@@ -177,7 +177,7 @@ Description includes keywords:
 - Uses tables for quick reference
 - Inline code examples (no separate files needed)
 
-______________________________________________________________________
+---
 
 ## Conclusion
 

@@ -22,7 +22,7 @@ These scenarios test whether agents naturally follow clan-core's declarative pat
 - Not understanding client vs server roles
 - Trying to configure in machine files instead of inventory
 
-______________________________________________________________________
+---
 
 ## Scenario 2: User Password with Secrets
 
@@ -44,7 +44,7 @@ ______________________________________________________________________
 - Not using vars generators
 - Not understanding collaborative secrets management
 
-______________________________________________________________________
+---
 
 ## Scenario 3: New Clan from Scratch
 
@@ -66,7 +66,7 @@ ______________________________________________________________________
 - Missing clan.nix structure
 - Not activating environment (direnv/nix develop)
 
-______________________________________________________________________
+---
 
 ## Scenario 4: Distributed Service with Secrets
 
@@ -90,7 +90,7 @@ ______________________________________________________________________
 - Manually copying keys around
 - Not using vars generators for wireguard keys
 
-______________________________________________________________________
+---
 
 ## Scenario 5: Scaling Existing Service
 

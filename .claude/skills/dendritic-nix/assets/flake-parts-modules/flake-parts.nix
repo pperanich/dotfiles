@@ -1,6 +1,7 @@
 # Import essential flake-parts modules
 # Enables the modules system and home-manager integration
-{ inputs, ... }: {
+{ inputs, ... }:
+{
   imports = [
     # Enable the flake-parts modules system
     # This allows modules to export via flake.modules.<platform>.<name>

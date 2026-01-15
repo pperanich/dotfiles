@@ -93,27 +93,27 @@ This skill was created following the **writing-skills** TDD methodology:
 - Created pressure scenarios simulating real use cases
 - Ran tests WITHOUT skill to document natural agent behavior
 - Identified failure patterns:
-    - Manual `mkpasswd` commands instead of vars
-    - Custom modules instead of clan services
-    - Per-machine configs instead of inventory
-    - No use of roles/tags for grouping
+  - Manual `mkpasswd` commands instead of vars
+  - Custom modules instead of clan services
+  - Per-machine configs instead of inventory
+  - No use of roles/tags for grouping
 
 ### GREEN Phase: Minimal Skill
 
 - Wrote skill addressing specific baseline failures
 - Focused on:
-    - Inventory patterns with roles and tags
-    - Vars for declarative generation
-    - Built-in clan services
-    - Scaling patterns
+  - Inventory patterns with roles and tags
+  - Vars for declarative generation
+  - Built-in clan services
+  - Scaling patterns
 
 ### REFACTOR Phase: Bulletproofing
 
 - Added "Common Rationalizations" table
 - Addressed pressure scenarios:
-    - "Too simple for inventory" (only 2 machines)
-    - "User said quick" (time pressure)
-    - "I don't know the syntax" (lack of examples)
+  - "Too simple for inventory" (only 2 machines)
+  - "User said quick" (time pressure)
+  - "I don't know the syntax" (lack of examples)
 - All tests passed with skill present
 
 ## Test Results
@@ -204,7 +204,7 @@ If you find patterns that agents still miss, follow the TDD cycle:
 1. Re-test to verify compliance
 1. Update TESTING_RESULTS.md
 
-______________________________________________________________________
+---
 
 **Skill Status**: ✅ Complete and tested
 **Last Updated**: 2025-11-05

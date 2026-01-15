@@ -187,9 +187,9 @@ _: {
 1. **Registry Pass-Through**: `inherit (config.flake.modules) homeManager` passes the homeManager module registry
 1. **Profile Import**: home-profile imports homeManager modules by name
 1. **Separation of Concerns**:
-    - `modules/users/` = system user + home-manager integration
-    - `home-profiles/` = user-specific home-manager configuration
-    - `modules/*/` = reusable homeManager modules
+   - `modules/users/` = system user + home-manager integration
+   - `home-profiles/` = user-specific home-manager configuration
+   - `modules/*/` = reusable homeManager modules
 
 **Benefits:**
 

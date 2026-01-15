@@ -2,7 +2,7 @@
 # Build mapping between aerospace NSScreen IDs and sketchybar display numbers
 # Output format: nsscreen_id|sketchybar_display (one per line)
 
-python3 << 'PYTHON'
+python3 <<'PYTHON'
 import subprocess
 import json
 

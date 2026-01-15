@@ -4,13 +4,18 @@
   lib,
   config,
   ...
-}: {
+}:
+{
   # Define option for allowed unfree packages
   options.nixpkgs.allowedUnfreePackages = lib.mkOption {
     type = lib.types.listOf lib.types.str;
-    default = [];
+    default = [ ];
     description = "List of unfree package names to allow";
-    example = [ "vscode" "slack" "zoom" ];
+    example = [
+      "vscode"
+      "slack"
+      "zoom"
+    ];
   };
 
   # Apply allowlist to all configurations
@@ -19,7 +24,8 @@
       let
         # Create predicate function to check if package is allowed
         predicate = pkg: builtins.elem (lib.getName pkg) config.nixpkgs.allowedUnfreePackages;
-      in {
+      in
+      {
         # Apply to NixOS configurations
         nixos.base.nixpkgs.config.allowUnfreePredicate = predicate;
 

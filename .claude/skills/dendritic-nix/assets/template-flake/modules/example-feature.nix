@@ -2,16 +2,18 @@
 # Modules export themselves by defining flake.modules.<platform>.<name>
 _: {
   # home-manager module (user-level configuration)
-  flake.modules.homeManager.example-feature = { pkgs, ... }: {
-    home.packages = with pkgs; [
-      # Add packages here
-      hello
-    ];
+  flake.modules.homeManager.example-feature =
+    { pkgs, ... }:
+    {
+      home.packages = with pkgs; [
+        # Add packages here
+        hello
+      ];
 
-    home.sessionVariables = {
-      EXAMPLE_VAR = "example-value";
+      home.sessionVariables = {
+        EXAMPLE_VAR = "example-value";
+      };
     };
-  };
 
   # NixOS module (system-level configuration)
   # Uncomment if you need NixOS-specific config

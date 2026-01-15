@@ -31,7 +31,7 @@ Without this, modules cannot export themselves via `flake.modules.<platform>.<na
 
 **Must have**: ✅ Absolutely required for dendritic pattern
 
-______________________________________________________________________
+---
 
 ### 2. nixpkgs.nix - Package Configuration
 
@@ -85,7 +85,7 @@ in {
 
 **Must have**: ✅ Required for consistent package management
 
-______________________________________________________________________
+---
 
 ### 3. home.nix - Home Manager Integration
 
@@ -130,7 +130,7 @@ ______________________________________________________________________
 
 **Must have**: ✅ If using standalone home-manager (not just NixOS submodules)
 
-______________________________________________________________________
+---
 
 ### 4. clan.nix - Infrastructure Orchestration (Optional)
 
@@ -179,7 +179,7 @@ ______________________________________________________________________
 
 **Must have**: ⚠️ Only if using clan-core for machine management
 
-______________________________________________________________________
+---
 
 ### 5. fmt.nix - Code Formatting
 
@@ -237,7 +237,7 @@ ______________________________________________________________________
 
 **Must have**: ⭐ Highly recommended for code quality
 
-______________________________________________________________________
+---
 
 ### 6. shell.nix - Development Environment
 
@@ -288,7 +288,7 @@ ______________________________________________________________________
 
 **Must have**: ⭐ Highly recommended for contributor experience
 
-______________________________________________________________________
+---
 
 ### 7. unfree-packages.nix - Unfree Package Management
 
@@ -337,7 +337,7 @@ ______________________________________________________________________
 
 **Must have**: ⭐ Recommended for unfree package management
 
-______________________________________________________________________
+---
 
 ### 8. flake.nix - Flake Metadata
 
@@ -368,7 +368,7 @@ ______________________________________________________________________
 
 **Must have**: 💡 Optional, but useful for metadata
 
-______________________________________________________________________
+---
 
 ## Recommended Setup Order
 

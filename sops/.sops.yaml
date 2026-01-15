@@ -1,18 +1,18 @@
 keys:
-  - &users:
-    - &peranpl1 age1sy8x2rtl25pqlt3vceqjzgn7ym3mfn8wavwjd4t8e38t4mmcyamqcmdp9k
-    - &pperanich age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
-    - &peranpl1-ed25519 age17atxvh6d40tzvn80z6xp4gzckp6c9e8m2ypr52muljc623qrtp7qpr56y8
-    - &pperanich-ed25519 age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
-    - &pperanich-pperanich-ml1 age10djyw5sv5m367smak0nav6scdp9mr9sncs7dlv6f7z2xkf4w7efszmhqww
-  - &hosts:
-    - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
-    - &pperanich-wsl1 age1pfappspcu2kdx33gxjpxapltx70qenl5dlwx00ugcghpvxg2t3aqfx53cz
-    - &pperanich-ll1 age1k5jdqa6mrymfjvrdazfuzx2rn3xavj43da5r4qt6v8pqyyvmjdhsejllsx
-    - &redd-holobrain age1l9fpjdh9ksma28zqhnl28k6pal5s2x9m586a9xjgyec6dsjrs34qsd6krx
-    - &holobrain-ld2 age1tmd7d6g6f9lzmg44g0uer2d6kzzktxh7d5dmdfhdcn3cm97xz9qsl2qv60
-    - &pperanich-orin1 age1dp8acw4lemjhujp3qze4emcq78rnf3axplrjneeqrvn5qj7aed3s7y23dw
-    - &pperanich-ml1 age1d0jvrgrtlecphg8s2svaly2ql9hlpp60qhfldeznkj8q46ggmqjq67ptcx
+  - &users '':
+      - &peranpl1 age1sy8x2rtl25pqlt3vceqjzgn7ym3mfn8wavwjd4t8e38t4mmcyamqcmdp9k
+      - &pperanich age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
+      - &peranpl1-ed25519 age17atxvh6d40tzvn80z6xp4gzckp6c9e8m2ypr52muljc623qrtp7qpr56y8
+      - &pperanich-ed25519 age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
+      - &pperanich-pperanich-ml1 age10djyw5sv5m367smak0nav6scdp9mr9sncs7dlv6f7z2xkf4w7efszmhqww
+  - &hosts '':
+      - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
+      - &pperanich-wsl1 age1pfappspcu2kdx33gxjpxapltx70qenl5dlwx00ugcghpvxg2t3aqfx53cz
+      - &pperanich-ll1 age1k5jdqa6mrymfjvrdazfuzx2rn3xavj43da5r4qt6v8pqyyvmjdhsejllsx
+      - &redd-holobrain age1l9fpjdh9ksma28zqhnl28k6pal5s2x9m586a9xjgyec6dsjrs34qsd6krx
+      - &holobrain-ld2 age1tmd7d6g6f9lzmg44g0uer2d6kzzktxh7d5dmdfhdcn3cm97xz9qsl2qv60
+      - &pperanich-orin1 age1dp8acw4lemjhujp3qze4emcq78rnf3axplrjneeqrvn5qj7aed3s7y23dw
+      - &pperanich-ml1 age1d0jvrgrtlecphg8s2svaly2ql9hlpp60qhfldeznkj8q46ggmqjq67ptcx
 creation_rules:
   - path_regex: secrets.yaml$
     key_groups:

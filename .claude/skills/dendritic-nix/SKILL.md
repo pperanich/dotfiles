@@ -41,39 +41,39 @@ To create a new flake from scratch:
 
 1. **Copy the template**:
 
-    ```bash
-    cp -r assets/template-flake my-flake
-    cd my-flake
-    ```
+   ```bash
+   cp -r assets/template-flake my-flake
+   cd my-flake
+   ```
 
 1. **Initialize git** (required for flakes):
 
-    ```bash
-    git init
-    git add .
-    ```
+   ```bash
+   git init
+   git add .
+   ```
 
 1. **Enable direnv** (optional but recommended):
 
-    ```bash
-    direnv allow
-    ```
+   ```bash
+   direnv allow
+   ```
 
-    This automatically loads the dev shell when entering the directory.
+   This automatically loads the dev shell when entering the directory.
 
 1. **Edit flake.nix**: Update the description and configure systems
 
 1. **Add feature modules**: Create modules in `modules/` for features
 
-    ```bash
-    python path/to/scripts/scaffold_module.py ssh-config -t with-options
-    ```
+   ```bash
+   python path/to/scripts/scaffold_module.py ssh-config -t with-options
+   ```
 
 1. **Test the flake**:
 
-    ```bash
-    nix flake check
-    ```
+   ```bash
+   nix flake check
+   ```
 
 ### Adding a Feature to an Existing Flake
 
@@ -81,20 +81,20 @@ To add a new feature module:
 
 1. **Scaffold the module**:
 
-    ```bash
-    python scripts/scaffold_module.py <feature-name> -t <type>
-    ```
+   ```bash
+   python scripts/scaffold_module.py <feature-name> -t <type>
+   ```
 
-    Types: `simple`, `with-options`, `cross-platform`, `flake-module`
+   Types: `simple`, `with-options`, `cross-platform`, `flake-module`
 
 1. **Edit the generated module**: Add configuration following the pattern
 
 1. **Validate**:
 
-    ```bash
-    python scripts/validate_dendritic.py .
-    nix flake check
-    ```
+   ```bash
+   python scripts/validate_dendritic.py .
+   nix flake check
+   ```
 
 ## Workflow Decision Tree
 
@@ -289,31 +289,31 @@ Key migration steps:
 
 1. **Add flake-parts to inputs**:
 
-    ```nix
-    inputs.flake-parts.url = "github:hercules-ci/flake-parts";
-    ```
+   ```nix
+   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
+   ```
 
 1. **Convert outputs to flake-parts**:
 
-    ```nix
-    outputs = inputs@{ flake-parts, ... }:
-      flake-parts.lib.mkFlake { inherit inputs; } { ... };
-    ```
+   ```nix
+   outputs = inputs@{ flake-parts, ... }:
+     flake-parts.lib.mkFlake { inherit inputs; } { ... };
+   ```
 
 1. **Convert each file to module format**:
 
-    ```nix
-    # Before: Plain config
-    { pkgs, ... }: { services.ssh.enable = true; }
+   ```nix
+   # Before: Plain config
+   { pkgs, ... }: { services.ssh.enable = true; }
 
-    # After: flake-parts module
-    { config, lib, pkgs, ... }: {
-      config = { services.ssh.enable = true; };
-    }
-    ```
+   # After: flake-parts module
+   { config, lib, pkgs, ... }: {
+     config = { services.ssh.enable = true; };
+   }
+   ```
 
 1. **Replace specialArgs with options**:
-    See migration guide for detailed examples.
+   See migration guide for detailed examples.
 
 1. **Test incrementally**: After each module migration, run `nix flake check`
 
@@ -361,10 +361,10 @@ config.bar = config.foo + 1;
 
 - Don't use specialArgs in dendritic pattern
 - Define options for shared values:
-    ```nix
-    options.myCustomValue = lib.mkOption { ... };
-    config.myCustomValue = "value";
-    ```
+  ```nix
+  options.myCustomValue = lib.mkOption { ... };
+  config.myCustomValue = "value";
+  ```
 
 #### Issue 4: Configuration Not Conditional
 
@@ -373,9 +373,9 @@ config.bar = config.foo + 1;
 **Solutions**:
 
 - Wrap config in `lib.mkIf`:
-    ```nix
-    config = lib.mkIf cfg.enable { ... };
-    ```
+  ```nix
+  config = lib.mkIf cfg.enable { ... };
+  ```
 
 ### Validation Tools
 
@@ -653,10 +653,10 @@ Templates and examples for quick starts:
 - **template-flake/**: Minimal working dendritic flake template
 - **example-modules/**: Complete example modules (ssh.nix, vim.nix, git.nix)
 - **flake-parts-modules/**: Essential infrastructure modules
-    - `fmt.nix` - treefmt configuration for code formatting
-    - `shell.nix` - Development shell template
-    - `unfree-packages.nix` - Centralized unfree package management
-    - `flake-parts.nix` - Module system foundation
+  - `fmt.nix` - treefmt configuration for code formatting
+  - `shell.nix` - Development shell template
+  - `unfree-packages.nix` - Centralized unfree package management
+  - `flake-parts.nix` - Module system foundation
 
 Use these to:
 

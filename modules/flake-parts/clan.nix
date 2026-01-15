@@ -23,20 +23,27 @@
     ];
 
     inventory = {
-      machines."pperanich-ml1".machineClass = "darwin";
-      machines."pperanich-ml1".tags = [ "laptop" ];
-
-      machines."peranpl1-ml1".machineClass = "darwin";
-      machines."peranpl1-ml1".tags = [ "laptop" ];
-
-      machines."peranpl1-ml2".machineClass = "darwin";
-      machines."peranpl1-ml2".tags = [ "laptop" ];
-
-      machines."pperanich-lm1".machineClass = "nixos";
-      machines."pperanich-lm1".tags = [
-        "mini"
-        "nixos"
-      ];
+      machines = {
+        "pperanich-ml1" = {
+          machineClass = "darwin";
+          tags = [ "laptop" ];
+        };
+        "peranpl1-ml1" = {
+          machineClass = "darwin";
+          tags = [ "laptop" ];
+        };
+        "peranpl1-ml2" = {
+          machineClass = "darwin";
+          tags = [ "laptop" ];
+        };
+        "pperanich-lm1" = {
+          machineClass = "nixos";
+          tags = [
+            "mini"
+            "nixos"
+          ];
+        };
+      };
 
       instances = {
         clan-cache = {
@@ -51,18 +58,24 @@
             name = "sshd";
             input = "clan-core";
           };
-          roles.server.tags.all = { };
-          roles.client.tags.all = { };
+          roles = {
+            server.tags.all = { };
+            client.tags.all = { };
+          };
         };
         users-root = {
-          module.name = "users";
-          module.input = "clan-core";
-          roles.default.tags.all = { };
-          roles.default.settings = {
-            user = "root";
-            share = true;
-            prompt = false; # Set to true if you want to be prompted
-            groups = [ ];
+          module = {
+            name = "users";
+            input = "clan-core";
+          };
+          roles.default = {
+            tags.all = { };
+            settings = {
+              user = "root";
+              share = true;
+              prompt = false; # Set to true if you want to be prompted
+              groups = [ ];
+            };
           };
         };
         user-pperanich = {
@@ -70,36 +83,39 @@
             name = "users";
             input = "clan-core";
           };
-          roles.default.tags.all = { };
-          roles.default.machines.pperanich-ll1 = { };
-          roles.default.machines.pperanich-lm1 = { };
-          roles.default.settings = {
-            user = "pperanich";
-            share = true;
-            prompt = true; # Set to true if you want to be prompted
-            groups = [
-              "admin"
-              "wheel"
-              "video"
-              "audio"
-              "dialout"
-              "network"
-              "wireshark"
-              "i2c"
-              "mysql"
-              "docker"
-              "podman"
-              "git"
-            ];
+          roles.default = {
+            tags.all = { };
+            machines = {
+              pperanich-ll1 = { };
+              pperanich-lm1 = { };
+            };
+            settings = {
+              user = "pperanich";
+              share = true;
+              prompt = true; # Set to true if you want to be prompted
+              groups = [
+                "admin"
+                "wheel"
+                "video"
+                "audio"
+                "dialout"
+                "network"
+                "wireshark"
+                "i2c"
+                "mysql"
+                "docker"
+                "podman"
+                "git"
+              ];
+            };
+            # extraModules = [ config.flake.modules.nixos.pperanich ];
           };
-          # roles.default.extraModules = [ config.flake.modules.nixos.pperanich ];
         };
         emergency-access = {
           module = {
             name = "emergency-access";
             input = "clan-core";
           };
-
           roles.default.tags.all = { };
         };
         # TODO: Re-enable after first deploy and run: clan vars generate --generator zerotier
@@ -108,10 +124,14 @@
         #     name = "zerotier";
         #     input = "clan-core";
         #   };
-        #   roles.controller.machines.pperanich-lm1 = { };
-        #   roles.peer.machines.pperanich-lm1 = { };
-        #   roles.peer.machines.peranpl1-ml1 = { };
-        #   roles.peer.machines.peranpl1-ml2 = { };
+        #   roles = {
+        #     controller.machines.pperanich-lm1 = { };
+        #     peer.machines = {
+        #       pperanich-lm1 = { };
+        #       peranpl1-ml1 = { };
+        #       peranpl1-ml2 = { };
+        #     };
+        #   };
         # };
       };
     };

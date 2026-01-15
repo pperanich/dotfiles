@@ -24,9 +24,11 @@
 
     clan-core = {
       url = "git+https://git.clan.lol/clan/clan-core";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-parts.follows = "flake-parts";
-      inputs.nixos-facter-modules.follows = "nixos-facter-modules";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        nixos-facter-modules.follows = "nixos-facter-modules";
+      };
     };
 
     import-tree = {

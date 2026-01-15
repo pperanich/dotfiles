@@ -66,28 +66,33 @@ _: {
           };
     in
     {
-      home.sessionVariables = {
-        DOOMDIR = "${homeDirectory}/.config/doom-literate";
+      home = {
+        sessionVariables = {
+          DOOMDIR = "${homeDirectory}/.config/doom-literate";
+        };
+        sessionPath = [ "${homeDirectory}/.config/emacs-doom/bin" ];
+        packages =
+          with pkgs;
+          [
+            # Common dependencies for modern text editing
+            ripgrep # Required for modern text search
+            fd # Required for file finding
+            fzf # Fuzzy finder
+            # Emacs-specific dependencies
+            pyright
+            jansson
+            djvulibre
+          ]
+          ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+            qpdfview
+            libvterm
+          ];
+        file = {
+          ".config/emacs".source = chemacs2;
+          ".config/emacs-doom".source = doomemacs;
+          ".config/emacs-spacemacs".source = spacemacs;
+        };
       };
-
-      home.sessionPath = [ "${homeDirectory}/.config/emacs-doom/bin" ];
-
-      home.packages =
-        with pkgs;
-        [
-          # Common dependencies for modern text editing
-          ripgrep # Required for modern text search
-          fd # Required for file finding
-          fzf # Fuzzy finder
-          # Emacs-specific dependencies
-          pyright
-          jansson
-          djvulibre
-        ]
-        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-          qpdfview
-          libvterm
-        ];
 
       programs.emacs = {
         enable = true;
@@ -96,12 +101,6 @@ _: {
           epkgs.treesit-grammars.with-all-grammars
           epkgs.vterm
         ];
-      };
-
-      home.file = {
-        ".config/emacs".source = chemacs2;
-        ".config/emacs-doom".source = doomemacs;
-        ".config/emacs-spacemacs".source = spacemacs;
       };
     };
 }

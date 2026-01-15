@@ -58,12 +58,16 @@ in
   clan.core.networking.targetHost = lib.mkForce "root@pperanich-ll1";
   clan.core.networking.buildHost = "root@pperanich-ll1";
 
-  # Enable the login manager
-  services.displayManager.cosmic-greeter.enable = true;
-  # Enable the COSMIC DE itself
-  services.desktopManager.cosmic.enable = true;
-  # Enable XWayland support in COSMIC
-  services.desktopManager.cosmic.xwayland.enable = true;
+  services = {
+    # Enable the login manager
+    displayManager.cosmic-greeter.enable = true;
+    # Enable the COSMIC DE itself
+    desktopManager.cosmic = {
+      enable = true;
+      # Enable XWayland support in COSMIC
+      xwayland.enable = true;
+    };
+  };
 
   # programs.waybar.enable = true;
 

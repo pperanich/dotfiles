@@ -103,6 +103,7 @@ _: {
 
           # Media
           ffmpeg # A complete, cross-platform solution to record, convert and stream audio and video
+          spotify-player # Terminal spotify player that has feature parity with the official client
 
           # Diagrams & Visualization
           plantuml # Draw UML diagrams using a simple and human readable text description

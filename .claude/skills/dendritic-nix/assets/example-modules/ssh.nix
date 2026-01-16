@@ -2,21 +2,19 @@
 _: {
   flake.modules = {
     # NixOS SSH server configuration
-    nixos.ssh-server =
-      _:
-      {
-        services.openssh = {
-          enable = true;
-          ports = [ 22 ];
-          settings = {
-            PermitRootLogin = "no";
-            PasswordAuthentication = false;
-            PubkeyAuthentication = true;
-          };
+    nixos.ssh-server = _: {
+      services.openssh = {
+        enable = true;
+        ports = [ 22 ];
+        settings = {
+          PermitRootLogin = "no";
+          PasswordAuthentication = false;
+          PubkeyAuthentication = true;
         };
-
-        networking.firewall.allowedTCPPorts = [ 22 ];
       };
+
+      networking.firewall.allowedTCPPorts = [ 22 ];
+    };
 
     # home-manager SSH client configuration
     homeManager.ssh-client =

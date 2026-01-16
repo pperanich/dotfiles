@@ -5,7 +5,6 @@
 
   inputs = {
     # Core
-    # nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     hardware = {
       url = "github:nixos/nixos-hardware";
@@ -13,6 +12,9 @@
     determinate = {
       url = "github:DeterminateSystems/determinate";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
     };
     nixos-facter-modules = {
       url = "github:nix-community/nixos-facter-modules";
@@ -27,7 +29,11 @@
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
-        nixos-facter-modules.follows = "nixos-facter-modules";
+        nix-darwin.follows = "darwin";
+        disko.follows = "disko";
+        sops-nix.follows = "sops-nix";
+        treefmt-nix.follows = "treefmt-nix";
+        systems.follows = "systems";
       };
     };
 
@@ -36,23 +42,27 @@
     };
     git-hooks = {
       url = "github:cachix/git-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "flake-compat";
+      };
     };
 
     # System Management
     home-manager = {
-      # url = "github:nix-community/home-manager/release-25.05";
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     darwin = {
-      # url = "github:LnL7/nix-darwin/nix-darwin-25.05";
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-wsl = {
       url = "github:nix-community/nixos-wsl";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "flake-compat";
+      };
     };
     jetpack-nixos = {
       url = "github:anduril/jetpack-nixos";
@@ -85,11 +95,16 @@
     # Development Tools
     neovim-nightly-overlay = {
       url = "github:nix-community/neovim-nightly-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+      };
     };
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+      };
     };
     nixgl = {
       url = "github:guibou/nixGL";
@@ -101,7 +116,11 @@
     };
     ghostty = {
       url = "github:ghostty-org/ghostty";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+        flake-compat.follows = "flake-compat";
+      };
     };
 
     # Additional Software

@@ -118,10 +118,13 @@
         # We are using the Determinate daemon
         nix.enable = false;
         # Custom settings written to /etc/nix/nix.custom.conf
-        determinate-nix.customSettings = {
-          eval-cores = 0;
-          extra-experimental-features = "external-builders parallel-eval";
-          # external-builders = "[{\"systems\":[\"aarch64-linux\",\"x86_64-linux\"],\"program\":\"/usr/local/bin/determinate-nixd\",\"args\":[\"builder\"]}]";
+        determinateNix = {
+          enable = true;
+          customSettings = {
+            eval-cores = 0;
+            extra-experimental-features = "external-builders parallel-eval";
+            # external-builders = "[{\"systems\":[\"aarch64-linux\",\"x86_64-linux\"],\"program\":\"/usr/local/bin/determinate-nixd\",\"args\":[\"builder\"]}]";
+          };
         };
 
         programs.zsh.enableCompletion = false;
@@ -211,7 +214,6 @@
             "reaper"
             "google-chrome"
             "brave-browser"
-            "bitwarden"
             "blender"
             "gimp"
             "xquartz"
@@ -303,7 +305,7 @@
           packages = with pkgs; [
             # Nix development tools
             nil # Nix LSP
-            nixfmt-rfc-style # Nix formatter
+            nixfmt # Nix formatter
             nix-tree # Explore Nix store dependencies
             nix-diff # Compare Nix derivations
 

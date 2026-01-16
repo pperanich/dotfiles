@@ -13,6 +13,8 @@ keys:
       - &holobrain-ld2 age1tmd7d6g6f9lzmg44g0uer2d6kzzktxh7d5dmdfhdcn3cm97xz9qsl2qv60
       - &pperanich-orin1 age1dp8acw4lemjhujp3qze4emcq78rnf3axplrjneeqrvn5qj7aed3s7y23dw
       - &pperanich-ml1 age1d0jvrgrtlecphg8s2svaly2ql9hlpp60qhfldeznkj8q46ggmqjq67ptcx
+  - &keys '':
+      - &yubikey0-slot1 age1yubikey1qdxm3n7yv2d065hewfmy3u5xk2n62udd8n992azmkzl9yp7mel3tgyzrzrv
 creation_rules:
   - path_regex: secrets.yaml$
     key_groups:
@@ -29,3 +31,4 @@ creation_rules:
           - *redd-holobrain
           - *holobrain-ld2
           - *pperanich-orin1
+          - *yubikey0-slot1

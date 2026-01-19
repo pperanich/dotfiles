@@ -26,21 +26,31 @@
       machines = {
         "pperanich-ml1" = {
           machineClass = "darwin";
-          tags = [ "laptop" ];
+          tags = [
+            "laptop"
+            "all"
+          ];
         };
         "peranpl1-ml1" = {
           machineClass = "darwin";
-          tags = [ "laptop" ];
+          tags = [
+            "laptop"
+            "all"
+          ];
         };
         "peranpl1-ml2" = {
           machineClass = "darwin";
-          tags = [ "laptop" ];
+          tags = [
+            "laptop"
+            "all"
+          ];
         };
         "pperanich-lm1" = {
           machineClass = "nixos";
           tags = [
             "mini"
             "nixos"
+            "all"
           ];
         };
       };
@@ -118,21 +128,37 @@
           };
           roles.default.tags.all = { };
         };
-        # TODO: Re-enable after first deploy and run: clan vars generate --generator zerotier
-        # zerotier-home = {
-        #   module = {
-        #     name = "zerotier";
-        #     input = "clan-core";
-        #   };
-        #   roles = {
-        #     controller.machines.pperanich-lm1 = { };
-        #     peer.machines = {
-        #       pperanich-lm1 = { };
-        #       peranpl1-ml1 = { };
-        #       peranpl1-ml2 = { };
-        #     };
-        #   };
-        # };
+        zerotier-home = {
+          module = {
+            name = "zerotier";
+            input = "clan-core";
+          };
+          roles = {
+            controller.machines.pperanich-lm1 = { };
+            peer.machines = {
+              pperanich-lm1 = { };
+              pperanich-ml1 = { };
+              peranpl1-ml1 = { };
+              peranpl1-ml2 = { };
+            };
+          };
+        };
+        wireguard-home = {
+          module = {
+            name = "wireguard";
+            input = "clan-core";
+          };
+          roles = {
+            controller.machines.pperanich-lm1 = {
+              settings.endpoint = "prestonperanich.com";
+            };
+            peer.machines = {
+              pperanich-ml1 = { };
+              peranpl1-ml1 = { };
+              peranpl1-ml2 = { };
+            };
+          };
+        };
       };
     };
   };

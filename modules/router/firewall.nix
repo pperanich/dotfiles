@@ -93,7 +93,10 @@ _: {
                 chain input {
                   type filter hook input priority 0; policy drop;
                   iifname "lo" accept
-                  iifname "${lanDevice}" accept
+                  iifname "${lanDevice}" udp dport 67 accept comment "DHCP"
+                  iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
+                  iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
+                  iifname "${lanDevice}" icmp accept
                   ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
                   iifname "${wan}" ip protocol icmp accept
@@ -127,13 +130,33 @@ _: {
                 }
               '';
             };
+            forwardV4 = {
+              family = "ip";
+              content = ''
+                chain forward {
+                  type filter hook forward priority -10;
+                  tcp flags syn tcp option maxseg size set rt mss
+                }
+              '';
+            };
+            forwardV6 = lib.mkIf cfg.ipv6.enable {
+              family = "ip6";
+              content = ''
+                chain forward {
+                  type filter hook forward priority -10;
+                  tcp flags syn tcp option maxseg size set rt mss
+                }
+              '';
+            };
             filterV6 = lib.mkIf cfg.ipv6.enable {
               family = "ip6";
               content = ''
                 chain input {
                   type filter hook input priority 0; policy drop;
                   iifname "lo" accept
-                  iifname "${lanDevice}" accept
+                  iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
+                  iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
+                  iifname "${lanDevice}" icmpv6 accept comment "Neighbor Discovery"
                   ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
                   iifname "${wan}" icmpv6 type {

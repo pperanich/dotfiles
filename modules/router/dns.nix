@@ -65,6 +65,16 @@ _: {
               num-threads = 2;
               so-reuseport = true;
 
+              # DNS Rebinding protection
+              private-address = [
+                "192.168.0.0/16"
+                "172.16.0.0/12"
+                "10.0.0.0/8"
+                "fd00::/8"
+                "fe80::/10"
+              ];
+              private-domain = [ "\"${dnsCfg.localZone}\"" ];
+
               # Local zone for LAN
               local-zone = "\"${dnsCfg.localZone}\" static";
               local-data = [

@@ -128,36 +128,36 @@
           };
           roles.default.tags.all = { };
         };
-        zerotier-home = {
-          module = {
-            name = "zerotier";
-            input = "clan-core";
-          };
-          roles = {
-            controller.machines.pperanich-lm1 = { };
-            peer.machines = {
-              pperanich-lm1 = { };
-            };
-          };
-        };
-        wireguard = {
-          module = {
-            name = "wireguard";
-            input = "clan-core";
-          };
-          roles = {
-            controller = {
-              machines.pperanich-lm1 = { };
-              settings.endpoint = "vpn.prestonperanich.com";
-            };
-            peer.machines = {
-              pperanich-ml1 = { };
-              peranpl1-ml1 = { };
-              peranpl1-ml2 = { };
-            };
-            peer.settings.controller = "pperanich-lm1";
-          };
-        };
+        # zerotier-home = {
+        #   module = {
+        #     name = "zerotier";
+        #     input = "clan-core";
+        #   };
+        #   roles = {
+        #     controller.machines.pperanich-lm1 = { };
+        #     peer.machines = {
+        #       pperanich-lm1 = { };
+        #     };
+        #   };
+        # };
+        # wireguard = {
+        #   module = {
+        #     name = "wireguard";
+        #     input = "clan-core";
+        #   };
+        #   roles = {
+        #     controller = {
+        #       machines.pperanich-lm1 = { };
+        #       settings.endpoint = "vpn.prestonperanich.com";
+        #     };
+        #     peer.machines = {
+        #       pperanich-ml1 = { };
+        #       peranpl1-ml1 = { };
+        #       peranpl1-ml2 = { };
+        #     };
+        #     peer.settings.controller = "pperanich-lm1";
+        #   };
+        # };
       };
     };
   };

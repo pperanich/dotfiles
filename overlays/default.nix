@@ -3,7 +3,7 @@
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
   sops-nix = inputs.sops-nix.overlays.default;
-  # ghostty = inputs.ghostty.overlays.default;
+  ghostty = inputs.ghostty.overlays.default;
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;

@@ -8,10 +8,36 @@ _: {
     let
       cfg = config.features.router;
       fwCfg = cfg.firewall;
+      hostapdCfg = cfg.hostapd;
       internal = cfg._internal;
       inherit (internal) lanSubnet;
       wan = cfg.wan.interface;
       inherit (internal) lanDevice;
+
+      # Wireless interfaces (if hostapd enabled) - only non-bridged ones need explicit rules
+      wlanInterfaces = if hostapdCfg.enable then hostapdCfg._internal.nonBridgedInterfaces else [ ];
+
+      # Generate firewall rules for wireless interfaces
+      mkWlanInputRules = iface: ''
+        iifname "${iface}" udp dport 67 accept comment "DHCP (${iface})"
+        iifname "${iface}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH (${iface})"
+        iifname "${iface}" udp dport 53 accept comment "DNS UDP (${iface})"
+        iifname "${iface}" icmp accept'';
+
+      mkWlanInputRulesV6 = iface: ''
+        iifname "${iface}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH (${iface})"
+        iifname "${iface}" udp dport 53 accept comment "DNS UDP (${iface})"
+        iifname "${iface}" icmpv6 accept comment "Neighbor Discovery (${iface})"'';
+
+      mkWlanForwardRules = iface: ''
+        iifname "${iface}" oifname "${wan}" accept
+        iifname "${iface}" oifname "${lanDevice}" accept
+        iifname "${lanDevice}" oifname "${iface}" accept
+        iifname "${wan}" oifname "${iface}" ct state established,related accept'';
+
+      wlanInputRules = lib.concatMapStringsSep "\n" mkWlanInputRules wlanInterfaces;
+      wlanInputRulesV6 = lib.concatMapStringsSep "\n" mkWlanInputRulesV6 wlanInterfaces;
+      wlanForwardRules = lib.concatMapStringsSep "\n" mkWlanForwardRules wlanInterfaces;
 
       # Build trusted interface rules
       trustedInputRules = lib.concatMapStringsSep "\n" (
@@ -97,6 +123,7 @@ _: {
                   iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
                   iifname "${lanDevice}" icmp accept
+                  ${wlanInputRules}
                   ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
                   iifname "${wan}" ip protocol icmp accept
@@ -112,6 +139,7 @@ _: {
                   iifname "${lanDevice}" oifname "${wan}" accept
                   iifname "${lanDevice}" oifname "${lanDevice}" accept
                   iifname "${wan}" oifname "${lanDevice}" ct state established,related accept
+                  ${wlanForwardRules}
                   ${trustedForwardRules}
                   ${forwardRules}
                 }
@@ -157,6 +185,7 @@ _: {
                   iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
                   iifname "${lanDevice}" icmpv6 accept comment "Neighbor Discovery"
+                  ${wlanInputRulesV6}
                   ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
                   iifname "${wan}" icmpv6 type {
@@ -170,6 +199,7 @@ _: {
                   type filter hook forward priority 0; policy drop;
                   iifname "${lanDevice}" oifname "${wan}" accept
                   iifname "${wan}" oifname "${lanDevice}" ct state established,related accept
+                  ${wlanForwardRules}
                   ${trustedForwardRules}
                 }
               '';

@@ -13,7 +13,7 @@ _: {
 
       # Radio submodule type (each radio = one hostapd instance)
       radioSubmodule = lib.types.submodule (
-        { name, ... }:
+        _:
         {
           options = {
             enable = lib.mkOption {
@@ -237,22 +237,22 @@ _: {
               radio.wpaKeyMgmt;
 
           baseSettings = {
-            interface = radio.interface;
-            driver = radio.driver;
-            ssid = radio.ssid;
+            inherit (radio) interface;
+            inherit (radio) driver;
+            inherit (radio) ssid;
             hw_mode = hwMode;
-            channel = radio.channel;
+            inherit (radio) channel;
             country_code = hostapdCfg.countryCode;
 
             # 802.11n
-            ieee80211n = radio.ieee80211n;
+            inherit (radio) ieee80211n;
             wmm_enabled = true;
 
             # 802.11ac (5GHz only)
             ieee80211ac = radio.ieee80211ac && is5GHz;
 
             # 802.11ax
-            ieee80211ax = radio.ieee80211ax;
+            inherit (radio) ieee80211ax;
 
             # Security
             auth_algs = 1;
@@ -262,10 +262,10 @@ _: {
             wpa_passphrase = radio.wpaPassphrase;
           }
           // lib.optionalAttrs (radio.bssid != null) {
-            bssid = radio.bssid;
+            inherit (radio) bssid;
           }
           // lib.optionalAttrs (radio.bridge != null) {
-            bridge = radio.bridge;
+            inherit (radio) bridge;
           }
           // lib.optionalAttrs (radio.ieee80211n && radio.htCapab != "") {
             ht_capab = radio.htCapab;
@@ -298,7 +298,7 @@ _: {
           # 802.11v BSS Transition Management
           // lib.optionalAttrs roamingCfg.ieee80211v {
             ieee80211v = true;
-            bss_transition = roamingCfg.bss_transition;
+            inherit (roamingCfg) bss_transition;
             wnm_sleep_mode = true;
           }
           // radio.extraSettings;
@@ -309,7 +309,7 @@ _: {
             let
               bssSettings = {
                 bss = bss.interface;
-                ssid = bss.ssid;
+                inherit (bss) ssid;
                 auth_algs = 1;
                 wpa = 2;
                 wpa_key_mgmt = bss.wpaKeyMgmt;
@@ -317,7 +317,7 @@ _: {
                 wpa_passphrase = bss.wpaPassphrase;
               }
               // lib.optionalAttrs (bss.bridge != null) {
-                bridge = bss.bridge;
+                inherit (bss) bridge;
               }
               // bss.extraSettings;
             in

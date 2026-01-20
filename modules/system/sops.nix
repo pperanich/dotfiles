@@ -75,6 +75,7 @@ in
             "api_keys/mistral_api_key" = { };
             "api_keys/openrouter_api_key" = { };
             "api_keys/gemini_api_key" = { };
+            "api_keys/artificial_analysis_api_key" = { };
             "private_keys/${config.home.username}" = {
               path = "${config.home.homeDirectory}/.ssh/id_ed25519";
               mode = "0400";

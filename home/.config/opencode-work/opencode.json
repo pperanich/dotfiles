@@ -93,6 +93,39 @@
         },
         "zai-org/GLM-4.5-Air-FP8": {
           "name": "zai-org/GLM-4.5-Air-FP8"
+        },
+        "intfloat/multilingual-e5-large": {
+          "name": "intfloat/multilingual-e5-large"
+        },
+        "intfloat/e5-large-v2": {
+          "name": "intfloat/e5-large-v2"
+        },
+        "BAAI/bge-large-en-v1.5": {
+          "name": "BAAI/bge-large-en-v1.5"
+        },
+        "BAAI/bge-small-en-v1.5": {
+          "name": "BAAI/bge-small-en-v1.5"
+        },
+        "WhereIsAI/UAE-Large-V1": {
+          "name": "WhereIsAI/UAE-Large-V1"
+        },
+        "openai/clip-vit-large-patch14": {
+          "name": "openai/clip-vit-large-patch14"
+        },
+        "Salesforce/blip2-itm-vit-g-coco": {
+          "name": "Salesforce/blip2-itm-vit-g-coco"
+        },
+        "sean/BAAI/bge-large-en-v1.5": {
+          "name": "sean/BAAI/bge-large-en-v1.5"
+        },
+        "sean/openai/clip-vit-large-patch14": {
+          "name": "sean/openai/clip-vit-large-patch14"
+        },
+        "Qwen/Qwen3-Embedding-8B": {
+          "name": "Qwen/Qwen3-Embedding-8B"
+        },
+        "Flux/flux1-schnell-fp8": {
+          "name": "Flux/flux1-schnell-fp8"
         }
       }
     }

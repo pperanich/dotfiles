@@ -5,6 +5,7 @@ Guidelines for AI agents working in this Nix-based dotfiles repository.
 ## Build/Lint/Test Commands
 
 ### Primary Commands
+
 ```bash
 # Enter development shell (includes formatters, linters, clan-cli)
 nix develop
@@ -23,6 +24,7 @@ nix flake update nixpkgs
 ```
 
 ### System Build Commands
+
 ```bash
 # NixOS system rebuild
 sudo nixos-rebuild switch --flake .#<hostname>
@@ -40,6 +42,7 @@ clan machines show <hostname>
 ```
 
 ### Hostnames Reference
+
 - `peranpl1-ml1`, `peranpl1-ml2` - Darwin laptops (x86_64-darwin)
 - `pperanich-ml1` - Darwin laptop
 - `pperanich-ll1` - NixOS laptop (MacBook w/ T2)
@@ -50,13 +53,16 @@ clan machines show <hostname>
 ## Architecture Overview
 
 This is a **dendritic Nix flake** using:
+
 - **flake-parts**: Composable flake architecture
 - **import-tree**: Automatic module discovery (all `.nix` files in `/modules` auto-imported)
 - **clan-core**: Infrastructure-as-code machine deployment
 - **GNU Stow**: Legacy dotfiles deployment
 
 ### Module Export Pattern
+
 Every module exports to `flake.modules.<platform>.<name>`:
+
 ```nix
 # modules/example/foo.nix
 _: {
@@ -69,7 +75,9 @@ _: {
 ## Code Style Guidelines
 
 ### Nix Formatting
+
 Enforced via treefmt-nix with:
+
 - `nixfmt` - Nix files
 - `deadnix` - Remove dead code
 - `statix` - Linting/suggestions
@@ -82,6 +90,7 @@ Enforced via treefmt-nix with:
 Run `nix fmt` before committing.
 
 ### Nix Code Conventions
+
 ```nix
 # Function arguments: use destructuring with trailing comma
 { inputs, config, lib, pkgs, ... }:
@@ -107,6 +116,7 @@ imports = with modules.darwin; [ base rust ];
 ```
 
 ### Naming Conventions
+
 - **Machines**: `{user}-{os}{type}{num}` (e.g., `pperanich-ll1` = Linux Laptop 1)
   - OS: `l`=Linux, `m`=macOS, `w`=Windows, `wsl`=WSL
   - Type: `l`=laptop, `d`=desktop, `m`=mini, `raspi`=Raspberry Pi
@@ -115,6 +125,7 @@ imports = with modules.darwin; [ base rust ];
 - **Options**: follow upstream conventions
 
 ### Directory Structure
+
 ```
 /modules/           # Auto-imported modules (dendritic pattern)
   flake-parts/      # Flake infrastructure (fmt, shell, clan, nixpkgs)
@@ -137,12 +148,14 @@ imports = with modules.darwin; [ base rust ];
 ```
 
 ### Error Handling
+
 - Prefer `lib.mkIf` for conditional enabling
 - Use `lib.optionals` for conditional list items
 - Use `lib.mkDefault` for overridable defaults
 - Never use `builtins.throw` unless truly unrecoverable
 
 ### Module Best Practices
+
 1. Single responsibility per module
 2. Export to correct platform (`nixos`, `darwin`, `homeManager`)
 3. Provide sensible defaults
@@ -152,36 +165,47 @@ imports = with modules.darwin; [ base rust ];
 ## Special Files and Patterns
 
 ### Extended Library
+
 Custom functions available as `lib.my.*`:
+
 - `lib.my.relativeToRoot` - Path relative to flake root
 - `lib.my.getHomeDirs` - Discover home profile directories
 - `lib.my.mkHomeConfigurations` - Generate home-manager configs
 
 ### Overlays (`/overlays/default.nix`)
+
 Applied globally to nixpkgs. Use for:
+
 - Version pinning
 - Patch application
 - Package modifications
 
 ### Secrets
+
 Managed via sops-nix with age encryption:
+
 ```bash
 # Edit secrets (requires age key)
 sops sops/secrets.yaml
 ```
+
 Never commit plaintext secrets.
 
 ## Pre-commit Hooks
+
 Configured via git-hooks.nix:
+
 - `nix-fmt`: Auto-format on commit
 
 ## Common Pitfalls
+
 1. **Module not found**: Check export path matches `flake.modules.<platform>.<name>`
 2. **Stow conflicts**: Check `/home` directory for file conflicts
 3. **State version mismatch**: Keep `stateVersion` consistent
 4. **Overlay order**: Overlays in `/overlays/default.nix` apply globally
 
 ## Testing Changes
+
 ```bash
 # Quick syntax check
 nix flake check
@@ -195,6 +219,7 @@ nvd diff /run/current-system result
 ```
 
 ## Commit Guidelines
+
 - Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`
 - Test locally before committing
 - Run `nix fmt` before commit (enforced by pre-commit hook)

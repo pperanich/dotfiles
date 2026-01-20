@@ -31,7 +31,7 @@ in
     };
 
     homeManager.aplnis =
-      { pkgs, ... }:
+      { pkgs, config, ... }:
       {
         # User-level APLNIS configuration
         inherit nixpkgs;
@@ -43,13 +43,14 @@ in
           UV_HTTP_TIMEOUT = "600";
           DETSYS_IDS_TELEMETRY = "disabled";
           GODEBUG = "x509negativeserial=1";
+          OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode-work/";
         };
 
         # APLNIS-specific packages
         home.packages = with pkgs; [
           openssl_1_1
-          git-openssl_1_1
-          curl-openssl_1_1
+          # git-openssl_1_1
+          # curl-openssl_1_1
           aplnis-env # Small shell script to set and unset environment variables to work around VPN.
         ];
       };

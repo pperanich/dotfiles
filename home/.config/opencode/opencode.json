@@ -22,14 +22,8 @@
             "output": 65535
           },
           "modalities": {
-            "input": [
-              "text",
-              "image",
-              "pdf"
-            ],
-            "output": [
-              "text"
-            ]
+            "input": ["text", "image", "pdf"],
+            "output": ["text"]
           }
         },
         "antigravity-gemini-3-pro-low": {
@@ -41,14 +35,8 @@
             "output": 65535
           },
           "modalities": {
-            "input": [
-              "text",
-              "image",
-              "pdf"
-            ],
-            "output": [
-              "text"
-            ]
+            "input": ["text", "image", "pdf"],
+            "output": ["text"]
           }
         },
         "antigravity-gemini-3-flash": {
@@ -59,45 +47,9 @@
             "output": 65536
           },
           "modalities": {
-            "input": [
-              "text",
-              "image",
-              "pdf"
-            ],
-            "output": [
-              "text"
-            ]
+            "input": ["text", "image", "pdf"],
+            "output": ["text"]
           }
-        }
-      }
-    },
-    "opal": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "OPAL",
-      "options": {
-        "baseURL": "https://opal.livelab.jhuapl.edu/v2"
-      },
-      "models": {
-        "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
-          "name": "Qwen3-Coder-30B-A3B-Instruct"
-        },
-        "zai-org/GLM-4.5-Air-FP8": {
-          "name": "GLM-4.5-Air-FP8"
-        }
-      }
-    },
-    "openai-enterprise": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "OpenAI Enterprise",
-      "options": {
-        "baseURL": "https://aigateway.jhuapl.edu/v1"
-      },
-      "models": {
-        "gpt-5-codex": {
-          "name": "gpt-5-codex"
-        },
-        "gpt-4.1": {
-          "name": "gpt-4.1"
         }
       }
     }

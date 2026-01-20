@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "catppuccin",
+  "model": "openai/gpt-5.2-codex",
+  "autoupdate": true,
+  "share": "disabled",
+  "plugin": ["oh-my-opencode"],
+  "provider": {
+    "opal": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OPAL",
+      "options": {
+        "baseURL": "https://opal.livelab.jhuapl.edu/v2"
+      },
+      "models": {
+        "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
+          "name": "Qwen3-Coder-30B-A3B-Instruct"
+        },
+        "zai-org/GLM-4.5-Air-FP8": {
+          "name": "GLM-4.5-Air-FP8"
+        }
+      }
+    }
+  }
+}

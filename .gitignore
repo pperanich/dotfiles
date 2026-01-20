@@ -8,5 +8,6 @@ lazyvim.json
 secrets/**/*.yaml
 !secrets/.sops.yaml
 .DS_Store
+.claude/
 
 /home/Library/Developer/

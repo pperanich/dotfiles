@@ -37,6 +37,20 @@ in
       {
         imports = [ inputs.sops-nix.homeManagerModules.sops ];
         home.packages = [ pkgs.sops ];
+
+        # TODO: Remove after sops-nix PR is merged that fixes empty PATH on Darwin
+        # https://github.com/Mic92/sops-nix/issues/899 (age plugin support regression)
+        # The home-manager module sets PATH = lib.makeBinPath cfg.age.plugins, which
+        # results in empty PATH when no plugins are configured, breaking LaunchAgent.
+        launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
+          enable = true;
+          config = {
+            EnvironmentVariables = {
+              PATH = pkgs.lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin";
+            };
+          };
+        };
+
         sops = {
           # package = pkgs.sops-install-secrets.overrideAttrs (_old: {
           #   env.GODEBUG = "x509negativeserial=1";

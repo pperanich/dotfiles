@@ -4,6 +4,19 @@
   "model": "openai/gpt-5.2",
   "autoupdate": true,
   "share": "disabled",
+  "tools": {
+    "write": true,
+    "bash": true,
+    "webfetch": true,
+    "skill": true
+  },
+  "permission": {
+    "skill": {
+      "*": "allow"
+    },
+    "external_directory": "allow",
+    "*": "allow"
+  },
   "plugin": ["oh-my-opencode"],
   "provider": {
     "opal": {

@@ -157,7 +157,7 @@ fi
 # Load API keys from sops-nix if not already set.
 _secrets_dir="${XDG_CONFIG_HOME:-$HOME/.config}/sops-nix/secrets/api_keys"
 # Removed OPENAI for now...
-for key in OPAL ASSEMBLYAI HUGGING_FACE_HUB ANTHROPIC MISTRAL OPENROUTER GEMINI ARTIFICIAL_ANALYSIS; do
+for key in OPAL ASSEMBLYAI HUGGING_FACE_HUB ANTHROPIC MISTRAL OPENROUTER GEMINI ARTIFICIAL_ANALYSIS OPENCODE; do
   var="${key}_API_KEY"
   file="${_secrets_dir}/${(L)key}_api_key"
   [[ -z "${(@P)var}" && -f "$file" ]] && export "$var"="$(<"$file")"

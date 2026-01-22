@@ -23,7 +23,8 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "OPAL",
       "options": {
-        "baseURL": "https://opal.jhuapl.edu/v2"
+        "baseURL": "https://opal.jhuapl.edu/v2",
+        "apiKey": "{env:OPAL_API_KEY}"
       },
       "models": {
         "openai/gpt-oss-120b": {

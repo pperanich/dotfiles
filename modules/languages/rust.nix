@@ -66,7 +66,7 @@ _: {
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
             # macOS-specific packages
-            darwin.libiconv
+            # darwin.libiconv
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
             # Linux-specific packages
@@ -99,15 +99,15 @@ _: {
     darwin.rust =
       { pkgs, ... }:
       {
-        environment.systemPackages = with pkgs; [
-          libiconv
-        ];
-
-        # Environment variables for linking
-        environment.variables = {
-          PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
-          LIBRARY_PATH = "${pkgs.libiconv}/lib";
-        };
+        # environment.systemPackages = with pkgs; [
+        #   libiconv
+        # ];
+        #
+        # # Environment variables for linking
+        # environment.variables = {
+        #   PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
+        #   LIBRARY_PATH = "${pkgs.libiconv}/lib";
+        # };
       };
   };
 }

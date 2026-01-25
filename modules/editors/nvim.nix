@@ -14,7 +14,7 @@ _: {
         fzf # Fuzzy finder
         pkg-config # Required for some nvim plugins
         unzip
-        gcc
+        # gcc
         python3
       ];
 

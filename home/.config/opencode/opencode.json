@@ -7,7 +7,7 @@
   "plugin": [
     "opencode-gemini-auth@latest",
     "oh-my-opencode",
-    "opencode-antigravity-auth@1.3.0"
+    "opencode-antigravity-auth@1.3.1"
   ],
   "provider": {
     "google": {

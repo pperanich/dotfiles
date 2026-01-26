@@ -37,8 +37,8 @@ _: {
           (
             _:
             import (lib.my.relativeToRoot "home-profiles/peranpl1") {
-              inherit pkgs;
               inherit (config.flake.modules) homeManager;
+              config = config.home-manager.users.peranpl1;
             }
           )
         ];
@@ -83,8 +83,8 @@ _: {
           (
             _:
             import (lib.my.relativeToRoot "home-profiles/peranpl1") {
-              inherit pkgs;
               inherit (modules) homeManager;
+              config = config.home-manager.users.peranpl1;
             }
           )
         ];

@@ -97,7 +97,7 @@ _: {
 
     # macOS-specific system configuration
     darwin.rust =
-      { pkgs, ... }:
+      _:
       {
         # environment.systemPackages = with pkgs; [
         #   libiconv

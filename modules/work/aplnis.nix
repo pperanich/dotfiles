@@ -31,7 +31,7 @@ in
     };
 
     homeManager.aplnis =
-      { pkgs, config, ... }:
+      { pkgs, ... }:
       {
         # User-level APLNIS configuration
         inherit nixpkgs;
@@ -43,7 +43,6 @@ in
           UV_HTTP_TIMEOUT = "600";
           DETSYS_IDS_TELEMETRY = "disabled";
           GODEBUG = "x509negativeserial=1";
-          OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode-work/";
         };
 
         # APLNIS-specific packages

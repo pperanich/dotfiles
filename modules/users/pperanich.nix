@@ -2,6 +2,7 @@ _: {
   # pperanich user configuration - both NixOS system user and home-manager setup
   flake.modules.nixos.pperanich =
     {
+      config,
       lib,
       pkgs,
       modules,
@@ -37,8 +38,8 @@ _: {
           (
             _:
             import (lib.my.relativeToRoot "home-profiles/pperanich") {
-              inherit pkgs;
               inherit (modules) homeManager;
+              config = config.home-manager.users.pperanich;
             }
           )
         ];
@@ -64,34 +65,11 @@ _: {
         shell = pkgs.zsh;
         packages = [ pkgs.home-manager ];
         home = "/Users/pperanich";
-        # hashedPasswordFile = config.sops.secrets.pperanich-password.path;
-        # isNormalUser = true;
-        # extraGroups = [
-        #   "wheel"
-        #   "video"
-        #   "audio"
-        #   "dialout"
-        # ]
-        # ++ (builtins.filter (group: builtins.hasAttr group config.users.groups) [
-        #   "network"
-        #   "wireshark"
-        #   "i2c"
-        #   "mysql"
-        #   "docker"
-        #   "podman"
-        #   "git"
-        # ]);
       };
 
       system.primaryUser = "pperanich";
 
       launchd.user.envVariables = config.home-manager.users.pperanich.home.sessionVariables;
-
-      # Enable zsh system-wide
-      # programs.zsh = {
-      #   enable = true;
-      #   enableCompletion = false;
-      # };
 
       # Add to trusted users for nix
       nix.settings.trusted-users = [ "pperanich" ];
@@ -106,8 +84,8 @@ _: {
           (
             _:
             import (lib.my.relativeToRoot "home-profiles/pperanich") {
-              inherit pkgs;
               inherit (modules) homeManager;
+              config = config.home-manager.users.pperanich;
             }
           )
         ];

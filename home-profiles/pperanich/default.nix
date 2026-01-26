@@ -1,6 +1,7 @@
 # Home configuration for pperanich
 {
   homeManager,
+  config,
   ...
 }:
 {
@@ -28,4 +29,5 @@
 
   # User identity
   home.username = "pperanich";
+  home.sessionVariables.OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode/profiles/default/";
 }

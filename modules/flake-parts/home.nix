@@ -29,6 +29,7 @@ in
       additionalUsers = [
         "hst"
         "holo"
+        "magic"
         "mxwbio"
         "prest"
       ];

@@ -55,17 +55,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1768581059,
-        "narHash": "sha256-lyik8upWMqnGSOj8aGITBJ6QAEZFVymVM85se72QXrE=",
-        "ref": "refs/heads/main",
-        "rev": "8edb22d4c70f89cede3916364d021c5a00fede07",
-        "revCount": 12167,
-        "type": "git",
-        "url": "https://git.clan.lol/clan/clan-core"
+        "lastModified": 1769699953,
+        "narHash": "sha256-UfWqbBjXugAO+ss3utdLtCNeHi0Yr9Ec5gfGpb0HhWI=",
+        "owner": "clan-lol",
+        "repo": "clan-core",
+        "rev": "64f101cb733f2a50b38b8481da54f85afb2043ab",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "https://git.clan.lol/clan/clan-core"
+        "owner": "clan-lol",
+        "repo": "clan-core",
+        "type": "github"
       }
     },
     "cuda-legacy": {

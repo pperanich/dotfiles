@@ -25,7 +25,7 @@
     };
 
     clan-core = {
-      url = "git+https://git.clan.lol/clan/clan-core";
+      url = "github:clan-lol/clan-core";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";

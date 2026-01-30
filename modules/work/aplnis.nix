@@ -1,22 +1,23 @@
-_:
+{ lib, ... }:
 let
-  nixpkgs = {
-    overlays = [ (import ../../overlays/aplnis-overlay.nix) ];
-    config = {
-      permittedInsecurePackages = [
-        "openssl-1.1.1w"
-      ];
-    };
+  aplnisOverlay = import ../../overlays/aplnis-overlay.nix;
+  nixpkgsConfig = {
+    permittedInsecurePackages = [
+      "openssl-1.1.1w"
+    ];
   };
 in
 {
   # APLNIS work environment configuration
   # Provides overlay for OpenSSL 1.1 support and work-specific packages
+  # Uses lib.mkAfter to ensure aplnis-overlay runs AFTER other overlays
+  # (especially sops-nix which defines sops-install-secrets)
 
   flake.modules = {
     nixos.aplnis = _: {
       # System-level APLNIS configuration
-      inherit nixpkgs;
+      nixpkgs.overlays = lib.mkAfter [ aplnisOverlay ];
+      nixpkgs.config = nixpkgsConfig;
       environment.variables = {
         DETSYS_IDS_TELEMETRY = "disabled";
       };
@@ -24,7 +25,8 @@ in
 
     darwin.aplnis = _: {
       # Darwin-specific APLNIS configuration
-      inherit nixpkgs;
+      nixpkgs.overlays = lib.mkAfter [ aplnisOverlay ];
+      nixpkgs.config = nixpkgsConfig;
       environment.variables = {
         DETSYS_IDS_TELEMETRY = "disabled";
       };
@@ -34,7 +36,8 @@ in
       { pkgs, ... }:
       {
         # User-level APLNIS configuration
-        inherit nixpkgs;
+        nixpkgs.overlays = lib.mkAfter [ aplnisOverlay ];
+        nixpkgs.config = nixpkgsConfig;
 
         # Work-specific environment variables for APLNIS VPN
         home.sessionVariables = {

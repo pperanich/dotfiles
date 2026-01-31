@@ -34,13 +34,16 @@ in
             # YubiKey support for system-level secrets
             age.plugins = [ pkgs.age-plugin-yubikey ];
           }
-          # WiFi passphrase secret for hostapd (only on hosts with router.hostapd enabled)
-          (lib.mkIf (config.features.router.hostapd.enable or false) {
-            secrets.wifi_passphrase = {
-              sopsFile = "${sopsFolder}/secrets.yaml";
-              mode = "0400";
-            };
-          })
+          # WiFi passphrase secret for hostapd AP mode or wpa_supplicant client mode
+          (lib.mkIf
+            ((config.features.router.hostapd.enable or false) || (config.networking.wireless.enable or false))
+            {
+              secrets.wifi_passphrase = {
+                sopsFile = "${sopsFolder}/secrets.yaml";
+                mode = "0400";
+              };
+            }
+          )
         ];
         environment.systemPackages = [ pkgs.sops ];
       };

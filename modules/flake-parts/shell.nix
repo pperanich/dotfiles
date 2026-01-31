@@ -17,6 +17,7 @@
           pkgs.ssh-to-age
           pkgs.gnupg
           pkgs.age
+          pkgs.zensical
 
           inputs'.clan-core.packages.clan-cli
           inputs'.home-manager.packages.home-manager

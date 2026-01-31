@@ -28,6 +28,13 @@
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           pkgs.age-plugin-se # Secure Enclave plugin - only works on macOS, requires Swift to build
         ];
+
+        shellHook = ''
+          # Derive age key from SSH key for sops decryption
+          if [[ -f "$HOME/.ssh/id_ed25519" ]]; then
+            export SOPS_AGE_KEY=$(ssh-to-age -private-key < "$HOME/.ssh/id_ed25519" 2>/dev/null)
+          fi
+        '';
       };
     };
 }

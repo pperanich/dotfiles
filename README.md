@@ -1,516 +1,212 @@
-# Nix Configuration
+# Dotfiles
 
-A modular and maintainable Nix configuration for both NixOS and Darwin systems, built using the dendritic pattern with flake-parts and clan-core for scalable machine deployment.
+Nix-based system configuration using the dendritic pattern with [flake-parts](https://flake.parts/) and [clan-core](https://docs.clan.lol/).
 
-## Architecture Overview
-
-This configuration leverages modern Nix tooling to create a highly modular and maintainable system:
-
-- **flake-parts**: Composable flake architecture for better organization
-- **clan-core**: Infrastructure-as-code machine deployment and management
-- **import-tree**: Automatic module discovery and loading (dendritic pattern)
-- **Extended library**: Custom functions for configuration generation
-
-### The Dendritic Pattern
-
-The dendritic pattern uses automatic module discovery via `import-tree`, where all `.nix` files under `/modules` are automatically imported and made available. Each module exports itself by defining attributes on `flake.modules.<platform>.<moduleName>`, creating a tree-like structure that grows organically.
-
-**Key benefits:**
-
-- No manual module imports required
-- Self-organizing module structure
-- Platform-specific module segregation (nixos, darwin, homeManager)
-- Scalable as configuration grows
-
-## Directory Structure
-
-### `/modules` - Modular Components
-
-All system, home-manager, and flake configuration modules, organized by category and automatically imported via `import-tree`:
-
-```
-modules/
-├── flake-parts/         # Flake-parts integration modules
-│   ├── flake-parts.nix    # Base flake-parts configuration
-│   ├── clan.nix           # Clan-core machine deployment
-│   ├── home.nix           # Home-manager integration
-│   ├── nixpkgs.nix        # Nixpkgs configuration & overlays
-│   ├── fmt.nix            # Code formatting
-│   └── shell.nix          # Development shell
-├── containers/          # Container runtimes (k3s, podman)
-├── database/            # Database services (couchdb)
-├── desktop/             # Desktop applications & window managers
-│   ├── applications.nix   # Desktop applications
-│   ├── fonts.nix          # Font configurations
-│   ├── yabai.nix          # Tiling WM (Darwin)
-│   ├── skhd.nix           # Hotkey daemon (Darwin)
-│   └── sketchybar.nix     # Status bar (Darwin)
-├── editors/             # Editor configurations (emacs, nvim, vscode)
-├── languages/           # Language-specific tools (rust, tex)
-├── network/             # Network services & utilities
-│   ├── tailscale.nix      # VPN mesh network
-│   ├── ssh-server.nix     # SSH server configuration
-│   ├── home-assistant.nix # Home automation
-│   └── utilities.nix      # Network tools
-├── shell/               # Shell environments & tools
-│   ├── zsh.nix            # Zsh configuration
-│   ├── tools.nix          # CLI utilities
-│   └── environment.nix    # Environment variables
-├── system/              # Core system configurations
-│   ├── nix-configuration.nix  # Base Nix settings
-│   ├── sops.nix           # Secrets management
-│   ├── borgbackup.nix     # Backup system
-│   └── file-exploration.nix # File managers
-├── users/               # User account modules (pperanich, peranpl1)
-├── virtualization/      # Virtualization (docker, qemu, lxd)
-└── work/                # Work-specific configurations
-```
-
-**Module Structure:**
-Each module exports itself by defining flake attributes:
-
-```nix
-# Example: modules/shell/zsh.nix
-_: {
-  flake.modules.homeManager.zsh = { ... };  # Home-manager module
-  flake.modules.nixos.zsh = { ... };        # NixOS module (if needed)
-  flake.modules.darwin.zsh = { ... };       # Darwin module (if needed)
-}
-```
-
-### `/home-profiles` - User Environments
-
-Pre-configured user profiles that compose homeManager modules into complete user environments:
-
-```
-home-profiles/
-├── generic/         # Generic profile for shared/service accounts
-├── pperanich/       # Primary user profile (NixOS)
-└── peranpl1/        # Primary user profile (Darwin)
-```
-
-Profiles automatically generate `homeConfigurations` via the `lib.my.mkHomeConfigurations` function, which:
-
-- Auto-discovers profile directories
-- Generates configurations for each user
-- Supports additional users via the `generic` profile
-
-### `/machines` - Host Configurations
-
-Individual machine configurations managed by clan-core:
-
-```
-machines/
-├── peranpl1-ml1/            # Darwin laptop (work)
-│   └── configuration.nix
-├── peranpl1-ml2/            # Darwin laptop (work)
-│   └── configuration.nix
-├── pp-ll1/                  # NixOS laptop (MacBook w/ T2)
-│   ├── configuration.nix
-│   └── hardware-configuration.nix
-├── pp-ld1/                  # NixOS desktop
-├── pp-ml1/                  # Darwin laptop (Apple Silicon)
-├── pp-nas1/                 # NixOS NAS (BeeLink MeMini)
-├── pp-rpi1/                 # NixOS Raspberry Pi
-└── pp-wsl1/                 # WSL instance
-```
-
-**Naming Convention:**
-
-Machine names follow the pattern: `{prefix}-{OS}{device-type}{number}` for general-purpose machines, or `{prefix}-{role}{number}` for dedicated-role machines.
-
-- **Prefix**: Owner identifier
-  - `pp` - Personal machines
-  - `peranpl1` - Work machines
-- **OS**: Operating system indicator (for general-purpose machines)
-  - `l` - Linux (NixOS)
-  - `m` - macOS (Darwin)
-  - `wsl` - Windows Subsystem for Linux
-- **Device Type**: Form factor (for general-purpose machines)
-  - `d` - Desktop
-  - `l` - Laptop
-- **Role**: Function name (for dedicated-role machines)
-  - `nas` - Network Attached Storage
-  - `rpi` - Raspberry Pi
-- **Number**: Sequential number for multiple devices of the same type (1, 2, 3, ...)
-
-Examples:
-
-- `pp-ll1` → Personal, Linux Laptop 1
-- `pp-ld1` → Personal, Linux Desktop 1
-- `pp-ml1` → Personal, macOS Laptop 1
-- `pp-nas1` → Personal, NAS 1
-- `pp-rpi1` → Personal, Raspberry Pi 1
-- `pp-wsl1` → Personal, WSL 1
-- `peranpl1-ml1` → Work, macOS Laptop 1
-
-Machine configurations import modules by referencing:
-
-```nix
-imports = [ ] ++ (with modules.nixos; [
-  base           # Core system config
-  rust           # Language support
-  pperanich      # User account
-]);
-```
-
-### `/home` - Traditional Dotfiles
-
-Raw configuration files managed outside of Nix, deployed via GNU Stow:
-
-```
-home/
-├── .config/         # XDG config directory
-├── .ssh/           # SSH configurations
-└── [other dotfiles]
-```
-
-These are automatically stowed to `$HOME` via home-manager activation:
-
-```nix
-home.activation.stowHome = lib.hm.dag.entryAfter ["writeBoundary"] ''
-  ${pkgs.stow}/bin/stow home
-'';
-```
-
-### Supporting Directories
-
-- `/lib` - Custom library functions (extended as `lib.my`)
-- `/overlays` - Nixpkgs overlays and patches
-- `/pkgs` - Custom package definitions
-- `/sops` - Encrypted secrets (managed by sops-nix)
-- `/vars` - Non-secret configuration variables
-
-## Flake-Parts Integration
-
-The flake entry point delegates all configuration to flake-parts modules:
-
-```nix
-# flake.nix
-{
-  outputs = inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; }
-      (inputs.import-tree ./modules);
-}
-```
-
-**How it works:**
-
-1. `import-tree` recursively imports all `.nix` files in `/modules`
-2. Each file can define flake-parts configuration
-3. Files under `modules/flake-parts/` wire together the complete system
-4. Modules export themselves into `flake.modules.<platform>.<name>`
-
-**Key flake-parts modules:**
-
-- `nixpkgs.nix`: Configures nixpkgs with overlays, extends lib with custom functions
-- `clan.nix`: Defines machine inventory and clan-core deployment settings
-- `home.nix`: Auto-generates homeConfigurations from profiles
-- `shell.nix`: Development environment with formatting tools
-
-## Clan-Core Deployment
-
-Machine deployment and management is handled by [clan-core](https://docs.clan.lol/), providing:
-
-- **Inventory management**: Centralized machine definitions
-- **Role-based configuration**: Shared settings across machine groups
-- **Secret management**: Integration with sops for encrypted secrets
-- **Remote deployment**: Standardized deployment workflows
-
-**Configuration** (`modules/flake-parts/clan.nix`):
-
-```nix
-flake.clan = {
-  meta.name = "pperanich-clan";
-
-  inventory = {
-    machines."peranpl1-ml1".machineClass = "darwin";
-    machines."peranpl1-ml1".tags = [ "laptop" ];
-
-    # Instances define shared services/roles
-    instances = {
-      clan-cache = { ... };      # Nix binary cache
-      sshd-basic = { ... };      # SSH configuration
-      users-root = { ... };      # Root user setup
-      emergency-access = { ... }; # Emergency access
-    };
-  };
-};
-```
-
-## Usage Guide
-
-### When to Use Each Component
-
-| Component                 | Use For                                                |
-| ------------------------- | ------------------------------------------------------ |
-| **Modules (NixOS)**       | System services, hardware config, system-wide settings |
-| **Modules (Darwin)**      | macOS system preferences, homebrew, system services    |
-| **Modules (homeManager)** | User packages, application configs, dev environments   |
-| **Home Profiles**         | Complete user environment definitions                  |
-| **Machines**              | Host-specific configuration, hardware settings         |
-| **Home (dotfiles)**       | Configs not yet nixified, legacy dotfiles              |
-
-### Adding a New Module
-
-1. Create a file in the appropriate category under `/modules`:
-
-   ```nix
-   # modules/editors/helix.nix
-   _: {
-     flake.modules.homeManager.helix = { pkgs, ... }: {
-       programs.helix.enable = true;
-     };
-   }
-   ```
-
-2. Reference it in a profile or machine:
-   ```nix
-   # home-profiles/pperanich/default.nix
-   imports = with outputs.homeModules; [
-     helix  # Automatically available!
-   ];
-   ```
-
-### Adding a New Machine
-
-1. Create machine directory and configuration:
-
-   ```nix
-   # machines/new-host/configuration.nix
-   { modules, ... }: {
-     imports = with modules.nixos; [ base pperanich ];
-     networking.hostName = "new-host";
-   }
-   ```
-
-2. Add to clan inventory:
-
-   ```nix
-   # modules/flake-parts/clan.nix
-   inventory.machines."new-host".machineClass = "nixos";
-   ```
-
-3. Deploy:
-   ```bash
-   clan machines update new-host
-   ```
-
-### Building Configurations
+## Quick Start
 
 ```bash
-# NixOS system
-sudo nixos-rebuild switch --flake .#pp-ll1
+# Clone
+git clone https://github.com/pperanich/dotfiles.git ~/dotfiles
+cd ~/dotfiles
 
-# Darwin system
-darwin-rebuild switch --flake .#peranpl1-ml1
-
-# Home-manager only
-home-manager switch --flake .#pperanich
-
-# Via clan-core
-clan machines update pp-ll1
-```
-
-### Development Workflow
-
-```bash
-# Enter development shell (includes formatters, linters)
+# Enter dev shell
 nix develop
 
-# Format all Nix files
-nix fmt
-
-# Check flake
-nix flake check
-
-# Update all inputs
-nix flake update
-
-# Update specific input
-nix flake update nixpkgs
+# Deploy to a machine
+clan vars upload <hostname>
+clan machines update <hostname>
 ```
+
+## Machines
+
+| Hostname     | OS     | Type    | Description                      |
+| ------------ | ------ | ------- | -------------------------------- |
+| pp-ml1       | Darwin | Laptop  | Personal MacBook (Apple Silicon) |
+| pp-ll1       | NixOS  | Laptop  | Personal Linux laptop            |
+| pp-ld1       | NixOS  | Desktop | Personal Linux desktop           |
+| pp-nas1      | NixOS  | Server  | NAS (BeeLink)                    |
+| pp-router1   | NixOS  | Server  | Router                           |
+| pp-rpi1      | NixOS  | SBC     | Raspberry Pi                     |
+| pp-wsl1      | NixOS  | VM      | WSL instance                     |
+| peranpl1-ml1 | Darwin | Laptop  | Work MacBook                     |
+| peranpl1-ml2 | Darwin | Laptop  | Work MacBook                     |
+
+## Architecture
+
+```
+dotfiles/
+├── machines/           # Host-specific configurations
+├── modules/            # Reusable NixOS/Darwin/home-manager modules
+│   └── flake-parts/    # Flake infrastructure (clan, nixpkgs, shell)
+├── home-profiles/      # User environment compositions
+├── sops/               # Secrets (machine keys, app secrets)
+├── vars/               # Clan-managed variables
+└── docs/               # Documentation
+```
+
+### Key Concepts
+
+| Concept               | Description                                                            |
+| --------------------- | ---------------------------------------------------------------------- |
+| **Dendritic pattern** | Auto-discovery of modules via `import-tree` - no manual imports needed |
+| **Clan-core**         | Infrastructure-as-code machine deployment with inventory and roles     |
+| **Hybrid secrets**    | Clan vars for machine bootstrap, traditional sops-nix for app secrets  |
+
+### Module Export Pattern
+
+```nix
+# modules/example/foo.nix
+_: {
+  flake.modules.homeManager.foo = { pkgs, ... }: { ... };
+  flake.modules.nixos.foo = { ... }: { ... };
+  flake.modules.darwin.foo = { ... }: { ... };
+}
+```
+
+## Common Commands
+
+```bash
+# Development
+nix develop                           # Enter dev shell
+nix fmt                               # Format all files
+nix flake check                       # Validate flake
+
+# Machine deployment
+clan machines list                    # List all machines
+clan machines update <hostname>       # Deploy to machine
+clan vars upload <hostname>           # Upload secrets only
+
+# Secrets
+clan vars list <hostname>             # List vars for machine
+clan secrets get <secret>             # Decrypt a secret
+
+# Manual builds
+sudo nixos-rebuild switch --flake .#<hostname>    # NixOS
+darwin-rebuild switch --flake .#<hostname>        # Darwin
+home-manager switch --flake .#<username>          # Home-manager
+```
+
+## Documentation
+
+Detailed guides are available in the [docs/](docs/) directory:
+
+- **[Adding New Machines](docs/adding-new-machines.md)** - Complete onboarding guide
+- **[Troubleshooting](docs/clan-machines-update-troubleshooting.md)** - Debug deployment issues
+
+To browse documentation locally:
+
+```bash
+nix run nixpkgs#zensical -- serve
+```
+
+## Secrets Management
+
+This repo uses a **hybrid approach**:
+
+| System                   | Purpose                                           | Location                 |
+| ------------------------ | ------------------------------------------------- | ------------------------ |
+| **Clan vars**            | Machine bootstrap (age keys, SSH keys, passwords) | `vars/`, `sops/secrets/` |
+| **Traditional sops-nix** | App secrets (tailscale, borg, k3s)                | `sops/secrets.yaml`      |
+
+### Adding a Machine to Secrets
+
+```bash
+# Generate vars (creates age keypair, SSH keys, etc.)
+clan vars generate <hostname>
+
+# Add to secrets.yaml recipients (edit sops/.sops.yaml, then:)
+cd sops && sops updatekeys secrets.yaml
+
+# Enable self-upload (optional)
+clan secrets machines add-secret <hostname> <hostname>-age.key
+```
+
+See [Adding New Machines](docs/adding-new-machines.md) for complete steps.
 
 ## Installation
 
 ### Prerequisites
 
-Install Nix with flakes enabled:
-
 ```bash
-# Install Nix (Determinate Systems installer - recommended)
+# Install Nix (Determinate Systems installer)
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-
-# Or traditional installer with flakes
-sh <(curl -L https://nixos.org/nix/install) --daemon
-
-# Enable flakes (traditional installer only)
-mkdir -p ~/.config/nix
-echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
 
-### Initial Setup
+### First-Time Setup
 
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/pperanich/dotfiles.git ~/dotfiles
-   cd ~/dotfiles
-   ```
-
-2. **For NixOS:**
-
-   ```bash
-   # First time (may need to bootstrap minimal config first)
-   sudo nixos-rebuild switch --flake .#your-hostname
-
-   # Subsequent updates
-   sudo nixos-rebuild switch --flake .
-   ```
-
-3. **For Darwin (macOS):**
-
-   ```bash
-   # Install nix-darwin
-   nix run nix-darwin -- switch --flake .#your-hostname
-
-   # Subsequent updates
-   darwin-rebuild switch --flake .
-   ```
-
-4. **Home-manager standalone:**
-
-   ```bash
-   # First time
-   nix run home-manager/release-25.05 -- switch --flake .#your-username
-
-   # Subsequent updates
-   home-manager switch --flake .
-   ```
-
-### Using Clan-Core
-
-Clan-core provides advanced deployment capabilities:
+**NixOS:**
 
 ```bash
-# Install clan CLI
-nix profile install git+https://git.clan.lol/clan/clan-core
-
-# List all machines
-clan machines list
-
-# Show machine info
-clan machines show pp-ll1
-
-# Update/deploy a machine
-clan machines update pp-ll1
-
-# Update all machines with a tag
-clan machines update --tag laptop
+sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
-## Secrets Management
-
-Secrets are managed using [sops-nix](https://github.com/Mic92/sops-nix) with age encryption:
+**Darwin:**
 
 ```bash
-# Edit secrets (requires proper age key)
-sops secrets/example.yaml
-
-# Secrets are automatically deployed with system configuration
-# and available at runtime in /run/secrets/
+nix run nix-darwin -- switch --flake .#<hostname>
 ```
 
-**Supported age plugins:**
+**Home-manager (standalone):**
 
-- `age-plugin-yubikey` - Hardware key storage
-- `age-plugin-fido2-hmac` - FIDO2 authentication
+```bash
+nix run home-manager/release-25.05 -- switch --flake .#<username>
+```
 
-## Project Philosophy
+## Project Structure
 
-### Design Principles
+<details>
+<summary>Click to expand full directory structure</summary>
 
-1. **Modularity**: Every component is a self-contained module
-2. **Composability**: Modules combine to create complete systems
-3. **Discoverability**: Automatic module loading via dendritic pattern
-4. **Type Safety**: Leverage Nix's type system for configuration validation
-5. **Reproducibility**: Pinned inputs ensure consistent builds
-6. **Scalability**: Easy to add new machines and modules
+```
+modules/
+├── flake-parts/         # Flake infrastructure
+│   ├── clan.nix           # Machine inventory & services
+│   ├── home.nix           # Home-manager integration
+│   ├── nixpkgs.nix        # Nixpkgs config & overlays
+│   └── shell.nix          # Development shell
+├── containers/          # k3s, podman
+├── database/            # couchdb
+├── desktop/             # fonts, yabai, skhd, sketchybar
+├── editors/             # emacs, nvim, vscode
+├── languages/           # rust, tex
+├── network/             # tailscale, ssh, home-assistant
+├── router/              # firewall, NAT, DHCP
+├── shell/               # zsh, tools, environment
+├── system/              # nix config, sops, borgbackup
+├── users/               # user account modules
+└── virtualization/      # docker, qemu, lxd
 
-### Module Guidelines
+machines/
+├── pp-*/                # Personal machines
+└── peranpl1-*/          # Work machines
 
-- Keep modules focused on a single responsibility
-- Use appropriate platform (nixos/darwin/homeManager)
-- Provide sensible defaults with override options
-- Document complex configuration choices
-- Minimize cross-module dependencies
+home-profiles/
+├── pperanich/           # Primary user (NixOS)
+├── peranpl1/            # Primary user (Darwin)
+└── generic/             # Shared/service accounts
 
-### Best Practices
+sops/
+├── .sops.yaml           # SOPS config for secrets.yaml
+├── secrets.yaml         # App secrets (traditional sops-nix)
+├── machines/            # Machine public keys
+└── secrets/             # Encrypted age keys
 
-- **Testing**: Test changes locally before committing
-- **Commits**: Use conventional commits (feat:, fix:, docs:, etc.)
-- **Secrets**: Never commit secrets; use sops-nix
-- **Pinning**: Pin dependencies for reproducibility
-- **Documentation**: Keep README synchronized with structure
+vars/
+├── per-machine/         # Machine-specific vars
+└── shared/              # Cross-machine vars (user passwords)
+```
 
-## Troubleshooting
+</details>
 
-### Common Issues
+## References
 
-**Module not found:**
-
-- Ensure the module file exports to the correct `flake.modules.<platform>` namespace
-- Check that the file is in the `/modules` directory (auto-imported)
-- Verify the module name matches what you're importing
-
-**Build failures:**
-
-- Check `nix flake check` for errors
-- Review flake inputs are up to date: `nix flake update`
-- Verify no conflicts in overlays or module options
-
-**Home-manager activation fails:**
-
-- Check for file conflicts: `home-manager switch --flake . --show-trace`
-- Review stow conflicts in `/home` directory
-- Ensure state version matches
-
-**Clan deployment issues:**
-
-- Verify SSH access to target machine
-- Check machine is in clan inventory
-- Review clan configuration: `clan machines show <hostname>`
-
-## Inspiration & References
-
-This configuration draws inspiration from:
-
-- **[hlissner/dotfiles](https://github.com/hlissner/dotfiles)** - Module organization patterns
-- **[Mic92/dotfiles](https://github.com/Mic92/dotfiles)** - Clan-core usage and sops integration
-- **[berberman/flakes](https://github.com/berberman/flakes)** - Flake-parts architecture
-- **[LnL7/nix-darwin](https://github.com/LnL7/nix-darwin)** - Darwin system management
-- **[nix-community/home-manager](https://github.com/nix-community/home-manager)** - User environment management
-
-**Documentation:**
-
-- [Flake-parts documentation](https://flake.parts/)
-- [Clan-core documentation](https://docs.clan.lol/)
-- [NixOS manual](https://nixos.org/manual/nixos/stable/)
-- [Nix-darwin manual](https://daiderd.com/nix-darwin/manual/)
-- [Home-manager manual](https://nix-community.github.io/home-manager/)
-
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Follow the module guidelines above
-4. Test your changes locally
-5. Commit with conventional commits
-6. Push to your branch
-7. Open a Pull Request
+- [Flake-parts](https://flake.parts/)
+- [Clan-core](https://docs.clan.lol/)
+- [sops-nix](https://github.com/Mic92/sops-nix)
+- [NixOS](https://nixos.org/manual/nixos/stable/)
+- [nix-darwin](https://github.com/LnL7/nix-darwin)
+- [home-manager](https://nix-community.github.io/home-manager/)
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT

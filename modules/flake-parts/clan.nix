@@ -149,22 +149,104 @@
         #     };
         #   };
         # };
-        # wireguard = {
+        wireguard-home = {
+          module = {
+            name = "wireguard";
+            input = "clan-core";
+          };
+          roles = {
+            controller.machines.pp-router1 = {
+              settings.endpoint = "vpn.prestonperanich.com";
+            };
+            peer.machines = {
+              pp-ml1 = { };
+              peranpl1-ml1 = { };
+              peranpl1-ml2 = { };
+            };
+          };
+        };
+
+        # Dynamic DNS - keep vpn.prestonperanich.com updated with home IP
+        dyndns = {
+          module = {
+            name = "dyndns";
+            input = "clan-core";
+          };
+          roles.default.machines.pp-router1 = { };
+          roles.default.settings = {
+            period = 5; # Update every 5 minutes
+            settings = {
+              vpn-prestonperanich = {
+                provider = "cloudflare";
+                domain = "prestonperanich.com";
+                secret_field_name = "token"; # Cloudflare API token
+                extraSettings = {
+                  host = "vpn"; # vpn.prestonperanich.com
+                  ip_version = "ipv4";
+                };
+              };
+            };
+          };
+        };
+
+        # Borgbackup - pp-router1 as backup server for NixOS machines
+        borgbackup = {
+          module = {
+            name = "borgbackup";
+            input = "clan-core";
+          };
+          roles = {
+            server.machines.pp-router1 = { };
+            # Clients automatically backup to all servers in this instance
+            client.machines = {
+              pp-nas1 = { };
+              # Add other NixOS machines as needed:
+              # pp-ll1 = { };
+            };
+          };
+        };
+
+        # Syncthing - P2P file sync across machines
+        syncthing = {
+          module = {
+            name = "syncthing";
+            input = "clan-core";
+          };
+          roles.peer = {
+            machines = {
+              pp-router1 = { };
+              pp-nas1 = { };
+            };
+            settings.folders = {
+              documents = {
+                path = "/home/pperanich/Sync/Documents";
+              };
+            };
+          };
+        };
+
+        # Nix cache proxy - speeds up builds for all LAN machines
+        # NOTE: Disabled - requires ncps nixpkgs module (not yet in stable nixpkgs)
+        # ncps = {
         #   module = {
-        #     name = "wireguard";
+        #     name = "ncps";
         #     input = "clan-core";
         #   };
         #   roles = {
-        #     controller = {
-        #       machines.pp-nas1 = { };
-        #       settings.endpoint = "vpn.prestonperanich.com";
+        #     server.machines.pp-router1 = {
+        #       settings = {
+        #         dataPath = "/var/lib/ncps";
+        #         caches = [
+        #           "https://cache.nixos.org"
+        #           "https://nix-community.cachix.org"
+        #         ];
+        #         publicKeys = [
+        #           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        #           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        #         ];
+        #       };
         #     };
-        #     peer.machines = {
-        #       pp-ml1 = { };
-        #       peranpl1-ml1 = { };
-        #       peranpl1-ml2 = { };
-        #     };
-        #     peer.settings.controller = "pp-nas1";
+        #     client.tags.nixos = { };
         #   };
         # };
       };

@@ -53,6 +53,14 @@
             "all"
           ];
         };
+        "pp-router1" = {
+          machineClass = "nixos";
+          tags = [
+            "router"
+            "nixos"
+            "all"
+          ];
+        };
       };
 
       instances = {
@@ -98,6 +106,7 @@
             machines = {
               pp-ll1 = { };
               pp-nas1 = { };
+              pp-router1 = { };
             };
             settings = {
               user = "pperanich";

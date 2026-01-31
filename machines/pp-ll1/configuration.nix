@@ -55,8 +55,8 @@ in
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pperanich-ll1.local";
-  clan.core.networking.buildHost = "root@pperanich-ll1.local";
+  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.181";
+  clan.core.networking.buildHost = "root@192.168.0.184";
 
   services = {
     # Enable the login manager

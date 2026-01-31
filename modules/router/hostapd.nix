@@ -43,8 +43,19 @@ _: {
           };
 
           wpaPassphrase = lib.mkOption {
-            type = lib.types.str;
-            description = "WPA2/WPA3 passphrase (8-63 characters)";
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "WPA2/WPA3 passphrase (8-63 characters). Mutually exclusive with wpaPassphraseFile.";
+          };
+
+          wpaPassphraseFile = lib.mkOption {
+            type = lib.types.nullOr lib.types.path;
+            default = null;
+            example = "/run/secrets/wifi_passphrase";
+            description = ''
+              Path to a file containing the WPA passphrase (8-63 characters).
+              Use this for sops-nix secrets integration. Mutually exclusive with wpaPassphrase.
+            '';
           };
 
           wpaKeyMgmt = lib.mkOption {
@@ -151,8 +162,14 @@ _: {
                     description = "SSID for this BSS";
                   };
                   wpaPassphrase = lib.mkOption {
-                    type = lib.types.str;
-                    description = "WPA passphrase for this BSS";
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "WPA passphrase for this BSS. Mutually exclusive with wpaPassphraseFile.";
+                  };
+                  wpaPassphraseFile = lib.mkOption {
+                    type = lib.types.nullOr lib.types.path;
+                    default = null;
+                    description = "Path to file containing WPA passphrase for this BSS.";
                   };
                   wpaKeyMgmt = lib.mkOption {
                     type = lib.types.str;
@@ -256,7 +273,14 @@ _: {
             wpa = 2;
             wpa_key_mgmt = wpaKeyMgmtWithFT;
             rsn_pairwise = "CCMP";
+          }
+          # Passphrase: either direct or from file (use placeholder for file-based)
+          // lib.optionalAttrs (radio.wpaPassphrase != null) {
             wpa_passphrase = radio.wpaPassphrase;
+          }
+          // lib.optionalAttrs (radio.wpaPassphraseFile != null) {
+            # Placeholder that will be replaced at runtime by ExecStartPre
+            wpa_passphrase = "@WPA_PASSPHRASE@";
           }
           // lib.optionalAttrs (radio.bssid != null) {
             inherit (radio) bssid;
@@ -311,7 +335,12 @@ _: {
                 wpa = 2;
                 wpa_key_mgmt = bss.wpaKeyMgmt;
                 rsn_pairwise = "CCMP";
+              }
+              // lib.optionalAttrs (bss.wpaPassphrase != null) {
                 wpa_passphrase = bss.wpaPassphrase;
+              }
+              // lib.optionalAttrs (bss.wpaPassphraseFile != null) {
+                wpa_passphrase = "@BSS_WPA_PASSPHRASE_${bss.interface}@";
               }
               // lib.optionalAttrs (bss.bridge != null) {
                 inherit (bss) bridge;
@@ -519,11 +548,19 @@ _: {
                 message = "router.hostapd.radios.${name}: 802.11ac requires 5GHz or 6GHz band";
               }
               {
-                assertion = builtins.stringLength radio.wpaPassphrase >= 8;
+                assertion = (radio.wpaPassphrase != null) || (radio.wpaPassphraseFile != null);
+                message = "router.hostapd.radios.${name}: Either wpaPassphrase or wpaPassphraseFile must be set";
+              }
+              {
+                assertion = !((radio.wpaPassphrase != null) && (radio.wpaPassphraseFile != null));
+                message = "router.hostapd.radios.${name}: wpaPassphrase and wpaPassphraseFile are mutually exclusive";
+              }
+              {
+                assertion = (radio.wpaPassphrase == null) || (builtins.stringLength radio.wpaPassphrase >= 8);
                 message = "router.hostapd.radios.${name}: WPA passphrase must be at least 8 characters";
               }
               {
-                assertion = builtins.stringLength radio.wpaPassphrase <= 63;
+                assertion = (radio.wpaPassphrase == null) || (builtins.stringLength radio.wpaPassphrase <= 63);
                 message = "router.hostapd.radios.${name}: WPA passphrase must be at most 63 characters";
               }
             ]) enabledRadios
@@ -535,12 +572,35 @@ _: {
         # Create a hostapd service for each radio
         systemd.services = lib.mapAttrs' (
           name: radio:
+          let
+            configFile = mkRadioConfig name radio;
+            usesPassphraseFile = radio.wpaPassphraseFile != null;
+            runtimeConfigPath = "/run/hostapd/hostapd-${name}.conf";
+            # Script to substitute passphrase from file
+            prepareConfig = pkgs.writeShellScript "hostapd-${name}-prepare" ''
+              set -euo pipefail
+              ${
+                if usesPassphraseFile then
+                  ''
+                    PASSPHRASE=$(cat "${radio.wpaPassphraseFile}")
+                    ${pkgs.gnused}/bin/sed "s|@WPA_PASSPHRASE@|$PASSPHRASE|g" "${configFile}" > "${runtimeConfigPath}"
+                    chmod 600 "${runtimeConfigPath}"
+                  ''
+                else
+                  ''
+                    cp "${configFile}" "${runtimeConfigPath}"
+                    chmod 600 "${runtimeConfigPath}"
+                  ''
+              }
+            '';
+          in
           lib.nameValuePair "hostapd-${name}" {
             description = "Hostapd Wireless AP - ${name} (${radio.band})";
             after = [
               "sys-subsystem-net-devices-${radio.interface}.device"
               "network.target"
-            ];
+            ]
+            ++ lib.optional usesPassphraseFile "sops-nix.service";
             bindsTo = [ "sys-subsystem-net-devices-${radio.interface}.device" ];
             wantedBy = [ "multi-user.target" ];
 
@@ -549,7 +609,8 @@ _: {
             serviceConfig = {
               Type = "forking";
               PIDFile = "/run/hostapd-${name}.pid";
-              ExecStart = "${pkgs.hostapd}/bin/hostapd -B -P /run/hostapd-${name}.pid ${mkRadioConfig name radio}";
+              ExecStartPre = "${prepareConfig}";
+              ExecStart = "${pkgs.hostapd}/bin/hostapd -B -P /run/hostapd-${name}.pid ${runtimeConfigPath}";
               ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
               Restart = "on-failure";
               RestartSec = "5s";
@@ -561,6 +622,7 @@ _: {
               NoNewPrivileges = true;
               DeviceAllow = [ "/dev/rfkill rw" ];
               RuntimeDirectory = "hostapd";
+              RuntimeDirectoryMode = "0750";
             };
           }
         ) enabledRadios;

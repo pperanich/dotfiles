@@ -1,6 +1,6 @@
 _: {
   # Aggregated router module that enables everything
-  # Sub-modules (core, network, firewall, dhcp, dns, hostapd) are auto-imported by import-tree
+  # Sub-modules (core, network, firewall, dhcp, dns, hostapd, mdns) are auto-imported by import-tree
   flake.modules.nixos.router =
     { modules, ... }:
     {
@@ -12,6 +12,7 @@ _: {
         routerDhcp
         routerDns
         routerHostapd
+        routerMdns
       ];
     };
 }

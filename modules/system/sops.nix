@@ -18,12 +18,25 @@ in
 {
   flake.modules = {
     nixos.sops =
-      { pkgs, ... }:
+      {
+        pkgs,
+        config,
+        lib,
+        ...
+      }:
       {
         # imports = [ inputs.sops-nix.nixosModules.sops ];
-        inherit sops;
+        sops = lib.mkMerge [
+          sops
+          # WiFi passphrase secret for hostapd (only on hosts with router.hostapd enabled)
+          (lib.mkIf (config.features.router.hostapd.enable or false) {
+            secrets.wifi_passphrase = {
+              sopsFile = "${sopsFolder}/secrets.yaml";
+              mode = "0400";
+            };
+          })
+        ];
         environment.systemPackages = [ pkgs.sops ];
-
       };
     darwin.sops =
       { pkgs, ... }:

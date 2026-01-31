@@ -137,15 +137,19 @@
           };
           roles.default.tags.all = { };
         };
+        # ZeroTier VPN - alternative to WireGuard (NixOS only, not supported on Darwin)
         # zerotier-home = {
         #   module = {
         #     name = "zerotier";
         #     input = "clan-core";
         #   };
         #   roles = {
-        #     controller.machines.pp-nas1 = { };
+        #     controller.machines.pp-router1 = { };
         #     peer.machines = {
         #       pp-nas1 = { };
+        #       # Add other NixOS machines as needed:
+        #       # pp-ll1 = { };
+        #       # pp-ld1 = { };
         #     };
         #   };
         # };

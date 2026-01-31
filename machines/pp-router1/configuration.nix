@@ -7,6 +7,7 @@
 }:
 {
   imports = [
+    ./disko.nix
     inputs.nixos-facter-modules.nixosModules.facter
   ]
   ++ (with modules.nixos; [

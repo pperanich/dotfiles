@@ -2,6 +2,9 @@
   "machines": {
     "pp-nas1": {
       "installedAt": 1763926471
+    },
+    "pp-router1": {
+      "installedAt": 1769888411
     }
   }
 }

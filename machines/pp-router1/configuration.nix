@@ -46,9 +46,9 @@
     hostname = "pp-router1";
 
     # TODO: Update these interface names after running `ip link` on the hardware
-    wan.interface = "PLACEHOLDER_WAN"; # e.g., enp1s0, eth0
+    wan.interface = "enp2s0"; # e.g., enp1s0, eth0
     lan = {
-      interface = "PLACEHOLDER_LAN"; # e.g., enp2s0, eth1
+      interface = "enp5s0"; # e.g., enp2s0, eth1
       subnet = "10.0.0";
       dhcpRange = {
         start = 100;

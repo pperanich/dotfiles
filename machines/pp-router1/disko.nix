@@ -16,7 +16,7 @@
     disk = {
       main = {
         name = "main-pp-router1";
-        device = "/dev/disk/by-id/PLACEHOLDER_DISK_ID";
+        device = "/dev/disk/by-id/4e79c8f0-dbb7-4df4-8dc0-e630cd57bbe1";
         type = "disk";
         content = {
           type = "gpt";

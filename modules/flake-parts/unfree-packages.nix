@@ -23,7 +23,5 @@
           };
         };
       };
-
-    meta.nixpkgs.allowedUnfreePackages = config.nixpkgs.allowedUnfreePackages;
   };
 }

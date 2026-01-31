@@ -669,6 +669,7 @@
         "fpu_exception": false,
         "cpuid_level": 32,
         "write_protect": false,
+        "tlb_size": 32655,
         "clflush_size": 64,
         "cache_alignment": 64,
         "address_sizes": {
@@ -986,7 +987,7 @@
     ],
     "hub": [
       {
-        "index": 39,
+        "index": 38,
         "attached_to": 29,
         "class_list": [
           "usb",
@@ -1073,7 +1074,7 @@
         "module_alias": "usb:v1D6Bp0002d0618dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 42,
+        "index": 40,
         "attached_to": 29,
         "class_list": [
           "usb",
@@ -1150,7 +1151,7 @@
         "module_alias": "usb:v1D6Bp0003d0618dc09dsc00dp03ic09isc00ip00in00"
       },
       {
-        "index": 43,
+        "index": 41,
         "attached_to": 10,
         "class_list": [
           "usb",
@@ -1237,7 +1238,7 @@
         "module_alias": "usb:v1D6Bp0002d0618dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 46,
+        "index": 42,
         "attached_to": 10,
         "class_list": [
           "usb",
@@ -1312,212 +1313,6 @@
           "usbcore"
         ],
         "module_alias": "usb:v1D6Bp0003d0618dc09dsc00dp03ic09isc00ip00in00"
-      }
-    ],
-    "keyboard": [
-      {
-        "index": 41,
-        "attached_to": 39,
-        "class_list": [
-          "keyboard",
-          "usb"
-        ],
-        "bus_type": {
-          "hex": "0086",
-          "name": "USB",
-          "value": 134
-        },
-        "slot": {
-          "bus": 0,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0108",
-          "name": "Keyboard",
-          "value": 264
-        },
-        "sub_class": {
-          "hex": "0000",
-          "name": "Keyboard",
-          "value": 0
-        },
-        "vendor": {
-          "hex": "1532",
-          "name": "Razer",
-          "value": 5426
-        },
-        "device": {
-          "hex": "00c5",
-          "name": "Razer DeathAdder V3 HyperSpeed",
-          "value": 197
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "1.00",
-          "value": 0
-        },
-        "serial": "000000000000",
-        "model": "Razer DeathAdder V3 HyperSpeed",
-        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3:1.1",
-        "sysfs_bus_id": "3-3:1.1",
-        "unix_device_names": [
-          "/dev/input/mice"
-        ],
-        "unix_device_name2": "/dev/input/mouse2",
-        "resources": [
-          {
-            "type": "baud",
-            "speed": 12000000,
-            "bits": 0,
-            "stop_bits": 0,
-            "parity": 0,
-            "handshake": 0
-          }
-        ],
-        "detail": {
-          "device_class": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_protocol": 0,
-          "interface_class": {
-            "hex": "0003",
-            "name": "hid",
-            "value": 3
-          },
-          "interface_subclass": {
-            "hex": "0001",
-            "name": "audio",
-            "value": 1
-          },
-          "interface_protocol": 1,
-          "interface_number": 1,
-          "interface_alternate_setting": 0
-        },
-        "hotplug": "usb",
-        "driver": "usbhid",
-        "driver_module": "usbhid",
-        "drivers": [
-          "usbhid"
-        ],
-        "driver_modules": [
-          "usbhid"
-        ],
-        "driver_info": {
-          "type": "keyboard",
-          "xkb_rules": "xfree86",
-          "xkb_model": "pc104"
-        },
-        "module_alias": "usb:v1532p00C5d0100dc00dsc00dp00ic03isc01ip01in01"
-      },
-      {
-        "index": 45,
-        "attached_to": 39,
-        "class_list": [
-          "keyboard",
-          "usb"
-        ],
-        "bus_type": {
-          "hex": "0086",
-          "name": "USB",
-          "value": 134
-        },
-        "slot": {
-          "bus": 0,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0108",
-          "name": "Keyboard",
-          "value": 264
-        },
-        "sub_class": {
-          "hex": "0000",
-          "name": "Keyboard",
-          "value": 0
-        },
-        "vendor": {
-          "hex": "1532",
-          "name": "Razer",
-          "value": 5426
-        },
-        "device": {
-          "hex": "00c5",
-          "name": "Razer DeathAdder V3 HyperSpeed",
-          "value": 197
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "1.00",
-          "value": 0
-        },
-        "serial": "000000000000",
-        "model": "Razer DeathAdder V3 HyperSpeed",
-        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3:1.2",
-        "sysfs_bus_id": "3-3:1.2",
-        "unix_device_names": [
-          "/dev/input/by-id/usb-Razer_Razer_DeathAdder_V3_HyperSpeed_000000000000-if02-event-kbd",
-          "/dev/input/by-path/pci-0000:00:14.0-usb-0:3:1.2-event-kbd",
-          "/dev/input/by-path/pci-0000:00:14.0-usbv2-0:3:1.2-event-kbd",
-          "/dev/input/event6"
-        ],
-        "resources": [
-          {
-            "type": "baud",
-            "speed": 12000000,
-            "bits": 0,
-            "stop_bits": 0,
-            "parity": 0,
-            "handshake": 0
-          }
-        ],
-        "detail": {
-          "device_class": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_protocol": 0,
-          "interface_class": {
-            "hex": "0003",
-            "name": "hid",
-            "value": 3
-          },
-          "interface_subclass": {
-            "hex": "0001",
-            "name": "audio",
-            "value": 1
-          },
-          "interface_protocol": 1,
-          "interface_number": 2,
-          "interface_alternate_setting": 0
-        },
-        "hotplug": "usb",
-        "driver": "usbhid",
-        "driver_module": "usbhid",
-        "drivers": [
-          "usbhid"
-        ],
-        "driver_modules": [
-          "usbhid"
-        ],
-        "driver_info": {
-          "type": "keyboard",
-          "xkb_rules": "xfree86",
-          "xkb_model": "pc104"
-        },
-        "module_alias": "usb:v1532p00C5d0100dc00dsc00dp00ic03isc01ip01in02"
       }
     ],
     "memory": [
@@ -1738,226 +1533,6 @@
           "horizontal_flag": 45,
           "vertical_flag": 43
         }
-      }
-    ],
-    "mouse": [
-      {
-        "index": 38,
-        "attached_to": 39,
-        "class_list": [
-          "mouse",
-          "usb"
-        ],
-        "bus_type": {
-          "hex": "0086",
-          "name": "USB",
-          "value": 134
-        },
-        "slot": {
-          "bus": 0,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0105",
-          "name": "Mouse",
-          "value": 261
-        },
-        "sub_class": {
-          "hex": "0003",
-          "name": "USB Mouse",
-          "value": 3
-        },
-        "vendor": {
-          "hex": "1532",
-          "name": "Razer",
-          "value": 5426
-        },
-        "device": {
-          "hex": "00c5",
-          "name": "Razer DeathAdder V3 HyperSpeed",
-          "value": 197
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "1.00",
-          "value": 0
-        },
-        "serial": "000000000000",
-        "compat_vendor": "Unknown",
-        "compat_device": "Generic USB Mouse",
-        "model": "Razer DeathAdder V3 HyperSpeed",
-        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3:1.0",
-        "sysfs_bus_id": "3-3:1.0",
-        "unix_device_names": [
-          "/dev/input/mice"
-        ],
-        "unix_device_name2": "/dev/input/mouse1",
-        "resources": [
-          {
-            "type": "baud",
-            "speed": 12000000,
-            "bits": 0,
-            "stop_bits": 0,
-            "parity": 0,
-            "handshake": 0
-          }
-        ],
-        "detail": {
-          "device_class": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_protocol": 0,
-          "interface_class": {
-            "hex": "0003",
-            "name": "hid",
-            "value": 3
-          },
-          "interface_subclass": {
-            "hex": "0001",
-            "name": "audio",
-            "value": 1
-          },
-          "interface_protocol": 2,
-          "interface_number": 0,
-          "interface_alternate_setting": 0
-        },
-        "hotplug": "usb",
-        "driver": "usbhid",
-        "driver_module": "usbhid",
-        "drivers": [
-          "usbhid"
-        ],
-        "driver_modules": [
-          "usbhid"
-        ],
-        "driver_info": {
-          "type": "mouse",
-          "db_entry_0": [
-            "explorerps/2",
-            "exps2"
-          ],
-          "xf86": "explorerps/2",
-          "gpm": "exps2",
-          "buttons": -1,
-          "wheels": -1
-        },
-        "module_alias": "usb:v1532p00C5d0100dc00dsc00dp00ic03isc01ip02in00"
-      },
-      {
-        "index": 44,
-        "attached_to": 39,
-        "class_list": [
-          "mouse",
-          "usb"
-        ],
-        "bus_type": {
-          "hex": "0086",
-          "name": "USB",
-          "value": 134
-        },
-        "slot": {
-          "bus": 0,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0105",
-          "name": "Mouse",
-          "value": 261
-        },
-        "sub_class": {
-          "hex": "0003",
-          "name": "USB Mouse",
-          "value": 3
-        },
-        "vendor": {
-          "hex": "29ea",
-          "name": "Kinesis Corporation",
-          "value": 10730
-        },
-        "device": {
-          "hex": "0362",
-          "name": "Adv360 Pro",
-          "value": 866
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "3.05",
-          "value": 0
-        },
-        "serial": "A819A0CCE07E448C",
-        "compat_vendor": "Unknown",
-        "compat_device": "Generic USB Mouse",
-        "model": "Kinesis Adv360 Pro",
-        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-2/3-2:1.0",
-        "sysfs_bus_id": "3-2:1.0",
-        "unix_device_names": [
-          "/dev/input/mice"
-        ],
-        "unix_device_name2": "/dev/input/mouse0",
-        "resources": [
-          {
-            "type": "baud",
-            "speed": 12000000,
-            "bits": 0,
-            "stop_bits": 0,
-            "parity": 0,
-            "handshake": 0
-          }
-        ],
-        "detail": {
-          "device_class": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_protocol": 0,
-          "interface_class": {
-            "hex": "0003",
-            "name": "hid",
-            "value": 3
-          },
-          "interface_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "interface_protocol": 0,
-          "interface_number": 0,
-          "interface_alternate_setting": 0
-        },
-        "hotplug": "usb",
-        "driver": "usbhid",
-        "driver_module": "usbhid",
-        "drivers": [
-          "usbhid"
-        ],
-        "driver_modules": [
-          "usbhid"
-        ],
-        "driver_info": {
-          "type": "mouse",
-          "db_entry_0": [
-            "explorerps/2",
-            "exps2"
-          ],
-          "xf86": "explorerps/2",
-          "gpm": "exps2",
-          "buttons": -1,
-          "wheels": -1
-        },
-        "module_alias": "usb:v29EAp0362d0305dc00dsc00dp00ic03isc00ip00in00"
       }
     ],
     "network_controller": [
@@ -2488,7 +2063,7 @@
         "resources": [
           {
             "type": "hwaddr",
-            "address": 54
+            "address": 102
           },
           {
             "type": "phwaddr",
@@ -2548,7 +2123,7 @@
     ],
     "network_interface": [
       {
-        "index": 47,
+        "index": 43,
         "attached_to": 13,
         "class_list": [
           "network_interface"
@@ -2589,7 +2164,7 @@
         ]
       },
       {
-        "index": 48,
+        "index": 44,
         "attached_to": 21,
         "class_list": [
           "network_interface"
@@ -2630,7 +2205,7 @@
         ]
       },
       {
-        "index": 49,
+        "index": 45,
         "attached_to": 26,
         "class_list": [
           "network_interface"
@@ -2671,7 +2246,7 @@
         ]
       },
       {
-        "index": 50,
+        "index": 46,
         "attached_to": 15,
         "class_list": [
           "network_interface"
@@ -2712,7 +2287,7 @@
         ]
       },
       {
-        "index": 51,
+        "index": 47,
         "attached_to": 27,
         "class_list": [
           "network_interface"
@@ -2736,7 +2311,7 @@
         "resources": [
           {
             "type": "hwaddr",
-            "address": 54
+            "address": 102
           },
           {
             "type": "phwaddr",
@@ -2753,7 +2328,7 @@
         ]
       },
       {
-        "index": 52,
+        "index": 48,
         "attached_to": 24,
         "class_list": [
           "network_interface"
@@ -2794,7 +2369,7 @@
         ]
       },
       {
-        "index": 53,
+        "index": 49,
         "attached_to": 0,
         "class_list": [
           "network_interface"
@@ -3784,7 +3359,7 @@
           197568495661,
           201863462958,
           279172874287,
-          1172526071873
+          1189705941057
         ]
       }
     ],

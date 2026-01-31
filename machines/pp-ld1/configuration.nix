@@ -1,4 +1,4 @@
-# Host configuration for pperanich-ld1 (Linux desktop)
+# Host configuration for pp-ld1 (Linux desktop)
 {
   modules,
   ...
@@ -30,5 +30,5 @@
   ]);
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  networking.hostName = "pperanich-ld1";
+  networking.hostName = "pp-ld1";
 }

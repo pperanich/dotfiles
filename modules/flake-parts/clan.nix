@@ -24,7 +24,7 @@
 
     inventory = {
       machines = {
-        "pperanich-ml1" = {
+        "pp-ml1" = {
           machineClass = "darwin";
           tags = [
             "laptop"
@@ -45,10 +45,10 @@
             "all"
           ];
         };
-        "pperanich-lm1" = {
+        "pp-nas1" = {
           machineClass = "nixos";
           tags = [
-            "mini"
+            "nas"
             "nixos"
             "all"
           ];
@@ -96,8 +96,8 @@
           roles.default = {
             tags.all = { };
             machines = {
-              pperanich-ll1 = { };
-              pperanich-lm1 = { };
+              pp-ll1 = { };
+              pp-nas1 = { };
             };
             settings = {
               user = "pperanich";
@@ -134,9 +134,9 @@
         #     input = "clan-core";
         #   };
         #   roles = {
-        #     controller.machines.pperanich-lm1 = { };
+        #     controller.machines.pp-nas1 = { };
         #     peer.machines = {
-        #       pperanich-lm1 = { };
+        #       pp-nas1 = { };
         #     };
         #   };
         # };
@@ -147,15 +147,15 @@
         #   };
         #   roles = {
         #     controller = {
-        #       machines.pperanich-lm1 = { };
+        #       machines.pp-nas1 = { };
         #       settings.endpoint = "vpn.prestonperanich.com";
         #     };
         #     peer.machines = {
-        #       pperanich-ml1 = { };
+        #       pp-ml1 = { };
         #       peranpl1-ml1 = { };
         #       peranpl1-ml2 = { };
         #     };
-        #     peer.settings.controller = "pperanich-lm1";
+        #     peer.settings.controller = "pp-nas1";
         #   };
         # };
       };

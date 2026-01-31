@@ -19,6 +19,11 @@
 
         system.stateVersion = "25.11";
 
+        # Disable NixOS manual/options doc generation to avoid builtins.toFile warning
+        # (options.json references store paths without proper context)
+        documentation.nixos.enable = false;
+        documentation.nixos.options.splitBuild = false;
+
         home-manager.backupFileExtension = "hm-back";
 
         # nix = {
@@ -258,6 +263,7 @@
         ];
         # User-level Nix configuration via Home Manager
         # Note: This configures the user's environment, not the system daemon
+        manual.manpages.enable = false;
 
         xdg.enable = true;
 

@@ -18,7 +18,7 @@ _: {
           alacritty # GPU-accelerated terminal emulator
           brave # Privacy-focused web browser
           wireshark # Network protocol analyzer
-          discord # Chat and voice communication
+          # discord # Chat and voice communication
           # reaper        # Digital audio workstation
           # vlc # Media player
           # postman

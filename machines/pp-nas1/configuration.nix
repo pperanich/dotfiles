@@ -33,16 +33,16 @@
   ]);
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pperanich-lm1";
-  clan.core.networking.buildHost = "root@pperanich-lm1";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-nas1";
+  clan.core.networking.buildHost = "root@pp-nas1";
 
   # Networking configuration
-  networking.hostName = "pperanich-lm1";
+  networking.hostName = "pp-nas1";
 
   # Router configuration
   features.router = {
     enable = true;
-    hostname = "pperanich-lm1";
+    hostname = "pp-nas1";
 
     wan.interface = "enp1s0";
     lan = {

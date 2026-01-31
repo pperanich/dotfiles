@@ -96,18 +96,16 @@ _: {
       };
 
     # macOS-specific system configuration
-    darwin.rust =
-      _:
-      {
-        # environment.systemPackages = with pkgs; [
-        #   libiconv
-        # ];
-        #
-        # # Environment variables for linking
-        # environment.variables = {
-        #   PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
-        #   LIBRARY_PATH = "${pkgs.libiconv}/lib";
-        # };
-      };
+    darwin.rust = _: {
+      # environment.systemPackages = with pkgs; [
+      #   libiconv
+      # ];
+      #
+      # # Environment variables for linking
+      # environment.variables = {
+      #   PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
+      #   LIBRARY_PATH = "${pkgs.libiconv}/lib";
+      # };
+    };
   };
 }

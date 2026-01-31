@@ -4,7 +4,7 @@
   ...
 }:
 {
-  imports = with outputs.homeManagerModules; [
+  imports = with outputs.homeModules; [
     # Core
     base
 

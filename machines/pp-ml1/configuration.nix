@@ -1,4 +1,4 @@
-# Host configuration for pperanich-ml1 (macOS laptop - Apple Silicon)
+# Host configuration for pp-ml1 (macOS laptop - Apple Silicon)
 {
   lib,
   modules,
@@ -20,10 +20,10 @@
     sketchybar
   ];
 
-  clan.core.networking.targetHost = lib.mkForce "root@pperanich-ml1";
-  clan.core.networking.buildHost = "root@pperanich-ml1";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-ml1";
+  clan.core.networking.buildHost = "root@pp-ml1";
 
   # Host-specific configuration
-  networking.hostName = "pperanich-ml1";
+  networking.hostName = "pp-ml1";
   nixpkgs.hostPlatform = "aarch64-darwin";
 }

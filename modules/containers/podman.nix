@@ -12,11 +12,6 @@ _: {
     in
     {
       options.features.podman = {
-        dockerCompat = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-          description = "Enable Docker-compatible socket for Podman";
-        };
         defaultNetwork.settings = lib.mkOption {
           type = lib.types.attrs;
           default = { };
@@ -37,9 +32,6 @@ _: {
       config = {
         virtualisation.podman = {
           enable = true;
-
-          # Enable Docker compatibility if requested
-          inherit (cfg) dockerCompat;
 
           # Dual-stack networking with DNS support
           defaultNetwork.settings = {

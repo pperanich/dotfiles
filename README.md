@@ -101,43 +101,48 @@ Individual machine configurations managed by clan-core:
 
 ```
 machines/
-├── peranpl1-ml1/            # Darwin laptop
+├── peranpl1-ml1/            # Darwin laptop (work)
 │   └── configuration.nix
-├── peranpl1-ml2/            # Darwin laptop
+├── peranpl1-ml2/            # Darwin laptop (work)
 │   └── configuration.nix
-├── pperanich-ll1/           # NixOS laptop (MacBook w/ T2)
+├── pp-ll1/                  # NixOS laptop (MacBook w/ T2)
 │   ├── configuration.nix
 │   └── hardware-configuration.nix
-├── pperanich-ld1/           # NixOS desktop
-├── pperanich-wsl1/          # WSL instance
-└── pperanich-raspi1/        # Raspberry Pi
+├── pp-ld1/                  # NixOS desktop
+├── pp-ml1/                  # Darwin laptop (Apple Silicon)
+├── pp-nas1/                 # NixOS NAS (BeeLink MeMini)
+├── pp-rpi1/                 # NixOS Raspberry Pi
+└── pp-wsl1/                 # WSL instance
 ```
 
 **Naming Convention:**
 
-Machine names follow the pattern: `{identifier}-{OS}{device-type}{number}`
+Machine names follow the pattern: `{prefix}-{OS}{device-type}{number}` for general-purpose machines, or `{prefix}-{role}{number}` for dedicated-role machines.
 
-- **Identifier**: Username or owner identifier (e.g., `pperanich`, `peranpl1`)
-- **OS**: Operating system indicator
+- **Prefix**: Owner identifier
+  - `pp` - Personal machines
+  - `peranpl1` - Work machines
+- **OS**: Operating system indicator (for general-purpose machines)
   - `l` - Linux (NixOS)
   - `m` - macOS (Darwin)
-  - `w` - Windows
   - `wsl` - Windows Subsystem for Linux
-- **Device Type**: Form factor or device category
+- **Device Type**: Form factor (for general-purpose machines)
   - `d` - Desktop
   - `l` - Laptop
-  - `m` - Mini PC
-  - `raspi` - Raspberry Pi
-  - `wsl` - WSL instance
+- **Role**: Function name (for dedicated-role machines)
+  - `nas` - Network Attached Storage
+  - `rpi` - Raspberry Pi
 - **Number**: Sequential number for multiple devices of the same type (1, 2, 3, ...)
 
 Examples:
 
-- `pperanich-ll1` → pperanich, Linux Laptop 1
-- `pperanich-ld1` → pperanich, Linux Desktop 1
-- `pperanich-lm1` → pperanich, Linux Mini 1
-- `peranpl1-ml1` → peranpl1, macOS Laptop 1
-- `pperanich-wsl1` → pperanich, WSL 1
+- `pp-ll1` → Personal, Linux Laptop 1
+- `pp-ld1` → Personal, Linux Desktop 1
+- `pp-ml1` → Personal, macOS Laptop 1
+- `pp-nas1` → Personal, NAS 1
+- `pp-rpi1` → Personal, Raspberry Pi 1
+- `pp-wsl1` → Personal, WSL 1
+- `peranpl1-ml1` → Work, macOS Laptop 1
 
 Machine configurations import modules by referencing:
 
@@ -262,7 +267,7 @@ flake.clan = {
 2. Reference it in a profile or machine:
    ```nix
    # home-profiles/pperanich/default.nix
-   imports = with outputs.homeManagerModules; [
+   imports = with outputs.homeModules; [
      helix  # Automatically available!
    ];
    ```
@@ -295,7 +300,7 @@ flake.clan = {
 
 ```bash
 # NixOS system
-sudo nixos-rebuild switch --flake .#pperanich-ll1
+sudo nixos-rebuild switch --flake .#pp-ll1
 
 # Darwin system
 darwin-rebuild switch --flake .#peranpl1-ml1
@@ -304,7 +309,7 @@ darwin-rebuild switch --flake .#peranpl1-ml1
 home-manager switch --flake .#pperanich
 
 # Via clan-core
-clan machines update pperanich-ll1
+clan machines update pp-ll1
 ```
 
 ### Development Workflow
@@ -395,10 +400,10 @@ nix profile install git+https://git.clan.lol/clan/clan-core
 clan machines list
 
 # Show machine info
-clan machines show pperanich-ll1
+clan machines show pp-ll1
 
 # Update/deploy a machine
-clan machines update pperanich-ll1
+clan machines update pp-ll1
 
 # Update all machines with a tag
 clan machines update --tag laptop

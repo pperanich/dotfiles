@@ -12,180 +12,177 @@ _: {
       enabled = cfg.enable && hostapdCfg.enable;
 
       # Radio submodule type (each radio = one hostapd instance)
-      radioSubmodule = lib.types.submodule (
-        _:
-        {
-          options = {
-            enable = lib.mkOption {
-              type = lib.types.bool;
-              default = true;
-              description = "Enable this radio";
-            };
-
-            interface = lib.mkOption {
-              type = lib.types.str;
-              example = "wlan0";
-              description = "Physical wireless interface for this radio";
-            };
-
-            band = lib.mkOption {
-              type = lib.types.enum [
-                "2.4GHz"
-                "5GHz"
-                "6GHz"
-              ];
-              example = "5GHz";
-              description = "Frequency band for this radio";
-            };
-
-            ssid = lib.mkOption {
-              type = lib.types.str;
-              example = "MyNetwork-5G";
-              description = "Wireless network name (SSID)";
-            };
-
-            wpaPassphrase = lib.mkOption {
-              type = lib.types.str;
-              description = "WPA2/WPA3 passphrase (8-63 characters)";
-            };
-
-            wpaKeyMgmt = lib.mkOption {
-              type = lib.types.str;
-              default = "WPA-PSK";
-              example = "SAE WPA-PSK";
-              description = "Key management. 'SAE' for WPA3, 'WPA-PSK' for WPA2, 'SAE WPA-PSK' for transition mode.";
-            };
-
-            bssid = lib.mkOption {
-              type = lib.types.nullOr lib.types.str;
-              default = null;
-              example = "02:00:00:00:00:01";
-              description = "Explicit BSSID for this radio. Required for 802.11r if not using bridge.";
-            };
-
-            bridge = lib.mkOption {
-              type = lib.types.nullOr lib.types.str;
-              default = null;
-              example = "br-lan";
-              description = "Bridge interface to add this radio to";
-            };
-
-            channel = lib.mkOption {
-              type = lib.types.int;
-              default = 0;
-              description = "Wireless channel. 0 = ACS (automatic channel selection) if supported.";
-            };
-
-            driver = lib.mkOption {
-              type = lib.types.str;
-              default = "nl80211";
-              description = "Hostapd driver";
-            };
-
-            ieee80211n = lib.mkOption {
-              type = lib.types.bool;
-              default = true;
-              description = "Enable 802.11n (Wi-Fi 4)";
-            };
-
-            ieee80211ac = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Enable 802.11ac (Wi-Fi 5). Only for 5GHz.";
-            };
-
-            ieee80211ax = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Enable 802.11ax (Wi-Fi 6)";
-            };
-
-            htCapab = lib.mkOption {
-              type = lib.types.str;
-              default = "";
-              example = "[HT40+][SHORT-GI-40][DSSS_CCK-40]";
-              description = "HT capabilities for 802.11n. Leave empty for auto-detection on supported drivers.";
-            };
-
-            vhtCapab = lib.mkOption {
-              type = lib.types.str;
-              default = "";
-              example = "[MAX-MPDU-11454][SHORT-GI-80][TX-STBC-2BY1][RX-STBC-1][SU-BEAMFORMEE]";
-              description = "VHT capabilities for 802.11ac";
-            };
-
-            vhtOperChwidth = lib.mkOption {
-              type = lib.types.int;
-              default = 1;
-              description = "VHT channel width (0=20/40MHz, 1=80MHz, 2=160MHz, 3=80+80MHz)";
-            };
-
-            vhtOperCentrFreqSeg0Idx = lib.mkOption {
-              type = lib.types.nullOr lib.types.int;
-              default = null;
-              example = 42;
-              description = "VHT center frequency segment 0. Required for 80MHz+ channels.";
-            };
-
-            extraSettings = lib.mkOption {
-              type = lib.types.attrsOf (
-                lib.types.oneOf [
-                  lib.types.str
-                  lib.types.int
-                  lib.types.bool
-                ]
-              );
-              default = { };
-              description = "Additional hostapd settings for this radio";
-            };
-
-            additionalBSS = lib.mkOption {
-              type = lib.types.listOf (
-                lib.types.submodule {
-                  options = {
-                    interface = lib.mkOption {
-                      type = lib.types.str;
-                      example = "wlan0_guest";
-                      description = "Virtual interface name for this BSS";
-                    };
-                    ssid = lib.mkOption {
-                      type = lib.types.str;
-                      description = "SSID for this BSS";
-                    };
-                    wpaPassphrase = lib.mkOption {
-                      type = lib.types.str;
-                      description = "WPA passphrase for this BSS";
-                    };
-                    wpaKeyMgmt = lib.mkOption {
-                      type = lib.types.str;
-                      default = "WPA-PSK";
-                      description = "Key management for this BSS";
-                    };
-                    bridge = lib.mkOption {
-                      type = lib.types.nullOr lib.types.str;
-                      default = null;
-                      description = "Bridge for this BSS";
-                    };
-                    extraSettings = lib.mkOption {
-                      type = lib.types.attrsOf (
-                        lib.types.oneOf [
-                          lib.types.str
-                          lib.types.int
-                          lib.types.bool
-                        ]
-                      );
-                      default = { };
-                      description = "Additional settings for this BSS";
-                    };
-                  };
-                }
-              );
-              default = [ ];
-              description = "Additional BSSes (virtual interfaces) on this radio";
-            };
+      radioSubmodule = lib.types.submodule (_: {
+        options = {
+          enable = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Enable this radio";
           };
-        }
-      );
+
+          interface = lib.mkOption {
+            type = lib.types.str;
+            example = "wlan0";
+            description = "Physical wireless interface for this radio";
+          };
+
+          band = lib.mkOption {
+            type = lib.types.enum [
+              "2.4GHz"
+              "5GHz"
+              "6GHz"
+            ];
+            example = "5GHz";
+            description = "Frequency band for this radio";
+          };
+
+          ssid = lib.mkOption {
+            type = lib.types.str;
+            example = "MyNetwork-5G";
+            description = "Wireless network name (SSID)";
+          };
+
+          wpaPassphrase = lib.mkOption {
+            type = lib.types.str;
+            description = "WPA2/WPA3 passphrase (8-63 characters)";
+          };
+
+          wpaKeyMgmt = lib.mkOption {
+            type = lib.types.str;
+            default = "WPA-PSK";
+            example = "SAE WPA-PSK";
+            description = "Key management. 'SAE' for WPA3, 'WPA-PSK' for WPA2, 'SAE WPA-PSK' for transition mode.";
+          };
+
+          bssid = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            example = "02:00:00:00:00:01";
+            description = "Explicit BSSID for this radio. Required for 802.11r if not using bridge.";
+          };
+
+          bridge = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            example = "br-lan";
+            description = "Bridge interface to add this radio to";
+          };
+
+          channel = lib.mkOption {
+            type = lib.types.int;
+            default = 0;
+            description = "Wireless channel. 0 = ACS (automatic channel selection) if supported.";
+          };
+
+          driver = lib.mkOption {
+            type = lib.types.str;
+            default = "nl80211";
+            description = "Hostapd driver";
+          };
+
+          ieee80211n = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Enable 802.11n (Wi-Fi 4)";
+          };
+
+          ieee80211ac = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Enable 802.11ac (Wi-Fi 5). Only for 5GHz.";
+          };
+
+          ieee80211ax = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Enable 802.11ax (Wi-Fi 6)";
+          };
+
+          htCapab = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            example = "[HT40+][SHORT-GI-40][DSSS_CCK-40]";
+            description = "HT capabilities for 802.11n. Leave empty for auto-detection on supported drivers.";
+          };
+
+          vhtCapab = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            example = "[MAX-MPDU-11454][SHORT-GI-80][TX-STBC-2BY1][RX-STBC-1][SU-BEAMFORMEE]";
+            description = "VHT capabilities for 802.11ac";
+          };
+
+          vhtOperChwidth = lib.mkOption {
+            type = lib.types.int;
+            default = 1;
+            description = "VHT channel width (0=20/40MHz, 1=80MHz, 2=160MHz, 3=80+80MHz)";
+          };
+
+          vhtOperCentrFreqSeg0Idx = lib.mkOption {
+            type = lib.types.nullOr lib.types.int;
+            default = null;
+            example = 42;
+            description = "VHT center frequency segment 0. Required for 80MHz+ channels.";
+          };
+
+          extraSettings = lib.mkOption {
+            type = lib.types.attrsOf (
+              lib.types.oneOf [
+                lib.types.str
+                lib.types.int
+                lib.types.bool
+              ]
+            );
+            default = { };
+            description = "Additional hostapd settings for this radio";
+          };
+
+          additionalBSS = lib.mkOption {
+            type = lib.types.listOf (
+              lib.types.submodule {
+                options = {
+                  interface = lib.mkOption {
+                    type = lib.types.str;
+                    example = "wlan0_guest";
+                    description = "Virtual interface name for this BSS";
+                  };
+                  ssid = lib.mkOption {
+                    type = lib.types.str;
+                    description = "SSID for this BSS";
+                  };
+                  wpaPassphrase = lib.mkOption {
+                    type = lib.types.str;
+                    description = "WPA passphrase for this BSS";
+                  };
+                  wpaKeyMgmt = lib.mkOption {
+                    type = lib.types.str;
+                    default = "WPA-PSK";
+                    description = "Key management for this BSS";
+                  };
+                  bridge = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "Bridge for this BSS";
+                  };
+                  extraSettings = lib.mkOption {
+                    type = lib.types.attrsOf (
+                      lib.types.oneOf [
+                        lib.types.str
+                        lib.types.int
+                        lib.types.bool
+                      ]
+                    );
+                    default = { };
+                    description = "Additional settings for this BSS";
+                  };
+                };
+              }
+            );
+            default = [ ];
+            description = "Additional BSSes (virtual interfaces) on this radio";
+          };
+        };
+      });
 
       # Helper: convert band to hw_mode
       bandToHwMode =

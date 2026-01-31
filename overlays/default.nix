@@ -26,7 +26,7 @@
       configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--program-prefix=g" ];
     });
     apple-fonts = {
-      inherit (inputs.apple-fonts.packages.${final.system})
+      inherit (inputs.apple-fonts.packages.${final.stdenv.hostPlatform.system})
         sf-pro
         sf-pro-nerd
         sf-compact

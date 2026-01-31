@@ -9,8 +9,8 @@ let
   outputs = config.flake;
 in
 {
-  # Export homeManagerModules from flake.modules.homeManager
-  flake.homeManagerModules = config.flake.modules.homeManager or { };
+  # Export homeModules from flake.modules.homeManager (schema-compliant name)
+  flake.homeModules = config.flake.modules.homeManager or { };
 
   # Auto-generate homeConfigurations from home-profiles/
   # Uses pkgs from perSystem (defined in nixpkgs.nix) to avoid duplication

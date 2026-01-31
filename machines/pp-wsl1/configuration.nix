@@ -28,8 +28,8 @@
 
   clan.core = {
     networking = {
-      targetHost = lib.mkForce "root@pperanich-wsl1";
-      buildHost = "root@pperanich-wsl1";
+      targetHost = lib.mkForce "root@pp-wsl1";
+      buildHost = "root@pp-wsl1";
     };
     enableRecommendedDefaults = false;
     deployment.requireExplicitUpdate = true;
@@ -63,7 +63,7 @@
   };
 
   networking = {
-    hostName = "pperanich-wsl1";
+    hostName = "pp-wsl1";
     interfaces = {
       # eth0 = {
       #   useDHCP = true;

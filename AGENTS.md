@@ -43,12 +43,13 @@ clan machines show <hostname>
 
 ### Hostnames Reference
 
-- `peranpl1-ml1`, `peranpl1-ml2` - Darwin laptops (x86_64-darwin)
-- `pperanich-ml1` - Darwin laptop
-- `pperanich-ll1` - NixOS laptop (MacBook w/ T2)
-- `pperanich-ld1` - NixOS desktop
-- `pperanich-lm1` - NixOS mini
-- `pperanich-wsl1` - WSL instance
+- `peranpl1-ml1`, `peranpl1-ml2` - Darwin laptops (work)
+- `pp-ml1` - Darwin laptop (Apple Silicon)
+- `pp-ll1` - NixOS laptop (MacBook w/ T2)
+- `pp-ld1` - NixOS desktop
+- `pp-nas1` - NixOS NAS (BeeLink MeMini)
+- `pp-rpi1` - NixOS Raspberry Pi
+- `pp-wsl1` - WSL instance
 
 ## Architecture Overview
 
@@ -117,9 +118,12 @@ imports = with modules.darwin; [ base rust ];
 
 ### Naming Conventions
 
-- **Machines**: `{user}-{os}{type}{num}` (e.g., `pperanich-ll1` = Linux Laptop 1)
-  - OS: `l`=Linux, `m`=macOS, `w`=Windows, `wsl`=WSL
-  - Type: `l`=laptop, `d`=desktop, `m`=mini, `raspi`=Raspberry Pi
+- **Machines**: `{prefix}-{os}{type}{num}` or `{prefix}-{role}{num}` for dedicated-role machines
+  - Prefix: `pp` for personal, `peranpl1` for work
+  - OS codes: `l`=Linux, `m`=macOS, `wsl`=WSL
+  - Type codes: `l`=laptop, `d`=desktop
+  - Role names: `nas`, `rpi` for dedicated-purpose machines
+  - Examples: `pp-ll1` (Linux Laptop 1), `pp-nas1` (NAS 1), `pp-rpi1` (Raspberry Pi 1)
 - **Modules**: lowercase, descriptive (e.g., `nix-configuration.nix`, `ssh-server.nix`)
 - **Functions**: camelCase in lib (e.g., `mkHomeConfigurations`, `relativeToRoot`)
 - **Options**: follow upstream conventions

@@ -78,12 +78,13 @@
       enable = true;
       countryCode = "US";
 
-      # Enable fast roaming for future multi-AP setup
+      # Fast roaming disabled - requires hostapd compiled with 802.11r/k/v support
+      # TODO: Enable when using a custom hostapd package with these features
       roaming = {
-        enable = true;
-        mobilityDomain = "a1b2"; # Must be same across all APs
-        ieee80211k = true; # Radio Resource Management
-        ieee80211v = true; # BSS Transition Management
+        enable = false;
+        # mobilityDomain = "a1b2"; # Must be same across all APs
+        # ieee80211k = true; # Radio Resource Management
+        # ieee80211v = true; # BSS Transition Management
       };
 
       radios = {

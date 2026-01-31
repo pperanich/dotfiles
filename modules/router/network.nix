@@ -17,8 +17,9 @@ _: {
     {
       config = lib.mkIf cfg.enable {
         # Kernel parameters for routing
+        # Use mkForce for forwarding since nixpkgs defaults to false
         boot.kernel.sysctl = {
-          "net.ipv4.conf.all.forwarding" = true;
+          "net.ipv4.conf.all.forwarding" = lib.mkForce 1;
           "net.ipv4.conf.all.rp_filter" = 1;
           "net.ipv4.conf.default.rp_filter" = 1;
           "net.ipv4.conf.${wan}.rp_filter" = 1;
@@ -27,7 +28,8 @@ _: {
           "net.ipv4.conf.br-lan.rp_filter" = 1;
         }
         // lib.optionalAttrs cfg.ipv6.enable {
-          "net.ipv6.conf.all.forwarding" = true;
+          # Use mkForce since router requires forwarding enabled
+          "net.ipv6.conf.all.forwarding" = lib.mkForce 1;
           "net.ipv6.conf.all.accept_ra" = 0;
           "net.ipv6.conf.all.autoconf" = 0;
           "net.ipv6.conf.all.use_tempaddr" = 0;

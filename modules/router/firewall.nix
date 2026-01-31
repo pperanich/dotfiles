@@ -22,12 +22,12 @@ _: {
         iifname "${iface}" udp dport 67 accept comment "DHCP (${iface})"
         iifname "${iface}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH (${iface})"
         iifname "${iface}" udp dport 53 accept comment "DNS UDP (${iface})"
-        iifname "${iface}" icmp accept'';
+        iifname "${iface}" icmp type { echo-request, echo-reply } accept'';
 
       mkWlanInputRulesV6 = iface: ''
         iifname "${iface}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH (${iface})"
         iifname "${iface}" udp dport 53 accept comment "DNS UDP (${iface})"
-        iifname "${iface}" icmpv6 accept comment "Neighbor Discovery (${iface})"'';
+        iifname "${iface}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6 (${iface})"'';
 
       mkWlanForwardRules = iface: ''
         iifname "${iface}" oifname "${wan}" accept
@@ -122,11 +122,11 @@ _: {
                   iifname "${lanDevice}" udp dport 67 accept comment "DHCP"
                   iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
-                  iifname "${lanDevice}" icmp accept
+                  iifname "${lanDevice}" icmp type { echo-request, echo-reply } accept
                   ${wlanInputRules}
                   ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept
-                  iifname "${wan}" ip protocol icmp accept
+                  iifname "${wan}" icmp type { echo-request, echo-reply } accept
                   ${lib.optionalString (
                     fwCfg.openPorts.tcp != [ ]
                   ) ''iifname "${wan}" tcp dport { ${tcpPortsStr} } accept comment "Open TCP ports"''}
@@ -162,8 +162,8 @@ _: {
               family = "ip";
               content = ''
                 chain forward {
-                  type filter hook forward priority -10;
-                  tcp flags syn tcp option maxseg size set rt mss
+                  type filter hook forward priority mangle;
+                  tcp flags syn / syn,rst tcp option maxseg size set rt mtu
                 }
               '';
             };
@@ -171,8 +171,8 @@ _: {
               family = "ip6";
               content = ''
                 chain forward {
-                  type filter hook forward priority -10;
-                  tcp flags syn tcp option maxseg size set rt mss
+                  type filter hook forward priority mangle;
+                  tcp flags syn / syn,rst tcp option maxseg size set rt mtu
                 }
               '';
             };
@@ -184,7 +184,7 @@ _: {
                   iifname "lo" accept
                   iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
-                  iifname "${lanDevice}" icmpv6 accept comment "Neighbor Discovery"
+                  iifname "${lanDevice}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
                   ${wlanInputRulesV6}
                   ${trustedInputRules}
                   iifname "${wan}" ct state established,related accept

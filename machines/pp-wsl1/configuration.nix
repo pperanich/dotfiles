@@ -28,8 +28,8 @@
 
   clan.core = {
     networking = {
-      targetHost = lib.mkForce "root@pp-wsl1";
-      buildHost = "root@pp-wsl1";
+      targetHost = lib.mkForce "root@192.168.0.184";
+      buildHost = "root@192.168.0.184";
     };
     enableRecommendedDefaults = false;
     deployment.requireExplicitUpdate = true;

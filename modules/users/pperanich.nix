@@ -1,4 +1,8 @@
-_: {
+_:
+let
+  sopsFolder = ../../sops;
+in
+{
   # pperanich user configuration - both NixOS system user and home-manager setup
   flake.modules.nixos.pperanich =
     {
@@ -9,6 +13,17 @@ _: {
       ...
     }:
     {
+      # Deploy SSH private key via system-level sops BEFORE home-manager runs
+      # This breaks the chicken-and-egg: home-manager sops needs SSH key to decrypt,
+      # but SSH key is a secret. System sops uses machine key, so it can decrypt first.
+      sops.secrets."private_keys/pperanich" = {
+        sopsFile = "${sopsFolder}/secrets.yaml";
+        owner = "pperanich";
+        group = "users";
+        mode = "0400";
+        path = "/home/pperanich/.ssh/id_ed25519";
+      };
+
       # Create system user
       users.users.pperanich = {
         openssh.authorizedKeys.keys = [
@@ -17,6 +32,8 @@ _: {
         ];
         shell = pkgs.zsh;
         packages = [ pkgs.home-manager ];
+        # Add to keys group for reading machine's sops age key
+        extraGroups = [ "keys" ];
       };
 
       # Enable zsh system-wide
@@ -56,6 +73,15 @@ _: {
       ...
     }:
     {
+      # Deploy SSH private key via system-level sops BEFORE home-manager runs
+      sops.secrets."private_keys/pperanich" = {
+        sopsFile = "${sopsFolder}/secrets.yaml";
+        owner = "pperanich";
+        group = "staff";
+        mode = "0400";
+        path = "/Users/pperanich/.ssh/id_ed25519";
+      };
+
       # Create system user
       users.users.pperanich = {
         openssh.authorizedKeys.keys = [

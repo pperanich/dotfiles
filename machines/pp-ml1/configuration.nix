@@ -20,8 +20,8 @@
     sketchybar
   ];
 
-  clan.core.networking.targetHost = lib.mkForce "root@pp-ml1";
-  clan.core.networking.buildHost = "root@pp-ml1";
+  clan.core.networking.targetHost = lib.mkForce "pperanich@pp-ml1.local";
+  clan.core.networking.buildHost = "pperanich@pp-ml1.local";
 
   # Host-specific configuration
   networking.hostName = "pp-ml1";

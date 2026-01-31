@@ -9,6 +9,10 @@ Nix-based system configuration using the dendritic pattern with flake-parts and 
 - [Adding New Machines](adding-new-machines.md) - Complete guide for onboarding new NixOS/Darwin machines
 - [Troubleshooting Clan Commands](clan-machines-update-troubleshooting.md) - Debug common deployment issues
 
+### Secrets
+
+- [Secrets and Key Management](secrets-and-key-management.md) - Machine keys vs user keys, SSH-derived keys, anti-patterns
+
 ## Quick Start
 
 ### Deploy to a Machine

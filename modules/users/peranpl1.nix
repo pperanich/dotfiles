@@ -1,4 +1,8 @@
-_: {
+_:
+let
+  sopsFolder = ../../sops;
+in
+{
   # peranpl1 user configuration - both NixOS system user and home-manager setup
   flake.modules.nixos.peranpl1 =
     {
@@ -8,6 +12,15 @@ _: {
       ...
     }:
     {
+      # Deploy SSH private key via system-level sops BEFORE home-manager runs
+      sops.secrets."private_keys/peranpl1" = {
+        sopsFile = "${sopsFolder}/secrets.yaml";
+        owner = "peranpl1";
+        group = "users";
+        mode = "0400";
+        path = "/home/peranpl1/.ssh/id_ed25519";
+      };
+
       # Create system user
       users.users.peranpl1 = {
         openssh.authorizedKeys.keys = [
@@ -16,6 +29,7 @@ _: {
         ];
         shell = pkgs.zsh;
         packages = [ pkgs.home-manager ];
+        extraGroups = [ "keys" ];
       };
 
       # Enable zsh system-wide
@@ -55,6 +69,15 @@ _: {
       ...
     }:
     {
+      # Deploy SSH private key via system-level sops BEFORE home-manager runs
+      sops.secrets."private_keys/peranpl1" = {
+        sopsFile = "${sopsFolder}/secrets.yaml";
+        owner = "peranpl1";
+        group = "staff";
+        mode = "0400";
+        path = "/Users/peranpl1/.ssh/id_ed25519";
+      };
+
       # Create system user
       users.users.peranpl1 = {
         openssh.authorizedKeys.keys = [

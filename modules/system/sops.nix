@@ -2,6 +2,8 @@
 { inputs, ... }:
 let
   sopsFolder = ../../sops;
+  # Base sops config shared between NixOS and Darwin
+  # Note: age.plugins is added per-platform below since it needs pkgs
   sops = {
     defaultSopsFile = "${sopsFolder}/secrets.yaml";
     validateSopsFiles = false;
@@ -28,6 +30,10 @@ in
         # imports = [ inputs.sops-nix.nixosModules.sops ];
         sops = lib.mkMerge [
           sops
+          {
+            # YubiKey support for system-level secrets
+            age.plugins = [ pkgs.age-plugin-yubikey ];
+          }
           # WiFi passphrase secret for hostapd (only on hosts with router.hostapd enabled)
           (lib.mkIf (config.features.router.hostapd.enable or false) {
             secrets.wifi_passphrase = {
@@ -39,10 +45,16 @@ in
         environment.systemPackages = [ pkgs.sops ];
       };
     darwin.sops =
-      { pkgs, ... }:
+      { pkgs, lib, ... }:
       {
         # imports = [ inputs.sops-nix.darwinModules.sops ];
-        inherit sops;
+        sops = lib.mkMerge [
+          sops
+          {
+            # YubiKey support for system-level secrets
+            age.plugins = [ pkgs.age-plugin-yubikey ];
+          }
+        ];
         environment.systemPackages = [ pkgs.sops ];
       };
     homeManager.sops =
@@ -55,29 +67,37 @@ in
         # https://github.com/Mic92/sops-nix/issues/899 (age plugin support regression)
         # The home-manager module sets PATH = lib.makeBinPath cfg.age.plugins, which
         # results in empty PATH when no plugins are configured, breaking LaunchAgent.
+        # We include age-plugin-yubikey in the PATH for YubiKey decryption support.
         launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
           enable = true;
           config = {
             EnvironmentVariables = {
-              PATH = pkgs.lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin";
+              PATH = pkgs.lib.mkForce "${
+                pkgs.lib.makeBinPath [ pkgs.age-plugin-yubikey ]
+              }:/usr/bin:/bin:/usr/sbin:/sbin";
             };
           };
         };
 
         sops = {
-          # package = pkgs.sops-install-secrets.overrideAttrs (_old: {
-          #   env.GODEBUG = "x509negativeserial=1";
-          # });
-          # This is the location of the host specific age-key and will to have been extracted to this location via hosts/shared/core/sops.nix on the host
           age = {
-            keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
+            # Use SSH key for decryption (converted to age key automatically by sops-nix)
+            # The SSH private key is deployed via system-level sops BEFORE home-manager runs
+            # secrets.yaml is encrypted for the SSH-derived age key (e.g., &pperanich)
             sshKeyPaths = [
               "${config.home.homeDirectory}/.ssh/id_ed25519"
             ];
+            # YubiKey support - if plugged in, can be used for decryption
+            # Secrets have both YubiKey AND machine/SSH keys as recipients,
+            # so system boots fine without YubiKey (SSH key decrypts)
+            plugins = [ pkgs.age-plugin-yubikey ];
           };
           defaultSopsFile = "${sopsFolder}/secrets.yaml";
           validateSopsFiles = true;
-
+          # SSH private key is deployed via system-level sops in user modules
+          # (modules/users/*.nix) BEFORE home-manager runs, breaking the
+          # chicken-and-egg problem where home-manager sops needs the SSH key
+          # to decrypt, but the SSH key is itself a secret.
           secrets = {
             "api_keys/opal_api_key" = { };
             "api_keys/openai_enterprise_api_key" = { };
@@ -90,10 +110,6 @@ in
             "api_keys/openrouter_api_key" = { };
             "api_keys/gemini_api_key" = { };
             "api_keys/artificial_analysis_api_key" = { };
-            "private_keys/${config.home.username}" = {
-              path = "${config.home.homeDirectory}/.ssh/id_ed25519";
-              mode = "0400";
-            };
           };
         };
       };

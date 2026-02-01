@@ -6,6 +6,21 @@
   config,
   ...
 }:
+let
+  # WiFi hardware configuration for mt7915e dual-band card
+  # MAC addresses from: /sys/class/net/<iface>/address
+  # Note: facter.json only stores first byte of MAC (known limitation)
+  wifi = {
+    radio24 = {
+      mac = "00:0a:52:09:61:ce"; # phy0 - 2.4GHz band
+      name = "wlan24";
+    };
+    radio5 = {
+      mac = "00:0a:52:09:61:cf"; # phy1 - 5GHz band
+      name = "wlan5";
+    };
+  };
+in
 {
   imports = [
     ./disko.nix
@@ -35,7 +50,7 @@
   ]);
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.233";
+  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.152";
   clan.core.networking.buildHost = "root@192.168.0.184";
 
   # Networking configuration
@@ -47,6 +62,19 @@
     "console=ttyS0,115200n8"
   ];
   systemd.services."serial-getty@ttyS0".enable = true;
+
+  # Stable WiFi interface names using MAC addresses
+  # mt7915e creates two interfaces on the same PCI device, NixOS only auto-renames one
+  systemd.network.links = {
+    "10-wlan24" = {
+      matchConfig.MACAddress = wifi.radio24.mac;
+      linkConfig.Name = wifi.radio24.name;
+    };
+    "10-wlan5" = {
+      matchConfig.MACAddress = wifi.radio5.mac;
+      linkConfig.Name = wifi.radio5.name;
+    };
+  };
 
   # Debug uplink - DHCP client to existing router for SSH access during development
   # Must use systemd.network since router module enables networkd
@@ -102,23 +130,22 @@
       enable = true;
       countryCode = "US";
 
-      # Fast roaming disabled - requires hostapd compiled with 802.11r/k/v support
-      # TODO: Enable when using a custom hostapd package with these features
+      # Fast roaming (802.11r/k/v) for seamless handoff between radios
       roaming = {
-        enable = false;
-        # mobilityDomain = "a1b2"; # Must be same across all APs
-        # ieee80211k = true; # Radio Resource Management
-        # ieee80211v = true; # BSS Transition Management
+        enable = true;
+        mobilityDomain = "a1b2"; # Must be same across all APs
+        ieee80211k = true; # Radio Resource Management (neighbor reports)
+        ieee80211v = true; # BSS Transition Management
       };
 
       radios = {
         # 2.4GHz radio - better range, slower speeds
         radio24 = {
-          interface = "wlan0";
+          interface = wifi.radio24.name;
           band = "2.4GHz";
-          ssid = "VirusInfectedWifi";
+          ssid = "TestWifi-PP";
           wpaPassphraseFile = config.sops.secrets.wifi_passphrase.path;
-          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode
+          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode (ieee80211w auto-enabled)
           channel = 6; # Common 2.4GHz channel
           bridge = "br-lan";
           ieee80211n = true;
@@ -127,11 +154,11 @@
 
         # 5GHz radio - shorter range, faster speeds
         radio5 = {
-          interface = "wlp4s0";
+          interface = wifi.radio5.name;
           band = "5GHz";
-          ssid = "VirusInfectedWifi"; # Same SSID for seamless roaming
+          ssid = "TestWifi-PP"; # Same SSID for seamless roaming (temp for testing)
           wpaPassphraseFile = config.sops.secrets.wifi_passphrase.path;
-          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode
+          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode (ieee80211w auto-enabled)
           channel = 36; # DFS-free channel
           bridge = "br-lan";
           ieee80211n = true;

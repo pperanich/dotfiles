@@ -3,6 +3,7 @@ _: {
     {
       config,
       lib,
+      utils,
       ...
     }:
     let
@@ -95,17 +96,25 @@ _: {
           };
         };
 
-        systemd.services.kea-dhcp4-server = {
-          wants = [ "network-online.target" ];
-          after = [
-            "systemd-networkd.service"
-            "network-online.target"
-          ];
-          serviceConfig = {
-            Restart = "on-failure";
-            RestartSec = "5s";
+        systemd.services.kea-dhcp4-server =
+          let
+            bridgeDevice = "sys-subsystem-net-devices-${utils.escapeSystemdPath lanDevice}.device";
+          in
+          {
+            wants = [ "network-online.target" ];
+            after = [
+              "systemd-networkd.service"
+              "network-online.target"
+              bridgeDevice # Wait for bridge interface
+            ];
+            bindsTo = [
+              bridgeDevice # Restart if bridge goes down
+            ];
+            serviceConfig = {
+              Restart = "on-failure";
+              RestartSec = "5s";
+            };
           };
-        };
       };
     };
 }

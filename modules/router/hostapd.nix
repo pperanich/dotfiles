@@ -65,6 +65,21 @@ _: {
             description = "Key management. 'SAE' for WPA3, 'WPA-PSK' for WPA2, 'SAE WPA-PSK' for transition mode.";
           };
 
+          ieee80211w = lib.mkOption {
+            type = lib.types.enum [
+              0
+              1
+              2
+            ];
+            default = 0;
+            example = 1;
+            description = ''
+              Management Frame Protection (MFP/PMF). Required for WPA3/SAE.
+              0 = disabled, 1 = optional (for transition mode), 2 = required (WPA3 only).
+              Automatically set to 1 when SAE is in wpaKeyMgmt for transition mode.
+            '';
+          };
+
           bssid = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
             default = null;
@@ -273,6 +288,20 @@ _: {
             wpa = 2;
             wpa_key_mgmt = wpaKeyMgmtWithFT;
             rsn_pairwise = "CCMP";
+
+            # Management Frame Protection (required for SAE/WPA3)
+            # Auto-enable if SAE is used and user hasn't explicitly set it
+            ieee80211w =
+              let
+                hasSAE = lib.hasInfix "SAE" radio.wpaKeyMgmt;
+                userValue = radio.ieee80211w;
+              in
+              if userValue != 0 then
+                userValue
+              else if hasSAE then
+                1 # Auto-enable for SAE transition mode
+              else
+                0;
           }
           # Passphrase: either direct or from file (use placeholder for file-based)
           // lib.optionalAttrs (radio.wpaPassphrase != null) {
@@ -303,24 +332,29 @@ _: {
             }
           )
           # 802.11r Fast Transition
+          # Note: ieee80211r is NOT a valid hostapd.conf option - it's an OpenWrt UCI abstraction.
+          # 802.11r is enabled implicitly when wpa_key_mgmt includes FT-PSK or FT-SAE.
           // lib.optionalAttrs roamingCfg.enable {
-            ieee80211r = true;
             mobility_domain = roamingCfg.mobilityDomain;
+            nas_identifier = "${hostapdCfg.countryCode}${name}";
             ft_over_ds = if roamingCfg.ft_over_ds then 1 else 0;
             ft_psk_generate_local = if roamingCfg.ft_psk_generate_local then 1 else 0;
+            reassociation_deadline = 1000;
             pmk_r1_push = 1;
-            nas_identifier = "${hostapdCfg.countryCode}${name}";
           }
-          # 802.11k Radio Resource Management
-          // lib.optionalAttrs roamingCfg.ieee80211k {
-            ieee80211k = true;
-            rrm_neighbor_report = true;
+          # 802.11k Radio Resource Management (requires roaming enabled)
+          # Note: ieee80211k is an OpenWrt UCI abstraction, not a hostapd.conf option.
+          # The actual options are rrm_neighbor_report and rrm_beacon_report.
+          // lib.optionalAttrs (roamingCfg.enable && roamingCfg.ieee80211k) {
+            rrm_neighbor_report = 1;
+            rrm_beacon_report = 1;
           }
-          # 802.11v BSS Transition Management
-          // lib.optionalAttrs roamingCfg.ieee80211v {
-            ieee80211v = true;
-            inherit (roamingCfg) bss_transition;
-            wnm_sleep_mode = true;
+          # 802.11v BSS Transition Management (requires roaming enabled)
+          # Note: ieee80211v is an OpenWrt UCI abstraction, not a hostapd.conf option.
+          # The actual options are bss_transition and wnm_sleep_mode.
+          // lib.optionalAttrs (roamingCfg.enable && roamingCfg.ieee80211v) {
+            bss_transition = if roamingCfg.bss_transition then 1 else 0;
+            wnm_sleep_mode = 1;
           }
           // radio.extraSettings;
 
@@ -607,10 +641,10 @@ _: {
             path = [ pkgs.hostapd ];
 
             serviceConfig = {
-              Type = "forking";
-              PIDFile = "/run/hostapd-${name}.pid";
+              # Use simple type (foreground) - forking mode times out during HT_SCAN
+              Type = "simple";
               ExecStartPre = "${prepareConfig}";
-              ExecStart = "${pkgs.hostapd}/bin/hostapd -B -P /run/hostapd-${name}.pid ${runtimeConfigPath}";
+              ExecStart = "${pkgs.hostapd}/bin/hostapd ${runtimeConfigPath}";
               ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
               Restart = "on-failure";
               RestartSec = "5s";

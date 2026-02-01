@@ -24,9 +24,6 @@
 
           # treefmt with config defined in fmt.nix
           config.treefmt.build.wrapper
-        ]
-        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-          pkgs.age-plugin-se # Secure Enclave plugin - only works on macOS, requires Swift to build
         ];
 
         shellHook = ''

@@ -41,18 +41,22 @@
   # Networking configuration
   networking.hostName = "pp-router1";
 
+  # Debug uplink - DHCP client to existing router for SSH access during development
+  networking.interfaces.enp2s0.useDHCP = true;
+
   # Router configuration
   features.router = {
     enable = true;
     hostname = "pp-router1";
 
-    # Network interfaces
-    wan.interface = "enp2s0";
+    # Network interfaces - using SFP+ ports for router functionality
+    wan.interface = "enp1s0f0np0"; # 10GbE SFP+ port 0
     lan = {
-      # Wired LAN only (WiFi disabled - using client mode instead)
-      interface = "enp5s0"; # Primary wired LAN interface
+      interface = "enp1s0f1np1"; # 10GbE SFP+ port 1
       interfaces = [
-        "enp5s0" # Wired LAN
+        "enp1s0f1np1" # Wired LAN (SFP+)
+        "wlan0" # 2.4GHz WiFi
+        "wlp4s0" # 5GHz WiFi
       ];
       subnet = "10.0.0";
       dhcpRange = {
@@ -71,8 +75,51 @@
     dns.enable = true;
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
-    # WiFi Access Point configuration - DISABLED for now, using WiFi client mode
-    hostapd.enable = false;
+    # WiFi Access Point configuration
+    hostapd = {
+      enable = true;
+      countryCode = "US";
+
+      # Fast roaming disabled - requires hostapd compiled with 802.11r/k/v support
+      # TODO: Enable when using a custom hostapd package with these features
+      roaming = {
+        enable = false;
+        # mobilityDomain = "a1b2"; # Must be same across all APs
+        # ieee80211k = true; # Radio Resource Management
+        # ieee80211v = true; # BSS Transition Management
+      };
+
+      radios = {
+        # 2.4GHz radio - better range, slower speeds
+        radio24 = {
+          interface = "wlan0";
+          band = "2.4GHz";
+          ssid = "VirusInfectedWifi";
+          wpaPassphraseFile = config.sops.secrets.wifi_passphrase.path;
+          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode
+          channel = 6; # Common 2.4GHz channel
+          bridge = "br-lan";
+          ieee80211n = true;
+          htCapab = "[HT40+][SHORT-GI-40]";
+        };
+
+        # 5GHz radio - shorter range, faster speeds
+        radio5 = {
+          interface = "wlp4s0";
+          band = "5GHz";
+          ssid = "VirusInfectedWifi"; # Same SSID for seamless roaming
+          wpaPassphraseFile = config.sops.secrets.wifi_passphrase.path;
+          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode
+          channel = 36; # DFS-free channel
+          bridge = "br-lan";
+          ieee80211n = true;
+          ieee80211ac = true; # Wi-Fi 5
+          ieee80211ax = true; # Wi-Fi 6
+          vhtOperChwidth = 1; # 80MHz channel width
+          vhtOperCentrFreqSeg0Idx = 42; # Center frequency for 80MHz
+        };
+      };
+    };
 
     # Static IP reservations (customize as needed)
     machines = [
@@ -85,33 +132,6 @@
       #   ];
       # }
     ];
-  };
-
-  # WiFi client mode - connect to existing router's WiFi
-  networking.wireless = {
-    enable = true;
-    # Use wlan0 (2.4GHz) for client connection - better range
-    interfaces = [ "wlan0" ];
-    # Allow imperative network configuration alongside declarative
-    allowAuxiliaryImperativeNetworks = true;
-    userControlled.enable = true; # Allow users to manage networks
-    networks = {
-      "VirusInfectedWifi" = {
-        psk = "@WIFI_PSK@";
-      };
-    };
-    secretsFile = config.sops.templates."wpa-secrets".path;
-    extraConfig = ''
-      country=US
-    '';
-  };
-
-  # Template to create wpa_supplicant secrets file from sops
-  sops.templates."wpa-secrets" = {
-    content = ''
-      WIFI_PSK=${config.sops.placeholder.wifi_passphrase}
-    '';
-    owner = "root";
   };
 
   services = {

@@ -13,6 +13,9 @@ _: {
         routerDns
         routerHostapd
         routerMdns
+        routerSqm
+        routerMonitoring
+        routerNetworks # Unified VLAN + WiFi configuration
       ];
     };
 }

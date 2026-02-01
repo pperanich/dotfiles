@@ -14,6 +14,20 @@ _: {
       wan = cfg.wan.interface;
       inherit (internal) lanDevice;
 
+      # Get network firewall rules (from networks.nix)
+      netFw =
+        internal.networkFirewall or {
+          inputRules = "";
+          forwardRules = "";
+          natRules = "";
+        };
+
+      # Get monitoring firewall rules if monitoring is enabled
+      monFw =
+        internal.monitoringFirewall or {
+          inputRules = "";
+        };
+
       # Wireless interfaces (if hostapd enabled) - only non-bridged ones need explicit rules
       wlanInterfaces = if hostapdCfg.enable then hostapdCfg._internal.nonBridgedInterfaces else [ ];
 
@@ -39,15 +53,18 @@ _: {
       wlanInputRulesV6 = lib.concatMapStringsSep "\n" mkWlanInputRulesV6 wlanInterfaces;
       wlanForwardRules = lib.concatMapStringsSep "\n" mkWlanForwardRules wlanInterfaces;
 
-      # Build trusted interface rules
+      # Build trusted interface rules (auto-include debug uplink if enabled)
+      allTrustedInterfaces =
+        fwCfg.trustedInterfaces ++ lib.optional cfg.debugUplink.enable cfg.debugUplink.interface;
+
       trustedInputRules = lib.concatMapStringsSep "\n" (
         iface: ''iifname "${iface}" accept''
-      ) fwCfg.trustedInterfaces;
+      ) allTrustedInterfaces;
 
       trustedForwardRules = lib.concatMapStringsSep "\n" (iface: ''
         iifname "${iface}" oifname "${lanDevice}" accept
         iifname "${lanDevice}" oifname "${iface}" accept
-        iifname "${iface}" oifname "${wan}" accept'') fwCfg.trustedInterfaces;
+        iifname "${iface}" oifname "${wan}" accept'') allTrustedInterfaces;
 
       # Build open ports rules
       tcpPortsStr = lib.concatMapStringsSep ", " toString fwCfg.openPorts.tcp;
@@ -107,6 +124,33 @@ _: {
             description = "UDP ports to open on WAN";
           };
         };
+        rateLimiting = {
+          enable = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Enable rate limiting on WAN to prevent DoS";
+          };
+          icmpRate = lib.mkOption {
+            type = lib.types.str;
+            default = "10/second";
+            description = "ICMP rate limit (nftables format)";
+          };
+          icmpBurst = lib.mkOption {
+            type = lib.types.int;
+            default = 50;
+            description = "ICMP burst limit";
+          };
+          newConnRate = lib.mkOption {
+            type = lib.types.str;
+            default = "100/second";
+            description = "New connection rate limit";
+          };
+          newConnBurst = lib.mkOption {
+            type = lib.types.int;
+            default = 200;
+            description = "New connection burst limit";
+          };
+        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -118,30 +162,75 @@ _: {
               content = ''
                 chain input {
                   type filter hook input priority 0; policy drop;
+
+                  # Early accepts
                   iifname "lo" accept
+                  ct state established,related accept
+                  ct state invalid drop
+
+                  # LAN input rules
                   iifname "${lanDevice}" udp dport 67 accept comment "DHCP"
                   iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
-                  iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
+                  iifname "${lanDevice}" udp dport { 53, 123 } accept comment "DNS, NTP UDP"
                   iifname "${lanDevice}" icmp type { echo-request, echo-reply } accept
+
+                  # Wireless input rules
                   ${wlanInputRules}
+
+                  # Trusted interfaces (VPN, debug uplink)
                   ${trustedInputRules}
-                  iifname "${wan}" ct state established,related accept
-                  iifname "${wan}" icmp type { echo-request, echo-reply } accept
-                  ${lib.optionalString (
-                    fwCfg.openPorts.tcp != [ ]
-                  ) ''iifname "${wan}" tcp dport { ${tcpPortsStr} } accept comment "Open TCP ports"''}
-                  ${lib.optionalString (
-                    fwCfg.openPorts.udp != [ ]
-                  ) ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''}
+
+                  # Network/VLAN input rules (injected)
+                  ${netFw.inputRules}
+
+                  # Monitoring input rules (injected)
+                  ${monFw.inputRules}
+
+                  # WAN input rules
+                  ${
+                    if fwCfg.rateLimiting.enable then
+                      ''
+                        iifname "${wan}" icmp type echo-request limit rate ${fwCfg.rateLimiting.icmpRate} burst ${toString fwCfg.rateLimiting.icmpBurst} packets accept comment "ICMP ping rate limited"
+                        iifname "${wan}" icmp type echo-reply accept comment "Allow ping responses"''
+                    else
+                      ''iifname "${wan}" icmp type { echo-request, echo-reply } accept''
+                  }
+                  ${lib.optionalString (fwCfg.openPorts.tcp != [ ]) (
+                    if fwCfg.rateLimiting.enable then
+                      ''iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets accept comment "Open TCP ports (rate limited)"''
+                    else
+                      ''iifname "${wan}" tcp dport { ${tcpPortsStr} } accept comment "Open TCP ports"''
+                  )}
+                  ${lib.optionalString (fwCfg.openPorts.udp != [ ]) (
+                    if fwCfg.rateLimiting.enable then
+                      ''iifname "${wan}" ct state new udp dport { ${udpPortsStr} } limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets accept comment "Open UDP ports (rate limited)"''
+                    else
+                      ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''
+                  )}
                 }
+
                 chain forward {
                   type filter hook forward priority 0; policy drop;
+
+                  # Early accepts for established connections (critical for return traffic)
+                  ct state established,related accept
+                  ct state invalid drop
+
+                  # LAN forwarding
                   iifname "${lanDevice}" oifname "${wan}" accept
                   iifname "${lanDevice}" oifname "${lanDevice}" accept
-                  iifname "${wan}" oifname "${lanDevice}" ct state established,related accept
+
+                  # Wireless forwarding
                   ${wlanForwardRules}
+
+                  # Trusted interfaces
                   ${trustedForwardRules}
+
+                  # Port forwarding rules
                   ${forwardRules}
+
+                  # Network/VLAN forwarding rules (injected)
+                  ${netFw.forwardRules}
                 }
               '';
             };
@@ -155,6 +244,7 @@ _: {
                 chain postrouting {
                   type nat hook postrouting priority 100;
                   oifname "${wan}" masquerade
+                  ${netFw.natRules}
                 }
               '';
             };
@@ -181,13 +271,24 @@ _: {
               content = ''
                 chain input {
                   type filter hook input priority 0; policy drop;
+
+                  # Early accepts
                   iifname "lo" accept
+                  ct state established,related accept
+                  ct state invalid drop
+
+                  # LAN input rules
                   iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
                   iifname "${lanDevice}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
+
+                  # Wireless input rules
                   ${wlanInputRulesV6}
+
+                  # Trusted interfaces
                   ${trustedInputRules}
-                  iifname "${wan}" ct state established,related accept
+
+                  # WAN input rules
                   iifname "${wan}" icmpv6 type {
                     destination-unreachable, packet-too-big, time-exceeded,
                     parameter-problem, nd-router-advert, nd-neighbor-solicit,
@@ -195,11 +296,21 @@ _: {
                   } accept
                   iifname "${wan}" udp dport dhcpv6-client udp sport dhcpv6-server accept
                 }
+
                 chain forward {
                   type filter hook forward priority 0; policy drop;
+
+                  # Early accepts
+                  ct state established,related accept
+                  ct state invalid drop
+
+                  # LAN forwarding
                   iifname "${lanDevice}" oifname "${wan}" accept
-                  iifname "${wan}" oifname "${lanDevice}" ct state established,related accept
+
+                  # Wireless forwarding
                   ${wlanForwardRules}
+
+                  # Trusted interfaces
                   ${trustedForwardRules}
                 }
               '';

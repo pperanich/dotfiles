@@ -44,6 +44,17 @@ in
               };
             }
           )
+          # Additional WiFi passphrases for network segmentation (IoT, Guest SSIDs)
+          (lib.mkIf (config.features.router.networks.enable or false) {
+            secrets.wifi_passphrase_iot = {
+              sopsFile = "${sopsFolder}/secrets.yaml";
+              mode = "0400";
+            };
+            secrets.wifi_passphrase_guest = {
+              sopsFile = "${sopsFolder}/secrets.yaml";
+              mode = "0400";
+            };
+          })
         ];
         environment.systemPackages = [ pkgs.sops ];
       };

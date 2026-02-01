@@ -23,6 +23,21 @@ _: {
           "net.ipv4.conf.all.rp_filter" = 1;
           "net.ipv4.conf.default.rp_filter" = 1;
           "net.ipv4.conf.${wan}.rp_filter" = 1;
+
+          # Connection tracking tuning for high traffic
+          "net.netfilter.nf_conntrack_max" = 262144;
+          "net.netfilter.nf_conntrack_tcp_timeout_established" = 7200;
+          "net.netfilter.nf_conntrack_tcp_timeout_time_wait" = 30;
+          "net.netfilter.nf_conntrack_udp_timeout" = 30;
+          "net.netfilter.nf_conntrack_udp_timeout_stream" = 180;
+
+          # TCP performance tuning
+          "net.core.rmem_max" = 16777216;
+          "net.core.wmem_max" = 16777216;
+          "net.ipv4.tcp_rmem" = "4096 87380 16777216";
+          "net.ipv4.tcp_wmem" = "4096 65536 16777216";
+          "net.core.netdev_max_backlog" = 16384;
+          "net.core.somaxconn" = 8192;
         }
         // lib.optionalAttrs useBridge {
           "net.ipv4.conf.br-lan.rp_filter" = 1;
@@ -45,6 +60,46 @@ _: {
         };
 
         services.resolved.enable = false;
+
+        # NTP server for LAN clients
+        services.chrony = {
+          enable = true;
+          servers = [
+            "time.cloudflare.com"
+            "time.google.com"
+            "pool.ntp.org"
+          ];
+          extraConfig = ''
+            # Allow NTP client access from LAN
+            allow ${cfg.lan.subnet}.0/24
+            ${lib.optionalString cfg.ipv6.enable "allow ${ulaPrefix}::/64"}
+
+            # Serve time even when not synchronized (stratum 10)
+            local stratum 10
+          '';
+        };
+
+        # SSH hardening for router (augments clan's sshd module)
+        # clan-core provides base openssh config; we just add hardening
+        services.openssh = {
+          openFirewall = false; # We control via nftables
+          settings = {
+            X11Forwarding = lib.mkForce false;
+            MaxAuthTries = 3;
+            LoginGraceTime = 20;
+            ClientAliveInterval = 300;
+            ClientAliveCountMax = 2;
+          };
+        };
+
+        # UPnP/NAT-PMP for automatic port forwarding
+        services.miniupnpd = lib.mkIf cfg.upnp.enable {
+          enable = true;
+          externalInterface = wan;
+          internalIPs = [ "${cfg.lan.subnet}.0/24" ];
+          natpmp = true;
+          upnp = true;
+        };
 
         systemd.network = {
           enable = true;
@@ -106,7 +161,22 @@ _: {
                 }
               ) cfg.lan.interfaces
             )
-          );
+          )
+          # Debug uplink - DHCP client to existing router for SSH access during development
+          // lib.optionalAttrs cfg.debugUplink.enable {
+            "05-debug-uplink" = {
+              matchConfig.Name = cfg.debugUplink.interface;
+              networkConfig = {
+                DHCP = "yes";
+                IPv6AcceptRA = true;
+              };
+              dhcpV4Config = {
+                UseDNS = false; # Don't override router's DNS config
+                RouteMetric = 1024; # Higher metric = lower priority than WAN
+              };
+              linkConfig.RequiredForOnline = "no"; # Don't block boot if unplugged
+            };
+          };
         };
 
         # Ensure nftables starts before network

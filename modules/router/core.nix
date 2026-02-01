@@ -153,7 +153,17 @@ _: {
         dhcp.enable = mkEnableOption "DHCP server (Kea)";
         dns.enable = mkEnableOption "DNS server (Unbound)";
         nginx.enable = mkEnableOption "nginx reverse proxy";
-        monitoring.enable = mkEnableOption "network monitoring";
+        upnp.enable = mkEnableOption "UPnP/NAT-PMP for automatic port forwarding (gaming, P2P)";
+        # monitoring.enable is defined in routerMonitoring module with additional options
+
+        debugUplink = {
+          enable = mkEnableOption "debug uplink interface for development access";
+          interface = mkOption {
+            type = types.str;
+            default = "enp2s0";
+            description = "Interface to use as debug uplink (gets DHCP from existing router)";
+          };
+        };
       };
 
       config = lib.mkIf cfg.enable {

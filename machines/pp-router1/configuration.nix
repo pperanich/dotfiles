@@ -3,7 +3,6 @@
   modules,
   pkgs,
   lib,
-  config,
   ...
 }:
 let
@@ -76,21 +75,6 @@ in
     };
   };
 
-  # Debug uplink - DHCP client to existing router for SSH access during development
-  # Must use systemd.network since router module enables networkd
-  systemd.network.networks."05-debug-uplink" = {
-    matchConfig.Name = "enp2s0";
-    networkConfig = {
-      DHCP = "yes";
-      IPv6AcceptRA = true;
-    };
-    dhcpV4Config = {
-      UseDNS = false; # Don't override router's DNS config
-      RouteMetric = 1024; # Higher metric = lower priority than WAN (default ~100)
-    };
-    linkConfig.RequiredForOnline = "no"; # Don't block boot if unplugged
-  };
-
   # Router configuration
   features.router = {
     enable = true;
@@ -102,8 +86,8 @@ in
       interface = "enp1s0f1np1"; # 10GbE SFP+ port 1
       interfaces = [
         "enp1s0f1np1" # Wired LAN (SFP+)
-        "wlan0" # 2.4GHz WiFi
-        "wlp4s0" # 5GHz WiFi
+        wifi.radio24.name # 2.4GHz WiFi
+        wifi.radio5.name # 5GHz WiFi
       ];
       subnet = "10.0.0";
       dhcpRange = {
@@ -122,12 +106,67 @@ in
     dns.enable = true;
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
-    # Trust the debug uplink interface for SSH access during development
-    firewall.trustedInterfaces = [ "enp2s0" ];
+    # Network monitoring with ntopng
+    # Access at http://10.0.0.1:3000 (default: admin/admin)
+    monitoring.enable = true;
+
+    # Unified network segmentation (VLAN + WiFi)
+    # Each network segment gets its own VLAN, subnet, and WiFi SSID
+    networks = {
+      enable = true;
+      segments = {
+        # Main network - no VLAN tag, uses primary LAN subnet
+        main = {
+          subnet = "10.0.0";
+          isolation = "none"; # Full access to everything
+          wifi = {
+            enable = true;
+            ssid = "PP-Net";
+            security = "wpa3-transition"; # WPA3 + WPA2 compatibility
+            passwordSecret = "wifi_passphrase";
+          };
+        };
+        # IoT network - isolated with controlled access
+        iot = {
+          vlan = 20;
+          subnet = "10.0.20";
+          isolation = "internet"; # Internet only, no inter-VLAN
+          allowAccessFrom = [ "main" ]; # Main network can access IoT devices
+          wifi = {
+            enable = true;
+            ssid = "PP-IoT";
+            security = "wpa2"; # WPA2 for IoT device compatibility
+            passwordSecret = "wifi_passphrase_iot";
+          };
+        };
+        # Guest network - fully isolated
+        guest = {
+          vlan = 30;
+          subnet = "10.0.30";
+          isolation = "full"; # Internet only, no inter-network access
+          wifi = {
+            enable = true;
+            ssid = "PP-Guest";
+            security = "wpa2"; # WPA2 for guest device compatibility
+            passwordSecret = "wifi_passphrase_guest";
+            clientIsolation = true; # Prevent guests from seeing each other
+          };
+        };
+      };
+    };
+
+    # Debug uplink for SSH access during development (disable for production)
+    # Automatically adds interface to firewall.trustedInterfaces
+    debugUplink = {
+      enable = true;
+      interface = "enp2s0";
+    };
 
     # WiFi Access Point configuration
+    # SSID/bridge/additionalBSS are auto-generated from networks.segments
     hostapd = {
       enable = true;
+      useNetworks = true; # Auto-configure from networks.segments with wifi.enable
       countryCode = "US";
 
       # Fast roaming (802.11r/k/v) for seamless handoff between radios
@@ -138,16 +177,14 @@ in
         ieee80211v = true; # BSS Transition Management
       };
 
+      # Radios only need hardware-specific settings now
+      # SSID, bridge, and additionalBSS are auto-populated from networks
       radios = {
         # 2.4GHz radio - better range, slower speeds
         radio24 = {
           interface = wifi.radio24.name;
           band = "2.4GHz";
-          ssid = "TestWifi-PP";
-          wpaPassphraseFile = config.sops.secrets.wifi_passphrase.path;
-          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode (ieee80211w auto-enabled)
           channel = 6; # Common 2.4GHz channel
-          bridge = "br-lan";
           ieee80211n = true;
           htCapab = "[HT40+][SHORT-GI-40]";
         };
@@ -156,11 +193,7 @@ in
         radio5 = {
           interface = wifi.radio5.name;
           band = "5GHz";
-          ssid = "TestWifi-PP"; # Same SSID for seamless roaming (temp for testing)
-          wpaPassphraseFile = config.sops.secrets.wifi_passphrase.path;
-          wpaKeyMgmt = "SAE WPA-PSK"; # WPA3 + WPA2 transition mode (ieee80211w auto-enabled)
           channel = 36; # DFS-free channel
-          bridge = "br-lan";
           ieee80211n = true;
           ieee80211ac = true; # Wi-Fi 5
           ieee80211ax = true; # Wi-Fi 6
@@ -183,80 +216,31 @@ in
     ];
   };
 
-  services = {
-    # Enable the login manager
-    displayManager.cosmic-greeter.enable = true;
-    # Enable the COSMIC DE itself
-    desktopManager.cosmic.enable = true;
-    # Enable XWayland support in COSMIC
-    desktopManager.cosmic.xwayland.enable = true;
-  };
-
-  xdg.portal = {
-    enable = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-gtk
-    ];
-  };
-
-  security = {
-    polkit.enable = true;
-  };
-
-  hardware = {
-    enableRedistributableFirmware = true;
-    bluetooth = {
-      enable = true;
-      powerOnBoot = true;
-      package = pkgs.bluez;
-    };
-    graphics = {
-      enable = true;
-      enable32Bit = true;
-
-      extraPackages = with pkgs; [
-        intel-vaapi-driver
-        libvdpau-va-gl
-        libva-vdpau-driver
-        intel-media-driver
-      ];
-    };
-  };
-
-  # Allow unfree packages (needed for some firmware)
-  nixpkgs.config.allowUnfree = true;
-
-  # Package configuration
+  # Router-appropriate packages (no desktop environment)
   environment.systemPackages = with pkgs; [
-    # Basic system utilities
+    # System utilities
     wget
     git
     htop
+    btop
     neofetch
 
-    # IDE
-    code-cursor
-
-    # Graphics drivers
-    mesa
-    vulkan-loader
-    vulkan-tools
+    # Network debugging
+    tcpdump
+    iperf3
+    mtr
+    nmap
+    ethtool
 
     # Firmware updates
     fwupd
     linux-firmware
-
-    ghostty
-
-    stdenv
   ];
 
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    audio.enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    jack.enable = true;
+  # Minimal hardware config for headless router
+  hardware = {
+    enableRedistributableFirmware = true;
+    # Bluetooth disabled - not needed for router
+    bluetooth.enable = false;
   };
 }

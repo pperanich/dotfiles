@@ -9,7 +9,67 @@ _: {
     let
       cfg = config.features.router;
       hostapdCfg = cfg.hostapd;
+      internal = cfg._internal;
       enabled = cfg.enable && hostapdCfg.enable;
+
+      # WiFi networks from the networks module (when useNetworks = true)
+      wifiNetworks = internal.wifiNetworks or [ ];
+      useNetworks = hostapdCfg.useNetworks && wifiNetworks != [ ];
+
+      # Get password file path from sops secret name
+      getPasswordFile =
+        secretName: if secretName != null then config.sops.secrets.${secretName}.path or null else null;
+
+      # First WiFi network becomes the primary BSS, rest become additionalBSS
+      primaryNetwork = if wifiNetworks != [ ] then builtins.head wifiNetworks else null;
+      additionalNetworks = if wifiNetworks != [ ] then builtins.tail wifiNetworks else [ ];
+
+      # Generate additionalBSS entries for a radio from networks
+      # bssIndex is used to generate unique locally-administered BSSIDs
+      mkNetworkBSS =
+        radioInterface: bssIndex: net:
+        let
+          # Add FT (Fast Transition) to key management if roaming enabled
+          keyMgmt =
+            if net.roaming or false then
+              # Add FT variants for roaming support
+              if net.wpaKeyMgmt == "SAE WPA-PSK" then
+                "SAE WPA-PSK FT-SAE FT-PSK"
+              else if net.wpaKeyMgmt == "SAE" then
+                "SAE FT-SAE"
+              else if net.wpaKeyMgmt == "WPA-PSK" then
+                "WPA-PSK FT-PSK"
+              else
+                net.wpaKeyMgmt
+            else
+              net.wpaKeyMgmt;
+        in
+        {
+          interface = "${radioInterface}_${net.name}";
+          inherit (net) ssid;
+          wpaKeyMgmt = keyMgmt;
+          wpaPassphraseFile = getPasswordFile net.passwordSecret;
+          inherit (net) bridge;
+          # Use locally administered MAC (02:xx:xx:xx:xx:idx) to avoid BSSID mask issues
+          # The 02 prefix sets the locally-administered bit
+          bssid = "02:00:00:00:00:0${toString bssIndex}";
+          roaming = net.roaming or false;
+          extraSettings =
+            lib.optionalAttrs net.clientIsolation { ap_isolate = 1; }
+            // lib.optionalAttrs (net.roaming or false) {
+              # 802.11r Fast Transition
+              mobility_domain = hostapdCfg.roaming.mobilityDomain;
+              ft_over_ds = 0;
+              ft_psk_generate_local = 1;
+              nas_identifier = "${hostapdCfg.countryCode}${radioInterface}_${net.name}";
+              # 802.11k Radio Resource Management
+              rrm_neighbor_report = 1;
+              rrm_beacon_report = 1;
+              # 802.11v BSS Transition Management
+              bss_transition = 1;
+              wnm_sleep_mode = 1;
+            };
+        };
 
       # Radio submodule type (each radio = one hostapd instance)
       radioSubmodule = lib.types.submodule (_: {
@@ -38,14 +98,15 @@ _: {
 
           ssid = lib.mkOption {
             type = lib.types.str;
+            default = "";
             example = "MyNetwork-5G";
-            description = "Wireless network name (SSID)";
+            description = "Wireless network name (SSID). Optional when hostapd.useNetworks = true.";
           };
 
           wpaPassphrase = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
             default = null;
-            description = "WPA2/WPA3 passphrase (8-63 characters). Mutually exclusive with wpaPassphraseFile.";
+            description = "WPA2/WPA3 passphrase (8-63 characters). Optional when hostapd.useNetworks = true.";
           };
 
           wpaPassphraseFile = lib.mkOption {
@@ -54,7 +115,7 @@ _: {
             example = "/run/secrets/wifi_passphrase";
             description = ''
               Path to a file containing the WPA passphrase (8-63 characters).
-              Use this for sops-nix secrets integration. Mutually exclusive with wpaPassphrase.
+              Optional when hostapd.useNetworks = true.
             '';
           };
 
@@ -122,6 +183,31 @@ _: {
             type = lib.types.bool;
             default = false;
             description = "Enable 802.11ax (Wi-Fi 6)";
+          };
+
+          # WiFi 6 (HE) specific options
+          heSuBeamformer = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Enable HE single-user beamformer (requires hardware support)";
+          };
+
+          heSuBeamformee = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Enable HE single-user beamformee";
+          };
+
+          heMuBeamformer = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Enable HE multi-user beamformer (MU-MIMO, requires hardware support)";
+          };
+
+          heBssColor = lib.mkOption {
+            type = lib.types.ints.between 1 63;
+            default = 1;
+            description = "HE BSS color for OBSS interference management (1-63)";
           };
 
           htCapab = lib.mkOption {
@@ -273,6 +359,10 @@ _: {
             inherit (radio) channel;
             country_code = hostapdCfg.countryCode;
 
+            # Control interface for hostapd_cli
+            ctrl_interface = "/run/hostapd";
+            ctrl_interface_group = 0; # root only
+
             # 802.11n
             inherit (radio) ieee80211n;
             wmm_enabled = true;
@@ -282,7 +372,15 @@ _: {
 
             # 802.11ax
             inherit (radio) ieee80211ax;
-
+          }
+          # WiFi 6 (HE) options - only when 802.11ax is enabled
+          // lib.optionalAttrs radio.ieee80211ax {
+            he_su_beamformer = if radio.heSuBeamformer then 1 else 0;
+            he_su_beamformee = if radio.heSuBeamformee then 1 else 0;
+            he_mu_beamformer = if radio.heMuBeamformer then 1 else 0;
+            he_bss_color = radio.heBssColor;
+          }
+          // {
             # Security
             auth_algs = 1;
             wpa = 2;
@@ -362,28 +460,38 @@ _: {
           mkBssSection =
             bss:
             let
+              # Handle both submodule BSSes (have wpaPassphrase attr) and network-generated BSSes (don't have it)
+              hasWpaPassphrase = bss.wpaPassphrase or null;
+              hasWpaPassphraseFile = bss.wpaPassphraseFile or null;
+              hasBridge = bss.bridge or null;
+              hasBssid = bss.bssid or null;
+              bssExtraSettings = bss.extraSettings or { };
+              # BSS settings (excluding 'bss' which must come first)
               bssSettings = {
-                bss = bss.interface;
                 inherit (bss) ssid;
                 auth_algs = 1;
                 wpa = 2;
                 wpa_key_mgmt = bss.wpaKeyMgmt;
                 rsn_pairwise = "CCMP";
               }
-              // lib.optionalAttrs (bss.wpaPassphrase != null) {
-                wpa_passphrase = bss.wpaPassphrase;
+              // lib.optionalAttrs (hasBssid != null) {
+                bssid = hasBssid;
               }
-              // lib.optionalAttrs (bss.wpaPassphraseFile != null) {
+              // lib.optionalAttrs (hasWpaPassphrase != null) {
+                wpa_passphrase = hasWpaPassphrase;
+              }
+              // lib.optionalAttrs (hasWpaPassphraseFile != null) {
                 wpa_passphrase = "@BSS_WPA_PASSPHRASE_${bss.interface}@";
               }
-              // lib.optionalAttrs (bss.bridge != null) {
-                inherit (bss) bridge;
+              // lib.optionalAttrs (hasBridge != null) {
+                bridge = hasBridge;
               }
-              // bss.extraSettings;
+              // bssExtraSettings;
             in
             ''
 
               # Additional BSS: ${bss.ssid}
+              bss=${bss.interface}
               ${mkHostapdLines bssSettings}
             '';
         in
@@ -395,8 +503,33 @@ _: {
           + lib.concatMapStrings mkBssSection radio.additionalBSS
         );
 
-      # All enabled radios
-      enabledRadios = lib.filterAttrs (_: r: r.enable) hostapdCfg.radios;
+      # All enabled radios (raw from config)
+      rawEnabledRadios = lib.filterAttrs (_: r: r.enable) hostapdCfg.radios;
+
+      # Apply network configuration to radios when useNetworks = true
+      # Each radio gets: primary SSID from first network, additionalBSS from rest
+      effectiveRadios =
+        if useNetworks then
+          lib.mapAttrs (
+            _name: radio:
+            radio
+            // {
+              # Primary BSS from first network
+              inherit (primaryNetwork) ssid;
+              inherit (primaryNetwork) bridge;
+              inherit (primaryNetwork) wpaKeyMgmt;
+              wpaPassphraseFile = getPasswordFile primaryNetwork.passwordSecret;
+              # Additional BSSes from remaining networks (with indexed BSSIDs)
+              additionalBSS =
+                radio.additionalBSS
+                ++ lib.imap1 (idx: net: mkNetworkBSS radio.interface idx net) additionalNetworks;
+            }
+          ) rawEnabledRadios
+        else
+          rawEnabledRadios;
+
+      # Use effective radios everywhere
+      enabledRadios = effectiveRadios;
 
       # Collect all interfaces for firewall/DHCP
       allInterfaces = lib.flatten (
@@ -416,6 +549,16 @@ _: {
     {
       options.features.router.hostapd = {
         enable = lib.mkEnableOption "wireless access point (hostapd)";
+
+        useNetworks = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Auto-configure WiFi networks from features.router.networks.
+            When enabled, radios don't need ssid/bridge/additionalBSS - they're
+            auto-generated from networks with wifi.enable = true.
+          '';
+        };
 
         countryCode = lib.mkOption {
           type = lib.types.str;
@@ -573,8 +716,13 @@ _: {
               assertion = enabledRadios != { };
               message = "router.hostapd: At least one radio must be configured in hostapd.radios";
             }
+            # When useNetworks is true, ensure networks are configured
+            {
+              assertion = !hostapdCfg.useNetworks || wifiNetworks != [ ];
+              message = "router.hostapd: useNetworks requires at least one network with wifi.enable = true";
+            }
           ]
-          # Per-radio assertions
+          # Per-radio assertions (on effective radios, so they have network config applied)
           ++ lib.flatten (
             lib.mapAttrsToList (name: radio: [
               {
@@ -582,6 +730,7 @@ _: {
                 message = "router.hostapd.radios.${name}: 802.11ac requires 5GHz or 6GHz band";
               }
               {
+                # Password required (either from radio config or from networks)
                 assertion = (radio.wpaPassphrase != null) || (radio.wpaPassphraseFile != null);
                 message = "router.hostapd.radios.${name}: Either wpaPassphrase or wpaPassphraseFile must be set";
               }
@@ -597,6 +746,11 @@ _: {
                 assertion = (radio.wpaPassphrase == null) || (builtins.stringLength radio.wpaPassphrase <= 63);
                 message = "router.hostapd.radios.${name}: WPA passphrase must be at most 63 characters";
               }
+              {
+                # SSID required (either from radio config or from networks)
+                assertion = radio.ssid != "";
+                message = "router.hostapd.radios.${name}: ssid must be set (or use hostapd.useNetworks = true)";
+              }
             ]) enabledRadios
           );
 
@@ -610,6 +764,20 @@ _: {
             configFile = mkRadioConfig name radio;
             usesPassphraseFile = radio.wpaPassphraseFile != null;
             runtimeConfigPath = "/run/hostapd/hostapd-${name}.conf";
+
+            # Collect all BSS entries that need passphrase substitution
+            bssWithPassphraseFiles = lib.filter (
+              bss: (bss.wpaPassphraseFile or null) != null
+            ) radio.additionalBSS;
+
+            # Generate sed commands for each BSS passphrase
+            bssSubstitutions = lib.concatMapStringsSep "\n" (bss: ''
+              BSS_PASS_${lib.replaceStrings [ "-" ] [ "_" ] bss.interface}=$(cat "${bss.wpaPassphraseFile}")
+              ${pkgs.gnused}/bin/sed -i "s|@BSS_WPA_PASSPHRASE_${bss.interface}@|$BSS_PASS_${
+                lib.replaceStrings [ "-" ] [ "_" ] bss.interface
+              }|g" "${runtimeConfigPath}"
+            '') bssWithPassphraseFiles;
+
             # Script to substitute passphrase from file
             prepareConfig = pkgs.writeShellScript "hostapd-${name}-prepare" ''
               set -euo pipefail
@@ -618,14 +786,30 @@ _: {
                   ''
                     PASSPHRASE=$(cat "${radio.wpaPassphraseFile}")
                     ${pkgs.gnused}/bin/sed "s|@WPA_PASSPHRASE@|$PASSPHRASE|g" "${configFile}" > "${runtimeConfigPath}"
-                    chmod 600 "${runtimeConfigPath}"
                   ''
                 else
                   ''
                     cp "${configFile}" "${runtimeConfigPath}"
-                    chmod 600 "${runtimeConfigPath}"
                   ''
               }
+              ${bssSubstitutions}
+              chmod 600 "${runtimeConfigPath}"
+            '';
+
+            # Workaround: hostapd sometimes fails to add BSS interfaces to bridges
+            # This script ensures all interfaces are in their correct bridges
+            # Run in background to not block service startup
+            bssWithBridges = lib.filter (bss: (bss.bridge or null) != null) radio.additionalBSS;
+            ensureBridges = pkgs.writeShellScript "hostapd-${name}-ensure-bridges" ''
+              (
+                # Wait for hostapd to create virtual interfaces
+                sleep 5
+                ${lib.concatMapStringsSep "\n" (bss: ''
+                  if ${pkgs.iproute2}/bin/ip link show ${bss.interface} &>/dev/null; then
+                    ${pkgs.iproute2}/bin/ip link set ${bss.interface} master ${bss.bridge} 2>/dev/null || true
+                  fi
+                '') bssWithBridges}
+              ) &
             '';
           in
           lib.nameValuePair "hostapd-${name}" {
@@ -645,6 +829,7 @@ _: {
               Type = "simple";
               ExecStartPre = "${prepareConfig}";
               ExecStart = "${pkgs.hostapd}/bin/hostapd ${runtimeConfigPath}";
+              ExecStartPost = lib.mkIf (bssWithBridges != [ ]) "${ensureBridges}";
               ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
               Restart = "on-failure";
               RestartSec = "5s";

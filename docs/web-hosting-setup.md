@@ -6,9 +6,9 @@ Guide for hosting websites from pp-router1 using DDNS + reverse proxy.
 
 DDNS is configured and working. The following DNS records auto-update with your home IP every 5 minutes:
 
-| Record | Status |
-|--------|--------|
-| `prestonperanich.com` | Active |
+| Record                    | Status |
+| ------------------------- | ------ |
+| `prestonperanich.com`     | Active |
 | `www.prestonperanich.com` | Active |
 | `vpn.prestonperanich.com` | Active |
 

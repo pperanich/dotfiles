@@ -13,6 +13,10 @@ Nix-based system configuration using the dendritic pattern with flake-parts and 
 
 - [Secrets and Key Management](secrets-and-key-management.md) - Machine keys vs user keys, SSH-derived keys, anti-patterns
 
+### Modules
+
+- [Router Module](router-module.md) - Complete router with VLAN, WiFi, firewall, DHCP, DNS, SQM
+
 ### Services (TODO)
 
 - [Web Hosting Setup](web-hosting-setup.md) - Self-hosting websites via DDNS + reverse proxy (in progress)

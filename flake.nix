@@ -145,5 +145,20 @@
       url = "github:Lyndeno/apple-fonts.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # OpenClaw - AI assistant gateway
+    nix-openclaw = {
+      url = "path:/Users/pperanich/Documents/repos/oss/nix-openclaw";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+      };
+    };
+
+    # OpenCode - AI coding agent
+    opencode = {
+      url = "path:/Users/pperanich/Documents/repos/oss/opencode";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 }

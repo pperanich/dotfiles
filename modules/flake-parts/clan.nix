@@ -61,6 +61,14 @@
             "all"
           ];
         };
+        "pp-wsl1" = {
+          machineClass = "nixos";
+          tags = [
+            "vm"
+            "nixos"
+            "all"
+          ];
+        };
       };
 
       instances = {
@@ -275,6 +283,39 @@
         #     client.tags.nixos = { };
         #   };
         # };
+
+        # OpenClaw - AI assistant with Gateway/Node distributed architecture
+        # Gateway runs on pp-router1, nodes on development machines
+        # Token is automatically shared via clan.core.vars (share = true)
+        # openclaw = {
+        #   module = {
+        #     name = "@pperanich/openclaw";
+        #     input = "self"; # Local module from clanServices/openclaw
+        #   };
+        #   roles = {
+        #     gateway.machines.pp-router1 = {
+        #       settings = {
+        #         port = 18789;
+        #         endpoint = "vpn.prestonperanich.com";
+        #       };
+        #     };
+        #     node.machines = {
+        #       pp-wsl1 = {
+        #         settings = {
+        #           displayName = "WSL Dev Node";
+        #           gatewayEndpoint = "vpn.prestonperanich.com:18789";
+        #         };
+        #       };
+        #       pp-ml1 = {
+        #         settings = {
+        #           displayName = "MacBook Dev Node";
+        #           gatewayEndpoint = "vpn.prestonperanich.com:18789";
+        #         };
+        #       };
+        #     };
+        #   };
+        # };
+
       };
     };
   };

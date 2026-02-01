@@ -25,6 +25,9 @@
     rust
 
     tools
+
+    # Services
+    opencode
   ];
 
   # User identity

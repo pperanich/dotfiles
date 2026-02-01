@@ -41,8 +41,27 @@
   # Networking configuration
   networking.hostName = "pp-router1";
 
+  # Serial console for debugging (ttyS0 at 115200 baud, 8N1)
+  boot.kernelParams = [
+    "console=tty0"
+    "console=ttyS0,115200n8"
+  ];
+  systemd.services."serial-getty@ttyS0".enable = true;
+
   # Debug uplink - DHCP client to existing router for SSH access during development
-  networking.interfaces.enp2s0.useDHCP = true;
+  # Must use systemd.network since router module enables networkd
+  systemd.network.networks."05-debug-uplink" = {
+    matchConfig.Name = "enp2s0";
+    networkConfig = {
+      DHCP = "yes";
+      IPv6AcceptRA = true;
+    };
+    dhcpV4Config = {
+      UseDNS = false; # Don't override router's DNS config
+      RouteMetric = 1024; # Higher metric = lower priority than WAN (default ~100)
+    };
+    linkConfig.RequiredForOnline = "no"; # Don't block boot if unplugged
+  };
 
   # Router configuration
   features.router = {

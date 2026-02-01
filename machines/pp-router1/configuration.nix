@@ -94,6 +94,9 @@
     dns.enable = true;
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
+    # Trust the debug uplink interface for SSH access during development
+    firewall.trustedInterfaces = [ "enp2s0" ];
+
     # WiFi Access Point configuration
     hostapd = {
       enable = true;

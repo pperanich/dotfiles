@@ -237,6 +237,19 @@ in
     linux-firmware
   ];
 
+  # SSH hardening for router
+  services.openssh.settings = {
+    X11Forwarding = false;
+    PermitRootLogin = "prohibit-password"; # Key-only root access
+    PasswordAuthentication = false; # Disable password auth entirely
+    KbdInteractiveAuthentication = false; # Disable keyboard-interactive
+    MaxAuthTries = 3;
+    LoginGraceTime = 20;
+    ClientAliveInterval = 300;
+    ClientAliveCountMax = 2;
+    MaxStartups = "10:30:60"; # Rate limit: start:rate:full
+  };
+
   # Minimal hardware config for headless router
   hardware = {
     enableRedistributableFirmware = true;

@@ -111,11 +111,12 @@ _: {
         openPorts = {
           tcp = lib.mkOption {
             type = lib.types.listOf lib.types.port;
-            default = [
+            default = [ ];
+            example = [
               80
               443
             ];
-            description = "TCP ports to open on WAN";
+            description = "TCP ports to open on WAN (empty by default for security)";
           };
           udp = lib.mkOption {
             type = lib.types.listOf lib.types.port;
@@ -167,6 +168,29 @@ _: {
                   iifname "lo" accept
                   ct state established,related accept
                   ct state invalid drop
+
+                  # Anti-spoofing: Drop packets with bogon/martian source IPs on WAN (BCP38)
+                  iifname "${wan}" ip saddr {
+                    0.0.0.0/8,        # "This" network
+                    10.0.0.0/8,       # RFC1918 private
+                    127.0.0.0/8,      # Loopback
+                    169.254.0.0/16,   # Link-local
+                    172.16.0.0/12,    # RFC1918 private
+                    192.0.0.0/24,     # IETF protocol assignments
+                    192.0.2.0/24,     # TEST-NET-1
+                    192.168.0.0/16,   # RFC1918 private
+                    198.18.0.0/15,    # Benchmark testing
+                    198.51.100.0/24,  # TEST-NET-2
+                    203.0.113.0/24,   # TEST-NET-3
+                    224.0.0.0/4,      # Multicast
+                    240.0.0.0/4       # Reserved
+                  } drop comment "Anti-spoofing bogons"
+
+                  # Port scan detection: Drop malformed TCP flag combinations
+                  iifname "${wan}" tcp flags & (fin|syn|rst|psh|ack|urg) == (fin|psh|urg) drop comment "XMAS scan"
+                  iifname "${wan}" tcp flags & (fin|syn) == (fin|syn) drop comment "FIN+SYN scan"
+                  iifname "${wan}" tcp flags & (syn|rst) == (syn|rst) drop comment "SYN+RST scan"
+                  iifname "${wan}" tcp flags == 0x0 drop comment "NULL scan"
 
                   # LAN input rules
                   iifname "${lanDevice}" udp dport 67 accept comment "DHCP"
@@ -277,6 +301,15 @@ _: {
                   ct state established,related accept
                   ct state invalid drop
 
+                  # IPv6 anti-spoofing on WAN
+                  iifname "${wan}" ip6 saddr {
+                    ::1/128,          # Loopback
+                    ::/128,           # Unspecified
+                    ::ffff:0:0/96,    # IPv4-mapped
+                    fc00::/7,         # Unique local (ULA)
+                    fe80::/10         # Link-local
+                  } drop comment "IPv6 anti-spoofing"
+
                   # LAN input rules
                   iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
@@ -288,13 +321,19 @@ _: {
                   # Trusted interfaces
                   ${trustedInputRules}
 
-                  # WAN input rules
+                  # WAN input rules - ICMPv6 required for IPv6 operation
+                  # Rate limit echo-request to prevent ping floods
+                  iifname "${wan}" icmpv6 type echo-request limit rate 10/second burst 50 packets accept comment "ICMPv6 ping rate limited"
                   iifname "${wan}" icmpv6 type {
                     destination-unreachable, packet-too-big, time-exceeded,
-                    parameter-problem, nd-router-advert, nd-neighbor-solicit,
-                    nd-neighbor-advert
-                  } accept
-                  iifname "${wan}" udp dport dhcpv6-client udp sport dhcpv6-server accept
+                    parameter-problem, nd-neighbor-solicit, nd-neighbor-advert
+                  } accept comment "ICMPv6 required for IPv6"
+                  # Router advertisements from ISP (needed for SLAAC/DHCP-PD)
+                  iifname "${wan}" icmpv6 type nd-router-advert accept comment "ISP router advertisements"
+                  iifname "${wan}" udp dport dhcpv6-client udp sport dhcpv6-server accept comment "DHCPv6 from ISP"
+
+                  # RA Guard: Block rogue router advertisements from LAN clients
+                  iifname "${lanDevice}" icmpv6 type nd-router-advert drop comment "RA Guard - block rogue RAs from LAN"
                 }
 
                 chain forward {

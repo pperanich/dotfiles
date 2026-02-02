@@ -36,6 +36,8 @@ _: {
       config = lib.mkIf enabled {
         services.unbound = {
           enable = true;
+          # DNSSEC root trust anchor (managed by NixOS module)
+          enableRootTrustAnchor = true;
           settings = {
             remote-control.control-enable = true;
             server = {
@@ -64,6 +66,22 @@ _: {
               prefetch = true;
               num-threads = 2;
               so-reuseport = true;
+
+              # DNSSEC validation (trust anchor managed via enableRootTrustAnchor)
+              val-clean-additional = true;
+
+              # Security hardening
+              hide-identity = true; # Don't reveal server identity
+              hide-version = true; # Don't reveal unbound version
+              harden-glue = true; # Harden against out-of-zone glue
+              harden-dnssec-stripped = true; # Require DNSSEC if available
+              harden-below-nxdomain = true; # RFC 8020 compliance
+              # Note: harden-referral-path omitted - significant performance cost for marginal security gain
+              use-caps-for-id = true; # DNS 0x20 encoding (may need disabling for incompatible servers)
+              qname-minimisation = true; # QNAME minimisation (privacy)
+
+              # Prevent DNS amplification attacks
+              max-udp-size = 1232;
 
               # DNS Rebinding protection
               private-address = [

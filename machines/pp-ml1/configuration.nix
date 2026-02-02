@@ -18,7 +18,16 @@
 
     # Window management
     sketchybar
+
+    # Remote development via Discord
+    kimaki
   ];
+
+  # Kimaki Discord bot for remote development
+  services.kimaki = {
+    enable = true;
+    enableVoiceChannels = true;
+  };
 
   clan.core.networking.targetHost = lib.mkForce "pperanich@pp-ml1.local";
 

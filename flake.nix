@@ -25,9 +25,7 @@
     };
 
     clan-core = {
-      # TODO: Switch back to upstream after PR merged
-      # url = "github:clan-lol/clan-core";
-      url = "path:/Users/pperanich/Documents/repos/oss/clan-core";
+      url = "github:clan-lol/clan-core";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";

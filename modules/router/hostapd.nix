@@ -401,6 +401,14 @@ _: {
               else
                 0;
           }
+          # SAE (WPA3) security hardening - protect against Dragonblood attacks
+          // lib.optionalAttrs (lib.hasInfix "SAE" radio.wpaKeyMgmt) {
+            # sae_pwe: SAE Password Element derivation method
+            # 0 = hunting-and-pecking (vulnerable to side-channel attacks)
+            # 1 = hash-to-element only
+            # 2 = both methods supported (recommended for compatibility)
+            sae_pwe = 2;
+          }
           # Passphrase: either direct or from file (use placeholder for file-based)
           // lib.optionalAttrs (radio.wpaPassphrase != null) {
             wpa_passphrase = radio.wpaPassphrase;

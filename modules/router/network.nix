@@ -79,18 +79,8 @@ _: {
           '';
         };
 
-        # SSH hardening for router (augments clan's sshd module)
-        # clan-core provides base openssh config; we just add hardening
-        services.openssh = {
-          openFirewall = false; # We control via nftables
-          settings = {
-            X11Forwarding = lib.mkForce false;
-            MaxAuthTries = 3;
-            LoginGraceTime = 20;
-            ClientAliveInterval = 300;
-            ClientAliveCountMax = 2;
-          };
-        };
+        # SSH: Don't use NixOS firewall module (we control via nftables)
+        services.openssh.openFirewall = false;
 
         # UPnP/NAT-PMP for automatic port forwarding
         services.miniupnpd = lib.mkIf cfg.upnp.enable {

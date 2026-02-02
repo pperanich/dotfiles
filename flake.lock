@@ -55,14 +55,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1769974045,
-        "narHash": "sha256-JE9O2tB28LqW5Oe37eZHy9lYSyAIKn4T5BDM4lgkhpg=",
-        "path": "/Users/pperanich/Documents/repos/oss/clan-core",
-        "type": "path"
+        "lastModified": 1770026929,
+        "narHash": "sha256-gbwfRm3TLR7FucVHmrWrKMNcW9Hgp86naTJS7ugT7Rg=",
+        "owner": "clan-lol",
+        "repo": "clan-core",
+        "rev": "fa11e70bbed7662feb8f7d532de5ef1524df154f",
+        "type": "github"
       },
       "original": {
-        "path": "/Users/pperanich/Documents/repos/oss/clan-core",
-        "type": "path"
+        "owner": "clan-lol",
+        "repo": "clan-core",
+        "type": "github"
       }
     },
     "cuda-legacy": {

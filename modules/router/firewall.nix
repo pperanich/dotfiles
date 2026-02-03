@@ -9,6 +9,7 @@ _: {
       cfg = config.features.router;
       fwCfg = cfg.firewall;
       hostapdCfg = cfg.hostapd;
+      networksCfg = cfg.networks;
       internal = cfg._internal;
       inherit (internal) lanSubnet;
       wan = cfg.wan.interface;
@@ -236,6 +237,9 @@ _: {
                 chain forward {
                   type filter hook forward priority 0; policy drop;
 
+                  # MSS clamping - must be before accept rules (fixes PPPoE/tunnel MTU issues)
+                  tcp flags syn / syn,rst tcp option maxseg size set rt mtu
+
                   # Early accepts for established connections (critical for return traffic)
                   ct state established,related accept
                   ct state invalid drop
@@ -272,27 +276,13 @@ _: {
                 }
               '';
             };
-            forwardV4 = {
-              family = "ip";
-              content = ''
-                chain forward {
-                  type filter hook forward priority mangle;
-                  tcp flags syn / syn,rst tcp option maxseg size set rt mtu
-                }
-              '';
-            };
-            forwardV6 = lib.mkIf cfg.ipv6.enable {
-              family = "ip6";
-              content = ''
-                chain forward {
-                  type filter hook forward priority mangle;
-                  tcp flags syn / syn,rst tcp option maxseg size set rt mtu
-                }
-              '';
-            };
+            # Note: MSS clamping is now in filterV4/filterV6 forward chains
+            # Removed separate forwardV4/forwardV6 tables that caused duplicate chain issues
             filterV6 = lib.mkIf cfg.ipv6.enable {
               family = "ip6";
               content = ''
+                # Note: Flowtable added via systemd service after br-lan exists
+
                 chain input {
                   type filter hook input priority 0; policy drop;
 
@@ -302,12 +292,12 @@ _: {
                   ct state invalid drop
 
                   # IPv6 anti-spoofing on WAN
+                  # Note: fe80::/10 (link-local) NOT blocked - needed for RA, ND, DHCPv6 from ISP
                   iifname "${wan}" ip6 saddr {
                     ::1/128,          # Loopback
                     ::/128,           # Unspecified
                     ::ffff:0:0/96,    # IPv4-mapped
-                    fc00::/7,         # Unique local (ULA)
-                    fe80::/10         # Link-local
+                    fc00::/7          # Unique local (ULA) - your LAN prefix shouldn't come from WAN
                   } drop comment "IPv6 anti-spoofing"
 
                   # LAN input rules
@@ -339,7 +329,10 @@ _: {
                 chain forward {
                   type filter hook forward priority 0; policy drop;
 
-                  # Early accepts
+                  # MSS clamping - must be before accept rules (fixes PPPoE/tunnel MTU issues)
+                  tcp flags syn / syn,rst tcp option maxseg size set rt mtu
+
+                  # Early accepts for established connections
                   ct state established,related accept
                   ct state invalid drop
 
@@ -355,6 +348,72 @@ _: {
               '';
             };
           };
+        };
+
+        # Flowtable device validation workaround for build sandbox
+        # Replace device lists with loopback (always exists) during nft check
+        # See: https://github.com/NixOS/nixpkgs/issues/141802
+        networking.nftables.preCheckRuleset = ''
+          sed 's/.*devices.*/devices = { lo }/g' -i ruleset.conf
+        '';
+
+        # Fix nftables service ordering - must start AFTER interfaces exist
+        # Default is before network-pre.target which is too early for flowtables
+        systemd.services.nftables = {
+          before = lib.mkForce [ ];
+          after = [ "network-pre.target" ];
+        };
+
+        # Flow offload via NixOS nftables module - declarative and cleaner
+        # Uses bridge interfaces - kernel 5.13+ discovers bridge ports automatically
+        networking.nftables.tables.flow_offload =
+          let
+            # Get all bridge names from network segments
+            bridges =
+              if networksCfg.enable then
+                [ "br-lan" ]
+                ++ lib.mapAttrsToList (name: _: "br-${name}") (
+                  lib.filterAttrs (_name: seg: seg.vlan != null) networksCfg.segments
+                )
+              else
+                [ "br-lan" ];
+            # WAN + all bridges (kernel discovers bridge ports for flow offload)
+            flowDevices = [ wan ] ++ bridges;
+            deviceList = lib.concatStringsSep ", " flowDevices;
+          in
+          {
+            family = "inet";
+            content = ''
+              # Flowtable for software flow offload - bypasses netfilter for established flows
+              # Kernel 5.13+ discovers bridge ports automatically
+              flowtable f {
+                hook ingress priority 0
+                devices = { ${deviceList} }
+                counter
+              }
+
+              chain forward {
+                type filter hook forward priority -100; policy accept;
+                # Only offload established/related - first packets go through full firewall
+                ct state established,related ip protocol { tcp, udp } flow offload @f counter
+                ct state established,related ip6 nexthdr { tcp, udp } flow offload @f counter
+              }
+            '';
+          };
+
+        # Ensure flow offload kernel modules are loaded
+        boot.kernelModules = [
+          "nf_flow_table"
+          "nf_flow_table_inet"
+        ];
+
+        # Conntrack and bridge netfilter tuning for router performance
+        boot.kernel.sysctl = {
+          # nf_conntrack_max is set in network.nix - don't duplicate
+          "net.netfilter.nf_conntrack_tcp_timeout_established" = lib.mkDefault 7200;
+          # Enable bridge netfilter for proper flow tracking through bridge
+          "net.bridge.bridge-nf-call-iptables" = lib.mkDefault 1;
+          "net.bridge.bridge-nf-call-ip6tables" = lib.mkDefault 1;
         };
       };
     };

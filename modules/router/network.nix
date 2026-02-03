@@ -52,7 +52,7 @@ _: {
 
         # Network configuration
         networking = {
-          hostName = cfg.hostname;
+          # hostName is set in machine config, not here (avoids circular dependency)
           useNetworkd = true;
           useDHCP = false;
           networkmanager.enable = lib.mkForce false;

@@ -67,6 +67,10 @@ in
           {
             # YubiKey support for system-level secrets
             age.plugins = [ pkgs.age-plugin-yubikey ];
+
+            # Fix PATH for sops-install-secrets on Darwin
+            # hdiutil is needed to create RAM disk for secrets but isn't in default PATH
+            # environment.PATH = "/usr/bin:/bin:/usr/sbin:/sbin";
           }
         ];
         environment.systemPackages = [ pkgs.sops ];

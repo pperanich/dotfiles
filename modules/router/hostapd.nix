@@ -161,6 +161,41 @@ _: {
             description = "Wireless channel. 0 = ACS (automatic channel selection) if supported.";
           };
 
+          # ACS (Automatic Channel Selection) options - only used when channel = 0
+          acs = {
+            numScans = lib.mkOption {
+              type = lib.types.int;
+              default = 10;
+              description = ''
+                Number of scans to perform for ACS. Higher = more accurate but slower startup.
+                Each scan takes ~100-200ms per channel. Range: 1-100.
+                Recommended: 10-15 for MT7915/WiFi 6.
+              '';
+            };
+
+            excludeDfs = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = ''
+                Exclude DFS channels (52-144 in 5GHz) from ACS.
+                Recommended for production to avoid 60-second CAC delay.
+              '';
+            };
+
+            chanBias = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              example = "1:0.8 6:0.9 11:0.8";
+              description = ''
+                Space-separated list of channel:bias pairs.
+                Values < 1.0 make channel MORE likely to be selected.
+                Values > 1.0 make channel LESS likely to be selected.
+                Example for 2.4GHz: "1:0.8 6:0.9 11:0.8" (prefer non-overlapping channels)
+                Example for 5GHz: "36:0.8 149:0.8" (prefer non-DFS channels)
+              '';
+            };
+          };
+
           driver = lib.mkOption {
             type = lib.types.str;
             default = "nl80211";
@@ -366,6 +401,16 @@ _: {
             # 802.11n
             inherit (radio) ieee80211n;
             wmm_enabled = true;
+          }
+          # ACS (Automatic Channel Selection) options - only when channel = 0
+          // lib.optionalAttrs (radio.channel == 0) {
+            acs_num_scans = radio.acs.numScans;
+            acs_exclude_dfs = if radio.acs.excludeDfs then 1 else 0;
+          }
+          // lib.optionalAttrs (radio.channel == 0 && radio.acs.chanBias != null) {
+            acs_chan_bias = radio.acs.chanBias;
+          }
+          // {
 
             # 802.11ac (5GHz only)
             ieee80211ac = radio.ieee80211ac && is5GHz;
@@ -374,12 +419,26 @@ _: {
             inherit (radio) ieee80211ax;
           }
           # WiFi 6 (HE) options - only when 802.11ax is enabled
-          // lib.optionalAttrs radio.ieee80211ax {
-            he_su_beamformer = if radio.heSuBeamformer then 1 else 0;
-            he_su_beamformee = if radio.heSuBeamformee then 1 else 0;
-            he_mu_beamformer = if radio.heMuBeamformer then 1 else 0;
-            he_bss_color = radio.heBssColor;
-          }
+          // lib.optionalAttrs radio.ieee80211ax (
+            {
+              he_su_beamformer = if radio.heSuBeamformer then 1 else 0;
+              he_su_beamformee = if radio.heSuBeamformee then 1 else 0;
+              he_mu_beamformer = if radio.heMuBeamformer then 1 else 0;
+              he_bss_color = radio.heBssColor;
+            }
+            # HE channel width settings (for 80MHz+ on WiFi 6)
+            // lib.optionalAttrs is5GHz {
+              he_oper_chwidth = radio.vhtOperChwidth; # Same as VHT
+              # For ACS with 80MHz+, set to 0 for auto-calculation
+              he_oper_centr_freq_seg0_idx =
+                if radio.vhtOperCentrFreqSeg0Idx != null then
+                  radio.vhtOperCentrFreqSeg0Idx
+                else if radio.channel == 0 && radio.vhtOperChwidth >= 1 then
+                  0
+                else
+                  null;
+            }
+          )
           // {
             # Security
             auth_algs = 1;
@@ -401,13 +460,14 @@ _: {
               else
                 0;
           }
-          # SAE (WPA3) security hardening - protect against Dragonblood attacks
+          # SAE (WPA3) Password Element derivation method
           // lib.optionalAttrs (lib.hasInfix "SAE" radio.wpaKeyMgmt) {
-            # sae_pwe: SAE Password Element derivation method
-            # 0 = hunting-and-pecking (vulnerable to side-channel attacks)
-            # 1 = hash-to-element only
-            # 2 = both methods supported (recommended for compatibility)
-            sae_pwe = 2;
+            # sae_pwe values:
+            # 0 = hunting-and-pecking only (legacy, most compatible)
+            # 1 = hash-to-element only (H2E, more secure but less compatible)
+            # 2 = both methods (good balance)
+            # Use 0 for maximum compatibility with Apple devices
+            sae_pwe = 0;
           }
           # Passphrase: either direct or from file (use placeholder for file-based)
           // lib.optionalAttrs (radio.wpaPassphrase != null) {
@@ -429,12 +489,18 @@ _: {
           // lib.optionalAttrs (radio.ieee80211ac && is5GHz) (
             {
               vht_oper_chwidth = radio.vhtOperChwidth;
+              # For ACS (channel=0) with 80MHz+, set seg0_idx=0 for auto-calculation
+              # This is required for MT7915 and similar drivers
+              vht_oper_centr_freq_seg0_idx =
+                if radio.vhtOperCentrFreqSeg0Idx != null then
+                  radio.vhtOperCentrFreqSeg0Idx
+                else if radio.channel == 0 && radio.vhtOperChwidth >= 1 then
+                  0 # Auto-calculate for ACS
+                else
+                  null;
             }
             // lib.optionalAttrs (radio.vhtCapab != "") {
               vht_capab = radio.vhtCapab;
-            }
-            // lib.optionalAttrs (radio.vhtOperCentrFreqSeg0Idx != null) {
-              vht_oper_centr_freq_seg0_idx = radio.vhtOperCentrFreqSeg0Idx;
             }
           )
           # 802.11r Fast Transition
@@ -461,6 +527,14 @@ _: {
           // lib.optionalAttrs (roamingCfg.enable && roamingCfg.ieee80211v) {
             bss_transition = if roamingCfg.bss_transition then 1 else 0;
             wnm_sleep_mode = 1;
+          }
+          # Band steering - BSS load and channel utilization reporting
+          # Helps clients make informed decisions about which band to use
+          // lib.optionalAttrs (roamingCfg.enable && roamingCfg.bandSteering.enable) {
+            # BSS load element - reports channel utilization and station count
+            bss_load_update_period = roamingCfg.bandSteering.bssLoadUpdatePeriod;
+            # Channel utilization averaging period
+            chan_util_avg_period = roamingCfg.bandSteering.chanUtilAvgPeriod;
           }
           // radio.extraSettings;
 
@@ -629,6 +703,40 @@ _: {
             type = lib.types.bool;
             default = true;
             description = "Enable BSS Transition Management (part of 802.11v)";
+          };
+
+          bandSteering = {
+            enable = lib.mkEnableOption "band steering to prefer 5GHz over 2.4GHz";
+
+            probeReqThreshold = lib.mkOption {
+              type = lib.types.int;
+              default = -70;
+              example = -65;
+              description = ''
+                RSSI threshold (dBm) for accepting probe requests.
+                Clients with weaker signal than this won't be steered to 5GHz.
+                Range: -100 (weak) to -30 (strong).
+              '';
+            };
+
+            bssLoadUpdatePeriod = lib.mkOption {
+              type = lib.types.int;
+              default = 50;
+              description = ''
+                Period (in TUs, 1 TU = 1.024ms) between BSS load updates.
+                Set to 50 for ~50ms updates. Used for QoS and steering decisions.
+                0 = disabled.
+              '';
+            };
+
+            chanUtilAvgPeriod = lib.mkOption {
+              type = lib.types.int;
+              default = 600;
+              description = ''
+                Averaging period (seconds) for channel utilization calculation.
+                Used in steering decisions. Higher values = smoother averages.
+              '';
+            };
           };
         };
 

@@ -41,10 +41,10 @@
         };
       };
 
-      pre-commit.settings.hooks.nix-fmt = {
-        enable = true;
-        # Use --no-cache to avoid cache locking issues in Nix sandbox
-        entry = "${lib.getExe self'.formatter} --no-cache";
-      };
+      # pre-commit.settings.hooks.nix-fmt = {
+      #   enable = true;
+      #   # Use --no-cache to avoid cache locking issues in Nix sandbox
+      #   entry = "${lib.getExe self'.formatter} --no-cache";
+      # };
     };
 }

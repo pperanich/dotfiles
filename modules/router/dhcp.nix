@@ -3,6 +3,7 @@ _: {
     {
       config,
       lib,
+      pkgs,
       utils,
       ...
     }:
@@ -99,22 +100,47 @@ _: {
         systemd.services.kea-dhcp4-server =
           let
             bridgeDevice = "sys-subsystem-net-devices-${utils.escapeSystemdPath lanDevice}.device";
+            # Wait for interface to have an IP address (not just exist)
+            waitForIp = pkgs.writeShellScript "wait-for-dhcp-interface" ''
+              set -euo pipefail
+              max_attempts=30
+              attempt=0
+              while [ $attempt -lt $max_attempts ]; do
+                if ${pkgs.iproute2}/bin/ip addr show ${lanDevice} 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q "inet "; then
+                  echo "Interface ${lanDevice} has IP, proceeding"
+                  exit 0
+                fi
+                attempt=$((attempt + 1))
+                echo "Waiting for ${lanDevice} to get IP (attempt $attempt/$max_attempts)..."
+                sleep 1
+              done
+              echo "ERROR: ${lanDevice} did not get IP after $max_attempts seconds"
+              exit 1
+            '';
           in
           {
-            wants = [ "network-online.target" ];
+            wants = [
+              "network-online.target"
+              bridgeDevice
+            ];
             after = [
               "systemd-networkd.service"
               "network-online.target"
               bridgeDevice # Wait for bridge interface
             ];
-            bindsTo = [
-              bridgeDevice # Restart if bridge goes down
-            ];
+            # Note: Don't use bindsTo with device units - too fragile during reconfigs
             serviceConfig = {
               Restart = "on-failure";
-              RestartSec = "5s";
+              RestartSec = "2s";
+              # Wait for interface to have IP before starting Kea
+              ExecStartPre = waitForIp;
             };
           };
+
+        # Ensure network-online waits for bridge to have carrier
+        systemd.network.wait-online.extraArgs = [
+          "--interface=${lanDevice}:carrier"
+        ];
       };
     };
 }

@@ -490,6 +490,11 @@ _: {
               );
         };
 
+        # DHCP: Add VLAN bridge interfaces so Kea can serve these networks
+        services.kea.dhcp4.settings.interfaces-config.interfaces = lib.mkIf (vlanNetworks != [ ]) (
+          map (net: "br-${net.name}") vlanNetworks
+        );
+
         # DHCP pools for VLAN networks
         services.kea.dhcp4.settings.subnet4 = lib.mkIf (vlanNetworks != [ ]) (
           map (net: {

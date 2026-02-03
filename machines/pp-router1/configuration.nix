@@ -49,17 +49,24 @@ in
   ]);
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.152";
-  clan.core.networking.buildHost = "root@192.168.0.184";
+  # clan.core.networking.targetHost = lib.mkForce "root@10.0.0.1";
+  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.149";
+  # clan.core.networking.buildHost = "root@10.0.0.1";
 
   # Networking configuration
   networking.hostName = "pp-router1";
 
   # Serial console for debugging (ttyS0 at 115200 baud, 8N1)
+  # PCIe ASPM disabled for MT7915 performance (research shows latency issues with default policy)
   boot.kernelParams = [
     "console=tty0"
     "console=ttyS0,115200n8"
+    "pcie_aspm=off" # Disable ASPM entirely for WiFi performance
   ];
+
+  # IRQ balancing - distributes MT7915 interrupts across all CPU cores
+  # Without this, all 3.6M+ IRQs go to a single core (CPU3), causing bottleneck
+  services.irqbalance.enable = true;
   systemd.services."serial-getty@ttyS0".enable = true;
 
   # Stable WiFi interface names using MAC addresses
@@ -78,16 +85,15 @@ in
   # Router configuration
   features.router = {
     enable = true;
-    hostname = "pp-router1";
 
     # Network interfaces - using SFP+ ports for router functionality
-    wan.interface = "enp1s0f0np0"; # 10GbE SFP+ port 0
+    wan.interface = "enp2s0"; # 10GbE SFP+ port 0
     lan = {
-      interface = "enp1s0f1np1"; # 10GbE SFP+ port 1
+      interface = "enp1s0f1np1";
       interfaces = [
-        "enp1s0f1np1" # Wired LAN (SFP+)
-        wifi.radio24.name # 2.4GHz WiFi
-        wifi.radio5.name # 5GHz WiFi
+        "enp1s0f1np1"
+        wifi.radio24.name
+        wifi.radio5.name
       ];
       subnet = "10.0.0";
       dhcpRange = {
@@ -159,61 +165,42 @@ in
     # Automatically adds interface to firewall.trustedInterfaces
     debugUplink = {
       enable = true;
-      interface = "enp2s0";
+      interface = "enp5s0";
     };
 
-    # WiFi Access Point configuration
-    # SSID/bridge/additionalBSS are auto-generated from networks.segments
+    # WiFi Access Point - SSIDs auto-generated from networks.segments
     hostapd = {
       enable = true;
-      useNetworks = true; # Auto-configure from networks.segments with wifi.enable
-      countryCode = "US";
+      useNetworks = true;
 
-      # Fast roaming (802.11r/k/v) for seamless handoff between radios
       roaming = {
         enable = true;
-        mobilityDomain = "a1b2"; # Must be same across all APs
-        ieee80211k = true; # Radio Resource Management (neighbor reports)
-        ieee80211v = true; # BSS Transition Management
+        bandSteering.enable = true;
       };
 
-      # Radios only need hardware-specific settings now
-      # SSID, bridge, and additionalBSS are auto-populated from networks
       radios = {
-        # 2.4GHz radio - better range, slower speeds
+        # 2.4GHz - 20MHz only (congested), ax disabled (Apple compatibility)
         radio24 = {
           interface = wifi.radio24.name;
           band = "2.4GHz";
-          channel = 6; # Common 2.4GHz channel
-          ieee80211n = true;
-          htCapab = "[HT40+][SHORT-GI-40]";
+          channel = 0;
+          ieee80211ax = false;
+          htCapab = "[LDPC][SHORT-GI-20][TX-STBC][RX-STBC1][MAX-AMSDU-7935]";
         };
 
-        # 5GHz radio - shorter range, faster speeds
+        # 5GHz - WiFi 6, 80MHz
         radio5 = {
           interface = wifi.radio5.name;
           band = "5GHz";
-          channel = 36; # DFS-free channel
-          ieee80211n = true;
-          ieee80211ac = true; # Wi-Fi 5
-          ieee80211ax = true; # Wi-Fi 6
-          vhtOperChwidth = 1; # 80MHz channel width
-          vhtOperCentrFreqSeg0Idx = 42; # Center frequency for 80MHz
+          channel = 0; # ACS
+          ieee80211ac = true;
+          ieee80211ax = true;
+          # MT7915E capabilities
+          htCapab = "[LDPC][HT40+][HT40-][SHORT-GI-20][SHORT-GI-40][TX-STBC][RX-STBC1][MAX-AMSDU-7935]";
+          vhtCapab = "[RXLDPC][SHORT-GI-80][TX-STBC-2BY1][SU-BEAMFORMER][SU-BEAMFORMEE][RX-STBC-1][MAX-MPDU-11454][MAX-A-MPDU-LEN-EXP7]";
         };
       };
     };
-
-    # Static IP reservations (customize as needed)
-    machines = [
-      # {
-      #   name = "desktop";
-      #   ip = 10;
-      #   mac = "AA:BB:CC:DD:EE:FF";
-      #   portForwards = [
-      #     { port = 22; protocol = "tcp"; }
-      #   ];
-      # }
-    ];
   };
 
   # Router-appropriate packages (no desktop environment)
@@ -224,6 +211,9 @@ in
     htop
     btop
     neofetch
+    dmidecode
+    pciutils
+    lm_sensors
 
     # Network debugging
     tcpdump
@@ -231,6 +221,11 @@ in
     mtr
     nmap
     ethtool
+    conntrack-tools
+
+    # WiFi debugging
+    iw
+    hostapd
 
     # Firmware updates
     fwupd

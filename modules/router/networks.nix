@@ -19,24 +19,6 @@ _: {
       # Networks with VLANs (exclude main LAN)
       vlanNetworks = lib.filter (n: n.vlan != null) networkList;
 
-      # Networks with WiFi enabled, sorted: main LAN first (vlan=null), then by VLAN ID
-      # This ensures the primary BSS is always the main network
-      wifiNetworks =
-        let
-          filtered = lib.filter (n: n.wifi.enable) networkList;
-          # Sort: null VLAN first, then by VLAN ID ascending
-          sorted = lib.sort (
-            a: b:
-            if a.vlan == null then
-              true
-            else if b.vlan == null then
-              false
-            else
-              a.vlan < b.vlan
-          ) filtered;
-        in
-        sorted;
-
       # Get interface name for a network (used in firewall rules)
       # For VLAN networks, this is the dedicated bridge; for main LAN, it's the main bridge
       netIfaceName = net: if net.vlan != null then "br-${net.name}" else lanDevice;
@@ -47,22 +29,11 @@ _: {
       # Get CIDR for a network
       netCidr = net: "${net.subnet}.0/24";
 
-      # Get bridge name for WiFi - VLAN networks get their own bridge
+      # Get bridge name - VLAN networks get their own bridge
       netBridge = net: if net.vlan != null then "br-${net.name}" else lanDevice;
 
       # Get VLAN interface name (the 802.1Q tagged interface on the main bridge)
       netVlanIface = net: "${lanDevice}.${toString net.vlan}";
-
-      # Map security level to wpaKeyMgmt
-      securityToKeyMgmt =
-        security:
-        {
-          "wpa3" = "SAE";
-          "wpa3-transition" = "SAE WPA-PSK";
-          "wpa2" = "WPA-PSK";
-          "open" = "NONE";
-        }
-        .${security} or "WPA-PSK";
 
       # Build input rules (services on router)
       mkInputRules =
@@ -199,60 +170,6 @@ _: {
                   example = [ "iot" ];
                   description = "Networks this one can initiate connections to";
                 };
-
-                wifi = {
-                  enable = lib.mkOption {
-                    type = lib.types.bool;
-                    default = false;
-                    description = "Whether to broadcast a WiFi SSID for this network";
-                  };
-
-                  ssid = lib.mkOption {
-                    type = lib.types.str;
-                    default = "";
-                    example = "Home-IoT";
-                    description = "WiFi network name (SSID)";
-                  };
-
-                  security = lib.mkOption {
-                    type = lib.types.enum [
-                      "wpa3"
-                      "wpa3-transition"
-                      "wpa2"
-                      "open"
-                    ];
-                    default = "wpa2";
-                    description = ''
-                      WiFi security level:
-                      - wpa3: WPA3-only (SAE)
-                      - wpa3-transition: WPA3 + WPA2 compatibility
-                      - wpa2: WPA2-only (most compatible)
-                      - open: No encryption (not recommended)
-                    '';
-                  };
-
-                  passwordSecret = lib.mkOption {
-                    type = lib.types.nullOr lib.types.str;
-                    default = null;
-                    example = "wifi_passphrase_iot";
-                    description = "Name of sops secret containing the WiFi password";
-                  };
-
-                  clientIsolation = lib.mkOption {
-                    type = lib.types.bool;
-                    default = false;
-                    description = "Prevent WiFi clients from seeing each other (ap_isolate)";
-                  };
-
-                  roaming = lib.mkOption {
-                    type = lib.types.bool;
-                    default = true;
-                    description = ''
-                      Enable 802.11r/k/v fast roaming for seamless band switching.
-                      Disable for networks with simple IoT devices that may not support it.
-                    '';
-                  };
-                };
               };
             })
           );
@@ -262,40 +179,21 @@ _: {
               main = {
                 subnet = "10.0.0";
                 isolation = "none";
-                wifi = {
-                  enable = true;
-                  ssid = "Home";
-                  security = "wpa3-transition";
-                  passwordSecret = "wifi_passphrase";
-                };
               };
               iot = {
                 vlan = 20;
                 subnet = "10.0.20";
                 isolation = "internet";
                 allowAccessFrom = [ "main" ];
-                wifi = {
-                  enable = true;
-                  ssid = "Home-IoT";
-                  security = "wpa2";
-                  passwordSecret = "wifi_passphrase_iot";
-                };
               };
               guest = {
                 vlan = 30;
                 subnet = "10.0.30";
                 isolation = "full";
-                wifi = {
-                  enable = true;
-                  ssid = "Home-Guest";
-                  security = "wpa2";
-                  passwordSecret = "wifi_passphrase_guest";
-                  clientIsolation = true;
-                };
               };
             }
           '';
-          description = "Network segment definitions combining VLAN and WiFi configuration";
+          description = "Network segment definitions with VLAN configuration";
         };
       };
 
@@ -348,18 +246,6 @@ _: {
                 message = "Network ${net.name}: cannot reference itself in allowAccessFrom";
               }) net.allowAccessFrom
             ) networkList)
-          ++
-            # WiFi requires SSID
-            (map (net: {
-              assertion = !net.wifi.enable || net.wifi.ssid != "";
-              message = "Network ${net.name}: wifi.ssid required when wifi.enable is true";
-            }) networkList)
-          ++
-            # WiFi requires password (unless open)
-            (map (net: {
-              assertion = !net.wifi.enable || net.wifi.security == "open" || net.wifi.passwordSecret != null;
-              message = "Network ${net.name}: wifi.passwordSecret required for secured WiFi";
-            }) networkList)
           ++ [
             # Unique VLAN IDs
             {
@@ -388,24 +274,9 @@ _: {
               routerIp = netRouterIp net;
               cidr = netCidr net;
               bridge = netBridge net;
-              inherit (net) wifi;
             };
           }) networkList
         );
-
-        # Export WiFi networks for hostapd
-        features.router._internal.wifiNetworks = map (net: {
-          inherit (net) name;
-          inherit (net.wifi)
-            ssid
-            security
-            passwordSecret
-            clientIsolation
-            roaming
-            ;
-          bridge = netBridge net;
-          wpaKeyMgmt = securityToKeyMgmt net.wifi.security;
-        }) wifiNetworks;
 
         # Export firewall rules (always export, even if empty, for proper fallback handling)
         features.router._internal.networkFirewall = {
@@ -440,7 +311,7 @@ _: {
               }) vlanNetworks
             )
             //
-              # Bridge for each VLAN network (WiFi interfaces attach here)
+              # Bridge for each VLAN network (external APs/devices attach here)
               lib.listToAttrs (
                 map (net: {
                   name = "30-br-${net.name}";

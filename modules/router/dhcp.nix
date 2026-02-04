@@ -10,7 +10,6 @@ _: {
     let
       cfg = config.features.router;
       dhcpCfg = cfg.dhcp;
-      hostapdCfg = cfg.hostapd;
       internal = cfg._internal;
       inherit (internal) lanSubnet;
       inherit (internal) lanCidr;
@@ -20,13 +19,6 @@ _: {
       inherit (internal) lanDevice;
       inherit (cfg) machines;
       enabled = cfg.enable && dhcpCfg.enable;
-
-      # Include wireless interfaces if hostapd is enabled and not bridged
-      # (bridged interfaces get DHCP through the bridge automatically)
-      dhcpInterfaces = [
-        lanDevice
-      ]
-      ++ lib.optionals hostapdCfg.enable hostapdCfg._internal.nonBridgedInterfaces;
     in
     {
       options.features.router.dhcp = {
@@ -55,7 +47,7 @@ _: {
             enable = true;
             settings = {
               interfaces-config = {
-                interfaces = dhcpInterfaces;
+                interfaces = [ lanDevice ];
                 re-detect = true;
               };
               lease-database = {

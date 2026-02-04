@@ -1,6 +1,5 @@
 {
   inputs,
-  lib,
   ...
 }:
 {
@@ -9,42 +8,34 @@
     inputs.git-hooks.flakeModule
   ];
 
-  perSystem =
-    { self', ... }:
-    {
-      treefmt = {
-        projectRootFile = "flake.nix";
-        programs = {
-          deadnix.enable = true;
-          jsonfmt.enable = true;
-          nixfmt.enable = true;
-          prettier.enable = true;
-          stylua.enable = true;
-          shfmt.enable = true;
-          statix.enable = true;
-          yamlfmt.enable = true;
-        };
-        settings = {
-          global.excludes = [
-            "*.envrc"
-            ".editorconfig"
-            "*.directory"
-            "*.face"
-            "*.fish"
-            "*.png"
-            "*.toml"
-            "*.svg"
-            "*.xml"
-            "*/.gitignore"
-            "LICENSE"
-          ];
-        };
+  perSystem = _: {
+    treefmt = {
+      projectRootFile = "flake.nix";
+      programs = {
+        deadnix.enable = true;
+        jsonfmt.enable = true;
+        nixfmt.enable = true;
+        prettier.enable = true;
+        stylua.enable = true;
+        shfmt.enable = true;
+        statix.enable = true;
+        yamlfmt.enable = true;
       };
-
-      # pre-commit.settings.hooks.nix-fmt = {
-      #   enable = true;
-      #   # Use --no-cache to avoid cache locking issues in Nix sandbox
-      #   entry = "${lib.getExe self'.formatter} --no-cache";
-      # };
+      settings = {
+        global.excludes = [
+          "*.envrc"
+          ".editorconfig"
+          "*.directory"
+          "*.face"
+          "*.fish"
+          "*.png"
+          "*.toml"
+          "*.svg"
+          "*.xml"
+          "*/.gitignore"
+          "LICENSE"
+        ];
+      };
     };
+  };
 }

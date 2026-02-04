@@ -16,7 +16,6 @@ _: {
       mdnsInterfaces = [
         lanDevice
       ]
-      ++ lib.optionals (cfg.hostapd.enable or false) cfg.hostapd._internal.nonBridgedInterfaces
       ++ mdnsCfg.extraInterfaces;
     in
     {

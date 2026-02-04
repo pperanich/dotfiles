@@ -11,7 +11,6 @@ _: {
       monCfg = cfg.monitoring;
       internal = cfg._internal;
       inherit (internal) lanDevice;
-      hostapdCfg = cfg.hostapd;
       enabled = cfg.enable && monCfg.enable;
 
       # Build list of interfaces to monitor
@@ -23,10 +22,7 @@ _: {
           [
             lanDevice
             cfg.wan.interface
-          ]
-          ++ lib.optionals hostapdCfg.enable (
-            lib.mapAttrsToList (_: radio: radio.interface) hostapdCfg.radios
-          );
+          ];
     in
     {
       options.features.router.monitoring = {
@@ -47,7 +43,7 @@ _: {
           ];
           description = ''
             Interfaces to monitor. Empty list means auto-detect
-            (LAN bridge, WAN, and WiFi interfaces).
+            (LAN bridge and WAN).
           '';
         };
 

@@ -8,7 +8,6 @@ _: {
     let
       cfg = config.features.router;
       fwCfg = cfg.firewall;
-      hostapdCfg = cfg.hostapd;
       networksCfg = cfg.networks;
       internal = cfg._internal;
       inherit (internal) lanSubnet;
@@ -29,30 +28,11 @@ _: {
           inputRules = "";
         };
 
-      # Wireless interfaces (if hostapd enabled) - only non-bridged ones need explicit rules
-      wlanInterfaces = if hostapdCfg.enable then hostapdCfg._internal.nonBridgedInterfaces else [ ];
-
-      # Generate firewall rules for wireless interfaces
-      mkWlanInputRules = iface: ''
-        iifname "${iface}" udp dport 67 accept comment "DHCP (${iface})"
-        iifname "${iface}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH (${iface})"
-        iifname "${iface}" udp dport 53 accept comment "DNS UDP (${iface})"
-        iifname "${iface}" icmp type { echo-request, echo-reply } accept'';
-
-      mkWlanInputRulesV6 = iface: ''
-        iifname "${iface}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH (${iface})"
-        iifname "${iface}" udp dport 53 accept comment "DNS UDP (${iface})"
-        iifname "${iface}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6 (${iface})"'';
-
-      mkWlanForwardRules = iface: ''
-        iifname "${iface}" oifname "${wan}" accept
-        iifname "${iface}" oifname "${lanDevice}" accept
-        iifname "${lanDevice}" oifname "${iface}" accept
-        iifname "${wan}" oifname "${iface}" ct state established,related accept'';
-
-      wlanInputRules = lib.concatMapStringsSep "\n" mkWlanInputRules wlanInterfaces;
-      wlanInputRulesV6 = lib.concatMapStringsSep "\n" mkWlanInputRulesV6 wlanInterfaces;
-      wlanForwardRules = lib.concatMapStringsSep "\n" mkWlanForwardRules wlanInterfaces;
+      # Get Unifi controller firewall rules if enabled
+      unifiFw =
+        internal.unifiFirewall or {
+          inputRules = "";
+        };
 
       # Build trusted interface rules (auto-include debug uplink if enabled)
       allTrustedInterfaces =
@@ -199,9 +179,6 @@ _: {
                   iifname "${lanDevice}" udp dport { 53, 123 } accept comment "DNS, NTP UDP"
                   iifname "${lanDevice}" icmp type { echo-request, echo-reply } accept
 
-                  # Wireless input rules
-                  ${wlanInputRules}
-
                   # Trusted interfaces (VPN, debug uplink)
                   ${trustedInputRules}
 
@@ -210,6 +187,9 @@ _: {
 
                   # Monitoring input rules (injected)
                   ${monFw.inputRules}
+
+                  # Unifi controller input rules (injected)
+                  ${unifiFw.inputRules}
 
                   # WAN input rules
                   ${
@@ -247,9 +227,6 @@ _: {
                   # LAN forwarding
                   iifname "${lanDevice}" oifname "${wan}" accept
                   iifname "${lanDevice}" oifname "${lanDevice}" accept
-
-                  # Wireless forwarding
-                  ${wlanForwardRules}
 
                   # Trusted interfaces
                   ${trustedForwardRules}
@@ -305,9 +282,6 @@ _: {
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
                   iifname "${lanDevice}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
 
-                  # Wireless input rules
-                  ${wlanInputRulesV6}
-
                   # Trusted interfaces
                   ${trustedInputRules}
 
@@ -338,9 +312,6 @@ _: {
 
                   # LAN forwarding
                   iifname "${lanDevice}" oifname "${wan}" accept
-
-                  # Wireless forwarding
-                  ${wlanForwardRules}
 
                   # Trusted interfaces
                   ${trustedForwardRules}

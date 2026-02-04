@@ -5,6 +5,7 @@
 **Hardware:** Protectli VP2440 router with Intel N150 CPU and MT7915E DBDC WiFi 6 card (2x2 MIMO)
 
 **Symptom:** Severe asymmetric WiFi performance on 5GHz:
+
 - **Download (AP to Client):** ~100-300 Mbps with 1000-6000 TCP retransmissions
 - **Upload (Client to AP):** ~500-700 Mbps, clean
 
@@ -37,7 +38,6 @@
   - WiFi SSID: `PP-Net`
   - WiFi Band: 5GHz, 80MHz, ACS (auto channel)
   - WiFi Mode: 802.11ax (WiFi 6)
-  
 - **Old Router (Reference)**
   - IP: `192.168.0.1`
   - Used for comparison testing and as upstream during development
@@ -51,23 +51,27 @@
 ### Test Methodology
 
 **Primary Test (Download - AP to Client):**
+
 ```bash
 # Client runs iperf3 in reverse mode (router sends to client)
 iperf3 -c 10.0.0.1 -R -t 10
 ```
 
 **Upload Test (Client to AP):**
+
 ```bash
 # Client sends to router
 iperf3 -c 10.0.0.1 -t 10
 ```
 
 **UDP Test (Rule out TCP-specific issues):**
+
 ```bash
 iperf3 -c 10.0.0.1 -R -u -b 800M -t 10
 ```
 
 **Cross-Router Test (Isolate WiFi vs network stack):**
+
 ```bash
 # Mac connected to OLD router WiFi, testing to new router
 iperf3 -c 192.168.0.149 -R -t 10
@@ -76,6 +80,7 @@ iperf3 -c 192.168.0.149 -R -t 10
 ### Deployment Process
 
 Configuration changes are made in NixOS and deployed via:
+
 ```bash
 clan machines update pp-router1 --target-host root@192.168.0.149
 ```
@@ -86,19 +91,19 @@ clan machines update pp-router1 --target-host root@192.168.0.149
 
 ### What We Tested and Ruled Out
 
-| Component | Test Performed | Result | Conclusion |
-|-----------|---------------|--------|------------|
-| **MU-MIMO Beamforming** | Removed `MU-BEAMFORMER` from vhtCapab | No improvement | Not the cause |
-| **All Beamforming** | Disabled SU/MU beamforming | Made it worse | Beamforming helps when it works |
-| **WiFi 6 (802.11ax)** | Set `ieee80211ax = false` | Worse (145 Mbps) | WiFi 6 not the cause |
-| **Minimum TX Rates** | Set `supported_rates` to 24+ Mbps | Worse | Rate adaptation not primary issue |
-| **nftables Firewall** | Bypassed INPUT chain for br-lan | No improvement | Firewall not the cause |
-| **Hardware Queues** | Monitored PLE/PSE via debugfs | No buildup (0xff9 free pages) | Driver queues fine |
-| **mac80211 AQM** | Checked fq_backlog, fq_overlimit | All zeros | mac80211 not congested |
-| **BA (Block ACK)** | Monitored BA miss count | Always 0 | No aggregation issues |
-| **AMSDU Packing** | Checked tx_stats | 50% at 7 MSDUs, 24% at 8 | Efficient aggregation |
-| **Thermal Throttling** | Checked thermal zones | 39-40C | Not thermal |
-| **WED Hardware Offload** | Researched and verified | Not available (Intel platform) | Expected, not an issue |
+| Component                | Test Performed                        | Result                         | Conclusion                        |
+| ------------------------ | ------------------------------------- | ------------------------------ | --------------------------------- |
+| **MU-MIMO Beamforming**  | Removed `MU-BEAMFORMER` from vhtCapab | No improvement                 | Not the cause                     |
+| **All Beamforming**      | Disabled SU/MU beamforming            | Made it worse                  | Beamforming helps when it works   |
+| **WiFi 6 (802.11ax)**    | Set `ieee80211ax = false`             | Worse (145 Mbps)               | WiFi 6 not the cause              |
+| **Minimum TX Rates**     | Set `supported_rates` to 24+ Mbps     | Worse                          | Rate adaptation not primary issue |
+| **nftables Firewall**    | Bypassed INPUT chain for br-lan       | No improvement                 | Firewall not the cause            |
+| **Hardware Queues**      | Monitored PLE/PSE via debugfs         | No buildup (0xff9 free pages)  | Driver queues fine                |
+| **mac80211 AQM**         | Checked fq_backlog, fq_overlimit      | All zeros                      | mac80211 not congested            |
+| **BA (Block ACK)**       | Monitored BA miss count               | Always 0                       | No aggregation issues             |
+| **AMSDU Packing**        | Checked tx_stats                      | 50% at 7 MSDUs, 24% at 8       | Efficient aggregation             |
+| **Thermal Throttling**   | Checked thermal zones                 | 39-40C                         | Not thermal                       |
+| **WED Hardware Offload** | Researched and verified               | Not available (Intel platform) | Expected, not an issue            |
 
 ---
 
@@ -121,20 +126,21 @@ clan machines update pp-router1 --target-host root@192.168.0.149
 
 **The Core Mystery:**
 
-| Layer | Metric | Value |
-|-------|--------|-------|
-| WiFi MAC | TX bitrate | 1080-1200 Mbps |
-| WiFi MAC | MAC retries | 0 |
-| WiFi MAC | BA miss count | 0 |
-| WiFi MAC | Signal | -44 to -50 dBm (excellent) |
-| TCP | Throughput | 100-300 Mbps |
-| TCP | Retransmissions | 1000-6000 per 10s |
+| Layer    | Metric          | Value                      |
+| -------- | --------------- | -------------------------- |
+| WiFi MAC | TX bitrate      | 1080-1200 Mbps             |
+| WiFi MAC | MAC retries     | 0                          |
+| WiFi MAC | BA miss count   | 0                          |
+| WiFi MAC | Signal          | -44 to -50 dBm (excellent) |
+| TCP      | Throughput      | 100-300 Mbps               |
+| TCP      | Retransmissions | 1000-6000 per 10s          |
 
 The WiFi hardware believes packets are being delivered successfully, but TCP is retransmitting massively.
 
 ### 3. Erratic Performance Pattern
 
 Typical download test shows:
+
 ```
 0-1s:  300-500 Mbps (good start)
 1-5s:  50-150 Mbps  (severe degradation)
@@ -147,6 +153,7 @@ This pattern is consistent across tests, suggesting a systematic issue rather th
 ### 4. UDP Also Affected
 
 UDP test showed same pattern:
+
 - First 6 seconds: 20-28% packet loss, 100-150 Mbps
 - Last 3 seconds: 0% loss, 500+ Mbps
 
@@ -156,10 +163,10 @@ This rules out TCP-specific issues (congestion control, etc.).
 
 Tested both Cubic (default) and BBR congestion control:
 
-| Algorithm | Throughput | Retries | Analysis |
-|-----------|-----------|---------|----------|
-| Cubic | ~150 Mbps | ~1,500 | Backs off on packet loss |
-| BBR | ~350 Mbps | ~12,700 | Pushes through despite loss |
+| Algorithm | Throughput | Retries | Analysis                    |
+| --------- | ---------- | ------- | --------------------------- |
+| Cubic     | ~150 Mbps  | ~1,500  | Backs off on packet loss    |
+| BBR       | ~350 Mbps  | ~12,700 | Pushes through despite loss |
 
 **Conclusion:** BBR achieves higher throughput by being aggressive, but the underlying packet loss is still present (actually worse). TCP congestion control is NOT the root cause.
 
@@ -172,12 +179,13 @@ Tested both Cubic (default) and BBR congestion control:
 iperf3 -c 192.168.0.149 -R -t 10
 ```
 
-| Test Path | Throughput | Retries |
-|-----------|-----------|---------|
-| New Router MT7915E WiFi → Mac | 150-350 Mbps | 1,500-12,000 |
-| Old Router WiFi → Wired → New Router → Mac | **608 Mbps** | **6** |
+| Test Path                                  | Throughput   | Retries      |
+| ------------------------------------------ | ------------ | ------------ |
+| New Router MT7915E WiFi → Mac              | 150-350 Mbps | 1,500-12,000 |
+| Old Router WiFi → Wired → New Router → Mac | **608 Mbps** | **6**        |
 
 **This definitively proves:**
+
 - ✅ **MacBook is NOT the problem** - Works perfectly over old router WiFi
 - ✅ **New router's TCP stack is NOT the problem** - Sends data fine over wired path
 - ❌ **MT7915E WiFi radio is the problem** - Something specific to this chipset's TX path
@@ -187,12 +195,14 @@ iperf3 -c 192.168.0.149 -R -t 10
 ## Root Cause Identification
 
 Based on the cross-router test, the issue is **specifically the MT7915E WiFi transmitting to the MacBook**. The problem is NOT:
+
 - The MacBook's WiFi/TCP stack
 - The router's kernel/TCP stack
 - The firewall or routing
 - The bridge or queuing
 
 The problem IS one of:
+
 1. **MT7915E driver bug** (mt76 driver)
 2. **MT7915E firmware bug**
 3. **MT7915E + Apple Broadcom chipset incompatibility**
@@ -203,6 +213,7 @@ The problem IS one of:
 ## Tools and Commands Used
 
 ### WiFi Diagnostics
+
 ```bash
 # Station info during transfer
 iw dev wlan5 station dump
@@ -221,6 +232,7 @@ cat /sys/kernel/debug/ieee80211/phy0/aqm
 ```
 
 ### Network Stack
+
 ```bash
 # Queue discipline
 tc -s qdisc show dev wlan5
@@ -233,6 +245,7 @@ nft monitor trace
 ```
 
 ### Performance Testing
+
 ```bash
 # TCP download (AP to client)
 iperf3 -c 10.0.0.1 -R -t 10
@@ -253,17 +266,20 @@ Based on the cross-router test proving the issue is MT7915E-specific:
 ### 1. MT7915E + Apple Broadcom Incompatibility (Most Likely)
 
 **Theory:** The MT7915E has a specific incompatibility with Apple's Broadcom WiFi chipset, possibly related to:
+
 - Block ACK handling
 - AMPDU aggregation
 - Power save negotiation
 - Beamforming feedback (even with MU disabled)
 
 **Evidence:**
+
 - Same Mac works fine on old router WiFi
 - Problem only occurs on MT7915E TX path
 - Reports of similar issues in mt76 GitHub (Issue #980)
 
 **Next Steps:**
+
 - Test with non-Apple client to confirm Apple-specific
 - Check mt76 GitHub for Apple compatibility patches
 - Try different hostapd settings (disable AMPDU, adjust BA window)
@@ -273,11 +289,13 @@ Based on the cross-router test proving the issue is MT7915E-specific:
 **Theory:** The mt76 driver has a bug in the TX path that causes packets to be reported as sent but not actually delivered.
 
 **Evidence:**
+
 - WiFi layer reports 0 MAC retries, 0 BA misses
 - But packets clearly not reaching client (TCP retransmits)
 - Driver queues show no buildup
 
 **Next Steps:**
+
 - Check for newer kernel with mt76 fixes
 - Try different kernel version
 - Enable firmware debug logging (`fw_debug_wm`)
@@ -289,6 +307,7 @@ Based on the cross-router test proving the issue is MT7915E-specific:
 **Evidence:** Intel N150 + MT7915E PCIe combination is known to have ASPM issues.
 
 **Test:**
+
 ```bash
 # Check current ASPM
 lspci -vv | grep -i aspm
@@ -303,7 +322,8 @@ lspci -vv | grep -i aspm
 
 **Evidence:** Firmware version is from August 2024 (20240823).
 
-**Next Steps:** 
+**Next Steps:**
+
 - Check for newer firmware
 - Try older known-good firmware version
 - Enable firmware debug logging
@@ -361,9 +381,11 @@ radio5 = {
    - If problem persists → General MT7915E issue
 
 2. **Disable PCIe ASPM**
+
    ```nix
    boot.kernelParams = [ "pcie_aspm=off" ];
    ```
+
    Known to cause issues with Intel N100/N150 + MT7915E.
 
 3. **Try Fixed Channel (Non-DFS)**
@@ -373,10 +395,12 @@ radio5 = {
 ### Driver/Firmware Experiments
 
 4. **Enable Firmware Debug Logging**
+
    ```bash
    echo 1 > /sys/kernel/debug/ieee80211/phy0/mt76/fw_debug_wm
    dmesg -w | grep mt7915
    ```
+
    Monitor during iperf3 test to see firmware-level errors.
 
 5. **Try Different Kernel Version**
@@ -391,9 +415,11 @@ radio5 = {
 
 7. **Disable AMPDU Aggregation**
    Add to hostapd config:
+
    ```
    disable_11n_for_ap=1
    ```
+
    Or try smaller BA window sizes.
 
 8. **Disable All Beamforming**
@@ -425,12 +451,12 @@ radio5 = {
 
 ### Key Test Results Summary
 
-| Test | Path | Throughput | Retries | Conclusion |
-|------|------|-----------|---------|------------|
-| Baseline | MT7915E → Mac | 150-300 Mbps | 1,500-6,000 | Broken |
-| BBR | MT7915E → Mac | 350 Mbps | 12,700 | Masks but doesn't fix |
-| Cross-router | Old WiFi → New Router → Mac | **608 Mbps** | **6** | Mac is fine |
-| Upload | Mac → MT7915E | 500-700 Mbps | Clean | TX to AP works |
+| Test         | Path                        | Throughput   | Retries     | Conclusion            |
+| ------------ | --------------------------- | ------------ | ----------- | --------------------- |
+| Baseline     | MT7915E → Mac               | 150-300 Mbps | 1,500-6,000 | Broken                |
+| BBR          | MT7915E → Mac               | 350 Mbps     | 12,700      | Masks but doesn't fix |
+| Cross-router | Old WiFi → New Router → Mac | **608 Mbps** | **6**       | Mac is fine           |
+| Upload       | Mac → MT7915E               | 500-700 Mbps | Clean       | TX to AP works        |
 
 ---
 

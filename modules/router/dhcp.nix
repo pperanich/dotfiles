@@ -3,7 +3,6 @@ _: {
     {
       config,
       lib,
-      pkgs,
       utils,
       ...
     }:
@@ -49,6 +48,8 @@ _: {
               interfaces-config = {
                 interfaces = [ lanDevice ];
                 re-detect = true;
+                service-sockets-max-retries = 10;
+                service-sockets-retry-wait-time = 2000;
               };
               lease-database = {
                 name = "/var/lib/kea/dhcp4-leases.csv";
@@ -92,23 +93,10 @@ _: {
         systemd.services.kea-dhcp4-server =
           let
             bridgeDevice = "sys-subsystem-net-devices-${utils.escapeSystemdPath lanDevice}.device";
-            # Wait for interface to have an IP address (not just exist)
-            waitForIp = pkgs.writeShellScript "wait-for-dhcp-interface" ''
-              set -euo pipefail
-              max_attempts=30
-              attempt=0
-              while [ $attempt -lt $max_attempts ]; do
-                if ${pkgs.iproute2}/bin/ip addr show ${lanDevice} 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q "inet "; then
-                  echo "Interface ${lanDevice} has IP, proceeding"
-                  exit 0
-                fi
-                attempt=$((attempt + 1))
-                echo "Waiting for ${lanDevice} to get IP (attempt $attempt/$max_attempts)..."
-                sleep 1
-              done
-              echo "ERROR: ${lanDevice} did not get IP after $max_attempts seconds"
-              exit 1
-            '';
+            # Wait for bridge to have carrier using netlink events (no polling).
+            # br-lan gets its IP immediately via ConfigureWithoutCarrier, but Kea
+            # needs the interface to be RUNNING (have carrier from a bridge member).
+            waitForCarrier = "${config.systemd.package}/lib/systemd/systemd-networkd-wait-online --interface=${lanDevice}:carrier --timeout=30";
           in
           {
             wants = [
@@ -118,14 +106,12 @@ _: {
             after = [
               "systemd-networkd.service"
               "network-online.target"
-              bridgeDevice # Wait for bridge interface
+              bridgeDevice
             ];
-            # Note: Don't use bindsTo with device units - too fragile during reconfigs
             serviceConfig = {
               Restart = "on-failure";
               RestartSec = "2s";
-              # Wait for interface to have IP before starting Kea
-              ExecStartPre = waitForIp;
+              ExecStartPre = waitForCarrier;
             };
           };
 

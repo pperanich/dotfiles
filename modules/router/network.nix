@@ -168,13 +168,6 @@ _: {
             };
           };
         };
-
-        # Ensure nftables starts before network
-        systemd.services.nftables = {
-          after = [ "sysinit.target" ];
-          before = [ "network-pre.target" ];
-          wants = [ "network-pre.target" ];
-        };
       };
     };
 }

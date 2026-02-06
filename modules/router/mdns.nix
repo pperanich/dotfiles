@@ -103,11 +103,14 @@ _: {
         networking.nftables.tables.mdnsV4 = {
           family = "ip";
           content = ''
+            set mdns_ifaces {
+              typeof iifname
+              elements = { ${lib.concatMapStringsSep ", " (i: ''"${i}"'') mdnsInterfaces} }
+            }
+
             chain input {
               type filter hook input priority -10; policy accept;
-              ${lib.concatMapStringsSep "\n" (
-                iface: ''iifname "${iface}" udp dport 5353 accept comment "mDNS (${iface})"''
-              ) mdnsInterfaces}
+              iifname @mdns_ifaces udp dport 5353 accept comment "mDNS"
             }
           '';
         };
@@ -115,11 +118,14 @@ _: {
         networking.nftables.tables.mdnsV6 = lib.mkIf cfg.ipv6.enable {
           family = "ip6";
           content = ''
+            set mdns_ifaces {
+              typeof iifname
+              elements = { ${lib.concatMapStringsSep ", " (i: ''"${i}"'') mdnsInterfaces} }
+            }
+
             chain input {
               type filter hook input priority -10; policy accept;
-              ${lib.concatMapStringsSep "\n" (
-                iface: ''iifname "${iface}" udp dport 5353 accept comment "mDNS IPv6 (${iface})"''
-              ) mdnsInterfaces}
+              iifname @mdns_ifaces udp dport 5353 accept comment "mDNS IPv6"
             }
           '';
         };

@@ -34,18 +34,20 @@ _: {
           inputRules = "";
         };
 
-      # Build trusted interface rules (auto-include debug uplink if enabled)
+      # Get Unifi controller interfaces if available
+      unifiControllerInterfaces = internal.unifiControllerInterfaces or [ ];
+
+      # Build trusted interface list (auto-include debug uplink if enabled)
       allTrustedInterfaces =
         fwCfg.trustedInterfaces ++ lib.optional cfg.debugUplink.enable cfg.debugUplink.interface;
 
-      trustedInputRules = lib.concatMapStringsSep "\n" (
-        iface: ''iifname "${iface}" accept''
-      ) allTrustedInterfaces;
-
-      trustedForwardRules = lib.concatMapStringsSep "\n" (iface: ''
-        iifname "${iface}" oifname "${lanDevice}" accept
-        iifname "${lanDevice}" oifname "${iface}" accept
-        iifname "${iface}" oifname "${wan}" accept'') allTrustedInterfaces;
+      # Helper to generate an nftables named set of interface names
+      mkIfaceSet = name: interfaces: ''
+        set ${name} {
+          typeof iifname
+          elements = { ${lib.concatMapStringsSep ", " (i: ''"${i}"'') interfaces} }
+        }
+      '';
 
       # Build open ports rules
       tcpPortsStr = lib.concatMapStringsSep ", " toString fwCfg.openPorts.tcp;
@@ -142,6 +144,13 @@ _: {
             filterV4 = {
               family = "ip";
               content = ''
+                ${lib.optionalString (allTrustedInterfaces != [ ]) (
+                  mkIfaceSet "trusted_ifaces" allTrustedInterfaces
+                )}
+                ${lib.optionalString (unifiControllerInterfaces != [ ]) (
+                  mkIfaceSet "unifi_ifaces" unifiControllerInterfaces
+                )}
+
                 chain input {
                   type filter hook input priority 0; policy drop;
 
@@ -180,7 +189,7 @@ _: {
                   iifname "${lanDevice}" icmp type { echo-request, echo-reply } accept
 
                   # Trusted interfaces (VPN, debug uplink)
-                  ${trustedInputRules}
+                  ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
 
                   # Network/VLAN input rules (injected)
                   ${netFw.inputRules}
@@ -229,7 +238,10 @@ _: {
                   iifname "${lanDevice}" oifname "${lanDevice}" accept
 
                   # Trusted interfaces
-                  ${trustedForwardRules}
+                  ${lib.optionalString (allTrustedInterfaces != [ ]) ''
+                    iifname @trusted_ifaces oifname "${lanDevice}" accept
+                    iifname "${lanDevice}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname "${wan}" accept''}
 
                   # Port forwarding rules
                   ${forwardRules}
@@ -258,7 +270,9 @@ _: {
             filterV6 = lib.mkIf cfg.ipv6.enable {
               family = "ip6";
               content = ''
-                # Note: Flowtable added via systemd service after br-lan exists
+                ${lib.optionalString (allTrustedInterfaces != [ ]) (
+                  mkIfaceSet "trusted_ifaces" allTrustedInterfaces
+                )}
 
                 chain input {
                   type filter hook input priority 0; policy drop;
@@ -283,7 +297,7 @@ _: {
                   iifname "${lanDevice}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
 
                   # Trusted interfaces
-                  ${trustedInputRules}
+                  ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
 
                   # WAN input rules - ICMPv6 required for IPv6 operation
                   # Rate limit echo-request to prevent ping floods
@@ -314,7 +328,10 @@ _: {
                   iifname "${lanDevice}" oifname "${wan}" accept
 
                   # Trusted interfaces
-                  ${trustedForwardRules}
+                  ${lib.optionalString (allTrustedInterfaces != [ ]) ''
+                    iifname @trusted_ifaces oifname "${lanDevice}" accept
+                    iifname "${lanDevice}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname "${wan}" accept''}
                 }
               '';
             };
@@ -329,7 +346,8 @@ _: {
         '';
 
         # Fix nftables service ordering - must start AFTER interfaces exist
-        # Default is before network-pre.target which is too early for flowtables
+        # Default NixOS module sets before=["network-pre.target"], but we need
+        # nftables AFTER network-pre.target so flowtable devices exist
         systemd.services.nftables = {
           before = lib.mkForce [ ];
           after = [ "network-pre.target" ];

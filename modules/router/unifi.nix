@@ -76,18 +76,17 @@ _: {
           inherit (unifiCfg) initialJavaHeapSize maximumJavaHeapSize extraJvmOptions;
         };
 
-        # Export firewall rules for injection into firewall.nix
+        # Export controller interfaces and firewall rules for injection into firewall.nix
+        features.router._internal.unifiControllerInterfaces = controllerInterfaces;
         features.router._internal.unifiFirewall = {
-          inputRules = lib.optionalString unifiCfg.openFirewall (
-            lib.concatMapStringsSep "\n" (iface: ''
-              # Unifi controller - ${iface}
-              iifname "${iface}" tcp dport 8080 accept comment "Unifi inform (${iface})"
-              iifname "${iface}" tcp dport 8443 accept comment "Unifi web UI (${iface})"
-              iifname "${iface}" udp dport 3478 accept comment "Unifi STUN (${iface})"
-              iifname "${iface}" udp dport 10001 accept comment "Unifi discovery (${iface})"
-              iifname "${iface}" tcp dport 6789 accept comment "Unifi speedtest (${iface})"
-            '') controllerInterfaces
-          );
+          inputRules = lib.optionalString unifiCfg.openFirewall ''
+            # Unifi controller ports
+            iifname @unifi_ifaces tcp dport 8080 accept comment "Unifi inform"
+            iifname @unifi_ifaces tcp dport 8443 accept comment "Unifi web UI"
+            iifname @unifi_ifaces udp dport 3478 accept comment "Unifi STUN"
+            iifname @unifi_ifaces udp dport 10001 accept comment "Unifi discovery"
+            iifname @unifi_ifaces tcp dport 6789 accept comment "Unifi speedtest"
+          '';
         };
 
         # Unifi tools

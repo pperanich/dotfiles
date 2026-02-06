@@ -62,12 +62,12 @@
   features.router = {
     enable = true;
 
-    # Network interfaces - using SFP+ ports for router functionality
-    wan.interface = "enp2s0"; # 10GbE SFP+ port 0
+    # Network interfaces
+    wan.interface = "enp1s0f0np0"; # SFP+ port 0
     lan = {
-      interface = "enp1s0f1np1";
+      interface = "enp2s0";
       interfaces = [
-        "enp1s0f1np1"
+        "enp2s0"
         # External Unifi AP connects here via trunk port
       ];
       subnet = "10.0.0";

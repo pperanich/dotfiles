@@ -65,9 +65,9 @@
     # Network interfaces
     wan.interface = "enp1s0f0np0"; # SFP+ port 0
     lan = {
-      interface = "enp2s0";
+      interface = "enp4s0";
       interfaces = [
-        "enp2s0"
+        "enp4s0"
         # External Unifi AP connects here via trunk port
       ];
       subnet = "10.0.0";
@@ -126,7 +126,7 @@
     # Automatically adds interface to firewall.trustedInterfaces
     debugUplink = {
       enable = true;
-      interface = "enp5s0";
+      interface = "enp2s0";
     };
 
     # Note: WiFi handled by external Unifi AP (MT7915E removed due to driver issues)

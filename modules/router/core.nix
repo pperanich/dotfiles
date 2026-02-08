@@ -97,17 +97,11 @@ _: {
           };
           interfaces = mkOption {
             type = types.listOf types.str;
-            default = [ ];
             example = [
               "enp2s0"
               "enp3s0"
             ];
-            description = "LAN interfaces to bridge (empty = no bridge, use single interface)";
-          };
-          interface = mkOption {
-            type = types.str;
-            default = "enp2s0";
-            description = "Primary LAN interface (used if no bridge)";
+            description = "LAN interfaces to bridge into br-lan";
           };
         };
 
@@ -174,12 +168,15 @@ _: {
           routerIp = "${cfg.lan.subnet}.1";
           dhcpStart = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.start}";
           dhcpEnd = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.end}";
-          useBridge = cfg.lan.interfaces != [ ];
-          lanDevice = if cfg.lan.interfaces != [ ] then "br-lan" else cfg.lan.interface;
+          lanDevice = "br-lan";
         };
 
         # Assertions for configuration validation
         assertions = [
+          {
+            assertion = cfg.lan.interfaces != [ ];
+            message = "router: lan.interfaces must contain at least one interface";
+          }
           {
             assertion = cfg.lan.dhcpRange.start < cfg.lan.dhcpRange.end;
             message = "router: DHCP range start must be less than end";

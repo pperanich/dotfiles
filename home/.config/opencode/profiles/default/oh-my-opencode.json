@@ -9,10 +9,10 @@
       "model": "anthropic/claude-sonnet-4-5"
     },
     "oracle": {
-      "model": "anthropic/claude-opus-4-5"
+      "model": "anthropic/claude-opus-4-6"
     },
     "frontend-ui-ux-engineer": {
-      "model": "anthropic/claude-opus-4-5"
+      "model": "anthropic/claude-opus-4-6"
     },
     "document-writer": {
       "model": "anthropic/claude-sonnet-4-5"

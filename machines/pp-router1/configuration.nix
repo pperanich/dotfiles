@@ -63,11 +63,11 @@
     enable = true;
 
     # Network interfaces
-    wan.interface = "enp1s0f0np0"; # SFP+ port 0
+    wan.interface = "enp4s0";
     lan = {
-      interface = "enp4s0";
       interfaces = [
-        "enp4s0"
+        "enp1s0f0np0"
+        "enp1s0f1np1"
         # External Unifi AP connects here via trunk port
       ];
       subnet = "10.0.0";

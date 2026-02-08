@@ -17,9 +17,6 @@
     # User setup
     pperanich
 
-    # Router functionality
-    router
-
     # Development environment
     rust
 
@@ -38,43 +35,6 @@
 
   # Networking configuration
   networking.hostName = "pp-nas1";
-
-  # Router configuration
-  features.router = {
-    enable = true;
-    hostname = "pp-nas1";
-
-    wan.interface = "enp1s0";
-    lan = {
-      interface = "enp2s0"; # Single LAN interface (no bridge needed)
-      subnet = "10.0.0";
-      dhcpRange = {
-        start = 100;
-        end = 200;
-      };
-    };
-
-    ipv6 = {
-      enable = true;
-      ulaPrefix = "fd12:3456:789a:bcde"; # Generate your own unique prefix
-    };
-
-    # Enable services
-    dhcp.enable = true;
-    dns.enable = true;
-
-    # Example machines (customize as needed)
-    machines = [
-      # {
-      #   name = "desktop";
-      #   ip = 10;
-      #   mac = "AA:BB:CC:DD:EE:FF";
-      #   portForwards = [
-      #     { port = 22; protocol = "tcp"; }
-      #   ];
-      # }
-    ];
-  };
 
   services = {
     # Enable the login manager

@@ -10,7 +10,6 @@ _: {
       internal = cfg._internal;
       wan = cfg.wan.interface;
       inherit (internal) lanDevice;
-      inherit (internal) useBridge;
       inherit (internal) routerIp;
       inherit (cfg.ipv6) ulaPrefix;
     in
@@ -38,8 +37,6 @@ _: {
           "net.ipv4.tcp_wmem" = "4096 65536 16777216";
           "net.core.netdev_max_backlog" = 16384;
           "net.core.somaxconn" = 8192;
-        }
-        // lib.optionalAttrs useBridge {
           "net.ipv4.conf.br-lan.rp_filter" = 1;
         }
         // lib.optionalAttrs cfg.ipv6.enable {
@@ -94,8 +91,8 @@ _: {
         systemd.network = {
           enable = true;
 
-          # Bridge device (if multiple LAN interfaces)
-          netdevs = lib.mkIf useBridge {
+          # Bridge device for LAN interfaces
+          netdevs = {
             "20-br-lan" = {
               netdevConfig = {
                 Kind = "bridge";
@@ -137,21 +134,18 @@ _: {
               linkConfig.RequiredForOnline = "no";
             };
           }
-          # Add bridge member configs if using bridge
-          // lib.optionalAttrs useBridge (
-            lib.listToAttrs (
-              map (
-                iface:
-                lib.nameValuePair "30-${iface}-lan" {
-                  matchConfig.Name = iface;
-                  networkConfig = {
-                    Bridge = "br-lan";
-                    ConfigureWithoutCarrier = true;
-                  };
-                }
-              ) cfg.lan.interfaces
-            )
-          )
+          // (lib.listToAttrs (
+            map (
+              iface:
+              lib.nameValuePair "30-${iface}-lan" {
+                matchConfig.Name = iface;
+                networkConfig = {
+                  Bridge = "br-lan";
+                  ConfigureWithoutCarrier = true;
+                };
+              }
+            ) cfg.lan.interfaces
+          ))
           # Debug uplink - DHCP client to existing router for SSH access during development
           // lib.optionalAttrs cfg.debugUplink.enable {
             "05-debug-uplink" = {

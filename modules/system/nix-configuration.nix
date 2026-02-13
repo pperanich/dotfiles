@@ -128,7 +128,8 @@
           customSettings = {
             eval-cores = 0;
             extra-experimental-features = "external-builders parallel-eval";
-            # external-builders = "[{\"systems\":[\"aarch64-linux\",\"x86_64-linux\"],\"program\":\"/usr/local/bin/determinate-nixd\",\"args\":[\"builder\"]}]";
+            # extra-substituters = "nix-apple-fonts.cachix.org";
+            # extra-trusted-public-keys = "nix-apple-fonts.cachix.org-1:+IufU9qEralI2eCib9vH4bv093Xo1F9l0rw24KzLEdg=";
           };
         };
 

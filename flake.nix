@@ -139,8 +139,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    apple-fonts = {
-      url = "github:Lyndeno/apple-fonts.nix";
+    nix-apple-fonts = {
+      url = "github:pperanich/nix-apple-fonts";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

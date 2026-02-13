@@ -4,6 +4,7 @@
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
   sops-nix = inputs.sops-nix.overlays.default;
   ghostty = inputs.ghostty.overlays.default;
+  nix-apple-fonts = inputs.nix-apple-fonts.overlays.default;
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
@@ -25,19 +26,5 @@
     glibtool = final.libtool.overrideAttrs (oldAttrs: {
       configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--program-prefix=g" ];
     });
-    apple-fonts = {
-      inherit (inputs.apple-fonts.packages.${final.stdenv.hostPlatform.system})
-        sf-pro
-        sf-pro-nerd
-        sf-compact
-        sf-compact-nerd
-        sf-mono
-        sf-mono-nerd
-        sf-arabic
-        sf-arabic-nerd
-        ny
-        ny-nerd
-        ;
-    };
   };
 }

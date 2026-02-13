@@ -20,13 +20,10 @@
     aplnis
 
     # Window management
-    # yabai
-    # skhd
     sketchybar
   ];
 
-  clan.core.networking.targetHost = lib.mkForce "root@peranpl1-ml2";
-  clan.core.networking.buildHost = "root@peranpl1-ml2";
+  clan.core.networking.targetHost = lib.mkForce "peranpl1@peranpl1-ml2";
 
   # Host-specific configuration
   networking.hostName = "peranpl1-ml2";

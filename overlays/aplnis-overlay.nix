@@ -2,7 +2,12 @@ final: prev: {
   cacert-apl = prev.cacert.override {
     extraCertificateFiles = [ ./JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt ];
   };
-  my-curl = prev.curl.override { openssl = prev.openssl_1_1; };
+  my-curl = prev.curl.override {
+    openssl = prev.openssl_1_1;
+    # OpenSSL 1.1 is required in this environment; disable HTTP/3 (ngtcp2)
+    # because recent curl builds require QUIC-capable TLS for --with-ngtcp2.
+    http3Support = false;
+  };
   my-git = prev.git.override {
     openssl = prev.openssl_1_1;
     curl = final.my-curl;

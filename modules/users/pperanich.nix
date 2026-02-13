@@ -26,10 +26,7 @@ in
 
       # Create system user
       users.users.pperanich = {
-        openssh.authorizedKeys.keys = [
-          (builtins.readFile ./pperanich_id_ed25519.pub)
-          (builtins.readFile ./peranpl1_id_ed25519.pub)
-        ];
+        openssh.authorizedKeys.keys = builtins.attrValues lib.my.sshKeys;
         shell = pkgs.zsh;
         packages = [ pkgs.home-manager ];
         # Add to keys group for reading machine's sops age key
@@ -84,10 +81,7 @@ in
 
       # Create system user
       users.users.pperanich = {
-        openssh.authorizedKeys.keys = [
-          (builtins.readFile ./pperanich_id_ed25519.pub)
-          (builtins.readFile ./peranpl1_id_ed25519.pub)
-        ];
+        openssh.authorizedKeys.keys = builtins.attrValues lib.my.sshKeys;
         shell = pkgs.zsh;
         packages = [ pkgs.home-manager ];
         home = "/Users/pperanich";

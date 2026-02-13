@@ -4,6 +4,12 @@
   # Use path relative to the root of the project
   relativeToRoot = lib.path.append ../.;
 
+  # SSH public keys for users — single source of truth
+  sshKeys = {
+    pperanich = lib.strings.trim (builtins.readFile ./pperanich_id_ed25519.pub);
+    peranpl1 = lib.strings.trim (builtins.readFile ./peranpl1_id_ed25519.pub);
+  };
+
   # Get all home-manager directories that contain a default.nix file
   getHomeDirs =
     homePath:

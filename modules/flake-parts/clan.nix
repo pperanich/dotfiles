@@ -1,6 +1,7 @@
 {
   inputs,
   config,
+  lib,
   ...
 }:
 {
@@ -85,7 +86,9 @@
             input = "clan-core";
           };
           roles = {
-            server.tags.all = { };
+            server.tags.all = {
+              settings.authorizedKeys = lib.my.sshKeys;
+            };
             client.tags.all = { };
           };
         };

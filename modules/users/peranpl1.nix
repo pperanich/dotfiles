@@ -23,10 +23,7 @@ in
 
       # Create system user
       users.users.peranpl1 = {
-        openssh.authorizedKeys.keys = [
-          (builtins.readFile ./peranpl1_id_ed25519.pub)
-          (builtins.readFile ./pperanich_id_ed25519.pub)
-        ];
+        openssh.authorizedKeys.keys = builtins.attrValues lib.my.sshKeys;
         shell = pkgs.zsh;
         packages = [ pkgs.home-manager ];
         extraGroups = [ "keys" ];
@@ -80,10 +77,7 @@ in
 
       # Create system user
       users.users.peranpl1 = {
-        openssh.authorizedKeys.keys = [
-          (builtins.readFile ./peranpl1_id_ed25519.pub)
-          (builtins.readFile ./pperanich_id_ed25519.pub)
-        ];
+        openssh.authorizedKeys.keys = builtins.attrValues lib.my.sshKeys;
         shell = pkgs.zsh;
         packages = [ pkgs.home-manager ];
         home = "/Users/peranpl1";

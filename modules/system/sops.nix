@@ -31,6 +31,7 @@ in
         sops = lib.mkMerge [
           sops
           {
+            package = pkgs.sops-install-secrets;
             # YubiKey support for system-level secrets
             age.plugins = [ pkgs.age-plugin-yubikey ];
           }
@@ -65,6 +66,7 @@ in
         sops = lib.mkMerge [
           sops
           {
+            package = pkgs.sops-install-secrets;
             # YubiKey support for system-level secrets
             age.plugins = [ pkgs.age-plugin-yubikey ];
 
@@ -86,18 +88,19 @@ in
         # The home-manager module sets PATH = lib.makeBinPath cfg.age.plugins, which
         # results in empty PATH when no plugins are configured, breaking LaunchAgent.
         # We include age-plugin-yubikey in the PATH for YubiKey decryption support.
-        launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
-          enable = true;
-          config = {
-            EnvironmentVariables = {
-              PATH = pkgs.lib.mkForce "${
-                pkgs.lib.makeBinPath [ pkgs.age-plugin-yubikey ]
-              }:/usr/bin:/bin:/usr/sbin:/sbin";
-            };
-          };
-        };
+        # launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
+        #   enable = true;
+        #   config = {
+        #     EnvironmentVariables = {
+        #       PATH = pkgs.lib.mkForce "${
+        #         pkgs.lib.makeBinPath [ pkgs.age-plugin-yubikey ]
+        #       }:/usr/bin:/bin:/usr/sbin:/sbin";
+        #     };
+        #   };
+        # };
 
         sops = {
+          package = pkgs.sops-install-secrets;
           age = {
             # Use SSH key for decryption (converted to age key automatically by sops-nix)
             # The SSH private key is deployed via system-level sops BEFORE home-manager runs

@@ -501,15 +501,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1770941087,
-        "narHash": "sha256-LERqMOoFmStaguCYZSV1kSRvHWZihJRttYkqzEh1WX4=",
-        "owner": "nix-community",
+        "lastModified": 1771021619,
+        "narHash": "sha256-Id54JPg8P7tocnVjpIxzjmKgVm4Zfei1aWdUb9Z8uyA=",
+        "owner": "pperanich",
         "repo": "neovim-nightly-overlay",
-        "rev": "6afe464c62eee957282721751d60f9d44651bf97",
+        "rev": "3bb1e6da9aac686be02e557cd4f01599ba5ca25f",
         "type": "github"
       },
       "original": {
-        "owner": "nix-community",
+        "owner": "pperanich",
         "repo": "neovim-nightly-overlay",
         "type": "github"
       }

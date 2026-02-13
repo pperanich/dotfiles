@@ -1,7 +1,7 @@
 {
   inputs,
   config,
-  lib,
+  self,
   ...
 }:
 {
@@ -15,7 +15,6 @@
     specialArgs = {
       inherit inputs;
       inherit (config.flake) modules lib;
-
     };
 
     secrets.age.plugins = [
@@ -86,10 +85,26 @@
             input = "clan-core";
           };
           roles = {
-            server.tags.all = {
-              settings.authorizedKeys = lib.my.sshKeys;
+            server = {
+              tags.all = { };
+              settings = {
+                authorizedKeys = self.lib.my.sshKeys;
+                generateRootKey = true;
+                certificate.searchDomains = [
+                  "home.arpa"
+                  "prestonperanich.com"
+                ];
+              };
             };
-            client.tags.all = { };
+            client = {
+              tags.all = { };
+              settings = {
+                certificate.searchDomains = [
+                  "home.arpa"
+                  "prestonperanich.com"
+                ];
+              };
+            };
           };
         };
         users-root = {

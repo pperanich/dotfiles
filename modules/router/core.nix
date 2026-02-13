@@ -171,6 +171,13 @@ _: {
           lanDevice = "br-lan";
         };
 
+        # Build-time warnings for security-sensitive configurations
+        warnings =
+          lib.optional cfg.debugUplink.enable "router: debugUplink is enabled — this grants SSH access from an external network. Disable for production (features.router.debugUplink.enable = false)."
+          ++
+            lib.optional (cfg.ipv6.enable && cfg.ipv6.ulaPrefix == "fd00:1234:5678:9abc")
+              "router: Using default ULA prefix 'fd00:1234:5678:9abc'. Generate a unique one per RFC 4193: printf 'fd%s:%s:%s' $(openssl rand -hex 1) $(openssl rand -hex 2) $(openssl rand -hex 2)";
+
         # Assertions for configuration validation
         assertions = [
           {
@@ -190,6 +197,35 @@ _: {
           {
             assertion = builtins.all (m: m.ip != 1) cfg.machines;
             message = "router: Machine IP .1 is reserved for the router";
+          }
+          # H2: Prevent duplicate port forward collisions (same port+protocol across machines)
+          {
+            assertion =
+              let
+                allPorts = lib.concatMap (
+                  m: map (pf: "${toString pf.port}/${pf.protocol}") m.portForwards
+                ) cfg.machines;
+              in
+              allPorts == lib.unique allPorts;
+            message = "router: Duplicate port forwards detected — each (port, protocol) pair must be unique across all machines";
+          }
+          # H2: Prevent duplicate machine IPs
+          {
+            assertion =
+              let
+                ips = map (m: m.ip) cfg.machines;
+              in
+              ips == lib.unique ips;
+            message = "router: Duplicate machine IPs detected — each machine must have a unique IP";
+          }
+          # H2: Prevent duplicate machine names
+          {
+            assertion =
+              let
+                names = map (m: m.name) cfg.machines;
+              in
+              names == lib.unique names;
+            message = "router: Duplicate machine names detected — each machine must have a unique name";
           }
         ];
       };

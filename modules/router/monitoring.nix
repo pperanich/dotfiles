@@ -122,10 +122,12 @@ _: {
         users.users.ntopng.extraGroups = [ "networkd" ];
 
         # Add packet capture capability
+        # M5: Only cap_net_raw is needed for packet capture — cap_net_admin omitted
+        # to prevent firewall/routing modification if ntopng is compromised
         security.wrappers.ntopng = {
           owner = "root";
           group = "ntopng";
-          capabilities = "cap_net_raw,cap_net_admin+eip";
+          capabilities = "cap_net_raw+eip";
           source = "${pkgs.ntopng}/bin/ntopng";
         };
 

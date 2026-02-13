@@ -69,6 +69,21 @@ _: {
       };
 
       config = lib.mkIf enabled {
+        # L4: Prevent mDNS reflector from leaking service discovery across isolated VLANs
+        assertions = lib.optional cfg.networks.enable {
+          assertion = builtins.all (
+            iface:
+            let
+              segName = lib.removePrefix "br-" iface;
+            in
+            !(
+              lib.hasPrefix "br-" iface
+              && lib.hasAttr segName cfg.networks.segments
+              && cfg.networks.segments.${segName}.isolation != "none"
+            )
+          ) mdnsCfg.extraInterfaces;
+          message = "router: mDNS extraInterfaces must not include isolated VLAN bridges — this would leak service discovery across security boundaries";
+        };
         services.avahi = {
           enable = true;
 

@@ -37,9 +37,8 @@ _: {
       # Get Unifi controller interfaces if available
       unifiControllerInterfaces = internal.unifiControllerInterfaces or [ ];
 
-      # Build trusted interface list (auto-include debug uplink if enabled)
-      allTrustedInterfaces =
-        fwCfg.trustedInterfaces ++ lib.optional cfg.debugUplink.enable cfg.debugUplink.interface;
+      # H3: Debug uplink is NOT added to trusted interfaces — gets SSH-only access instead
+      allTrustedInterfaces = fwCfg.trustedInterfaces;
 
       # Helper to generate an nftables named set of interface names
       mkIfaceSet = name: interfaces: ''
@@ -183,13 +182,19 @@ _: {
                   iifname "${wan}" tcp flags == 0x0 drop comment "NULL scan"
 
                   # LAN input rules
-                  iifname "${lanDevice}" udp dport 67 accept comment "DHCP"
-                  iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
+                  iifname "${lanDevice}" udp dport 67 limit rate 10/second burst 50 packets accept comment "DHCP (rate limited)"
+                  iifname "${lanDevice}" tcp dport 53 accept comment "DNS TCP"
+                  iifname "${lanDevice}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
                   iifname "${lanDevice}" udp dport { 53, 123 } accept comment "DNS, NTP UDP"
                   iifname "${lanDevice}" icmp type { echo-request, echo-reply } accept
 
-                  # Trusted interfaces (VPN, debug uplink)
+                  # Trusted interfaces (VPN tunnels, etc.)
                   ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
+
+                  # H3: Debug uplink — SSH access only (not full trust)
+                  ${lib.optionalString cfg.debugUplink.enable ''
+                    iifname "${cfg.debugUplink.interface}" tcp dport 22 accept comment "Debug uplink: SSH only"
+                  ''}
 
                   # Network/VLAN input rules (injected)
                   ${netFw.inputRules}
@@ -221,6 +226,9 @@ _: {
                     else
                       ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''
                   )}
+
+                  # L1: Log dropped packets for forensics (rate limited to prevent log flooding)
+                  limit rate 5/minute burst 10 packets log prefix "nft-drop-input: " level info
                 }
 
                 chain forward {
@@ -248,6 +256,9 @@ _: {
 
                   # Network/VLAN forwarding rules (injected)
                   ${netFw.forwardRules}
+
+                  # L1: Log dropped packets for forensics (rate limited)
+                  limit rate 5/minute burst 10 packets log prefix "nft-drop-forward: " level info
                 }
               '';
             };
@@ -260,7 +271,8 @@ _: {
                 }
                 chain postrouting {
                   type nat hook postrouting priority 100;
-                  oifname "${wan}" masquerade
+                  # M1: Scoped to RFC1918 — prevents NAT of unexpected traffic from routing misconfigs
+                  ip saddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } oifname "${wan}" masquerade
                   ${netFw.natRules}
                 }
               '';
@@ -282,17 +294,22 @@ _: {
                   ct state established,related accept
                   ct state invalid drop
 
-                  # IPv6 anti-spoofing on WAN
-                  # Note: fe80::/10 (link-local) NOT blocked - needed for RA, ND, DHCPv6 from ISP
+                  # M2: IPv6 anti-spoofing on WAN (expanded bogon list per IANA special-purpose registry)
+                  # Note: fe80::/10 (link-local) NOT blocked — needed for RA, NDP, DHCPv6 from ISP.
+                  # Unsolicited RAs arrive with fe80:: source BEFORE ct state can track them.
                   iifname "${wan}" ip6 saddr {
                     ::1/128,          # Loopback
                     ::/128,           # Unspecified
                     ::ffff:0:0/96,    # IPv4-mapped
-                    fc00::/7          # Unique local (ULA) - your LAN prefix shouldn't come from WAN
-                  } drop comment "IPv6 anti-spoofing"
+                    fc00::/7,         # Unique local (ULA) - shouldn't arrive from WAN
+                    2001:db8::/32,    # Documentation range
+                    100::/64,         # Discard-only (RFC 6666)
+                    ff00::/8          # Multicast as source
+                  } drop comment "IPv6 anti-spoofing bogons"
 
                   # LAN input rules
-                  iifname "${lanDevice}" tcp dport { 53, 22 } accept comment "DNS TCP, SSH"
+                  iifname "${lanDevice}" tcp dport 53 accept comment "DNS TCP"
+                  iifname "${lanDevice}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
                   iifname "${lanDevice}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
 
@@ -310,8 +327,12 @@ _: {
                   iifname "${wan}" icmpv6 type nd-router-advert accept comment "ISP router advertisements"
                   iifname "${wan}" udp dport dhcpv6-client udp sport dhcpv6-server accept comment "DHCPv6 from ISP"
 
-                  # RA Guard: Block rogue router advertisements from LAN clients
+                  # RA Guard: Block rogue router advertisements from LAN clients (input chain)
+                  # Note: This only protects the router — see raGuard bridge table for LAN client protection
                   iifname "${lanDevice}" icmpv6 type nd-router-advert drop comment "RA Guard - block rogue RAs from LAN"
+
+                  # L1: Log dropped packets for forensics (rate limited)
+                  limit rate 5/minute burst 10 packets log prefix "nft6-drop-input: " level info
                 }
 
                 chain forward {
@@ -332,6 +353,9 @@ _: {
                     iifname @trusted_ifaces oifname "${lanDevice}" accept
                     iifname "${lanDevice}" oifname @trusted_ifaces accept
                     iifname @trusted_ifaces oifname "${wan}" accept''}
+
+                  # L1: Log dropped packets for forensics (rate limited)
+                  limit rate 5/minute burst 10 packets log prefix "nft6-drop-forward: " level info
                 }
               '';
             };
@@ -390,6 +414,21 @@ _: {
             '';
           };
 
+        # H1: Bridge-level RA Guard — blocks rogue Router Advertisements at L2
+        # The input chain RA Guard only protects the router itself. Rogue RAs are
+        # multicast at L2 on the bridge, reaching all LAN hosts directly.
+        # This bridge-family table drops RAs forwarded between bridge ports.
+        # Router's own RAs originate from the local stack (bridge output), not forward.
+        networking.nftables.tables.raGuard = {
+          family = "bridge";
+          content = ''
+            chain forward {
+              type filter hook forward priority -200; policy accept;
+              ether type ip6 icmpv6 type nd-router-advert drop comment "RA Guard: block rogue RAs on bridge"
+            }
+          '';
+        };
+
         # Ensure flow offload kernel modules are loaded
         boot.kernelModules = [
           "nf_flow_table"
@@ -400,9 +439,11 @@ _: {
         boot.kernel.sysctl = {
           # nf_conntrack_max is set in network.nix - don't duplicate
           "net.netfilter.nf_conntrack_tcp_timeout_established" = lib.mkDefault 7200;
-          # Enable bridge netfilter for proper flow tracking through bridge
-          "net.bridge.bridge-nf-call-iptables" = lib.mkDefault 1;
-          "net.bridge.bridge-nf-call-ip6tables" = lib.mkDefault 1;
+          # M3: Disable bridge-nf-call — forces all bridged L2 frames through netfilter,
+          # causing performance overhead and unexpected interactions with nftables rules.
+          # Only enable if running containers (Docker/podman) that need it.
+          "net.bridge.bridge-nf-call-iptables" = lib.mkDefault 0;
+          "net.bridge.bridge-nf-call-ip6tables" = lib.mkDefault 0;
         };
       };
     };

@@ -35,6 +35,10 @@ _: {
 
       config = lib.mkIf enabled {
         services.kea = {
+          # M4: Control agent bound to localhost but lacks authentication.
+          # Any local process can issue Kea commands (modify leases, change config).
+          # Consider adding basic auth via settings.authentication if running
+          # untrusted services on this host, or disable if not needed.
           ctrl-agent = {
             enable = true;
             settings = {

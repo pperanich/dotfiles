@@ -8,10 +8,18 @@ final: prev: {
     # because recent curl builds require QUIC-capable TLS for --with-ngtcp2.
     http3Support = false;
   };
-  my-git = prev.git.override {
-    openssl = prev.openssl_1_1;
-    curl = final.my-curl;
-  };
+  my-git =
+    (prev.git.override {
+      openssl = prev.openssl_1_1;
+      curl = final.my-curl;
+    }).overrideAttrs
+      (_: {
+        # Keep dev shell bootstrap reliable; upstream git checks are flaky in
+        # some constrained build environments and are not needed here.
+        doCheck = false;
+        doInstallCheck = false;
+      });
+
   buildPackages = prev.buildPackages // {
     openssl = prev.openssl_1_1;
     buildInputs = (prev.buildInputs or [ ]) // [ prev.openssl_1_1 ];

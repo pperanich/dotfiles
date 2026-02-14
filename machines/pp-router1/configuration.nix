@@ -45,9 +45,8 @@ in
   features.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@10.0.0.1";
-  # clan.core.networking.targetHost = lib.mkForce "root@192.168.0.149";
-  # clan.core.networking.buildHost = "root@192.168.0.184";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-router.pp-wg";
+  # clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
 
   # Networking configuration
   networking.hostName = "pp-router1";
@@ -105,6 +104,9 @@ in
     dhcp.enable = true;
     dns.enable = true;
     dns.privateDomains = [ "prestonperanich.com" ]; # Allow private IP responses for Caddy subdomains
+    dns.extraInterfaces = [ wgAddress ]; # Serve DNS to WireGuard VPN clients
+    dns.extraAccessControl = [ "${wgPrefix}::/40 allow" ]; # Allow queries from WireGuard subnet
+    dns.ddns.enable = true; # Auto-register DHCP client hostnames in DNS
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
     # Network monitoring with ntopng
@@ -256,6 +258,92 @@ in
         name = "nextcloud.prestonperanich.com";
         content = wgAddress;
       }
+      # home — dashboard on pp-router1
+      {
+        type = "A";
+        name = "home.prestonperanich.com";
+        content = "10.0.0.1";
+      }
+      {
+        type = "AAAA";
+        name = "home.prestonperanich.com";
+        content = wgAddress;
+      }
+    ];
+  };
+
+  # Homepage dashboard — landing page for all internal services
+  services.homepage-dashboard = {
+    enable = true;
+    # Internal-only — not exposed to WAN, Caddy handles access control
+    allowedHosts = "*";
+    settings = {
+      title = "Homelab";
+      favicon = "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png";
+      headerStyle = "clean";
+      layout = {
+        Network = {
+          style = "row";
+          columns = 3;
+        };
+        Services = {
+          style = "row";
+          columns = 3;
+        };
+      };
+    };
+    services = [
+      {
+        "Network" = [
+          {
+            "Unifi" = {
+              icon = "unifi";
+              href = "https://unifi.prestonperanich.com";
+              description = "Network controller";
+            };
+          }
+          {
+            "ntopng" = {
+              icon = "ntopng";
+              href = "https://ntopng.prestonperanich.com";
+              description = "Network monitoring";
+            };
+          }
+        ];
+      }
+      {
+        "Services" = [
+          {
+            "Immich" = {
+              icon = "immich";
+              href = "https://immich.prestonperanich.com";
+              description = "Photo & video backup";
+            };
+          }
+          {
+            "Nextcloud" = {
+              icon = "nextcloud";
+              href = "https://nextcloud.prestonperanich.com";
+              description = "File sync & collaboration";
+            };
+          }
+        ];
+      }
+    ];
+    widgets = [
+      {
+        resources = {
+          cpu = true;
+          memory = true;
+          disk = "/";
+        };
+      }
+      {
+        search = {
+          provider = "duckduckgo";
+          target = "_blank";
+        };
+      }
     ];
   };
 
@@ -292,6 +380,17 @@ in
     '';
 
     virtualHosts = {
+      # Homepage dashboard (runs on this router)
+      "home.prestonperanich.com" = {
+        listenAddresses = [
+          "10.0.0.1"
+          wgAddress # WireGuard VPN
+        ];
+        extraConfig = ''
+          reverse_proxy localhost:8082
+        '';
+      };
+
       "ntopng.prestonperanich.com" = {
         listenAddresses = [
           "10.0.0.1"
@@ -323,7 +422,7 @@ in
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
-          reverse_proxy http://10.0.0.105:2283 {
+          reverse_proxy http://10.0.0.106:2283 {
             # Large photo/video uploads
             header_up X-Forwarded-Proto {scheme}
           }
@@ -340,7 +439,7 @@ in
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
-          reverse_proxy http://10.0.0.105:80 {
+          reverse_proxy http://10.0.0.106:80 {
             header_up X-Forwarded-Proto {scheme}
             header_up X-Forwarded-For {remote_host}
           }

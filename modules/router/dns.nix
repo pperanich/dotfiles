@@ -39,6 +39,18 @@ _: {
           example = [ "prestonperanich.com" ];
           description = "Domains exempt from DNS rebinding protection (allowed to resolve to private IPs)";
         };
+        extraInterfaces = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "fdb4:63fa:2:aa00::1" ];
+          description = "Additional addresses for Unbound to listen on (e.g., VPN interfaces)";
+        };
+        extraAccessControl = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "fdb4:63fa:2:aa00::/40 allow" ];
+          description = "Additional access-control entries for Unbound (e.g., VPN subnets)";
+        };
       };
 
       config = lib.mkIf enabled {
@@ -54,7 +66,8 @@ _: {
                 "::1"
                 routerIp
               ]
-              ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1";
+              ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1"
+              ++ dnsCfg.extraInterfaces;
 
               access-control = [
                 "127.0.0.0/8 allow"
@@ -62,6 +75,7 @@ _: {
                 "${lanCidr} allow"
               ]
               ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::/64 allow"
+              ++ dnsCfg.extraAccessControl
               ++ [
                 "0.0.0.0/0 refuse"
                 "::0/0 refuse"

@@ -37,8 +37,8 @@
   features.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.161";
-  clan.core.networking.buildHost = "root@192.168.0.184";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.pp-wg";
+  clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
 
   # Networking configuration
   networking.hostName = "pp-nas1";
@@ -53,7 +53,7 @@
     hostName = "nextcloud.prestonperanich.com";
     datadir = "/tank/appdata/nextcloud";
     trustedProxies = [ "10.0.0.1" ];
-    extraTrustedDomains = [ "192.168.0.161" ];
+    extraTrustedDomains = [ "10.0.0.106" ];
     extraApps = [
       "calendar"
       "contacts"

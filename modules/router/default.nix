@@ -11,6 +11,7 @@ _: {
         routerFirewall
         routerDhcp
         routerDns
+        routerDdns # Dynamic DNS: Kea DHCP leases → Unbound
         routerMdns
         routerSqm
         routerMonitoring

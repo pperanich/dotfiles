@@ -16,6 +16,7 @@ _: {
         routerMonitoring
         routerNetworks # Unified VLAN configuration
         routerUnifi # Ubiquiti Unifi controller
+        routerSsdpRelay # SSDP relay for cross-VLAN device discovery
       ];
     };
 }

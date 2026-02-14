@@ -33,6 +33,12 @@ _: {
           default = "lan.";
           description = "Local DNS zone name";
         };
+        privateDomains = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "prestonperanich.com" ];
+          description = "Domains exempt from DNS rebinding protection (allowed to resolve to private IPs)";
+        };
       };
 
       config = lib.mkIf enabled {
@@ -93,7 +99,7 @@ _: {
                 "fd00::/8"
                 "fe80::/10"
               ];
-              private-domain = [ "\"${dnsCfg.localZone}\"" ];
+              private-domain = [ "\"${dnsCfg.localZone}\"" ] ++ map (d: "\"${d}\"") dnsCfg.privateDomains;
 
               # Local zone for LAN
               local-zone = "\"${dnsCfg.localZone}\" static";

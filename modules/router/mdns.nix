@@ -12,10 +12,20 @@ _: {
       inherit (internal) lanDevice;
       enabled = cfg.enable && mdnsCfg.enable;
 
+      # VLAN bridges that opted into mDNS via per-segment `mdns = true`
+      mdnsNetworkBridges =
+        if cfg.networks.enable then
+          lib.mapAttrsToList (name: _: "br-${name}") (
+            lib.filterAttrs (_: seg: seg.mdns && seg.vlan != null) cfg.networks.segments
+          )
+        else
+          [ ];
+
       # Build list of interfaces to allow mDNS on
       mdnsInterfaces = [
         lanDevice
       ]
+      ++ mdnsNetworkBridges
       ++ mdnsCfg.extraInterfaces;
     in
     {
@@ -84,6 +94,21 @@ _: {
           ) mdnsCfg.extraInterfaces;
           message = "router: mDNS extraInterfaces must not include isolated VLAN bridges — this would leak service discovery across security boundaries";
         };
+
+        # Export firewall rules for injection into the main filterV4/filterV6 input chains.
+        # mDNS rules MUST be in the main filter tables — separate nftables tables with
+        # their own base chains don't override the main chain's policy drop verdict.
+        # In nftables, every base chain on the same hook evaluates independently and
+        # ALL must accept for a packet to pass.
+        features.router._internal.mdnsFirewall = {
+          inputRules = lib.concatMapStringsSep "\n" (
+            iface: ''iifname "${iface}" udp dport 5353 accept comment "mDNS ${iface}"''
+          ) mdnsInterfaces;
+          inputRulesV6 = lib.concatMapStringsSep "\n" (
+            iface: ''iifname "${iface}" udp dport 5353 accept comment "mDNS IPv6 ${iface}"''
+          ) mdnsInterfaces;
+        };
+
         services.avahi = {
           enable = true;
 
@@ -111,38 +136,6 @@ _: {
           # Domain settings
           domainName = "local";
           browseDomains = [ "local" ];
-        };
-
-        # Add firewall rules for mDNS (UDP 5353) in a separate table
-        # Priority -10 ensures these rules are evaluated before the main filter (priority 0)
-        networking.nftables.tables.mdnsV4 = {
-          family = "ip";
-          content = ''
-            set mdns_ifaces {
-              typeof iifname
-              elements = { ${lib.concatMapStringsSep ", " (i: ''"${i}"'') mdnsInterfaces} }
-            }
-
-            chain input {
-              type filter hook input priority -10; policy accept;
-              iifname @mdns_ifaces udp dport 5353 accept comment "mDNS"
-            }
-          '';
-        };
-
-        networking.nftables.tables.mdnsV6 = lib.mkIf cfg.ipv6.enable {
-          family = "ip6";
-          content = ''
-            set mdns_ifaces {
-              typeof iifname
-              elements = { ${lib.concatMapStringsSep ", " (i: ''"${i}"'') mdnsInterfaces} }
-            }
-
-            chain input {
-              type filter hook input priority -10; policy accept;
-              iifname @mdns_ifaces udp dport 5353 accept comment "mDNS IPv6"
-            }
-          '';
         };
       };
     };

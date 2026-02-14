@@ -170,6 +170,16 @@ _: {
                   example = [ "iot" ];
                   description = "Networks this one can initiate connections to";
                 };
+
+                mdns = lib.mkOption {
+                  type = lib.types.bool;
+                  default = false;
+                  description = ''
+                    Enable mDNS/service discovery on this network segment.
+                    Allows devices on this VLAN to be discovered via AirPlay, Chromecast, etc.
+                    Only meaningful for VLAN networks (main LAN always has mDNS).
+                  '';
+                };
               };
             })
           );
@@ -246,6 +256,12 @@ _: {
                 message = "Network ${net.name}: cannot reference itself in allowAccessFrom";
               }) net.allowAccessFrom
             ) networkList)
+          ++
+            # mdns only valid on VLAN networks (main LAN always has mDNS)
+            (map (net: {
+              assertion = !net.mdns || net.vlan != null;
+              message = "Network ${net.name}: mdns can only be enabled on VLAN networks (main LAN already has mDNS)";
+            }) networkList)
           ++ [
             # Unique VLAN IDs
             {
@@ -319,6 +335,13 @@ _: {
                     netdevConfig = {
                       Kind = "bridge";
                       Name = netBridge net;
+                    };
+                    # Disable IGMP snooping on discovery-enabled bridges so reflected
+                    # mDNS/SSDP multicast floods to all ports. Phones don't send IGMP
+                    # joins for link-local multicast (224.0.0.x), causing snooping to
+                    # silently drop reflected discovery packets.
+                    bridgeConfig = lib.mkIf net.mdns {
+                      MulticastSnooping = false;
                     };
                   };
                 }) vlanNetworks

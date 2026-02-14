@@ -179,7 +179,7 @@
         #     };
         #   };
         # };
-        wireguard-home = {
+        pp-wg = {
           module = {
             name = "wireguard";
             input = "clan-core";
@@ -189,6 +189,8 @@
               settings.endpoint = "vpn.prestonperanich.com";
             };
             peer.machines = {
+              pp-nas1 = { };
+              pp-wsl1 = { };
               pp-ml1 = { };
               peranpl1-ml1 = { };
               peranpl1-ml2 = { };

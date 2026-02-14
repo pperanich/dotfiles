@@ -9,4 +9,5 @@
   ai-buddy = pkgs.callPackage ./ai-buddy { };
   devai = pkgs.callPackage ./devai { };
   update-display = pkgs.callPackage ./update-display { };
+  udp-broadcast-relay-redux = pkgs.callPackage ./udp-broadcast-relay-redux { };
 }

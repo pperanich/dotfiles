@@ -105,6 +105,11 @@ _: {
                 Kind = "bridge";
                 Name = "br-lan";
               };
+              # Disable IGMP snooping so reflected mDNS/SSDP multicast floods
+              # to all bridge ports. Phones don't send IGMP joins for link-local
+              # multicast (224.0.0.x), so snooping silently drops reflected
+              # discovery packets before they reach clients.
+              bridgeConfig.MulticastSnooping = false;
             };
           };
 

@@ -22,10 +22,24 @@ _: {
           natRules = "";
         };
 
+      # Get mDNS firewall rules if mDNS is enabled
+      mdnsFw =
+        internal.mdnsFirewall or {
+          inputRules = "";
+          inputRulesV6 = "";
+        };
+
       # Get monitoring firewall rules if monitoring is enabled
       monFw =
         internal.monitoringFirewall or {
           inputRules = "";
+        };
+
+      # Get SSDP relay firewall rules if enabled
+      ssdpFw =
+        internal.ssdpFirewall or {
+          inputRules = "";
+          forwardRules = "";
         };
 
       # Get Unifi controller firewall rules if enabled
@@ -78,6 +92,19 @@ _: {
           )
         ) machinesByName
       );
+
+      # Hairpin NAT: DNAT rules for LAN clients accessing port-forwarded services via the public IP
+      hairpinDnatRules = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          _: machine:
+          lib.concatStringsSep "\n" (
+            map (
+              pf:
+              "iifname \"${lanDevice}\" ${pf.protocol} dport ${toString pf.port} dnat to ${lanSubnet}.${toString machine.ip} comment \"Hairpin DNAT\""
+            ) machine.portForwards
+          )
+        ) machinesByName
+      );
     in
     {
       options.features.router.firewall = {
@@ -105,6 +132,13 @@ _: {
             default = [ ];
             example = [ 51820 ];
             description = "UDP ports to open on WAN";
+          };
+        };
+        hairpinNat = {
+          enable = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Enable hairpin NAT (NAT reflection) so LAN clients can access WAN-facing services via the router's public IP";
           };
         };
         rateLimiting = {
@@ -196,6 +230,12 @@ _: {
                     iifname "${cfg.debugUplink.interface}" tcp dport 22 accept comment "Debug uplink: SSH only"
                   ''}
 
+                  # mDNS input rules (injected from mdns.nix)
+                  ${mdnsFw.inputRules}
+
+                  # SSDP relay input rules (injected from ssdp-relay.nix)
+                  ${ssdpFw.inputRules}
+
                   # Network/VLAN input rules (injected)
                   ${netFw.inputRules}
 
@@ -227,6 +267,14 @@ _: {
                       ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''
                   )}
 
+                  # Hairpin NAT: accept WAN-facing ports from LAN (for router-local services like WireGuard)
+                  ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.tcp != [ ]) ''
+                    iifname "${lanDevice}" tcp dport { ${tcpPortsStr} } accept comment "Hairpin: open TCP ports from LAN"
+                  ''}
+                  ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.udp != [ ]) ''
+                    iifname "${lanDevice}" udp dport { ${udpPortsStr} } accept comment "Hairpin: open UDP ports from LAN"
+                  ''}
+
                   # L1: Log dropped packets for forensics (rate limited to prevent log flooding)
                   limit rate 5/minute burst 10 packets log prefix "nft-drop-input: " level info
                 }
@@ -254,6 +302,9 @@ _: {
                   # Port forwarding rules
                   ${forwardRules}
 
+                  # SSDP relay forwarding rules (injected from ssdp-relay.nix)
+                  ${ssdpFw.forwardRules}
+
                   # Network/VLAN forwarding rules (injected)
                   ${netFw.forwardRules}
 
@@ -268,11 +319,17 @@ _: {
                 chain prerouting {
                   type nat hook prerouting priority -100;
                   ${dnatRules}
+                  # Hairpin NAT: DNAT for LAN clients accessing port-forwarded services via public IP
+                  ${lib.optionalString fwCfg.hairpinNat.enable hairpinDnatRules}
                 }
                 chain postrouting {
                   type nat hook postrouting priority 100;
                   # M1: Scoped to RFC1918 — prevents NAT of unexpected traffic from routing misconfigs
                   ip saddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } oifname "${wan}" masquerade
+                  # Hairpin NAT: masquerade LAN-to-LAN DNAT'd traffic so return path goes through router
+                  ${lib.optionalString fwCfg.hairpinNat.enable ''
+                    iifname "${lanDevice}" oifname "${lanDevice}" ct status dnat masquerade comment "Hairpin NAT"
+                  ''}
                   ${netFw.natRules}
                 }
               '';
@@ -312,6 +369,9 @@ _: {
                   iifname "${lanDevice}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
                   iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
                   iifname "${lanDevice}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
+
+                  # mDNS input rules (injected from mdns.nix)
+                  ${mdnsFw.inputRulesV6}
 
                   # Trusted interfaces
                   ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
@@ -375,6 +435,12 @@ _: {
         systemd.services.nftables = {
           before = lib.mkForce [ ];
           after = [ "network-pre.target" ];
+          # Force restart instead of reload on config changes.
+          # NixOS defaults to X-ReloadIfChanged=true, but nftables reload cannot
+          # update flowtable device bindings — the kernel rejects in-place changes
+          # to live flowtable devices, causing the entire reload to fail silently
+          # (old ruleset stays active, new rules never apply).
+          reloadIfChanged = lib.mkForce false;
         };
 
         # Flow offload via NixOS nftables module - declarative and cleaner

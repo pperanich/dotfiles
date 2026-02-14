@@ -31,7 +31,7 @@
   ]);
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "pperanich@192.168.0.161";
+  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.161";
   clan.core.networking.buildHost = "root@192.168.0.184";
 
   # Networking configuration

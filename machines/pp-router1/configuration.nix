@@ -77,6 +77,13 @@ in
       openPorts.udp = [ 51820 ];
       trustedInterfaces = [ "pp-wg" ];
       hairpinNat.enable = true;
+      # Open HTTPS for Caddy on LAN (WireGuard is already trusted via @trusted_ifaces)
+      extraInputRules = ''
+        iifname "br-lan" tcp dport 443 accept comment "Caddy HTTPS from LAN"
+      '';
+      extraInputRulesV6 = ''
+        iifname "br-lan" tcp dport 443 accept comment "Caddy HTTPS from LAN"
+      '';
     };
 
     # Network interfaces
@@ -194,21 +201,6 @@ in
     ClientAliveCountMax = 2;
     MaxStartups = "10:30:60"; # Rate limit: start:rate:full
   };
-
-  # Open HTTPS for Caddy on LAN (WireGuard is already trusted)
-  # Injected into the router firewall's input chain via _internal
-  networking.nftables.tables.filterV4.content = lib.mkAfter ''
-    chain caddy-input {
-      type filter hook input priority -1; policy accept;
-      iifname "br-lan" tcp dport 443 accept comment "Caddy HTTPS from LAN"
-    }
-  '';
-  networking.nftables.tables.filterV6.content = lib.mkAfter ''
-    chain caddy-input {
-      type filter hook input priority -1; policy accept;
-      iifname "br-lan" tcp dport 443 accept comment "Caddy HTTPS from LAN"
-    }
-  '';
 
   # Declarative Cloudflare DNS records for internal services
   # Records point to private IPs — unreachable from the public internet.

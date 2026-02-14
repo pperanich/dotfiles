@@ -134,6 +134,16 @@ _: {
             description = "UDP ports to open on WAN";
           };
         };
+        extraInputRules = lib.mkOption {
+          type = lib.types.lines;
+          default = "";
+          description = "Additional nftables rules injected into the IPv4 input chain";
+        };
+        extraInputRulesV6 = lib.mkOption {
+          type = lib.types.lines;
+          default = "";
+          description = "Additional nftables rules injected into the IPv6 input chain";
+        };
         hairpinNat = {
           enable = lib.mkOption {
             type = lib.types.bool;
@@ -244,6 +254,9 @@ _: {
 
                   # Unifi controller input rules (injected)
                   ${unifiFw.inputRules}
+
+                  # Machine-specific input rules
+                  ${fwCfg.extraInputRules}
 
                   # WAN input rules
                   ${
@@ -376,6 +389,9 @@ _: {
 
                   # Trusted interfaces
                   ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
+
+                  # Machine-specific input rules
+                  ${fwCfg.extraInputRulesV6}
 
                   # WAN input rules - ICMPv6 required for IPv6 operation
                   # Rate limit echo-request to prevent ping floods

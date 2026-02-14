@@ -94,9 +94,7 @@
 
     # Development Tools
     neovim-nightly-overlay = {
-      url = "github:pperanich/neovim-nightly-overlay";
-      # url = "path:/Users/peranpl1/Documents/repos/oss/neovim-nightly-overlay";
-      # url = "github:nix-community/neovim-nightly-overlay";
+      url = "github:nix-community/neovim-nightly-overlay";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";

@@ -15,7 +15,7 @@
     base
     sops
 
-    # User setup
+    # User setup (headless — no desktop apps/fonts)
     pperanich
 
     # Development environment (minimal for WSL)
@@ -34,6 +34,8 @@
     enableRecommendedDefaults = false;
     deployment.requireExplicitUpdate = true;
   };
+
+  features.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "x86_64-linux";
 

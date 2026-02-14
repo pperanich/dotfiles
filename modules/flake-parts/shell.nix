@@ -23,6 +23,9 @@
 
           # treefmt with config defined in fmt.nix
           config.treefmt.build.wrapper
+
+          # WireGuard peer onboarding
+          (pkgs.callPackage ../../pkgs/wg-add-peer { })
           # ]
           # ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           #   pkgs.age-plugin-se # Secure Enclave plugin - only works on macOS, requires Swift to build

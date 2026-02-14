@@ -79,6 +79,7 @@
 
         # System auto-upgrade (NixOS specific) - disabled by default
         # system.autoUpgrade.enable = false;
+        environment.systemPackages = [ pkgs.ghostty.terminfo ];
 
         nixpkgs = {
           config = {

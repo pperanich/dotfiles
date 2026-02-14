@@ -17,13 +17,15 @@
     base
     sops
 
-    # User setup
+    # User setup (headless — no desktop apps/fonts)
     pperanich
 
     # System utilities
     fileExploration
     networkUtilities
   ]);
+
+  features.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "aarch64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-rpi1";

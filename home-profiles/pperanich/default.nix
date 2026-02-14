@@ -2,33 +2,43 @@
 {
   homeManager,
   config,
+  desktop ? true,
   ...
 }:
 {
-  imports = with homeManager; [
-    # Core
-    base
-    sops
+  imports =
+    with homeManager;
+    [
+      # Core
+      base
+      sops
 
-    # Shell
-    zsh
+      # Shell
+      zsh
 
-    # Desktop
-    fonts
-    desktopApplications
+      # Editors
+      nvim
 
-    # Editors
-    nvim
-    vscode
+      # Languages
+      rust
 
-    # Languages
-    rust
+      tools
 
-    tools
-
-    # Services
-    opencode
-  ];
+      # Services
+      opencode
+    ]
+    ++ (
+      if desktop then
+        with homeManager;
+        [
+          # Desktop
+          fonts
+          desktopApplications
+          vscode
+        ]
+      else
+        [ ]
+    );
 
   # User identity
   home.username = "pperanich";

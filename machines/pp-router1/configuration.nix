@@ -21,11 +21,14 @@ in
     base
     sops
 
-    # User setup
+    # User setup (headless — no desktop apps/fonts)
     pperanich
 
     # Router functionality
     router
+
+    # Cloudflare DNS sync
+    cfDns
 
     # Development environment
     rust
@@ -38,6 +41,8 @@ in
     # docker
     # qemu
   ]);
+
+  features.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@10.0.0.1";
@@ -199,20 +204,71 @@ in
     }
   '';
 
+  # Declarative Cloudflare DNS records for internal services
+  # Records point to private IPs — unreachable from the public internet.
+  # LAN clients resolve via Unbound (10.0.0.1), VPN clients via public DNS + WireGuard.
+  # Synced every 12h via systemd timer. Manual: systemctl start cf-dns-sync
+  services.cf-dns = {
+    enable = true;
+    zone = "prestonperanich.com";
+    records = [
+      # ntopng — network monitoring
+      {
+        type = "A";
+        name = "ntopng.prestonperanich.com";
+        content = "10.0.0.1";
+      }
+      {
+        type = "AAAA";
+        name = "ntopng.prestonperanich.com";
+        content = wgAddress;
+      }
+      # unifi — Ubiquiti controller
+      {
+        type = "A";
+        name = "unifi.prestonperanich.com";
+        content = "10.0.0.1";
+      }
+      {
+        type = "AAAA";
+        name = "unifi.prestonperanich.com";
+        content = wgAddress;
+      }
+      # immich — photo/video management on pp-nas1
+      {
+        type = "A";
+        name = "immich.prestonperanich.com";
+        content = "10.0.0.1";
+      }
+      {
+        type = "AAAA";
+        name = "immich.prestonperanich.com";
+        content = wgAddress;
+      }
+      # nextcloud — file sync & collaboration on pp-nas1
+      {
+        type = "A";
+        name = "nextcloud.prestonperanich.com";
+        content = "10.0.0.1";
+      }
+      {
+        type = "AAAA";
+        name = "nextcloud.prestonperanich.com";
+        content = wgAddress;
+      }
+    ];
+  };
+
   # Caddy reverse proxy for internal services
   # Provides HTTPS via Cloudflare DNS challenge — no public ports exposed
   # Access from LAN (10.0.0.1) and WireGuard VPN
   #
   # Prerequisites:
-  #   1. Add cloudflare_api_token to sops/secrets.yaml (Zone:DNS:Edit permission)
+  #   1. Add cloudflare_api_token to sops/secrets.yaml (Zone:DNS:Edit + Zone:Zone:Read)
   #   2. Build once to get correct Caddy plugin hash (set hash = "" to trigger)
   #
-  # Manual Cloudflare DNS records (set once, proxy OFF):
-  #   ntopng.prestonperanich.com  → A: 10.0.0.1    AAAA: <wgAddress>
-  #   unifi.prestonperanich.com   → A: 10.0.0.1    AAAA: <wgAddress>
-  # These point to private IPs — unreachable from the public internet.
-  # When adding a new virtualHost below, create matching DNS records.
-  sops.secrets.cloudflare-api-token = { };
+  # DNS records are managed declaratively above via services.cf-dns.
+  # When adding a new virtualHost below, add matching records above.
 
   sops.templates."caddy.env" = {
     content = ''
@@ -259,32 +315,64 @@ in
           }
         '';
       };
+
+      # Immich — photo/video management on pp-nas1
+      "immich.prestonperanich.com" = {
+        listenAddresses = [
+          "10.0.0.1"
+          wgAddress # WireGuard VPN
+        ];
+        extraConfig = ''
+          reverse_proxy http://10.0.0.105:2283 {
+            # Large photo/video uploads
+            header_up X-Forwarded-Proto {scheme}
+          }
+          request_body {
+            max_size 50G
+          }
+        '';
+      };
+
+      # Nextcloud — file sync & collaboration on pp-nas1
+      "nextcloud.prestonperanich.com" = {
+        listenAddresses = [
+          "10.0.0.1"
+          wgAddress # WireGuard VPN
+        ];
+        extraConfig = ''
+          reverse_proxy http://10.0.0.105:80 {
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-For {remote_host}
+          }
+          request_body {
+            max_size 16G
+          }
+        '';
+      };
     };
   };
 
-  # External WireGuard peers (non-clan devices)
-  # These merge with clan-managed peers in the systemd-networkd .netdev file
-  # Phone configs + QR codes: see /tmp/wg-phones/ on the build host
-  systemd.network.netdevs."40-pp-wg".wireguardPeers = [
-    {
-      # Phone 1 (Preston's iPhone)
-      PublicKey = "As57FlqVRVhD9E4sKQ+f+5IvaHOOOYDRA4Pe49d8uHU=";
-      AllowedIPs = [ "${wgPrefix}::f001/128" ];
+  # External WireGuard peers (non-clan devices like phones, tablets)
+  # Managed via wg-external-peers.json — use `wg-add-peer` in devshell to add new devices
+  # Private keys stored in sops/secrets.yaml, configs saved to docs/wireguard/
+  systemd.network.netdevs."40-pp-wg".wireguardPeers =
+    let
+      peers = builtins.fromJSON (builtins.readFile ./wg-external-peers.json);
+    in
+    lib.mapAttrsToList (_name: peer: {
+      PublicKey = peer.publicKey;
+      AllowedIPs = [ "${wgPrefix}::${peer.addressSuffix}/128" ];
       PersistentKeepalive = 25;
-    }
-    {
-      # Phone 2
-      PublicKey = "rdwhOOvOQpznSQIE1frgksRjgE+8hTyx28TgIxI7LwM=";
-      AllowedIPs = [ "${wgPrefix}::f002/128" ];
-      PersistentKeepalive = 25;
-    }
-  ];
+    }) peers;
 
-  # Add phone hostnames for convenience
-  networking.extraHosts = ''
-    ${wgPrefix}::f001 phone1.pp-wg
-    ${wgPrefix}::f002 phone2.pp-wg
-  '';
+  # Hostnames for external WireGuard peers
+  networking.extraHosts =
+    let
+      peers = builtins.fromJSON (builtins.readFile ./wg-external-peers.json);
+    in
+    lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (name: peer: "${wgPrefix}::${peer.addressSuffix} ${name}.pp-wg") peers
+    );
 
   # Minimal hardware config for headless router
   hardware = {

@@ -1,0 +1,12 @@
+{
+  "phone1": {
+    "name": "Preston's iPhone",
+    "publicKey": "As57FlqVRVhD9E4sKQ+f+5IvaHOOOYDRA4Pe49d8uHU=",
+    "addressSuffix": "f001"
+  },
+  "phone2": {
+    "name": "Phone 2",
+    "publicKey": "rdwhOOvOQpznSQIE1frgksRjgE+8hTyx28TgIxI7LwM=",
+    "addressSuffix": "f002"
+  }
+}

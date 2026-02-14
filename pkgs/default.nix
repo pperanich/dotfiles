@@ -10,4 +10,6 @@
   devai = pkgs.callPackage ./devai { };
   update-display = pkgs.callPackage ./update-display { };
   udp-broadcast-relay-redux = pkgs.callPackage ./udp-broadcast-relay-redux { };
+  wg-add-peer = pkgs.callPackage ./wg-add-peer { };
+  cf-dns = pkgs.callPackage ./cf-dns { };
 }

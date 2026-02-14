@@ -51,6 +51,12 @@ _: {
           example = [ "fdb4:63fa:2:aa00::/40 allow" ];
           description = "Additional access-control entries for Unbound (e.g., VPN subnets)";
         };
+        extraLocalData = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "pp-wsl1.lan. CNAME pperanich-wd1.lan." ];
+          description = "Additional local-data entries for Unbound (e.g., CNAME aliases)";
+        };
       };
 
       config = lib.mkIf enabled {
@@ -124,7 +130,8 @@ _: {
               ++ map (
                 machine: "\"${machine.name}.${dnsCfg.localZone} IN A ${lanSubnet}.${toString machine.ip}\""
               ) machines
-              ++ map (service: "\"${service.name} IN A ${service.target}\"") services;
+              ++ map (service: "\"${service.name} IN A ${service.target}\"") services
+              ++ map (d: "\"${d}\"") dnsCfg.extraLocalData;
             };
             forward-zone = [
               {

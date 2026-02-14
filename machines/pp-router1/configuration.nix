@@ -107,6 +107,10 @@ in
     dns.extraInterfaces = [ wgAddress ]; # Serve DNS to WireGuard VPN clients
     dns.extraAccessControl = [ "${wgPrefix}::/40 allow" ]; # Allow queries from WireGuard subnet
     dns.ddns.enable = true; # Auto-register DHCP client hostnames in DNS
+    dns.extraLocalData = [
+      # WSL mirrored networking shares the Windows host's IP
+      "pp-wsl1.lan. CNAME pp-wd1.lan."
+    ];
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
     # Network monitoring with ntopng

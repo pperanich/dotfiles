@@ -40,9 +40,15 @@ _: {
           # --- Parse active leases from Kea CSV ---
           # Columns: address,hwaddr,client_id,valid_lifetime,expire,subnet_id,
           #          fqdn_fwd,fqdn_rev,hostname,state,user_context,pool_id
-          declare -A CURRENT_LEASES
+          #
+          # Kea uses LFC (Lease File Cleanup) which splits data across two files:
+          #   .csv.2  = consolidated leases from last LFC run
+          #   .csv    = append-only journal of changes since last LFC
+          # We read .csv.2 first, then .csv on top so recent changes win.
+          declare -A CURRENT_LEASES=()
 
-          if [[ -f "$LEASE_FILE" ]]; then
+          for lf in "''${LEASE_FILE}.2" "$LEASE_FILE"; do
+            [[ -f "$lf" ]] || continue
             while IFS=',' read -r address _ _ _ expire _ _ _ hostname state _; do
               # Skip header and comments
               [[ "$address" =~ ^#|^address$ ]] && continue
@@ -64,11 +70,11 @@ _: {
 
               # Last lease for a given hostname wins
               CURRENT_LEASES["$hostname"]="$address"
-            done < "$LEASE_FILE"
-          fi
+            done < "$lf"
+          done
 
           # --- Load previously synced records ---
-          declare -A OLD_RECORDS
+          declare -A OLD_RECORDS=()
           if [[ -f "$TRACKING_FILE" ]]; then
             while IFS='=' read -r name addr; do
               [[ -n "$name" ]] && OLD_RECORDS["$name"]="$addr"
@@ -76,36 +82,45 @@ _: {
           fi
 
           # --- Add new / update changed records ---
-          for hostname in "''${!CURRENT_LEASES[@]}"; do
-            addr="''${CURRENT_LEASES[$hostname]}"
-            fqdn="''${hostname}.''${DOMAIN}."
+          if [[ ''${#CURRENT_LEASES[@]} -gt 0 ]]; then
+            for hostname in "''${!CURRENT_LEASES[@]}"; do
+              addr="''${CURRENT_LEASES[$hostname]}"
+              fqdn="''${hostname}.''${DOMAIN}."
 
-            if [[ "''${OLD_RECORDS[$hostname]:-}" != "$addr" ]]; then
-              # Remove stale entry if IP changed
-              if [[ -n "''${OLD_RECORDS[$hostname]:-}" ]]; then
-                "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
+              if [[ "''${OLD_RECORDS[$hostname]:-}" != "$addr" ]]; then
+                # Remove stale entry if IP changed
+                if [[ -n "''${OLD_RECORDS[$hostname]:-}" ]]; then
+                  "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
+                fi
+                if "$UNBOUND" local_data "$fqdn IN A $addr"; then
+                  echo "[ddns] $fqdn -> $addr"
+                else
+                  echo "[ddns] WARN: failed to add $fqdn -> $addr" >&2
+                fi
               fi
-              "$UNBOUND" local_data "$fqdn IN A $addr" || true
-              echo "[ddns] $fqdn -> $addr"
-            fi
 
-            # Mark as processed
-            unset "OLD_RECORDS[$hostname]" 2>/dev/null || true
-          done
+              # Mark as processed
+              unset "OLD_RECORDS[$hostname]" 2>/dev/null || true
+            done
+          fi
 
           # --- Remove records for expired/released leases ---
-          for hostname in "''${!OLD_RECORDS[@]}"; do
-            fqdn="''${hostname}.''${DOMAIN}."
-            "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
-            echo "[ddns] removed $fqdn"
-          done
+          if [[ ''${#OLD_RECORDS[@]} -gt 0 ]]; then
+            for hostname in "''${!OLD_RECORDS[@]}"; do
+              fqdn="''${hostname}.''${DOMAIN}."
+              "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
+              echo "[ddns] removed $fqdn"
+            done
+          fi
 
           # --- Persist current state (atomic write) ---
           TMPFILE="''${TRACKING_FILE}.tmp"
           : > "$TMPFILE"
-          for hostname in "''${!CURRENT_LEASES[@]}"; do
-            echo "''${hostname}=''${CURRENT_LEASES[$hostname]}" >> "$TMPFILE"
-          done
+          if [[ ''${#CURRENT_LEASES[@]} -gt 0 ]]; then
+            for hostname in "''${!CURRENT_LEASES[@]}"; do
+              echo "''${hostname}=''${CURRENT_LEASES[$hostname]}" >> "$TMPFILE"
+            done
+          fi
           mv "$TMPFILE" "$TRACKING_FILE"
 
           echo "[ddns] synced ''${#CURRENT_LEASES[@]} lease(s)"
@@ -166,9 +181,14 @@ _: {
             };
           };
 
+          # Clear tracking file when Unbound stops/restarts — dynamic records are
+          # lost on restart, so the next sync must re-add everything
+          systemd.services.unbound.serviceConfig.ExecStopPost =
+            "-${pkgs.coreutils}/bin/rm -f ${trackingFile}";
+
           # Timer — periodic fallback (catches missed inotify events)
           # partOf: when Unbound restarts (losing dynamic records), this timer
-          # also restarts and re-syncs within OnBootSec seconds
+          # also restarts and fires immediately (OnBootSec triggers from activation)
           systemd.timers.kea-unbound-sync = {
             description = "Periodic Kea→Unbound lease sync";
             wantedBy = [ "timers.target" ];

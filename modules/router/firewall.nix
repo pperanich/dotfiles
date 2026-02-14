@@ -297,6 +297,7 @@ _: {
                   ${lib.optionalString (allTrustedInterfaces != [ ]) ''
                     iifname @trusted_ifaces oifname "${lanDevice}" accept
                     iifname "${lanDevice}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname @trusted_ifaces accept comment "VPN peer-to-peer"
                     iifname @trusted_ifaces oifname "${wan}" accept''}
 
                   # Port forwarding rules
@@ -412,6 +413,7 @@ _: {
                   ${lib.optionalString (allTrustedInterfaces != [ ]) ''
                     iifname @trusted_ifaces oifname "${lanDevice}" accept
                     iifname "${lanDevice}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname @trusted_ifaces accept comment "VPN peer-to-peer"
                     iifname @trusted_ifaces oifname "${wan}" accept''}
 
                   # L1: Log dropped packets for forensics (rate limited)

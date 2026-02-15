@@ -10,6 +10,8 @@ let
   # WireGuard controller IPv6 address (derived from clan-managed prefix)
   wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
   wgAddress = "${wgPrefix}::1";
+  routerIp = config.features.router.lan.address;
+  nasHost = "pp-nas1.${config.features.router.dhcp.domainName}";
   domain = config.features.router.dhcp.domainName;
 in
 {
@@ -31,6 +33,10 @@ in
     # Cloudflare DNS sync
     cfDns
 
+    # Public services (via Cloudflare Tunnel)
+    cloudflareTunnel
+    vaultwarden
+
     # Development environment
     rust
 
@@ -44,6 +50,26 @@ in
   ]);
 
   features.pperanich.desktop = false;
+
+  # Vaultwarden password manager
+  features.vaultwarden = {
+    enable = true;
+    domain = "vault.prestonperanich.com";
+    environmentFiles = [
+      config.sops.secrets.vaultwarden-env.path
+      config.sops.templates."vaultwarden-admin.env".path
+    ];
+  };
+
+  # Cloudflare Tunnel — public service exposure without opening WAN ports
+  features.cloudflareTunnel = {
+    enable = true;
+    tunnelId = "REPLACE_WITH_TUNNEL_UUID"; # cf-tunnel-create homelab --account-id <id>
+    credentialsFile = config.sops.secrets.cloudflared-tunnel-credentials.path;
+    ingress = {
+      "vault.prestonperanich.com" = "http://localhost:8223"; # Caddy tunnel listener (blocks /admin)
+    };
+  };
 
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-router.pp-wg";
@@ -215,7 +241,7 @@ in
       {
         type = "A";
         name = "ntopng.prestonperanich.com";
-        content = "10.0.0.1";
+        content = routerIp;
       }
       {
         type = "AAAA";
@@ -226,7 +252,7 @@ in
       {
         type = "A";
         name = "unifi.prestonperanich.com";
-        content = "10.0.0.1";
+        content = routerIp;
       }
       {
         type = "AAAA";
@@ -237,7 +263,7 @@ in
       {
         type = "A";
         name = "immich.prestonperanich.com";
-        content = "10.0.0.1";
+        content = routerIp;
       }
       {
         type = "AAAA";
@@ -248,7 +274,7 @@ in
       {
         type = "A";
         name = "nextcloud.prestonperanich.com";
-        content = "10.0.0.1";
+        content = routerIp;
       }
       {
         type = "AAAA";
@@ -259,7 +285,7 @@ in
       {
         type = "A";
         name = "opencloud.prestonperanich.com";
-        content = "10.0.0.1";
+        content = routerIp;
       }
       {
         type = "AAAA";
@@ -270,11 +296,23 @@ in
       {
         type = "A";
         name = "home.prestonperanich.com";
-        content = "10.0.0.1";
+        content = routerIp;
       }
       {
         type = "AAAA";
         name = "home.prestonperanich.com";
+        content = wgAddress;
+      }
+      # vault — password manager (LAN/WG fast path)
+      # Public access uses Cloudflare Tunnel CNAME (managed in CF dashboard)
+      {
+        type = "A";
+        name = "vault.prestonperanich.com";
+        content = routerIp;
+      }
+      {
+        type = "AAAA";
+        name = "vault.prestonperanich.com";
         content = wgAddress;
       }
     ];
@@ -342,6 +380,20 @@ in
               description = "File sync (trial)";
             };
           }
+          {
+            "Vaultwarden" = {
+              icon = "vaultwarden";
+              href = "https://vault.prestonperanich.com";
+              description = "Password manager";
+            };
+          }
+          {
+            "Vaultwarden Admin" = {
+              icon = "vaultwarden";
+              href = "https://vault.prestonperanich.com/admin";
+              description = "Admin panel";
+            };
+          }
         ];
       }
     ];
@@ -373,6 +425,42 @@ in
   # DNS records are managed declaratively above via services.cf-dns.
   # When adding a new virtualHost below, add matching records above.
 
+  # --- Secrets wiring (sops-nix) ---
+  # Vaultwarden: env file with SMTP config + admin token template
+  sops.secrets.vaultwarden-env = {
+    owner = "vaultwarden";
+    group = "vaultwarden";
+    mode = "0400";
+  };
+  sops.secrets.vaultwarden-admin-token = {
+    owner = "vaultwarden";
+    mode = "0400";
+  };
+  sops.templates."vaultwarden-admin.env" = {
+    content = ''
+      ADMIN_TOKEN=${config.sops.placeholder."vaultwarden-admin-token"}
+    '';
+    owner = "vaultwarden";
+    group = "vaultwarden";
+  };
+
+  # Cloudflare Tunnel: credentials JSON (binary format, separate sops file)
+  sops.secrets.cloudflared-tunnel-credentials = {
+    sopsFile = lib.my.relativeToRoot "sops/cloudflared-tunnel.json";
+    format = "binary";
+    owner = "cloudflared";
+    mode = "0400";
+  };
+
+  # Cloudflare DNS sync: API token env file
+  sops.templates."cf-dns.env" = {
+    content = ''
+      CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
+    '';
+  };
+  services.cf-dns.environmentFile = config.sops.templates."cf-dns.env".path;
+
+  # Caddy: Cloudflare API token for DNS challenge
   sops.templates."caddy.env" = {
     content = ''
       CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
@@ -398,7 +486,7 @@ in
       # Homepage dashboard (runs on this router)
       "home.prestonperanich.com" = {
         listenAddresses = [
-          "10.0.0.1"
+          routerIp
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
@@ -408,7 +496,7 @@ in
 
       "ntopng.prestonperanich.com" = {
         listenAddresses = [
-          "10.0.0.1"
+          routerIp
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
@@ -418,7 +506,7 @@ in
 
       "unifi.prestonperanich.com" = {
         listenAddresses = [
-          "10.0.0.1"
+          routerIp
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
@@ -433,11 +521,11 @@ in
       # Immich — photo/video management on pp-nas1
       "immich.prestonperanich.com" = {
         listenAddresses = [
-          "10.0.0.1"
+          routerIp
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
-          reverse_proxy http://10.0.0.106:2283 {
+          reverse_proxy http://${nasHost}:2283 {
             # Large photo/video uploads
             header_up X-Forwarded-Proto {scheme}
           }
@@ -450,11 +538,11 @@ in
       # Nextcloud — file sync & collaboration on pp-nas1
       "nextcloud.prestonperanich.com" = {
         listenAddresses = [
-          "10.0.0.1"
+          routerIp
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
-          reverse_proxy http://10.0.0.106:80 {
+          reverse_proxy http://${nasHost}:80 {
             header_up X-Forwarded-Proto {scheme}
             header_up X-Forwarded-For {remote_host}
           }
@@ -467,15 +555,41 @@ in
       # OpenCloud — file sync trial on pp-nas1
       "opencloud.prestonperanich.com" = {
         listenAddresses = [
-          "10.0.0.1"
+          routerIp
           wgAddress # WireGuard VPN
         ];
         extraConfig = ''
-          reverse_proxy http://10.0.0.106:9200 {
+          reverse_proxy http://${nasHost}:9200 {
             header_up X-Forwarded-Proto {scheme}
           }
           request_body {
             max_size 16G
+          }
+        '';
+      };
+
+      # Vaultwarden — password manager (LAN + WireGuard: full access including /admin)
+      "vault.prestonperanich.com" = {
+        listenAddresses = [
+          routerIp
+          wgAddress # WireGuard VPN
+        ];
+        extraConfig = ''
+          reverse_proxy localhost:${toString config.features.vaultwarden.port}
+        '';
+      };
+
+      # Vaultwarden — public access via Cloudflare Tunnel (blocks /admin)
+      # CF Tunnel routes here instead of directly to Vaultwarden, so Caddy
+      # can strip /admin before it reaches the backend.
+      "vault-tunnel.prestonperanich.com:8223" = {
+        listenAddresses = [ "127.0.0.1" ];
+        extraConfig = ''
+          handle /admin* {
+            respond "Forbidden" 403
+          }
+          handle {
+            reverse_proxy localhost:${toString config.features.vaultwarden.port}
           }
         '';
       };

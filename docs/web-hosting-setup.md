@@ -1,5 +1,9 @@
 # Web Hosting Setup (TODO)
 
+> **Note:** This document is superseded by [Service Exposure Pathways](service-exposure.md)
+> for the recommended approach to exposing services. The DDNS information below remains
+> accurate for domains that require direct WAN IP resolution (e.g., WireGuard VPN endpoint).
+
 Guide for hosting websites from pp-router1 using DDNS + reverse proxy.
 
 ## Current State

@@ -10,9 +10,8 @@ _: {
       fwCfg = cfg.firewall;
       networksCfg = cfg.networks;
       internal = cfg._internal;
-      inherit (internal) lanSubnet;
+      inherit (cfg.lan) subnet bridgeName;
       wan = cfg.wan.interface;
-      inherit (internal) lanDevice;
 
       # Get network firewall rules (from networks.nix)
       netFw =
@@ -75,7 +74,7 @@ _: {
           lib.concatStringsSep "\n" (
             map (
               pf:
-              "iifname \"${wan}\" oifname \"${lanDevice}\" ip daddr ${lanSubnet}.${toString machine.ip} ${pf.protocol} dport ${toString pf.port} accept"
+              "iifname \"${wan}\" oifname \"${bridgeName}\" ip daddr ${subnet}.${toString machine.ip} ${pf.protocol} dport ${toString pf.port} accept"
             ) machine.portForwards
           )
         ) machinesByName
@@ -87,7 +86,7 @@ _: {
           lib.concatStringsSep "\n" (
             map (
               pf:
-              "iifname \"${wan}\" ${pf.protocol} dport ${toString pf.port} dnat to ${lanSubnet}.${toString machine.ip}"
+              "iifname \"${wan}\" ${pf.protocol} dport ${toString pf.port} dnat to ${subnet}.${toString machine.ip}"
             ) machine.portForwards
           )
         ) machinesByName
@@ -100,7 +99,7 @@ _: {
           lib.concatStringsSep "\n" (
             map (
               pf:
-              "iifname \"${lanDevice}\" ${pf.protocol} dport ${toString pf.port} dnat to ${lanSubnet}.${toString machine.ip} comment \"Hairpin DNAT\""
+              "iifname \"${bridgeName}\" ${pf.protocol} dport ${toString pf.port} dnat to ${subnet}.${toString machine.ip} comment \"Hairpin DNAT\""
             ) machine.portForwards
           )
         ) machinesByName
@@ -226,11 +225,11 @@ _: {
                   iifname "${wan}" tcp flags == 0x0 drop comment "NULL scan"
 
                   # LAN input rules
-                  iifname "${lanDevice}" udp dport 67 limit rate 10/second burst 50 packets accept comment "DHCP (rate limited)"
-                  iifname "${lanDevice}" tcp dport 53 accept comment "DNS TCP"
-                  iifname "${lanDevice}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
-                  iifname "${lanDevice}" udp dport { 53, 123 } accept comment "DNS, NTP UDP"
-                  iifname "${lanDevice}" icmp type { echo-request, echo-reply } accept
+                  iifname "${bridgeName}" udp dport 67 limit rate 10/second burst 50 packets accept comment "DHCP (rate limited)"
+                  iifname "${bridgeName}" tcp dport 53 accept comment "DNS TCP"
+                  iifname "${bridgeName}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
+                  iifname "${bridgeName}" udp dport { 53, 123 } accept comment "DNS, NTP UDP"
+                  iifname "${bridgeName}" icmp type { echo-request, echo-reply } accept
 
                   # Trusted interfaces (VPN tunnels, etc.)
                   ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
@@ -282,10 +281,10 @@ _: {
 
                   # Hairpin NAT: accept WAN-facing ports from LAN (for router-local services like WireGuard)
                   ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.tcp != [ ]) ''
-                    iifname "${lanDevice}" tcp dport { ${tcpPortsStr} } accept comment "Hairpin: open TCP ports from LAN"
+                    iifname "${bridgeName}" tcp dport { ${tcpPortsStr} } accept comment "Hairpin: open TCP ports from LAN"
                   ''}
                   ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.udp != [ ]) ''
-                    iifname "${lanDevice}" udp dport { ${udpPortsStr} } accept comment "Hairpin: open UDP ports from LAN"
+                    iifname "${bridgeName}" udp dport { ${udpPortsStr} } accept comment "Hairpin: open UDP ports from LAN"
                   ''}
 
                   # L1: Log dropped packets for forensics (rate limited to prevent log flooding)
@@ -303,13 +302,13 @@ _: {
                   ct state invalid drop
 
                   # LAN forwarding
-                  iifname "${lanDevice}" oifname "${wan}" accept
-                  iifname "${lanDevice}" oifname "${lanDevice}" accept
+                  iifname "${bridgeName}" oifname "${wan}" accept
+                  iifname "${bridgeName}" oifname "${bridgeName}" accept
 
                   # Trusted interfaces
                   ${lib.optionalString (allTrustedInterfaces != [ ]) ''
-                    iifname @trusted_ifaces oifname "${lanDevice}" accept
-                    iifname "${lanDevice}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname "${bridgeName}" accept
+                    iifname "${bridgeName}" oifname @trusted_ifaces accept
                     iifname @trusted_ifaces oifname @trusted_ifaces accept comment "VPN peer-to-peer"
                     iifname @trusted_ifaces oifname "${wan}" accept''}
 
@@ -342,7 +341,7 @@ _: {
                   ip saddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } oifname "${wan}" masquerade
                   # Hairpin NAT: masquerade LAN-to-LAN DNAT'd traffic so return path goes through router
                   ${lib.optionalString fwCfg.hairpinNat.enable ''
-                    iifname "${lanDevice}" oifname "${lanDevice}" ct status dnat masquerade comment "Hairpin NAT"
+                    iifname "${bridgeName}" oifname "${bridgeName}" ct status dnat masquerade comment "Hairpin NAT"
                   ''}
                   ${netFw.natRules}
                 }
@@ -379,10 +378,10 @@ _: {
                   } drop comment "IPv6 anti-spoofing bogons"
 
                   # LAN input rules
-                  iifname "${lanDevice}" tcp dport 53 accept comment "DNS TCP"
-                  iifname "${lanDevice}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
-                  iifname "${lanDevice}" udp dport 53 accept comment "DNS UDP"
-                  iifname "${lanDevice}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
+                  iifname "${bridgeName}" tcp dport 53 accept comment "DNS TCP"
+                  iifname "${bridgeName}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
+                  iifname "${bridgeName}" udp dport 53 accept comment "DNS UDP"
+                  iifname "${bridgeName}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
 
                   # mDNS input rules (injected from mdns.nix)
                   ${mdnsFw.inputRulesV6}
@@ -406,7 +405,7 @@ _: {
 
                   # RA Guard: Block rogue router advertisements from LAN clients (input chain)
                   # Note: This only protects the router — see raGuard bridge table for LAN client protection
-                  iifname "${lanDevice}" icmpv6 type nd-router-advert drop comment "RA Guard - block rogue RAs from LAN"
+                  iifname "${bridgeName}" icmpv6 type nd-router-advert drop comment "RA Guard - block rogue RAs from LAN"
 
                   # L1: Log dropped packets for forensics (rate limited)
                   limit rate 5/minute burst 10 packets log prefix "nft6-drop-input: " level info
@@ -423,12 +422,12 @@ _: {
                   ct state invalid drop
 
                   # LAN forwarding
-                  iifname "${lanDevice}" oifname "${wan}" accept
+                  iifname "${bridgeName}" oifname "${wan}" accept
 
                   # Trusted interfaces
                   ${lib.optionalString (allTrustedInterfaces != [ ]) ''
-                    iifname @trusted_ifaces oifname "${lanDevice}" accept
-                    iifname "${lanDevice}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname "${bridgeName}" accept
+                    iifname "${bridgeName}" oifname @trusted_ifaces accept
                     iifname @trusted_ifaces oifname @trusted_ifaces accept comment "VPN peer-to-peer"
                     iifname @trusted_ifaces oifname "${wan}" accept''}
 

@@ -82,21 +82,24 @@ _: {
           fi
 
           # --- Add new / update changed records ---
+          # Always call local_data for every lease (idempotent) — self-heals after
+          # Unbound restarts even if the tracking file wasn't properly cleared.
           if [[ ''${#CURRENT_LEASES[@]} -gt 0 ]]; then
             for hostname in "''${!CURRENT_LEASES[@]}"; do
               addr="''${CURRENT_LEASES[$hostname]}"
               fqdn="''${hostname}.''${DOMAIN}."
 
-              if [[ "''${OLD_RECORDS[$hostname]:-}" != "$addr" ]]; then
-                # Remove stale entry if IP changed
-                if [[ -n "''${OLD_RECORDS[$hostname]:-}" ]]; then
-                  "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
-                fi
-                if "$UNBOUND" local_data "$fqdn IN A $addr"; then
-                  echo "[ddns] $fqdn -> $addr"
-                else
-                  echo "[ddns] WARN: failed to add $fqdn -> $addr" >&2
-                fi
+              # Remove stale entry if IP changed
+              if [[ -n "''${OLD_RECORDS[$hostname]:-}" && "''${OLD_RECORDS[$hostname]}" != "$addr" ]]; then
+                "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
+                echo "[ddns] $fqdn -> $addr (updated)"
+              elif [[ -z "''${OLD_RECORDS[$hostname]:-}" ]]; then
+                echo "[ddns] $fqdn -> $addr"
+              fi
+
+              # Ensure record exists (idempotent — handles stale tracking file)
+              if ! "$UNBOUND" local_data "$fqdn IN A $addr" >/dev/null 2>&1; then
+                echo "[ddns] WARN: failed to add $fqdn -> $addr" >&2
               fi
 
               # Mark as processed
@@ -182,9 +185,10 @@ _: {
           };
 
           # Clear tracking file when Unbound stops/restarts — dynamic records are
-          # lost on restart, so the next sync must re-add everything
+          # lost on restart, so the next sync must re-add everything.
+          # '+' runs with full privileges (file is root-owned, Unbound runs as unbound user)
           systemd.services.unbound.serviceConfig.ExecStopPost =
-            "-${pkgs.coreutils}/bin/rm -f ${trackingFile}";
+            "+-${pkgs.coreutils}/bin/rm -f ${trackingFile}";
 
           # Timer — periodic fallback (catches missed inotify events)
           # partOf: when Unbound restarts (losing dynamic records), this timer

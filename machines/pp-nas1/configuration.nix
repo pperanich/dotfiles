@@ -1,5 +1,6 @@
 {
   inputs,
+  config,
   modules,
   pkgs,
   lib,
@@ -55,7 +56,7 @@
     hostName = "nextcloud.prestonperanich.com";
     datadir = "/tank/appdata/nextcloud";
     trustedProxies = [ "10.0.0.1" ];
-    extraTrustedDomains = [ "10.0.0.106" ];
+    extraTrustedDomains = [ "pp-nas1.home.arpa" ];
     extraApps = [
       "calendar"
       "contacts"
@@ -88,6 +89,27 @@
     enableHardwareTranscoding = true;
     enableMachineLearning = false;
   };
+
+  # --- Secrets wiring (sops-nix) ---
+  # Nextcloud: admin password file
+  sops.secrets.nextcloud-admin-pass = {
+    owner = "nextcloud";
+    mode = "0400";
+  };
+  features.nextcloud.adminPasswordFile = config.sops.secrets.nextcloud-admin-pass.path;
+
+  # OpenCloud: admin password via environment file template
+  sops.secrets.opencloud-admin-pass = {
+    owner = "opencloud";
+    mode = "0400";
+  };
+  sops.templates."opencloud.env" = {
+    content = ''
+      IDM_ADMIN_PASSWORD=${config.sops.placeholder."opencloud-admin-pass"}
+    '';
+    owner = "opencloud";
+  };
+  features.opencloud.environmentFile = config.sops.templates."opencloud.env".path;
 
   hardware = {
     enableRedistributableFirmware = true;

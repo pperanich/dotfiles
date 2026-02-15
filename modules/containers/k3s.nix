@@ -20,6 +20,10 @@ _: {
           default = "server";
           description = "K3s role: server or agent";
         };
+        tokenFile = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to file containing the K3s cluster token";
+        };
         serverAddr = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = null;
@@ -54,15 +58,8 @@ _: {
           inherit (cfg) role;
           inherit (cfg) clusterInit;
           inherit (cfg) serverAddr;
-          tokenFile = "/run/secrets/k3s-token";
+          inherit (cfg) tokenFile;
           extraFlags = (map (component: "--disable=${component}") cfg.disableComponents) ++ cfg.extraFlags;
-        };
-
-        # Secret management
-        sops.secrets.k3s-token = {
-          mode = "0400";
-          owner = "root";
-          group = "root";
         };
 
         # Firewall configuration

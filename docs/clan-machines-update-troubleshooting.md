@@ -295,6 +295,50 @@ boot.kernel.sysctl = {
 
 ---
 
+## Issue 7: `.home.arpa` Hostnames Don't Resolve on macOS
+
+### Symptoms
+
+```
+ping pp-nas1.home.arpa
+ping: cannot resolve pp-nas1.home.arpa: Unknown host
+```
+
+But the same hostname resolves fine from the router itself.
+
+### Root Cause
+
+macOS aggressively caches negative DNS responses (NXDOMAIN). If a `.home.arpa` lookup fails once (e.g., before the DDNS sync has populated Unbound), macOS caches the failure and continues returning "Unknown host" even after the DNS record exists.
+
+This commonly happens after deploying router config changes — Unbound restarts and loses dynamic DDNS records until the sync re-adds them.
+
+### Solution
+
+Flush the macOS DNS cache:
+
+```bash
+sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
+```
+
+If records are also missing on the router (verify with `dig @10.0.0.1 <hostname>.home.arpa`), force a DDNS re-sync:
+
+```bash
+ssh root@pp-router1.pp-wg "rm -f /run/kea-unbound-sync/records && systemctl start kea-unbound-sync"
+```
+
+### Verification
+
+```bash
+# Confirm the record exists on the router
+dig @10.0.0.1 pp-nas1.home.arpa +short
+
+# Confirm local resolution works
+dig pp-nas1.home.arpa +short
+ping pp-nas1.home.arpa
+```
+
+---
+
 ## General Debugging Tips
 
 1. **Add `-v` for verbose SSH output**:

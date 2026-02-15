@@ -49,6 +49,7 @@ nav = [
   { "Adding New Machines" = "adding-new-machines.md" },
   { "Secrets and Key Management" = "secrets-and-key-management.md" },
   { "Router Module" = "router-module.md" },
+  { "Service Exposure" = "service-exposure.md" },
   { "Web Hosting Setup" = "web-hosting-setup.md" },
   { "Troubleshooting" = "clan-machines-update-troubleshooting.md" },
 ]

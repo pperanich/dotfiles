@@ -4,7 +4,7 @@
 # Uses OpenID Connect for auth and stores metadata on the filesystem.
 #
 # Access: via Caddy reverse proxy on the router (e.g., opencloud.prestonperanich.com)
-# Admin: initial password injected via sops env file (INITIAL_ADMIN_PASSWORD)
+# Admin: initial password injected via environmentFile option
 _: {
   flake.modules.nixos.opencloud =
     {
@@ -46,22 +46,14 @@ _: {
           default = false;
           description = "Whether to open the firewall for OpenCloud.";
         };
+
+        environmentFile = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to environment file containing IDM_ADMIN_PASSWORD";
+        };
       };
 
       config = {
-        # Admin password from sops — raw secret, templated into env file
-        sops.secrets.opencloud-admin-pass = {
-          owner = "opencloud";
-          mode = "0400";
-        };
-
-        sops.templates."opencloud.env" = {
-          content = ''
-            IDM_ADMIN_PASSWORD=${config.sops.placeholder."opencloud-admin-pass"}
-          '';
-          owner = "opencloud";
-        };
-
         services.opencloud = {
           enable = true;
           inherit (cfg)
@@ -69,12 +61,21 @@ _: {
             address
             port
             stateDir
+            environmentFile
             ;
-          environmentFile = config.sops.templates."opencloud.env".path;
           environment = {
             # Disable TLS — Caddy on the router handles HTTPS termination
             OC_INSECURE = "true";
             PROXY_TLS = "false";
+          };
+        };
+
+        # Ensure state directory exists with correct ownership
+        systemd.tmpfiles.settings."10-opencloud" = {
+          ${cfg.stateDir}."d" = {
+            user = "opencloud";
+            group = "opencloud";
+            mode = "0750";
           };
         };
 

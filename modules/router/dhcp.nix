@@ -9,13 +9,13 @@ _: {
     let
       cfg = config.features.router;
       dhcpCfg = cfg.dhcp;
-      internal = cfg._internal;
-      inherit (internal) lanSubnet;
-      inherit (internal) lanCidr;
-      inherit (internal) routerIp;
-      inherit (internal) dhcpStart;
-      inherit (internal) dhcpEnd;
-      inherit (internal) lanDevice;
+      inherit (cfg._internal) dhcpStart dhcpEnd;
+      inherit (cfg.lan)
+        address
+        cidr
+        subnet
+        bridgeName
+        ;
       inherit (cfg) machines;
       enabled = cfg.enable && dhcpCfg.enable;
     in
@@ -50,7 +50,7 @@ _: {
             enable = true;
             settings = {
               interfaces-config = {
-                interfaces = [ lanDevice ];
+                interfaces = [ bridgeName ];
                 re-detect = true;
                 service-sockets-max-retries = 10;
                 service-sockets-retry-wait-time = 2000;
@@ -67,21 +67,21 @@ _: {
               subnet4 = [
                 {
                   id = 1;
-                  subnet = lanCidr;
+                  subnet = cidr;
                   pools = [ { pool = "${dhcpStart} - ${dhcpEnd}"; } ];
                   reservations = map (machine: {
                     hw-address = machine.mac;
-                    ip-address = "${lanSubnet}.${toString machine.ip}";
+                    ip-address = "${subnet}.${toString machine.ip}";
                     hostname = machine.name;
                   }) machines;
                   option-data = [
                     {
                       name = "routers";
-                      data = routerIp;
+                      data = address;
                     }
                     {
                       name = "domain-name-servers";
-                      data = routerIp;
+                      data = address;
                     }
                     {
                       name = "domain-name";
@@ -96,11 +96,11 @@ _: {
 
         systemd.services.kea-dhcp4-server =
           let
-            bridgeDevice = "sys-subsystem-net-devices-${utils.escapeSystemdPath lanDevice}.device";
+            bridgeDevice = "sys-subsystem-net-devices-${utils.escapeSystemdPath bridgeName}.device";
             # Wait for bridge to have carrier using netlink events (no polling).
             # br-lan gets its IP immediately via ConfigureWithoutCarrier, but Kea
             # needs the interface to be RUNNING (have carrier from a bridge member).
-            waitForCarrier = "${config.systemd.package}/lib/systemd/systemd-networkd-wait-online --interface=${lanDevice}:carrier --timeout=30";
+            waitForCarrier = "${config.systemd.package}/lib/systemd/systemd-networkd-wait-online --interface=${bridgeName}:carrier --timeout=30";
           in
           {
             wants = [
@@ -121,7 +121,7 @@ _: {
 
         # Ensure network-online waits for bridge to have carrier
         systemd.network.wait-online.extraArgs = [
-          "--interface=${lanDevice}:carrier"
+          "--interface=${bridgeName}:carrier"
         ];
       };
     };

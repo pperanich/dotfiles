@@ -19,6 +19,7 @@ Nix-based system configuration using the dendritic pattern with flake-parts and 
 
 ### Services (TODO)
 
+- [Service Exposure Pathways](service-exposure.md) - Private (Caddy/LAN/WG) and public (Cloudflare Tunnel) service access
 - [Web Hosting Setup](web-hosting-setup.md) - Self-hosting websites via DDNS + reverse proxy (in progress)
 
 ## Quick Start

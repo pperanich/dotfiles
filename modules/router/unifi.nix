@@ -9,14 +9,13 @@ _: {
     let
       cfg = config.features.router;
       unifiCfg = cfg.unifi;
-      internal = cfg._internal;
-      inherit (internal) lanDevice;
+      inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && unifiCfg.enable;
 
       # All LAN interfaces that need access to the controller
       # Main bridge + any VLAN bridges where APs might be
       controllerInterfaces = [
-        lanDevice
+        bridgeName
       ]
       ++ lib.optionals cfg.networks.enable (
         lib.mapAttrsToList (name: _: "br-${name}") (

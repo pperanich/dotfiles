@@ -11,5 +11,6 @@
   update-display = pkgs.callPackage ./update-display { };
   udp-broadcast-relay-redux = pkgs.callPackage ./udp-broadcast-relay-redux { };
   wg-add-peer = pkgs.callPackage ./wg-add-peer { };
+  cf-tunnel-create = pkgs.callPackage ./cf-tunnel-create { };
   cf-dns = pkgs.callPackage ./cf-dns { };
 }

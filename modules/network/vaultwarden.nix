@@ -1,5 +1,4 @@
 _: {
-  # NixOS system-level Vaultwarden configuration
   flake.modules.nixos.vaultwarden =
     {
       config,
@@ -11,6 +10,7 @@ _: {
     in
     {
       options.features.vaultwarden = {
+        enable = lib.mkEnableOption "Vaultwarden password manager";
         port = lib.mkOption {
           type = lib.types.port;
           default = 8222;
@@ -27,46 +27,58 @@ _: {
           example = "vault.example.com";
           description = "Domain name for Vaultwarden";
         };
+        ipHeader = lib.mkOption {
+          type = lib.types.str;
+          default = "X-Forwarded-For";
+          description = "Header containing the real client IP (set by reverse proxy)";
+        };
+        environmentFiles = lib.mkOption {
+          type = lib.types.listOf lib.types.path;
+          default = [ ];
+          description = "Environment files passed to the Vaultwarden systemd service (e.g. SMTP config, admin token)";
+        };
       };
 
-      config = {
-        # Vaultwarden service configuration
+      config = lib.mkIf cfg.enable {
         services.vaultwarden = {
           enable = true;
           config = {
             ROCKET_ADDRESS = cfg.address;
             ROCKET_PORT = cfg.port;
-            DOMAIN = lib.mkIf (cfg.domain != null) "https://${cfg.domain}";
             WEB_VAULT_ENABLED = true;
             SIGNUPS_ALLOWED = false;
+            INVITATIONS_ALLOWED = false;
+            SHOW_PASSWORD_HINT = false;
+            IP_HEADER = cfg.ipHeader;
+            LOGIN_RATELIMIT_SECONDS = 60;
+            LOGIN_RATELIMIT_MAX_BURST = 5;
+          }
+          // lib.optionalAttrs (cfg.domain != null) {
+            DOMAIN = "https://${cfg.domain}";
           };
-          environmentFile = "/run/secrets/vaultwarden-env";
         };
 
-        # Secret management
-        sops.secrets.vaultwarden-env = {
-          mode = "0400";
-          owner = "vaultwarden";
-          group = "vaultwarden";
-        };
+        systemd.services.vaultwarden.serviceConfig.EnvironmentFile = cfg.environmentFiles;
 
-        # Open firewall port if not binding to localhost
-        networking.firewall.allowedTCPPorts = lib.mkIf (cfg.address != "127.0.0.1") [
-          cfg.port
-        ];
+        networking.firewall.allowedTCPPorts =
+          lib.mkIf
+            (
+              !builtins.elem cfg.address [
+                "127.0.0.1"
+                "::1"
+              ]
+            )
+            [
+              cfg.port
+            ];
       };
     };
 
-  # Home Manager client tools
   flake.modules.homeManager.vaultwarden =
     { pkgs, ... }:
     {
       home.packages = with pkgs; [
-        # Bitwarden CLI for command-line access
         bitwarden-cli
-
-        # Browser integration (if needed)
-        # Note: Browser extensions are typically installed separately
       ];
     };
 }

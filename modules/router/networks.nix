@@ -8,9 +8,8 @@ _: {
     let
       cfg = config.features.router;
       netCfg = cfg.networks;
-      internal = cfg._internal;
       wan = cfg.wan.interface;
-      inherit (internal) lanDevice;
+      inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && netCfg.enable;
 
       # Convert networks attrset to list with names
@@ -21,7 +20,7 @@ _: {
 
       # Get interface name for a network (used in firewall rules)
       # For VLAN networks, this is the dedicated bridge; for main LAN, it's the main bridge
-      netIfaceName = net: if net.vlan != null then "br-${net.name}" else lanDevice;
+      netIfaceName = net: if net.vlan != null then "br-${net.name}" else bridgeName;
 
       # Get router IP for a network
       netRouterIp = net: "${net.subnet}.1";
@@ -30,10 +29,10 @@ _: {
       netCidr = net: "${net.subnet}.0/24";
 
       # Get bridge name - VLAN networks get their own bridge
-      netBridge = net: if net.vlan != null then "br-${net.name}" else lanDevice;
+      netBridge = net: if net.vlan != null then "br-${net.name}" else bridgeName;
 
       # Get VLAN interface name (the 802.1Q tagged interface on the main bridge)
-      netVlanIface = net: "${lanDevice}.${toString net.vlan}";
+      netVlanIface = net: "${bridgeName}.${toString net.vlan}";
 
       # Build input rules (services on router)
       mkInputRules =
@@ -72,8 +71,8 @@ _: {
             # ${net.name}: Trusted - full access to WAN, LAN, and all networks
             iifname "${iface}" oifname "${wan}" accept comment "${net.name} to WAN"
             ${lib.optionalString (net.vlan != null) ''
-              iifname "${iface}" oifname "${lanDevice}" accept comment "${net.name} to LAN"
-              iifname "${lanDevice}" oifname "${iface}" accept comment "LAN to ${net.name}"
+              iifname "${iface}" oifname "${bridgeName}" accept comment "${net.name} to LAN"
+              iifname "${bridgeName}" oifname "${iface}" accept comment "LAN to ${net.name}"
             ''}
             ${lib.concatMapStringsSep "\n" (
               n:

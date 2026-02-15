@@ -8,10 +8,7 @@ _: {
     let
       cfg = config.features.router;
       dnsCfg = cfg.dns;
-      internal = cfg._internal;
-      inherit (internal) lanSubnet;
-      inherit (internal) lanCidr;
-      inherit (internal) routerIp;
+      inherit (cfg.lan) subnet address cidr;
       inherit (cfg.ipv6) ulaPrefix;
       inherit (cfg) machines services;
       enabled = cfg.enable && dnsCfg.enable;
@@ -70,7 +67,7 @@ _: {
               interface = [
                 "127.0.0.1"
                 "::1"
-                routerIp
+                address
               ]
               ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1"
               ++ dnsCfg.extraInterfaces;
@@ -78,7 +75,7 @@ _: {
               access-control = [
                 "127.0.0.0/8 allow"
                 "::1 allow"
-                "${lanCidr} allow"
+                "${cidr} allow"
               ]
               ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::/64 allow"
               ++ dnsCfg.extraAccessControl
@@ -124,11 +121,11 @@ _: {
               # Local zone for LAN
               local-zone = "\"${dnsCfg.localZone}\" static";
               local-data = [
-                "\"${cfg.hostname}.${dnsCfg.localZone} IN A ${routerIp}\""
+                "\"${cfg.hostname}.${dnsCfg.localZone} IN A ${address}\""
               ]
               ++ lib.optional cfg.ipv6.enable "\"${cfg.hostname}.${dnsCfg.localZone} IN AAAA ${ulaPrefix}::1\""
               ++ map (
-                machine: "\"${machine.name}.${dnsCfg.localZone} IN A ${lanSubnet}.${toString machine.ip}\""
+                machine: "\"${machine.name}.${dnsCfg.localZone} IN A ${subnet}.${toString machine.ip}\""
               ) machines
               ++ map (service: "\"${service.name} IN A ${service.target}\"") services
               ++ map (d: "\"${d}\"") dnsCfg.extraLocalData;

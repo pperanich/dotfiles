@@ -4,7 +4,7 @@
 # Uses PostgreSQL + Redis for performance. Nginx handles PHP-FPM locally.
 #
 # Access: via Caddy reverse proxy on the router (e.g., nextcloud.prestonperanich.com)
-# Admin: log in with the admin credentials configured via sops
+# Admin: log in with the admin credentials configured via adminPasswordFile option
 _: {
   flake.modules.nixos.nextcloud =
     {
@@ -67,15 +67,14 @@ _: {
           ];
           description = "Nextcloud apps to install from nixpkgs (by attribute name).";
         };
+
+        adminPasswordFile = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to file containing the Nextcloud admin password";
+        };
       };
 
       config = {
-        # Admin password from sops
-        sops.secrets.nextcloud-admin-pass = {
-          owner = "nextcloud";
-          mode = "0400";
-        };
-
         services.nextcloud = {
           enable = true;
           package = pkgs.nextcloud32;
@@ -91,7 +90,7 @@ _: {
           config = {
             dbtype = "pgsql";
             adminuser = "admin";
-            adminpassFile = config.sops.secrets.nextcloud-admin-pass.path;
+            adminpassFile = cfg.adminPasswordFile;
           };
 
           settings = {
@@ -145,6 +144,15 @@ _: {
           ];
         };
         networking.firewall.allowedTCPPorts = [ 80 ];
+
+        # Ensure data directory exists with correct ownership
+        systemd.tmpfiles.settings."10-nextcloud" = {
+          ${cfg.datadir}."d" = {
+            user = "nextcloud";
+            group = "nextcloud";
+            mode = "0750";
+          };
+        };
 
         # Automatic database backups
         services.postgresqlBackup = {

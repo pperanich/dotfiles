@@ -60,6 +60,7 @@
     interop.register = true;
     startMenuLaunchers = true;
     usbip.enable = true;
+    wslConf.network.generateHosts = false;
     wslConf.network.generateResolvConf = true;
   };
 

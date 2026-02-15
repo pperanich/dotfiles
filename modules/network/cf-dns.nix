@@ -1,7 +1,7 @@
 # Declarative Cloudflare DNS record management
 #
 # Generates a JSON config at build time and syncs it to Cloudflare
-# via a systemd timer. Secrets injected at runtime via sops-nix.
+# via a systemd timer. API token injected at runtime via environmentFile.
 #
 # Usage in machine config:
 #   services.cf-dns = {
@@ -24,8 +24,6 @@ _: {
     }:
     let
       cfg = config.services.cf-dns;
-
-      cf-dns = pkgs.callPackage ../../pkgs/cf-dns { };
 
       configJson = pkgs.writeText "cf-dns-config.json" (
         builtins.toJSON {
@@ -93,32 +91,21 @@ _: {
           description = "How often to sync DNS records (systemd timer interval).";
         };
 
-        sopsSecretName = lib.mkOption {
-          type = lib.types.str;
-          default = "cloudflare-api-token";
-          description = "Name of the sops secret containing the Cloudflare API token.";
+        environmentFile = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to environment file containing CLOUDFLARE_API_TOKEN";
         };
       };
 
       config = lib.mkIf cfg.enable {
-        # Ensure the Cloudflare API token secret is declared
-        sops.secrets.${cfg.sopsSecretName} = { };
-
-        # Render env file with the API token at runtime
-        sops.templates."cf-dns.env" = {
-          content = ''
-            CLOUDFLARE_API_TOKEN=${config.sops.placeholder.${cfg.sopsSecretName}}
-          '';
-        };
-
         systemd.services.cf-dns-sync = {
           description = "Sync Cloudflare DNS records";
           after = [ "network-online.target" ];
           wants = [ "network-online.target" ];
           serviceConfig = {
             Type = "oneshot";
-            EnvironmentFile = config.sops.templates."cf-dns.env".path;
-            ExecStart = "${cf-dns}/bin/cf-dns sync --config ${configJson} --apply";
+            EnvironmentFile = cfg.environmentFile;
+            ExecStart = "${pkgs.cf-dns}/bin/cf-dns sync --config ${configJson} --apply";
             DynamicUser = true;
           };
         };

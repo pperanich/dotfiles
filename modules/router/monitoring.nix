@@ -9,8 +9,7 @@ _: {
     let
       cfg = config.features.router;
       monCfg = cfg.monitoring;
-      internal = cfg._internal;
-      inherit (internal) lanDevice;
+      inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && monCfg.enable;
 
       # Build list of interfaces to monitor
@@ -20,7 +19,7 @@ _: {
         else
           # Default: monitor bridge + WAN
           [
-            lanDevice
+            bridgeName
             cfg.wan.interface
           ];
     in
@@ -82,7 +81,7 @@ _: {
         features.router._internal.monitoringFirewall = {
           inputRules = ''
             # ntopng web UI - LAN only
-            iifname "${lanDevice}" tcp dport ${toString monCfg.httpPort} accept comment "ntopng web UI"
+            iifname "${bridgeName}" tcp dport ${toString monCfg.httpPort} accept comment "ntopng web UI"
           '';
         };
 

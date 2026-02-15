@@ -63,6 +63,15 @@ _: {
           "render"
         ];
 
+        # Ensure media directory exists with correct ownership
+        systemd.tmpfiles.settings."10-immich" = {
+          ${cfg.mediaLocation}."d" = {
+            user = "immich";
+            group = "immich";
+            mode = "0750";
+          };
+        };
+
         # Note: services.immich.openFirewall handles firewall rules natively
       };
     };

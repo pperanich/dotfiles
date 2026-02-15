@@ -26,6 +26,8 @@
 
           # WireGuard peer onboarding
           (pkgs.callPackage ../../pkgs/wg-add-peer { })
+          # Cloudflare Tunnel provisioning
+          (pkgs.callPackage ../../pkgs/cf-tunnel-create { })
           # ]
           # ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           #   pkgs.age-plugin-se # Secure Enclave plugin - only works on macOS, requires Swift to build

@@ -32,6 +32,17 @@ keys:
   - &keys "":
       - &yubikey0-slot1 age1yubikey1qdxm3n7yv2d065hewfmy3u5xk2n62udd8n992azmkzl9yp7mel3tgyzrzrv
 creation_rules:
+  # Cloudflare Tunnel credentials (only admin + pp-router1)
+  - path_regex: cloudflared-tunnel\.json$
+    key_groups:
+      - age:
+          - *peranpl1
+          - *peranpl1-ed25519
+          - *pperanich
+          - *pperanich-pperanich-ml1
+          - *yubikey0-slot1
+          - *pp-router1
+  # Main secrets file (all machines)
   - path_regex: secrets.yaml$
     key_groups:
       - age:

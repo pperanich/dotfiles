@@ -25,7 +25,8 @@
     };
 
     clan-core = {
-      url = "github:clan-lol/clan-core";
+      url = "git+https://git.clan.lol/pperanich/clan-core?ref=main&shallow=1";
+      # url = "github:clan-lol/clan-core";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";

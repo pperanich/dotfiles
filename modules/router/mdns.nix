@@ -8,8 +8,7 @@ _: {
     let
       cfg = config.features.router;
       mdnsCfg = cfg.mdns;
-      internal = cfg._internal;
-      inherit (internal) lanDevice;
+      inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && mdnsCfg.enable;
 
       # VLAN bridges that opted into mDNS via per-segment `mdns = true`
@@ -23,7 +22,7 @@ _: {
 
       # Build list of interfaces to allow mDNS on
       mdnsInterfaces = [
-        lanDevice
+        bridgeName
       ]
       ++ mdnsNetworkBridges
       ++ mdnsCfg.extraInterfaces;

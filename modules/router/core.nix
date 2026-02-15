@@ -83,6 +83,21 @@ _: {
             example = "192.168.1";
             description = "LAN subnet base (first 3 octets)";
           };
+          address = mkOption {
+            type = types.str;
+            readOnly = true;
+            description = "Router's LAN IP address (computed from subnet)";
+          };
+          cidr = mkOption {
+            type = types.str;
+            readOnly = true;
+            description = "LAN network in CIDR notation (computed from subnet)";
+          };
+          bridgeName = mkOption {
+            type = types.str;
+            readOnly = true;
+            description = "LAN bridge device name";
+          };
           dhcpRange = {
             start = mkOption {
               type = octetType;
@@ -161,14 +176,17 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Computed helper values available to other modules
+        # Public computed values (derived from user-facing options)
+        features.router.lan = {
+          address = "${cfg.lan.subnet}.1";
+          cidr = "${cfg.lan.subnet}.0/24";
+          bridgeName = "br-lan";
+        };
+
+        # Internal computed values (cross-module plumbing only)
         features.router._internal = {
-          lanSubnet = cfg.lan.subnet;
-          lanCidr = "${cfg.lan.subnet}.0/24";
-          routerIp = "${cfg.lan.subnet}.1";
           dhcpStart = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.start}";
           dhcpEnd = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.end}";
-          lanDevice = "br-lan";
         };
 
         # Build-time warnings for security-sensitive configurations

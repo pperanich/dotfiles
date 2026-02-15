@@ -17,6 +17,10 @@ _: {
           example = "borg@backup-server:/backups/{hostname}";
           description = "Borg repository path";
         };
+        passphraseFile = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to file containing the Borg repository passphrase";
+        };
         paths = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [
@@ -66,7 +70,7 @@ _: {
 
           encryption = {
             mode = "repokey-blake2";
-            passCommand = "cat /run/secrets/borg-passphrase";
+            passCommand = "cat ${cfg.passphraseFile}";
           };
 
           environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no'";
@@ -95,13 +99,6 @@ _: {
             backup_size=$(${pkgs.borgbackup}/bin/borg info ::'{hostname}-{now}' --json 2>/dev/null | ${pkgs.jq}/bin/jq -r '.archives[0].stats.compressed_size // "unknown"')
             EOF
           '';
-        };
-
-        # Secret management
-        sops.secrets.borg-passphrase = {
-          mode = "0400";
-          owner = "root";
-          group = "root";
         };
 
         # Required packages

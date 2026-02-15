@@ -14,7 +14,7 @@ _: {
         options.features.tailscale = {
           authKeyFile = lib.mkOption {
             type = lib.types.nullOr lib.types.path;
-            default = "/run/secrets/tailscale-authkey";
+            default = null;
             description = "Path to Tailscale auth key file";
           };
           exitNode = lib.mkOption {
@@ -44,13 +44,6 @@ _: {
               lib.optional cfg.exitNode "--advertise-exit-node"
               ++ lib.optional (cfg.subnet != null) "--advertise-routes=${cfg.subnet}"
               ++ lib.optional cfg.acceptRoutes "--accept-routes";
-          };
-
-          # SOPS secret for auth key
-          sops.secrets.tailscale-authkey = lib.mkIf (cfg.authKeyFile == "/run/secrets/tailscale-authkey") {
-            mode = "0400";
-            owner = "root";
-            group = "root";
           };
 
           # Enable IP forwarding if acting as exit node or subnet router

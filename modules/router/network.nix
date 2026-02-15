@@ -7,10 +7,8 @@ _: {
     }:
     let
       cfg = config.features.router;
-      internal = cfg._internal;
       wan = cfg.wan.interface;
-      inherit (internal) lanDevice;
-      inherit (internal) routerIp;
+      inherit (cfg.lan) bridgeName address;
       inherit (cfg.ipv6) ulaPrefix;
     in
     {
@@ -128,8 +126,8 @@ _: {
 
             # LAN bridge or interface
             "10-lan" = {
-              matchConfig.Name = lanDevice;
-              address = [ "${routerIp}/24" ] ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1/64";
+              matchConfig.Name = bridgeName;
+              address = [ "${address}/24" ] ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1/64";
               networkConfig = {
                 ConfigureWithoutCarrier = true;
                 DHCPPrefixDelegation = cfg.ipv6.enable;

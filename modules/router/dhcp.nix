@@ -28,8 +28,8 @@ _: {
         };
         domainName = lib.mkOption {
           type = lib.types.str;
-          default = "lan";
-          description = "Domain name for DHCP clients";
+          default = "home.arpa";
+          description = "Domain name for DHCP clients (RFC 8375)";
         };
       };
 

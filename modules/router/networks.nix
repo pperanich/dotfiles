@@ -410,7 +410,7 @@ _: {
               }
               {
                 name = "domain-name";
-                data = "${net.name}.lan";
+                data = "${net.name}.${cfg.dhcp.domainName}";
               }
             ];
           }) vlanNetworks

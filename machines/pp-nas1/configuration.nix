@@ -28,6 +28,8 @@
     # Self-hosted services
     immich
     nextcloud
+    opencloud
+    radicale
 
     # Virtualization (useful for mini PC/home server use)
     # docker
@@ -60,6 +62,21 @@
       "tasks"
       "notes"
     ];
+  };
+
+  # OpenCloud — file sync (side-by-side trial with Nextcloud)
+  # Accessed via Caddy reverse proxy on pp-router1 (opencloud.prestonperanich.com)
+  features.opencloud = {
+    url = "https://opencloud.prestonperanich.com";
+    stateDir = "/tank/appdata/opencloud";
+    address = "0.0.0.0";
+    openFirewall = true;
+  };
+
+  # Radicale — CalDAV/CardDAV for OpenCloud (calendar + contacts)
+  # Listens on localhost only; proxied through Caddy alongside OpenCloud
+  features.radicale = {
+    dataDir = "/tank/appdata/radicale";
   };
 
   # Immich photo management

@@ -93,6 +93,7 @@
                 certificate.searchDomains = [
                   "home.arpa"
                   "prestonperanich.com"
+                  "pp-wg"
                 ];
               };
             };
@@ -102,6 +103,7 @@
                 certificate.searchDomains = [
                   "home.arpa"
                   "prestonperanich.com"
+                  "pp-wg"
                 ];
               };
             };

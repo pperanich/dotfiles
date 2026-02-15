@@ -30,8 +30,8 @@ _: {
         };
         localZone = lib.mkOption {
           type = lib.types.str;
-          default = "lan.";
-          description = "Local DNS zone name";
+          default = "home.arpa.";
+          description = "Local DNS zone name (RFC 8375)";
         };
         privateDomains = lib.mkOption {
           type = lib.types.listOf lib.types.str;
@@ -54,7 +54,7 @@ _: {
         extraLocalData = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
-          example = [ "pp-wsl1.lan. CNAME pperanich-wd1.lan." ];
+          example = [ "pp-wsl1.home.arpa. CNAME pperanich-wd1.home.arpa." ];
           description = "Additional local-data entries for Unbound (e.g., CNAME aliases)";
         };
       };

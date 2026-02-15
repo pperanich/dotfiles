@@ -10,6 +10,7 @@ let
   # WireGuard controller IPv6 address (derived from clan-managed prefix)
   wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
   wgAddress = "${wgPrefix}::1";
+  domain = config.features.router.dhcp.domainName;
 in
 {
   imports = [
@@ -116,7 +117,7 @@ in
     dns.ddns.enable = true; # Auto-register DHCP client hostnames in DNS
     dns.extraLocalData = [
       # WSL mirrored networking shares the Windows host's IP
-      "pp-wsl1.lan. CNAME pp-wd1.lan."
+      "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."
     ];
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
@@ -254,6 +255,17 @@ in
         name = "nextcloud.prestonperanich.com";
         content = wgAddress;
       }
+      # opencloud — file sync on pp-nas1 (trial alongside nextcloud)
+      {
+        type = "A";
+        name = "opencloud.prestonperanich.com";
+        content = "10.0.0.1";
+      }
+      {
+        type = "AAAA";
+        name = "opencloud.prestonperanich.com";
+        content = wgAddress;
+      }
       # home — dashboard on pp-router1
       {
         type = "A";
@@ -321,6 +333,13 @@ in
               icon = "nextcloud";
               href = "https://nextcloud.prestonperanich.com";
               description = "File sync & collaboration";
+            };
+          }
+          {
+            "OpenCloud" = {
+              icon = "open-cloud";
+              href = "https://opencloud.prestonperanich.com";
+              description = "File sync (trial)";
             };
           }
         ];
@@ -438,6 +457,22 @@ in
           reverse_proxy http://10.0.0.106:80 {
             header_up X-Forwarded-Proto {scheme}
             header_up X-Forwarded-For {remote_host}
+          }
+          request_body {
+            max_size 16G
+          }
+        '';
+      };
+
+      # OpenCloud — file sync trial on pp-nas1
+      "opencloud.prestonperanich.com" = {
+        listenAddresses = [
+          "10.0.0.1"
+          wgAddress # WireGuard VPN
+        ];
+        extraConfig = ''
+          reverse_proxy http://10.0.0.106:9200 {
+            header_up X-Forwarded-Proto {scheme}
           }
           request_body {
             max_size 16G

@@ -1,7 +1,7 @@
 # Dynamic DNS: sync Kea DHCP leases → Unbound local-data
 #
 # When a DHCP client gets a lease with a hostname, that hostname becomes
-# resolvable as <hostname>.lan via Unbound. Records are kept in sync via
+# resolvable as <hostname>.home.arpa via Unbound. Records are kept in sync via
 # a systemd path unit (inotify on the lease file) and a periodic timer fallback.
 # The timer also re-syncs after Unbound restarts (partOf binding).
 _: {
@@ -16,7 +16,7 @@ _: {
       cfg = config.features.router;
       dnsCfg = cfg.dns;
       enabled = cfg.enable && dnsCfg.enable && cfg.dhcp.enable && dnsCfg.ddns.enable;
-      domain = cfg.dhcp.domainName; # "lan"
+      domain = cfg.dhcp.domainName; # "home.arpa"
       leaseFile = "/var/lib/kea/dhcp4-leases.csv";
       trackingFile = "/run/kea-unbound-sync/records";
       unboundPkg = config.services.unbound.package;

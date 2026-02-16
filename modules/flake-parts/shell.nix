@@ -26,9 +26,9 @@
           config.treefmt.build.wrapper
 
           # WireGuard peer onboarding
-          (pkgs.callPackage ../../pkgs/wg-add-peer { })
+          # pkgs.wg-add-peer
           # Cloudflare CLI (DNS sync + tunnel provisioning)
-          (pkgs.callPackage ../../pkgs/cf { })
+          # pkgs.cf
           # ]
           # ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           #   pkgs.age-plugin-se # Secure Enclave plugin - only works on macOS, requires Swift to build

@@ -415,11 +415,8 @@ _: {
           }) vlanNetworks
         );
 
-        # DNS: Allow access from VLAN networks
-        services.unbound.settings.server = lib.mkIf (vlanNetworks != [ ]) {
-          interface = map netRouterIp vlanNetworks;
-          access-control = map (net: "${netCidr net} allow") vlanNetworks;
-        };
+        # DNS: VLAN listener config handled by dns.nix (Unbound) and blocky.nix (Blocky)
+        # via _internal.networks — see routerDns and routerBlocky modules
 
         # Chrony: Allow NTP from VLAN networks
         services.chrony.extraConfig = lib.mkIf (vlanNetworks != [ ]) (

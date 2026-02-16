@@ -99,9 +99,7 @@ in
   my.vaultwarden = {
     enable = true;
     domain = "vault.prestonperanich.com";
-    environmentFiles = [
-      config.sops.templates."vaultwarden-admin.env".path
-    ];
+    adminTokenFile = config.sops.secrets.vaultwarden-admin-token.path;
   };
 
   # SMTP via local Stalwart (no auth needed for localhost)
@@ -213,6 +211,29 @@ in
       # "vault.prestonperanich.com. AAAA ${wgAddress}"
       # vault-admin — internal only, no public DNS
     ];
+
+    # DNS ad-blocking via Blocky (sits in front of Unbound on port 53)
+    # Unbound retreats to localhost:5335 as DNSSEC/DoT backend
+    blocky = {
+      enable = true;
+      # Per-VLAN blocking (override auto-derived defaults for explicit control)
+      clientGroupsBlock = {
+        default = [
+          "ads"
+          "malware"
+        ];
+        "10.0.20.0/24" = [
+          "ads"
+          "malware"
+          "telemetry"
+        ]; # IoT: aggressive
+        "10.0.30.0/24" = [
+          "ads"
+          "malware"
+        ]; # Guest: standard
+      };
+    };
+
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
     # Network monitoring with ntopng
@@ -469,13 +490,6 @@ in
   sops.secrets.vaultwarden-admin-token = {
     owner = "vaultwarden";
     mode = "0400";
-  };
-  sops.templates."vaultwarden-admin.env" = {
-    content = ''
-      ADMIN_TOKEN=${config.sops.placeholder."vaultwarden-admin-token"}
-    '';
-    owner = "vaultwarden";
-    group = "vaultwarden";
   };
 
   # Cloudflare API token (used by cf-dns and caddy templates)

@@ -3,6 +3,7 @@ _: {
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -37,6 +38,11 @@ _: {
           default = [ ];
           description = "Environment files passed to the Vaultwarden systemd service (e.g. SMTP config, admin token)";
         };
+        adminTokenFile = lib.mkOption {
+          type = lib.types.nullOr lib.types.path;
+          default = null;
+          description = "Path to a file containing the plaintext admin token. Will be Argon2id-hashed at service start.";
+        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -58,7 +64,28 @@ _: {
           };
         };
 
-        systemd.services.vaultwarden.serviceConfig.EnvironmentFile = cfg.environmentFiles;
+        systemd.services.vaultwarden.serviceConfig.EnvironmentFile =
+          cfg.environmentFiles
+          ++ lib.optional (cfg.adminTokenFile != null) "/run/vaultwarden-admin-token.env";
+
+        systemd.services.vaultwarden-admin-hash = lib.mkIf (cfg.adminTokenFile != null) {
+          description = "Hash Vaultwarden admin token with Argon2id";
+          requiredBy = [ "vaultwarden.service" ];
+          before = [ "vaultwarden.service" ];
+          serviceConfig.Type = "oneshot";
+          path = [
+            pkgs.libargon2
+            pkgs.openssl
+          ];
+          script = ''
+            TOKEN=$(<"${cfg.adminTokenFile}")
+            SALT=$(openssl rand -base64 32)
+            HASH=$(echo -n "$TOKEN" | argon2 "$SALT" -e -id -k 65540 -t 3 -p 4)
+            printf 'ADMIN_TOKEN=%s\n' "$HASH" > /run/vaultwarden-admin-token.env
+            chown vaultwarden:vaultwarden /run/vaultwarden-admin-token.env
+            chmod 400 /run/vaultwarden-admin-token.env
+          '';
+        };
 
         networking.firewall.allowedTCPPorts =
           lib.mkIf

@@ -12,6 +12,7 @@ _: {
       inherit (cfg.ipv6) ulaPrefix;
       inherit (cfg) machines services;
       enabled = cfg.enable && dnsCfg.enable;
+      blockyEnabled = cfg.blocky.enable;
     in
     {
       options.my.router.dns = {
@@ -40,13 +41,13 @@ _: {
           type = lib.types.listOf lib.types.str;
           default = [ ];
           example = [ "fdb4:63fa:2:aa00::1" ];
-          description = "Additional addresses for Unbound to listen on (e.g., VPN interfaces)";
+          description = "Additional addresses for DNS to listen on (e.g., VPN interfaces). Configures Blocky when enabled, otherwise Unbound.";
         };
         extraAccessControl = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
           example = [ "fdb4:63fa:2:aa00::/40 allow" ];
-          description = "Additional access-control entries for Unbound (e.g., VPN subnets)";
+          description = "Additional access-control entries for Unbound (e.g., VPN subnets). Used by Unbound when Blocky is disabled.";
         };
         extraLocalData = lib.mkOption {
           type = lib.types.listOf lib.types.str;
@@ -63,73 +64,102 @@ _: {
           enableRootTrustAnchor = true;
           settings = {
             remote-control.control-enable = true;
-            server = {
-              interface = [
-                "127.0.0.1"
-                "::1"
-                address
-              ]
-              ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1"
-              ++ dnsCfg.extraInterfaces;
+            server =
+              let
+                # VLAN IPs for Unbound-only fallback (moved from vlans.nix)
+                vlanNets = lib.filterAttrs (_: n: (n.vlan or null) != null) (cfg._internal.networks or { });
+                vlanIps = lib.mapAttrsToList (_: net: net.routerIp) vlanNets;
+                vlanAcls = lib.mapAttrsToList (_: net: "${net.cidr} allow") vlanNets;
+              in
+              {
+                # When Blocky is enabled, Unbound retreats to localhost:5335 as a backend.
+                # Blocky takes over port 53 on all LAN/VLAN/WireGuard interfaces.
+                port = if blockyEnabled then 5335 else 53;
 
-              access-control = [
-                "127.0.0.0/8 allow"
-                "::1 allow"
-                "${cidr} allow"
-              ]
-              ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::/64 allow"
-              ++ dnsCfg.extraAccessControl
-              ++ [
-                "0.0.0.0/0 refuse"
-                "::0/0 refuse"
-              ];
+                interface =
+                  if blockyEnabled then
+                    [
+                      "127.0.0.1"
+                      "::1"
+                    ]
+                  else
+                    [
+                      "127.0.0.1"
+                      "::1"
+                      address
+                    ]
+                    ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::1"
+                    ++ dnsCfg.extraInterfaces
+                    ++ vlanIps;
 
-              cache-min-ttl = 0;
-              cache-max-ttl = 86400;
-              do-tcp = true;
-              do-udp = true;
-              prefetch = true;
-              num-threads = 2;
-              so-reuseport = true;
+                access-control =
+                  if blockyEnabled then
+                    [
+                      "127.0.0.0/8 allow"
+                      "::1 allow"
+                      "0.0.0.0/0 refuse"
+                      "::0/0 refuse"
+                    ]
+                  else
+                    [
+                      "127.0.0.0/8 allow"
+                      "::1 allow"
+                      "${cidr} allow"
+                    ]
+                    ++ lib.optional cfg.ipv6.enable "${ulaPrefix}::/64 allow"
+                    ++ dnsCfg.extraAccessControl
+                    ++ vlanAcls
+                    ++ [
+                      "0.0.0.0/0 refuse"
+                      "::0/0 refuse"
+                    ];
 
-              # DNSSEC validation (trust anchor managed via enableRootTrustAnchor)
-              val-clean-additional = true;
+                cache-min-ttl = 0;
+                cache-max-ttl = 86400;
+                do-tcp = true;
+                do-udp = true;
+                prefetch = true;
+                num-threads = 2;
+                so-reuseport = true;
 
-              # Security hardening
-              hide-identity = true; # Don't reveal server identity
-              hide-version = true; # Don't reveal unbound version
-              harden-glue = true; # Harden against out-of-zone glue
-              harden-dnssec-stripped = true; # Require DNSSEC if available
-              harden-below-nxdomain = true; # RFC 8020 compliance
-              # Note: harden-referral-path omitted - significant performance cost for marginal security gain
-              use-caps-for-id = true; # DNS 0x20 encoding (may need disabling for incompatible servers)
-              qname-minimisation = true; # QNAME minimisation (privacy)
+                # DNSSEC validation (trust anchor managed via enableRootTrustAnchor)
+                val-clean-additional = true;
 
-              # Prevent DNS amplification attacks
-              max-udp-size = 1232;
+                # Security hardening
+                hide-identity = true; # Don't reveal server identity
+                hide-version = true; # Don't reveal unbound version
+                harden-glue = true; # Harden against out-of-zone glue
+                harden-dnssec-stripped = true; # Require DNSSEC if available
+                harden-below-nxdomain = true; # RFC 8020 compliance
+                # Note: harden-referral-path omitted - significant performance cost for marginal security gain
+                use-caps-for-id = true; # DNS 0x20 encoding (may need disabling for incompatible servers)
+                qname-minimisation = true; # QNAME minimisation (privacy)
 
-              # DNS Rebinding protection
-              private-address = [
-                "192.168.0.0/16"
-                "172.16.0.0/12"
-                "10.0.0.0/8"
-                "fd00::/8"
-                "fe80::/10"
-              ];
-              private-domain = [ "\"${dnsCfg.localZone}\"" ] ++ map (d: "\"${d}\"") dnsCfg.privateDomains;
+                # Prevent DNS amplification attacks
+                max-udp-size = 1232;
 
-              # Local zone for LAN
-              local-zone = "\"${dnsCfg.localZone}\" static";
-              local-data = [
-                "\"${cfg.hostname}.${dnsCfg.localZone} IN A ${address}\""
-              ]
-              ++ lib.optional cfg.ipv6.enable "\"${cfg.hostname}.${dnsCfg.localZone} IN AAAA ${ulaPrefix}::1\""
-              ++ map (
-                machine: "\"${machine.name}.${dnsCfg.localZone} IN A ${subnet}.${toString machine.ip}\""
-              ) machines
-              ++ map (service: "\"${service.name} IN A ${service.target}\"") services
-              ++ map (d: "\"${d}\"") dnsCfg.extraLocalData;
-            };
+                # DNS Rebinding protection
+                private-address = [
+                  "192.168.0.0/16"
+                  "172.16.0.0/12"
+                  "10.0.0.0/8"
+                  "fd00::/8"
+                  "fe80::/10"
+                ];
+                private-domain = [ "\"${dnsCfg.localZone}\"" ] ++ map (d: "\"${d}\"") dnsCfg.privateDomains;
+
+                # Local zone for LAN
+                local-zone = "\"${dnsCfg.localZone}\" static";
+                local-data = [
+                  "\"${cfg.hostname}.${dnsCfg.localZone} IN A ${address}\""
+                ]
+                ++ lib.optional cfg.ipv6.enable "\"${cfg.hostname}.${dnsCfg.localZone} IN AAAA ${ulaPrefix}::1\""
+                ++ map (
+                  machine: "\"${machine.name}.${dnsCfg.localZone} IN A ${subnet}.${toString machine.ip}\""
+                ) machines
+                ++ map (service: "\"${service.name} IN A ${service.target}\"") services
+                ++ map (d: "\"${d}\"") dnsCfg.extraLocalData;
+              };
             forward-zone = [
               {
                 name = ".";

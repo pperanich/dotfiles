@@ -11,6 +11,7 @@ _: {
         routerFirewall
         routerDhcp
         routerDns
+        routerBlocky # DNS ad-blocking (Blocky in front of Unbound)
         routerDdns # Dynamic DNS: Kea DHCP leases → Unbound
         routerMdns
         routerSqm

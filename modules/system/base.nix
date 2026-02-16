@@ -28,8 +28,8 @@
 
         environment.systemPackages = with pkgs; [
           ghostty.terminfo
-
           # Merged from former file-exploration + networkUtilities modules
+          openssh
           fzf
           curl
           wget
@@ -190,6 +190,7 @@
         };
 
         environment.systemPackages = with pkgs; [
+          openssh
           python313Packages.pymobiledevice3
         ];
 

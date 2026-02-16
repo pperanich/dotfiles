@@ -65,6 +65,22 @@ _: {
 
       # Build conditional mapping: local zone + private domains → Unbound backend
       localZone = lib.removeSuffix "." dnsCfg.localZone;
+
+      # RFC 1918 + ULA/link-local reverse DNS zones → Unbound
+      # Without this, Blocky's SUDN resolver returns NXDOMAIN for private PTR queries
+      privateReverseZones = [
+        "10.in-addr.arpa"
+        "168.192.in-addr.arpa"
+      ]
+      ++ map (n: "${toString n}.172.in-addr.arpa") (lib.range 16 31)
+      ++ [
+        "d.f.ip6.arpa" # fd00::/8 ULA
+        "8.e.f.ip6.arpa" # fe80::/10 link-local
+        "9.e.f.ip6.arpa"
+        "a.e.f.ip6.arpa"
+        "b.e.f.ip6.arpa"
+      ];
+
       conditionalMappings = {
         "${localZone}" = "127.0.0.1:5335";
       }
@@ -73,6 +89,12 @@ _: {
           name = d;
           value = "127.0.0.1:5335";
         }) dnsCfg.privateDomains
+      )
+      // lib.listToAttrs (
+        map (z: {
+          name = z;
+          value = "127.0.0.1:5335";
+        }) privateReverseZones
       );
     in
     {
@@ -214,7 +236,7 @@ _: {
                 upstreams = {
                   groups.default = [ "127.0.0.1:5335" ];
                   strategy = "strict";
-                  timeout = "2s";
+                  timeout = "5s";
                 };
 
                 # Forward local zone + private domains directly to Unbound

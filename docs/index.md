@@ -17,6 +17,10 @@ Nix-based system configuration using the dendritic pattern with flake-parts and 
 
 - [Router Module](router-module.md) - Complete router with VLAN, WiFi, firewall, DHCP, DNS, SQM
 
+### Networking
+
+- [WireGuard Split Tunneling](wireguard-split-tunneling.md) - Route specific services through a VPN using network namespaces
+
 ### Services (TODO)
 
 - [Service Exposure Pathways](service-exposure.md) - Private (Caddy/LAN/WG) and public (Cloudflare Tunnel) service access

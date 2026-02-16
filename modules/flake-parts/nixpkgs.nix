@@ -1,0 +1,50 @@
+{
+  inputs,
+  withSystem,
+  ...
+}:
+let
+  overlays = import ../../overlays { inherit inputs; };
+
+  # Extend nixpkgs lib with custom functions
+  extendedLib = inputs.nixpkgs.lib.extend (
+    _self: _super: {
+      my = import ../../lib { inherit (inputs.nixpkgs) lib; };
+    }
+  );
+in
+{
+  systems = import inputs.systems;
+
+  # Make extended lib available to all flake-parts modules
+  _module.args.lib = extendedLib;
+
+  perSystem =
+    { system, pkgs, ... }:
+    {
+      _module.args.pkgs = import inputs.nixpkgs {
+        inherit system;
+        config = {
+          allowUnfree = true;
+          allowBroken = true;
+          permittedInsecurePackages = [
+            "openssl-1.1.1w"
+          ];
+          overlays = builtins.attrValues overlays;
+        };
+      };
+      clan.pkgs = pkgs;
+    };
+
+  flake = {
+    lib = extendedLib;
+    overlays.default =
+      _final: prev:
+      withSystem prev.stdenv.hostPlatform.system (
+        { config, ... }:
+        {
+          local = config.packages;
+        }
+      );
+  };
+}

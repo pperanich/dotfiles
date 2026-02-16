@@ -1,23 +1,69 @@
 {
   description = "My nix configs";
 
+  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
+
   inputs = {
     # Core
-    nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
-    hardware.url = "github:nixos/nixos-hardware";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    hardware = {
+      url = "github:nixos/nixos-hardware";
+    };
+    determinate = {
+      url = "github:DeterminateSystems/determinate";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+    };
+    nixos-facter-modules = {
+      url = "github:nix-community/nixos-facter-modules";
+    };
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+    };
+
+    clan-core = {
+      url = "git+https://git.clan.lol/pperanich/clan-core?ref=main&shallow=1";
+      # url = "github:clan-lol/clan-core";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        nix-darwin.follows = "darwin";
+        disko.follows = "disko";
+        sops-nix.follows = "sops-nix";
+        treefmt-nix.follows = "treefmt-nix";
+        systems.follows = "systems";
+      };
+    };
+
+    import-tree = {
+      url = "github:vic/import-tree";
+    };
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "flake-compat";
+      };
+    };
 
     # System Management
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.05";
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     darwin = {
-      url = "github:LnL7/nix-darwin/nix-darwin-25.05";
+      url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-wsl = {
       url = "github:nix-community/nixos-wsl";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "flake-compat";
+      };
     };
     jetpack-nixos = {
       url = "github:anduril/jetpack-nixos";
@@ -39,15 +85,44 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    systems.url = "github:nix-systems/default";
-    mac-app-util.url = "github:hraban/mac-app-util";
+    systems = {
+      url = "github:nix-systems/default";
+    };
+    nix-ld = {
+      url = "github:Mic92/nix-ld";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Development Tools
-    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
-    emacs-overlay.url = "github:nix-community/emacs-overlay";
-    nixgl.url = "github:guibou/nixGL";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    ghostty.url = "github:ghostty-org/ghostty";
+    neovim-nightly-overlay = {
+      url = "github:nix-community/neovim-nightly-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+      };
+    };
+    emacs-overlay = {
+      url = "github:nix-community/emacs-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
+    nixgl = {
+      url = "github:guibou/nixGL";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    ghostty = {
+      url = "github:ghostty-org/ghostty";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+        flake-compat.follows = "flake-compat";
+      };
+    };
 
     # Additional Software
     nixcasks = {
@@ -56,81 +131,18 @@
     };
 
     # Development Tools
-    nil.url = "github:oxalica/nil"; # Nix LSP
-    treefmt-nix.url = "github:numtide/treefmt-nix"; # Formatting tools
-
-    apple-fonts.url = "github:Lyndeno/apple-fonts.nix";
-  };
-
-  outputs = {
-    self,
-    nixpkgs,
-    systems,
-    darwin,
-    home-manager,
-    nixos-wsl,
-    nixcasks,
-    disko,
-    ...
-  } @ inputs: let
-    inherit (self) outputs;
-    lib = nixpkgs.lib.extend (self: super: {my = import ./lib {inherit (nixpkgs) lib;};});
-
-    forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-    nixcasks =
-      forEachSystem
-      (inputs.nixcasks.output {
-        osVersion = "sequoia";
-      })
-      .packages;
-
-    pkgsFor = lib.genAttrs (import systems) (
-      system:
-        import nixpkgs {
-          inherit system;
-          config = {
-            allowUnfree = true;
-            allowBroken = true;
-            permittedInsecurePackages = [
-              "openssl-1.1.1w"
-            ];
-            overlays = builtins.attrValues outputs.overlays;
-            packageOverrides = _: {
-              inherit nixcasks;
-            };
-          };
-        }
-    );
-
-    # Generate all configurations automatically
-    allConfigurations = lib.my.mkAllConfigurations {
-      inherit inputs outputs lib darwin home-manager pkgsFor;
-      additionalUsers = ["hst" "holo" "mxwbio"];
+    nil = {
+      url = "github:oxalica/nil"; # Nix LSP
+      inputs.nixpkgs.follows = "nixpkgs";
     };
-  in {
-    inherit lib;
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix"; # Formatting tools
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
-    # Reusable modules
-    sharedModules = import ./modules/shared;
-    nixosModules = import ./modules/nixos;
-    darwinModules = import ./modules/darwin;
-    homeManagerModules = import ./modules/home-manager;
-
-    # Overlays
-    overlays = import ./overlays {inherit inputs outputs;};
-
-    # Packages & Development Shells
-    packages = forEachSystem (pkgs: import ./pkgs {inherit pkgs;});
-    devShells = forEachSystem (pkgs: {
-      default = import ./shell.nix {
-        inherit pkgs;
-      };
-    });
-    formatter = forEachSystem (pkgs: pkgs.alejandra);
-
-    # Automatically generated configurations
-    inherit (allConfigurations) nixosConfigurations;
-    inherit (allConfigurations) darwinConfigurations;
-    inherit (allConfigurations) homeConfigurations;
+    nix-apple-fonts = {
+      url = "github:pperanich/nix-apple-fonts";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 }

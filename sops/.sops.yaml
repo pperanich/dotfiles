@@ -1,28 +1,68 @@
+# SOPS configuration for traditional secrets.yaml
+# For clan-managed vars, see vars/ directory (managed by clan CLI)
+#
+# Users: Admin keys for decrypting/editing secrets
+# Hosts: Machine keys for runtime decryption (clan-generated keys for clan-managed machines)
+# Keys: Hardware security keys
 keys:
-  - &users:
-    - &peranpl1 age1sy8x2rtl25pqlt3vceqjzgn7ym3mfn8wavwjd4t8e38t4mmcyamqcmdp9k
-    - &pperanich age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
-    - &peranpl1-ed25519 age17atxvh6d40tzvn80z6xp4gzckp6c9e8m2ypr52muljc623qrtp7qpr56y8
-    - &pperanich-ed25519 age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
-
-  - &hosts:
-    - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
-    - &pperanich-wsl1 age1pfappspcu2kdx33gxjpxapltx70qenl5dlwx00ugcghpvxg2t3aqfx53cz
-    - &pperanich-ll1 age1k5jdqa6mrymfjvrdazfuzx2rn3xavj43da5r4qt6v8pqyyvmjdhsejllsx
-    - &redd-holobrain age1l9fpjdh9ksma28zqhnl28k6pal5s2x9m586a9xjgyec6dsjrs34qsd6krx
-    - &holobrain-ld2 age1tmd7d6g6f9lzmg44g0uer2d6kzzktxh7d5dmdfhdcn3cm97xz9qsl2qv60
-    - &pperanich-orin1 age1dp8acw4lemjhujp3qze4emcq78rnf3axplrjneeqrvn5qj7aed3s7y23dw
+  # Admin user keys (for editing secrets from workstations)
+  - &users "":
+      - &peranpl1 age1sy8x2rtl25pqlt3vceqjzgn7ym3mfn8wavwjd4t8e38t4mmcyamqcmdp9k
+      - &pperanich age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
+      - &peranpl1-ed25519 age17atxvh6d40tzvn80z6xp4gzckp6c9e8m2ypr52muljc623qrtp7qpr56y8
+      - &pperanich-pperanich-ml1 age10djyw5sv5m367smak0nav6scdp9mr9sncs7dlv6f7z2xkf4w7efszmhqww
+  # Machine keys (clan-generated for clan-managed machines)
+  - &hosts "":
+      # Darwin machines (clan-managed)
+      - &peranpl1-ml1 age1rnledp55zj4sppzva9x9p8tazgnj0cceqwtvewyqmec89v02395srql42s
+      - &peranpl1-ml2 age195lwu9hw5guj6w6hjqljsg0rk5za6xg2utcsqry22g4g0mp7h5mqyq0d3s
+      - &pp-ml1 age1cmmf27yjx3qchljpzsnwpftlshy8hjmp97j2fx8gl5h2n89yjfpsfju3xa
+      - &pp-ml1-ssh age1d0jvrgrtlecphg8s2svaly2ql9hlpp60qhfldeznkj8q46ggmqjq67ptcx
+      # NixOS machines (clan-managed)
+      - &pp-ld1 age12fefxmnpw4e63u8nj86atqen28dawdmh02vjsn23akxrqp5xzfastya7v7
+      - &pp-ll1 age1xdlr9shxgf4vrsz9uh2t90pxw5xq8pym487v2gz2mcd02yw5up4sxm0m2m
+      - &pp-nas1 age1d5ayyw97mevjemgaka6ag4ajep9pppr2h06stfu3pngkur0y95uqnanfhc
+      - &pp-router1 age1amd39n0ruhd220mz3qad4y4ngsct25c00r6jad4e448z2q68qqlq7ma8ka
+      - &pp-rpi1 age14sqpltns04kd53hslj23wuqrxzxzc5g38l8u9vrwlz7z3wteaepqcl8hcr
+      - &pp-wsl1 age14skf7pejrvwnepqyq5zyz3f38zlex3f0gtufmhg8vml6g8ze6cnq84zc70
+      # Non-clan machines (still active)
+      - &redd-holobrain age1l9fpjdh9ksma28zqhnl28k6pal5s2x9m586a9xjgyec6dsjrs34qsd6krx
+      - &holobrain-ld2 age1tmd7d6g6f9lzmg44g0uer2d6kzzktxh7d5dmdfhdcn3cm97xz9qsl2qv60
+  # Hardware security keys
+  - &keys "":
+      - &yubikey0-slot1 age1yubikey1qdxm3n7yv2d065hewfmy3u5xk2n62udd8n992azmkzl9yp7mel3tgyzrzrv
 creation_rules:
-  - path_regex: secrets.yaml$
+  # Cloudflare Tunnel credentials (only admin + pp-router1)
+  - path_regex: cloudflared-tunnel\.json$
     key_groups:
       - age:
           - *peranpl1
           - *peranpl1-ed25519
           - *pperanich
-          - *pperanich-ed25519
+          - *pperanich-pperanich-ml1
+          - *yubikey0-slot1
+          - *pp-router1
+  # Main secrets file (all machines)
+  - path_regex: secrets.yaml$
+    key_groups:
+      - age:
+          # Admin users (can edit secrets)
+          - *peranpl1
+          - *peranpl1-ed25519
+          - *pperanich
+          - *pperanich-pperanich-ml1
+          - *yubikey0-slot1
+          # Darwin machines
+          - *peranpl1-ml1
           - *peranpl1-ml2
-          - *pperanich-wsl1
-          - *pperanich-ll1
+          - *pp-ml1
+          # NixOS machines
+          - *pp-ld1
+          - *pp-ll1
+          - *pp-nas1
+          - *pp-router1
+          - *pp-rpi1
+          - *pp-wsl1
+          # Non-clan machines
           - *redd-holobrain
           - *holobrain-ld2
-          - *pperanich-orin1

@@ -1,234 +1,212 @@
-# Nix Configuration
+# Dotfiles
 
-A modular and maintainable Nix configuration for both NixOS and Darwin systems, with a focus on developer experience and system management.
+Nix-based system configuration using the dendritic pattern with [flake-parts](https://flake.parts/) and [clan-core](https://docs.clan.lol/).
 
-## Organization
+## Quick Start
 
-The configuration is organized into four main categories:
+```bash
+# Clone
+git clone https://github.com/pperanich/dotfiles.git ~/dotfiles
+cd ~/dotfiles
 
-### Modules (`/modules`)
+# Enter dev shell
+nix develop
 
-Modules are system-level configurations that define core functionality and services. They are:
+# Deploy to a machine
+clan vars upload <hostname>
+clan machines update <hostname>
+```
 
-- Stateless and reusable
-- System-wide in scope
-- Often require privileged access
-- Handle service definitions and system defaults
+## Machines
 
-Structure:
+| Hostname     | OS     | Type    | Description                      |
+| ------------ | ------ | ------- | -------------------------------- |
+| pp-ml1       | Darwin | Laptop  | Personal MacBook (Apple Silicon) |
+| pp-ll1       | NixOS  | Laptop  | Personal Linux laptop            |
+| pp-ld1       | NixOS  | Desktop | Personal Linux desktop           |
+| pp-nas1      | NixOS  | Server  | NAS (BeeLink)                    |
+| pp-router1   | NixOS  | Server  | Router                           |
+| pp-rpi1      | NixOS  | SBC     | Raspberry Pi                     |
+| pp-wsl1      | NixOS  | VM      | WSL instance                     |
+| peranpl1-ml1 | Darwin | Laptop  | Work MacBook                     |
+| peranpl1-ml2 | Darwin | Laptop  | Work MacBook                     |
+
+## Architecture
+
+```
+dotfiles/
+├── machines/           # Host-specific configurations
+├── modules/            # Reusable NixOS/Darwin/home-manager modules
+│   └── flake-parts/    # Flake infrastructure (clan, nixpkgs, shell)
+├── home-profiles/      # User environment compositions
+├── sops/               # Secrets (machine keys, app secrets)
+├── vars/               # Clan-managed variables
+└── docs/               # Documentation
+```
+
+### Key Concepts
+
+| Concept               | Description                                                            |
+| --------------------- | ---------------------------------------------------------------------- |
+| **Dendritic pattern** | Auto-discovery of modules via `import-tree` - no manual imports needed |
+| **Clan-core**         | Infrastructure-as-code machine deployment with inventory and roles     |
+| **Hybrid secrets**    | Clan vars for machine bootstrap, traditional sops-nix for app secrets  |
+
+### Module Export Pattern
+
+```nix
+# modules/example/foo.nix
+_: {
+  flake.modules.homeManager.foo = { pkgs, ... }: { ... };
+  flake.modules.nixos.foo = { ... }: { ... };
+  flake.modules.darwin.foo = { ... }: { ... };
+}
+```
+
+## Common Commands
+
+```bash
+# Development
+nix develop                           # Enter dev shell
+nix fmt                               # Format all files
+nix flake check                       # Validate flake
+
+# Machine deployment
+clan machines list                    # List all machines
+clan machines update <hostname>       # Deploy to machine
+clan vars upload <hostname>           # Upload secrets only
+
+# Secrets
+clan vars list <hostname>             # List vars for machine
+clan secrets get <secret>             # Decrypt a secret
+
+# Manual builds
+sudo nixos-rebuild switch --flake .#<hostname>    # NixOS
+darwin-rebuild switch --flake .#<hostname>        # Darwin
+home-manager switch --flake .#<username>          # Home-manager
+```
+
+## Documentation
+
+Detailed guides are available in the [docs/](docs/) directory:
+
+- **[Adding New Machines](docs/adding-new-machines.md)** - Complete onboarding guide
+- **[Troubleshooting](docs/clan-machines-update-troubleshooting.md)** - Debug deployment issues
+
+To browse documentation locally:
+
+```bash
+nix run nixpkgs#zensical -- serve
+```
+
+## Secrets Management
+
+This repo uses a **hybrid approach**:
+
+| System                   | Purpose                                           | Location                 |
+| ------------------------ | ------------------------------------------------- | ------------------------ |
+| **Clan vars**            | Machine bootstrap (age keys, SSH keys, passwords) | `vars/`, `sops/secrets/` |
+| **Traditional sops-nix** | App secrets (tailscale, borg, k3s)                | `sops/secrets.yaml`      |
+
+### Adding a Machine to Secrets
+
+```bash
+# Generate vars (creates age keypair, SSH keys, etc.)
+clan vars generate <hostname>
+
+# Add to secrets.yaml recipients (edit sops/.sops.yaml, then:)
+cd sops && sops updatekeys secrets.yaml
+
+# Enable self-upload (optional)
+clan secrets machines add-secret <hostname> <hostname>-age.key
+```
+
+See [Adding New Machines](docs/adding-new-machines.md) for complete steps.
+
+## Installation
+
+### Prerequisites
+
+```bash
+# Install Nix (Determinate Systems installer)
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+### First-Time Setup
+
+**NixOS:**
+
+```bash
+sudo nixos-rebuild switch --flake .#<hostname>
+```
+
+**Darwin:**
+
+```bash
+nix run nix-darwin -- switch --flake .#<hostname>
+```
+
+**Home-manager (standalone):**
+
+```bash
+nix run home-manager/release-25.05 -- switch --flake .#<username>
+```
+
+## Project Structure
+
+<details>
+<summary>Click to expand full directory structure</summary>
 
 ```
 modules/
-├── shared/           # Shared between NixOS and Darwin
-│   ├── development.nix  # Development tools and settings
-│   ├── security.nix     # Security features and hardening
-│   ├── shell.nix       # Shell configuration and utilities
-│   └── user.nix        # User account management
-├── darwin/           # Darwin-specific modules
-│   ├── default.nix     # Core Darwin settings
-│   └── wm/            # Window management
-│       ├── yabai.nix     # Tiling window manager
-│       ├── skhd.nix      # Hotkey daemon
-│       └── sketchybar.nix # Status bar
-└── nixos/            # NixOS-specific modules
-    └── desktop.nix     # Desktop environment settings
+├── flake-parts/         # Flake infrastructure
+│   ├── clan.nix           # Machine inventory & services
+│   ├── clan-services.nix  # Clan service definitions
+│   ├── flake-parts.nix    # Import-tree & flake-parts config
+│   ├── fmt.nix            # Treefmt formatters
+│   ├── home.nix           # Home-manager integration
+│   ├── nixpkgs.nix        # Nixpkgs config & overlays
+│   └── shell.nix          # Development shell
+├── desktop/             # fonts, applications, sketchybar
+├── router/              # firewall, DHCP, DNS, VLANs, monitoring
+├── services/            # audiobookshelf, cloudflare-dns, cloudflare-tunnel,
+│                        # immich, jellyfin, kimaki, navidrome, nextcloud,
+│                        # opencloud, radicale, stalwart, vaultwarden
+├── shell/               # nvim, opencode, rust, tools
+├── system/              # base (nix config), sops
+├── users/               # user account modules
+└── work.nix             # Work profile (APL/JHU)
+
+machines/
+├── pp-*/                # Personal machines
+└── peranpl1-*/          # Work machines
+
+home-profiles/
+├── pperanich/           # Primary user (NixOS)
+├── peranpl1/            # Primary user (Darwin)
+└── generic/             # Shared/service accounts
+
+sops/
+├── .sops.yaml           # SOPS config for secrets.yaml
+├── secrets.yaml         # App secrets (traditional sops-nix)
+├── machines/            # Machine public keys
+└── secrets/             # Encrypted age keys
+
+vars/
+├── per-machine/         # Machine-specific vars
+└── shared/              # Cross-machine vars (user passwords)
 ```
 
-### Home Manager (`/home-manager`)
+</details>
 
-Home Manager configurations manage user environments through Nix:
+## References
 
-- User package management
-- Application configurations
-- Environment setup
-- Feature management
-
-Structure:
-
-```
-home-manager/
-├── default.nix      # Base home-manager configuration
-├── features/        # User environment features
-│   ├── desktop/     # Desktop customization
-│   │   ├── shared/  # Shared desktop configs
-│   │   └── darwin/  # macOS-specific features
-│   ├── development/ # Development environments
-│   │   ├── editors/   # Editor configurations
-│   │   ├── languages/ # Language-specific setups
-│   │   └── tools/     # Development tools
-│   ├── shell/      # Shell customization
-│   └── work/       # Work-specific setups
-└── global/         # Shared home-manager modules
-```
-
-### Home (`/home`)
-
-Raw application configurations not managed by Nix:
-
-- Dotfiles
-- Application-specific configs
-- Manual customizations
-- Legacy configurations
-
-Structure:
-
-```
-home/
-├── .config/         # XDG config directory
-├── .ssh/           # SSH configurations
-├── .npmrc          # npm configuration
-└── [other dotfiles]
-```
-
-### Hosts (`/hosts`)
-
-Host configurations define machine-specific settings:
-
-- Hardware configurations
-- System-specific overrides
-- Host-specific features
-
-Structure:
-
-```
-hosts/
-├── darwin/          # Darwin hosts
-│   └── peranpl1-ml2/  # Specific host configuration
-│       ├── default.nix  # Main configuration
-│       └── hardware.nix # Hardware-specific settings
-└── nixos/           # NixOS hosts
-    └── example-host/   # Specific host configuration
-        ├── default.nix  # Main configuration
-        └── hardware.nix # Hardware-specific settings
-```
-
-## When to Use Each
-
-### Use Modules When
-
-- Configuring system-wide services
-- Setting up core system functionality
-- Managing system defaults
-- Implementing security policies
-- Defining service dependencies
-- Setting up hardware configurations
-
-### Use Home Manager When
-
-- Managing user packages
-- Configuring applications through Nix
-- Setting up development environments
-- Defining user features
-- Organizing work environments
-- Managing shell configurations
-
-### Use Home When
-
-- Storing traditional dotfiles
-- Managing configs not yet in Nix
-- Keeping application-specific settings
-- Maintaining legacy configurations
-
-### Use Hosts When
-
-- Defining machine-specific settings
-- Configuring hardware
-- Setting up system-specific overrides
-- Managing host-specific features
-
-## Implementation Details
-
-### System Configuration (`flake.nix`)
-
-The system configuration is built using a flexible `mkSystem` function that:
-
-- Supports both NixOS and Darwin systems
-- Integrates home-manager
-- Provides consistent module structure
-- Allows for system-specific customization
-
-### Module System
-
-Modules follow the Nix module system pattern:
-
-- Options are declared using `lib.mkOption`
-- Configurations are conditionally applied using `lib.mkIf`
-- Dependencies are managed through imports
-- Settings are merged using `lib.mkMerge`
-
-### Darwin-Specific Features
-
-Special attention is given to Darwin systems with:
-
-- Window management (yabai, skhd, sketchybar)
-- macOS system defaults
-- Homebrew integration
-- Application management
-
-## Inspiration
-
-This configuration draws inspiration from several excellent Nix configurations:
-
-- [hlissner/dotfiles](https://github.com/hlissner/dotfiles)
-
-  - Module organization
-  - Feature separation
-
-- [LnL7/nix-darwin](https://github.com/LnL7/nix-darwin)
-
-  - Darwin system management
-  - macOS integration
-
-- [nix-community/home-manager](https://github.com/nix-community/home-manager)
-
-  - User environment management
-  - Feature organization
-
-- [kclejeune/system](https://github.com/kclejeune/system)
-  - Darwin configuration
-  - Homebrew integration
-
-## Usage
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/dotfiles.git
-```
-
-2. Install Nix:
-
-```bash
-# For NixOS, it's already installed
-# For Darwin (macOS):
-sh <(curl -L https://nixos.org/nix/install)
-```
-
-3. Enable flakes:
-
-```bash
-mkdir -p ~/.config/nix
-echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
-```
-
-4. Build and activate:
-
-```bash
-# For Darwin:
-nix build .#darwinConfigurations.peranpl1-ml2.system
-./result/sw/bin/darwin-rebuild switch --flake .
-
-# For NixOS:
-sudo nixos-rebuild switch --flake .#hostname
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+- [Flake-parts](https://flake.parts/)
+- [Clan-core](https://docs.clan.lol/)
+- [sops-nix](https://github.com/Mic92/sops-nix)
+- [NixOS](https://nixos.org/manual/nixos/stable/)
+- [nix-darwin](https://github.com/LnL7/nix-darwin)
+- [home-manager](https://nix-community.github.io/home-manager/)
 
 ## License
 

@@ -1,0 +1,558 @@
+# AeroSpace Configuration
+
+# Required for persistent-workspaces and other v0.20+ features
+config-version = 2
+
+# ========================================
+# CORE SETTINGS
+# ========================================
+
+# Start AeroSpace at login (default: false)
+start-at-login = true
+
+# Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Default layout for new windows (tiles = BSP-like)
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+# Padding for accordion layout
+accordion-padding = 20
+
+# Automatically unhide hidden macOS apps when focusing them
+automatically-unhide-macos-hidden-apps = true
+
+# Mouse follows focus (inverted from yabai's focus_follows_mouse)
+# This moves the mouse to the center of the focused window
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Commands to run after AeroSpace starts
+after-startup-command = [
+  # Assign workspaces to monitors based on current display configuration
+  'exec-and-forget ~/.config/aerospace/scripts/assign-workspaces-to-monitors.sh',
+  # Set accordion layout for specific workspaces
+  'workspace 3',
+  'layout accordion',
+  'workspace-back-and-forth',
+  'workspace 5',
+  'layout accordion',
+  'workspace-back-and-forth',
+  'workspace 6',
+  'layout accordion',
+  'workspace-back-and-forth',
+  'workspace 7',
+  'layout accordion',
+  'workspace-back-and-forth',
+  'workspace 8',
+  'layout accordion',
+  'workspace-back-and-forth',
+]
+
+# Trigger SketchyBar when workspace changes
+exec-on-workspace-change = [
+  '/bin/bash',
+  '-c',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+]
+
+# Trigger SketchyBar when mode changes (v0.20+)
+# This replaces manual triggers in each mode binding
+on-mode-changed = [
+  'exec-and-forget sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)',
+]
+
+# Keep workspaces alive even when empty - important for stable multi-monitor assignments
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8']
+
+# ========================================
+# GAPS CONFIGURATION
+# ========================================
+
+[gaps]
+# Inner gaps between windows (matching yabai's window_gap = 6)
+inner.horizontal = 6
+inner.vertical = 6
+
+# Outer gaps at screen edges (matching yabai's padding = 6)
+outer.left = 6
+outer.bottom = 6
+outer.right = 6
+# Top gap is bar height 32px + 2 * y_offset 4px = 40
+# Notch on M3 Macbook Pro 16in = 64 physical px / 2 = 32 points (logical pixels)
+# Add 1 for janky borders width
+# => gap should be 41 - 32 = 9
+# => just 41 on all other monitors
+outer.top = [{ monitor."built-in" = 9 }, 41]
+
+# ========================================
+# KEYBOARD MAPPING
+# ========================================
+
+[key-mapping]
+preset = 'qwerty'
+
+# ========================================
+# WORKSPACE DEFINITIONS
+# ========================================
+
+# Define numbered workspaces with functional labels
+# 1: term, 2: web, 3: notes, 4: ide, 5: comms, 6: creative, 7: social, 8: office
+
+# [workspace-to-monitor-force-assignment]
+# DISABLED: Using script-based assignment instead (service mode 'm')
+# Force-assignment prevents manual moves and is unreliable across reconnects.
+# Run ~/.config/aerospace/scripts/assign-workspaces-to-monitors.sh to assign workspaces.
+#
+# To find your monitor names run: aerospace list-monitors --format '%{monitor-id}|%{monitor-name}'
+#
+# Known monitor serial numbers (decimal):
+#   DELL U2719D (1): 825373527
+#   DELL U2719D (2): 892875607
+#   Built-in: 4251086178
+#
+# # Primary workspaces on main display:
+# 1 = ['main', 'built-in'] # term
+# 4 = ['main', 'built-in'] # ide
+# 5 = ['main', 'built-in'] # slack
+# #
+# # Secondary workspaces on external when available:
+# 2 = ['secondary', 'main', 'built-in'] # web
+# 3 = ['secondary', 'main', 'built-in'] # notes
+# 6 = ['secondary', 'main', 'built-in'] # mail
+# 7 = ['secondary', 'main', 'built-in'] # zoom
+# 8 = ['secondary', 'main', 'built-in'] # social
+
+# ========================================
+# MODES
+# ========================================
+
+# You can create different binding modes
+# The 'main' mode is default and mandatory
+[mode.main.binding]
+
+# ----------------------------------------
+# Application Launchers
+# ----------------------------------------
+# NOTE: App launching is handled by LeaderKey.app (https://github.com/mikker/LeaderKey.app)
+# This provides a cleaner, more extensible launcher with nested shortcuts.
+# The alt-a, alt-g, alt-c, alt-s bindings have been removed to avoid conflicts.
+
+# ----------------------------------------
+# System Commands
+# ----------------------------------------
+# Reload AeroSpace config
+alt-shift-r = 'reload-config'
+
+# ----------------------------------------
+# Window Focus (Arrow Keys + HJKL)
+# ----------------------------------------
+alt-left = 'focus left'
+alt-down = 'focus down'
+alt-up = 'focus up'
+alt-right = 'focus right'
+
+# Vim-style navigation (from default config)
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# ----------------------------------------
+# Window Movement (Alt + Shift + Arrows and HJKL)
+# ----------------------------------------
+# Move windows within workspace
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# Arrow key variants
+alt-shift-left = 'move left'
+alt-shift-down = 'move down'
+alt-shift-up = 'move up'
+alt-shift-right = 'move right'
+
+# ----------------------------------------
+# Workspace Navigation
+# ----------------------------------------
+# Navigate to previous/next workspace (wraps across monitors)
+# cmd-left = 'workspace --wrap-around prev'
+# cmd-right = 'workspace --wrap-around next'
+cmd-left = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin prev'
+cmd-right = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin next'
+# cmd-h = 'workspace --wrap-around prev'
+# cmd-l = 'workspace --wrap-around next'
+cmd-h = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin prev'
+cmd-l = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin next'
+
+# Back and forth between recent workspaces (like i3)
+alt-b = 'workspace-back-and-forth'
+alt-tab = 'workspace-back-and-forth' # Alternative (from default config)
+
+# Move workspace to next monitor
+alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Direct workspace access (cmd + number)
+cmd-1 = 'workspace 1' # term
+cmd-2 = 'workspace 2' # web
+cmd-3 = 'workspace 3' # notes
+cmd-4 = 'workspace 4' # ide
+cmd-5 = 'workspace 5' # comms
+cmd-6 = 'workspace 6' # creative
+cmd-7 = 'workspace 7' # social
+cmd-8 = 'workspace 8' # office
+# cmd-9 = 'workspace 9'
+# cmd-0 = 'workspace 10'
+
+# ----------------------------------------
+# Move Window to Workspace
+# ----------------------------------------
+# Each binding triggers sketchybar to update app icons after moving
+alt-shift-1 = [
+  'move-node-to-workspace 1',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # term
+alt-shift-2 = [
+  'move-node-to-workspace 2',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # web
+alt-shift-3 = [
+  'move-node-to-workspace 3',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # notes
+alt-shift-4 = [
+  'move-node-to-workspace 4',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # ide
+alt-shift-5 = [
+  'move-node-to-workspace 5',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # comms
+alt-shift-6 = [
+  'move-node-to-workspace 6',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # creative
+alt-shift-7 = [
+  'move-node-to-workspace 7',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # social
+alt-shift-8 = [
+  'move-node-to-workspace 8',
+  'exec-and-forget sketchybar --trigger aerospace_window_move',
+] # office
+# alt-shift-9 = ['move-node-to-workspace 9', 'exec-and-forget sketchybar --trigger aerospace_window_move']
+
+# Move to recent workspace and follow
+# NOTE: AeroSpace's move-node-to-workspace doesn't support --workspace-back-and-forth flag
+# Workaround: Use alt-b to switch workspaces, then alt-shift-<num> to move windows
+# Or manually move to a specific workspace number
+# alt-shift-b = 'workspace-back-and-forth'  # Disabled - limitation in AeroSpace
+
+# ----------------------------------------
+# Layout Management
+# ----------------------------------------
+# Toggle between layouts
+alt-slash = 'layout tiles horizontal vertical'     # Quick layout toggle (from default)
+alt-comma = 'layout accordion horizontal vertical' # Accordion layout toggle (from default)
+
+# Explicit layout commands
+alt-e = 'layout tiles'    # BSP-like layout
+alt-r = 'layout floating' # Floating mode
+
+# Balance window sizes in workspace
+alt-shift-0 = 'balance-sizes'
+
+# Smart resize shortcuts (from default config)
+alt-minus = 'resize smart -50'
+alt-equal = 'resize smart +50'
+
+# Mirror workspace tree
+alt-shift-y = 'layout h_accordion' # Approximate y-axis mirror with accordion
+alt-shift-x = 'layout v_accordion' # Approximate x-axis mirror with accordion
+
+# Flatten workspace tree (remove all splits)
+alt-shift-slash = 'flatten-workspace-tree'
+
+# ----------------------------------------
+# Window State
+# ----------------------------------------
+# Toggle float on current window and center it
+alt-t = ['layout floating', 'resize smart 800']
+
+# Toggle between floating and tiling
+alt-shift-space = 'layout floating tiling'
+
+# Fullscreen toggle (AeroSpace fullscreen, not macOS native)
+alt-f = 'fullscreen'
+
+# Native macOS fullscreen
+alt-shift-f = 'macos-native-fullscreen'
+
+# ----------------------------------------
+# Window Control
+# ----------------------------------------
+# Close focused window
+alt-w = 'close'
+
+# ----------------------------------------
+# Container Manipulation (i3-like)
+# ----------------------------------------
+# Set insertion point (using join-with as alternative)
+alt-ctrl-left = 'join-with left'
+alt-ctrl-down = 'join-with down'
+alt-ctrl-up = 'join-with up'
+alt-ctrl-right = 'join-with right'
+
+# HJKL variants
+alt-ctrl-h = 'join-with left'
+alt-ctrl-j = 'join-with down'
+alt-ctrl-k = 'join-with up'
+alt-ctrl-l = 'join-with right'
+
+# Split orientation
+# NOTE: 'split' command conflicts with enable-normalization-flatten-containers
+# Using 'join-with' for manual container control instead (see Container Manipulation section above)
+
+# ----------------------------------------
+# Monitor Focus
+# ----------------------------------------
+alt-ctrl-x = 'focus-monitor next'
+alt-ctrl-z = 'focus-monitor prev'
+# Direct monitor access
+alt-ctrl-1 = 'focus-monitor 1'
+alt-ctrl-2 = 'focus-monitor 2'
+alt-ctrl-3 = 'focus-monitor 3'
+
+# ----------------------------------------
+# Resize Mode
+# ----------------------------------------
+# Enter resize mode (IMPROVEMENT: modal resizing like i3)
+# Using ctrl-alt-r to avoid conflict with alt-r (layout floating)
+ctrl-alt-r = 'mode resize'
+
+# ----------------------------------------
+# Service Mode
+# ----------------------------------------
+# Enter service mode for administrative tasks
+alt-shift-semicolon = 'mode service'
+
+# ----------------------------------------
+# Passthrough Mode
+# ----------------------------------------
+# Disable all AeroSpace keybindings (press esc to return)
+alt-shift-p = 'mode passthrough'
+
+# ========================================
+# PASSTHROUGH MODE
+# ========================================
+# Disables all keybindings except esc to return to main mode
+# Useful when you need all keys to pass through to the active application
+
+[mode.passthrough.binding]
+esc = 'mode main'
+
+# ========================================
+# RESIZE MODE (IMPROVEMENT)
+# ========================================
+
+[mode.resize.binding]
+# Resize with HJKL or arrows
+h = 'resize width -20'
+j = 'resize height +20'
+k = 'resize height -20'
+l = 'resize width +20'
+
+left = 'resize width -20'
+down = 'resize height +20'
+up = 'resize height -20'
+right = 'resize width +20'
+
+# Increase window size (shift)
+shift-h = 'resize width +20'
+shift-j = 'resize height -20'
+shift-k = 'resize height +20'
+shift-l = 'resize width -20'
+
+shift-left = 'resize width +20'
+shift-down = 'resize height -20'
+shift-up = 'resize height +20'
+shift-right = 'resize width -20'
+
+# Exit resize mode
+enter = 'mode main'
+esc = 'mode main'
+
+# ========================================
+# SERVICE MODE
+# ========================================
+
+[mode.service.binding]
+# Access with alt-shift-semicolon
+esc = ['reload-config', 'mode main']
+r = ['flatten-workspace-tree', 'mode main']
+f = ['layout floating tiling', 'mode main']
+backspace = ['close-all-windows-but-current', 'mode main']
+
+# Reset all workspace layouts to configured defaults (tiles/accordion)
+l = [
+  'exec-and-forget ~/.config/aerospace/scripts/reset-layouts.sh',
+  'mode main',
+]
+
+# Reassign workspaces to monitors based on current display configuration
+# Uses serial numbers to identify monitors reliably across reconnects
+m = [
+  'exec-and-forget ~/.config/aerospace/scripts/assign-workspaces-to-monitors.sh',
+  'mode main',
+]
+
+# Reassign windows to configured workspaces
+a = [
+  'exec-and-forget ~/.config/aerospace/scripts/reassign-windows.sh',
+  'mode main',
+]
+
+# Join windows (from default config)
+alt-shift-h = ['join-with left', 'mode main']
+alt-shift-j = ['join-with down', 'mode main']
+alt-shift-k = ['join-with up', 'mode main']
+alt-shift-l = ['join-with right', 'mode main']
+
+# Volume controls (from default config)
+down = 'volume down'
+up = 'volume up'
+shift-down = ['volume set 0', 'mode main']
+
+# Return to main mode
+enter = 'mode main'
+
+# ========================================
+# WINDOW RULES & AUTO-ASSIGNMENTS
+# ========================================
+
+# Float system preferences and settings windows
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.SystemProfiler'
+run = 'layout floating'
+
+# Float windows with "Settings" or "Preferences" in title
+[[on-window-detected]]
+if.window-title-regex-substring = 'Preferences$'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.window-title-regex-substring = 'Settings$'
+run = 'layout floating'
+
+# ----------------------------------------
+# App-to-Workspace Assignments
+# ----------------------------------------
+
+# Workspace 1: Term
+[[on-window-detected]]
+if.app-id = 'org.alacritty'
+run = 'move-node-to-workspace 1'
+
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 1'
+
+# Workspace 2: Web
+[[on-window-detected]]
+if.app-id = 'com.apple.Safari'
+run = 'move-node-to-workspace 2'
+
+[[on-window-detected]]
+if.app-id = 'com.brave.Browser'
+run = 'move-node-to-workspace 2'
+
+# Workspace 3: Notes
+[[on-window-detected]]
+if.app-id = 'md.obsidian'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.Notes'
+run = 'move-node-to-workspace 3'
+
+# Workspace 4: IDE
+[[on-window-detected]]
+if.app-id = 'com.microsoft.VSCode'
+run = 'move-node-to-workspace 4'
+
+# Workspace 5: Comms (Slack, Mail, Zoom)
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Outlook'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'us.zoom.xos'
+run = 'move-node-to-workspace 5'
+
+# Workspace 6: Creative (GIMP, Blender, Reaper, Spotify)
+[[on-window-detected]]
+if.app-id = 'org.gimp.gimp'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'org.blender.blender'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.cockos.reaper'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'
+run = 'move-node-to-workspace 6'
+
+# Workspace 7: Social
+[[on-window-detected]]
+if.app-id = 'com.apple.MobileSMS'
+run = 'move-node-to-workspace 7'
+
+[[on-window-detected]]
+if.app-id = 'com.hnc.Discord'
+run = 'move-node-to-workspace 7'
+
+[[on-window-detected]]
+if.app-id = 'im.riot.app'
+run = 'move-node-to-workspace 7'
+
+# Workspace 8: Office (Microsoft Office apps)
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Word'
+run = 'move-node-to-workspace 8'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Excel'
+run = 'move-node-to-workspace 8'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Powerpoint'
+run = 'move-node-to-workspace 8'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.rdc.macos'
+run = 'move-node-to-workspace 8'
+
+# ========================================
+# ENVIRONMENT VARIABLES
+# ========================================
+
+[exec]
+inherit-env-vars = true
+
+[exec.env-vars]
+# Ensure Homebrew and NixOS paths are available for GUI apps
+PATH = '/run/current-system/sw/bin:/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}'

@@ -156,7 +156,9 @@ fi
 
 # Load API keys from sops-nix if not already set.
 _secrets_dir="${XDG_CONFIG_HOME:-$HOME/.config}/sops-nix/secrets/api_keys"
-for key in OPAL OPENAI ASSEMBLYAI HUGGING_FACE_HUB ANTHROPIC MISTRAL OPENROUTER GEMINI; do
+# Removed OPENAI for now...
+# for key in OPAL ASSEMBLYAI HUGGING_FACE_HUB OPENAI ANTHROPIC MISTRAL OPENROUTER GEMINI ARTIFICIAL_ANALYSIS OPENCODE; do
+for key in OPAL HUGGING_FACE_HUB ARTIFICIAL_ANALYSIS OPENCODE; do
   var="${key}_API_KEY"
   file="${_secrets_dir}/${(L)key}_api_key"
   [[ -z "${(@P)var}" && -f "$file" ]] && export "$var"="$(<"$file")"
@@ -182,6 +184,3 @@ fi
 if [[ -f "$HOME/.zshrc.local" ]]; then
   source "$HOME/.zshrc.local"
 fi
-
-# opencode
-export PATH=~/.opencode/bin:$PATH

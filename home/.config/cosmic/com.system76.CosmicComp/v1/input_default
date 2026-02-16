@@ -1,0 +1,7 @@
+(
+    state: Enabled,
+    acceleration: Some((
+        profile: Some(Flat),
+        speed: -0.4988700325272239,
+    )),
+)

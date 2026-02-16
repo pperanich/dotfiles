@@ -1,0 +1,305 @@
+{
+  "$help": "https://aka.ms/terminal-documentation",
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "defaultProfile": "{159a785b-36c2-42fa-995e-8fbda647460f}",
+  "alwaysShowTabs": true,
+  "showTabsInTitlebar": true,
+  "showTerminalTitleInTitlebar": true,
+  "initialCols": 120,
+  "initialRows": 30,
+  "theme": "Catppuccin Mocha",
+  "wordDelimiters": " ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?\u2764",
+  "newTabMenu": [
+    {
+      "type": "remainingProfiles"
+    }
+  ],
+  "keybindings": [
+    {
+      "keys": "ctrl+t",
+      "command": "newTab"
+    },
+    {
+      "keys": "ctrl+w",
+      "command": null
+    },
+    {
+      "keys": "ctrl+tab",
+      "command": "nextTab"
+    },
+    {
+      "keys": "ctrl+shift+tab",
+      "command": "prevTab"
+    },
+    {
+      "keys": "ctrl+shift+up",
+      "command": "scrollUp"
+    },
+    {
+      "keys": "ctrl+shift+down",
+      "command": "scrollDown"
+    },
+    {
+      "keys": "ctrl+shift+pgup",
+      "command": "scrollUpPage"
+    },
+    {
+      "keys": "ctrl+shift+pgdn",
+      "command": "scrollDownPage"
+    },
+    {
+      "keys": "alt+1",
+      "command": {
+        "action": "switchToTab",
+        "index": 0
+      }
+    },
+    {
+      "keys": "alt+2",
+      "command": {
+        "action": "switchToTab",
+        "index": 1
+      }
+    },
+    {
+      "keys": "alt+3",
+      "command": {
+        "action": "switchToTab",
+        "index": 2
+      }
+    },
+    {
+      "keys": "alt+4",
+      "command": {
+        "action": "switchToTab",
+        "index": 3
+      }
+    },
+    {
+      "keys": "alt+5",
+      "command": {
+        "action": "switchToTab",
+        "index": 4
+      }
+    },
+    {
+      "keys": "alt+6",
+      "command": {
+        "action": "switchToTab",
+        "index": 5
+      }
+    },
+    {
+      "keys": "alt+7",
+      "command": {
+        "action": "switchToTab",
+        "index": 6
+      }
+    },
+    {
+      "keys": "alt+8",
+      "command": {
+        "action": "switchToTab",
+        "index": 7
+      }
+    },
+    {
+      "keys": "alt+9",
+      "command": {
+        "action": "switchToTab",
+        "index": 8
+      }
+    },
+    {
+      "keys": "ctrl+shift+1",
+      "command": {
+        "action": "newTab",
+        "index": 0
+      }
+    },
+    {
+      "keys": "ctrl+shift+2",
+      "command": {
+        "action": "newTab",
+        "index": 1
+      }
+    },
+    {
+      "keys": "ctrl+shift+3",
+      "command": {
+        "action": "newTab",
+        "index": 2
+      }
+    },
+    {
+      "keys": "ctrl+shift+4",
+      "command": {
+        "action": "newTab",
+        "index": 3
+      }
+    }
+  ],
+  "profiles": {
+    "defaults": {
+      "colorScheme": "Catppuccin Mocha",
+      "font": {
+        "face": "Iosevka Nerd Font",
+        "size": 14
+      },
+      "historySize": 9001,
+      "padding": "0, 0, 0, 0"
+    },
+    "list": [
+      {
+        "guid": "{159a785b-36c2-42fa-995e-8fbda647460f}",
+        "name": "NixOS",
+        "commandline": "wsl.exe -d NixOS",
+        "startingDirectory": "\\\\wsl$\\NixOS\\home\\pperanich",
+        "icon": "ms-appdata:///roaming/nix.png",
+        "tabTitle": "NixOS",
+        "closeOnExit": "never",
+        "antialiasingMode": "cleartype",
+        "cursorColor": "#FFFFFF",
+        "cursorShape": "filledBox",
+        "intenseTextStyle": "none",
+        "snapOnInput": false,
+        "useAcrylic": false,
+        "opacity": 100
+      },
+      {
+        "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+        "name": "Windows PowerShell",
+        "colorScheme": "Campbell (modified)",
+        "startingDirectory": "C:/Users/prest/Documents",
+        "tabTitle": "PowerShell",
+        "background": "#012456",
+        "cursorColor": "#FFFFFF",
+        "cursorShape": "bar",
+        "snapOnInput": true,
+        "useAcrylic": true,
+        "opacity": 85
+      },
+      {
+        "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+        "name": "Command Prompt",
+        "colorScheme": "Pandora",
+        "startingDirectory": "C:/Users/prest/Documents",
+        "tabTitle": "cmd",
+        "cursorColor": "#FFFFFF",
+        "cursorShape": "bar",
+        "closeOnExit": "graceful",
+        "snapOnInput": true,
+        "useAcrylic": true,
+        "opacity": 85
+      },
+      {
+        "guid": "{e24737f6-ffce-4202-b26e-6b165321d75c}",
+        "name": "PowerShell Admin",
+        "colorScheme": "Campbell (modified)",
+        "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "startingDirectory": "C:/Users/prest/Documents",
+        "tabTitle": "PowerShell Admin",
+        "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
+        "background": "#012456",
+        "elevate": true,
+        "closeOnExit": "never",
+        "antialiasingMode": "grayscale",
+        "cursorColor": "#FFFFFF",
+        "cursorShape": "bar",
+        "snapOnInput": true,
+        "useAcrylic": true,
+        "opacity": 85
+      }
+    ]
+  },
+  "schemes": [
+    {
+      "name": "Catppuccin Mocha",
+      "background": "#1E1E2E",
+      "foreground": "#CDD6F4",
+      "cursorColor": "#F5E0DC",
+      "selectionBackground": "#585B70",
+      "black": "#45475A",
+      "red": "#F38BA8",
+      "green": "#A6E3A1",
+      "yellow": "#F9E2AF",
+      "blue": "#89B4FA",
+      "purple": "#F5C2E7",
+      "cyan": "#94E2D5",
+      "white": "#BAC2DE",
+      "brightBlack": "#585B70",
+      "brightRed": "#F38BA8",
+      "brightGreen": "#A6E3A1",
+      "brightYellow": "#F9E2AF",
+      "brightBlue": "#89B4FA",
+      "brightPurple": "#F5C2E7",
+      "brightCyan": "#94E2D5",
+      "brightWhite": "#A6ADC8"
+    },
+    {
+      "name": "Campbell (modified)",
+      "background": "#0C0C0C",
+      "foreground": "#F2F2F2",
+      "cursorColor": "#FFFFFF",
+      "selectionBackground": "#FFFFFF",
+      "black": "#0C0C0C",
+      "red": "#C50F1F",
+      "green": "#13A10E",
+      "yellow": "#C19C00",
+      "blue": "#0037DA",
+      "purple": "#881798",
+      "cyan": "#3A96DD",
+      "white": "#CCCCCC",
+      "brightBlack": "#767676",
+      "brightRed": "#E74856",
+      "brightGreen": "#16C60C",
+      "brightYellow": "#F9F1A5",
+      "brightBlue": "#3B78FF",
+      "brightPurple": "#B4009E",
+      "brightCyan": "#61D6D6",
+      "brightWhite": "#F2F2F2"
+    },
+    {
+      "name": "Pandora",
+      "background": "#141E43",
+      "foreground": "#E1E1E1",
+      "cursorColor": "#FFFFFF",
+      "selectionBackground": "#FFFFFF",
+      "black": "#000000",
+      "red": "#FF4242",
+      "green": "#74AF68",
+      "yellow": "#FFAD29",
+      "blue": "#338F86",
+      "purple": "#9414E6",
+      "cyan": "#23D7D7",
+      "white": "#E2E2E2",
+      "brightBlack": "#3F5648",
+      "brightRed": "#FF3242",
+      "brightGreen": "#74CD68",
+      "brightYellow": "#FFB929",
+      "brightBlue": "#23D7D7",
+      "brightPurple": "#FF37FF",
+      "brightCyan": "#00EDE1",
+      "brightWhite": "#FFFFFF"
+    }
+  ],
+  "themes": [
+    {
+      "name": "Catppuccin Mocha",
+      "tab": {
+        "background": "#1E1E2EFF",
+        "iconStyle": "default",
+        "showCloseButton": "always",
+        "unfocusedBackground": null
+      },
+      "tabRow": {
+        "background": "#181825FF",
+        "unfocusedBackground": "#11111BFF"
+      },
+      "window": {
+        "applicationTheme": "dark",
+        "useMica": false
+      }
+    }
+  ]
+}

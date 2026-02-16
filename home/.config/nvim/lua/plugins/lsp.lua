@@ -2,23 +2,26 @@ return {
   -- {
   --   "neovim/nvim-lspconfig",
   --   opts = {
-  --     format = { timeout_ms = 30000 },
+  --     -- format = { timeout_ms = 30000 },
   --     servers = {
-  --       tailwindcss = {
-  --         filetypes_include = { "rust" },
-  --         init_options = {
-  --           userLanguages = {
-  --             rust = "html",
-  --           },
-  --         },
-  --         on_attach = function(_, bufnr)
-  --           require("tailwindcss-colors").buf_attach(bufnr)
-  --         end,
+  --       -- tailwindcss = {
+  --       --   filetypes_include = { "rust" },
+  --       --   init_options = {
+  --       --     userLanguages = {
+  --       --       rust = "html",
+  --       --     },
+  --       --   },
+  --       --   on_attach = function(_, bufnr)
+  --       --     require("tailwindcss-colors").buf_attach(bufnr)
+  --       --   end,
+  --       -- },
+  --       sourcekit = {
+  --         cmd = { vim.trim(vim.fn.system("xcrun -f sourcekit-lsp")) } or nil,
   --       },
   --     },
   --   },
   -- },
-  -- {
-  --   "themaxmarchuk/tailwindcss-colors.nvim",
-  -- },
+  -- -- {
+  -- --   "themaxmarchuk/tailwindcss-colors.nvim",
+  -- -- },
 }

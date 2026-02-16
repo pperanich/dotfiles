@@ -1,3 +1,14 @@
 .cursor/
 memory-bank/
 **/.claude/settings.local.json
+
+.mcp.json
+
+.worktrees/
+
+# CLAUDE.md files (automatically generated from AGENTS.md via symlinks)
+CLAUDE.md
+**/CLAUDE.md
+
+/.leann/
+/site/

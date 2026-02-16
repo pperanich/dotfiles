@@ -1,22 +1,22 @@
 #!/bin/sh
 
 if [[ "$1" == "ON" ]]; then
-MAIN_1=colour51 # Cyan1
-MAIN_2=colour50 # Cyan2
-MAIN_3=colour43 # Cyan3
+  MAIN_1=colour51 # Cyan1
+  MAIN_2=colour50 # Cyan2
+  MAIN_3=colour43 # Cyan3
 elif [[ "$1" == "OFF" ]]; then
-MAIN_1=colour214 # Orange1
-MAIN_2=colour208 # DarkOrange
-MAIN_3=colour172 # Orange3
+  MAIN_1=colour214 # Orange1
+  MAIN_2=colour208 # DarkOrange
+  MAIN_3=colour172 # Orange3
 else
-echo "Theme state not detected! Exiting..."
-return
+  echo "Theme state not detected! Exiting..."
+  return
 fi
 
 ACTIVE_PANE=colour9 # Red
-CLOCK=colour109 # LightSkyBlue3
-ALT_1=colour167 # IndianRed
-ALT_2=colour7 # Silver
+CLOCK=colour109     # LightSkyBlue3
+ALT_1=colour167     # IndianRed
+ALT_2=colour7       # Silver
 # The grays go from darkest to lightest below.
 GREY_1=colour232 # Grey3
 GREY_2=colour234 # Grey11

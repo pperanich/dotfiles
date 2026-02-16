@@ -2,7 +2,6 @@
 {
   lib,
   writeShellApplication,
-  stdenv,
 }:
 (writeShellApplication {
   name = "update-display";

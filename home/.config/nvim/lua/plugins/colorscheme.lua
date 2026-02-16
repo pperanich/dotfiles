@@ -1,6 +1,6 @@
 return {
   -- add gruvbox
-  { "ishan9299/modus-theme-vim" },
+  -- { "ishan9299/modus-theme-vim" },
   { "Mofiqul/vscode.nvim" },
   { "projekt0n/github-nvim-theme" },
   {
@@ -15,11 +15,17 @@ return {
     priority = 1000,
     opts = {},
   },
+  {
+    "miikanissi/modus-themes.nvim",
+    lazy = false,
+    priority = 1000,
+    opts = {},
+  },
 
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "github_dark_default",
+      colorscheme = "catppuccin-mocha",
     },
   },
 }

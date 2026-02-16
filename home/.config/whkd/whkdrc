@@ -1,0 +1,194 @@
+.shell powershell
+
+# ================================================================
+# komorebi Windows Window Manager Configuration
+# Keybindings mirroring macOS AeroSpace/SKHD setup
+# ================================================================
+
+# ----------------------------------------------------------------
+# System Commands
+# ----------------------------------------------------------------
+
+# Reload whkd configuration
+alt + shift + o         : taskkill /f /im whkd.exe; Start-Process whkd -WindowStyle hidden
+
+# Reload komorebi configuration
+alt + shift + r         : komorebic reload-configuration
+
+# Retile windows
+alt + ctrl + shift + r  : komorebic retile
+
+# Toggle pause (stop managing windows)
+alt + p                 : komorebic toggle-pause
+
+# ----------------------------------------------------------------
+# Window Focus (HJKL + Arrows)
+# ----------------------------------------------------------------
+
+alt + h                 : komorebic focus left
+alt + j                 : komorebic focus down
+alt + k                 : komorebic focus up
+alt + l                 : komorebic focus right
+
+alt + left              : komorebic focus left
+alt + down              : komorebic focus down
+alt + up                : komorebic focus up
+alt + right             : komorebic focus right
+
+# Cycle focus
+alt + shift + oem_4     : komorebic cycle-focus previous
+alt + shift + oem_6     : komorebic cycle-focus next
+
+# ----------------------------------------------------------------
+# Window Movement (HJKL + Arrows)
+# ----------------------------------------------------------------
+
+alt + shift + h         : komorebic move left
+alt + shift + j         : komorebic move down
+alt + shift + k         : komorebic move up
+alt + shift + l         : komorebic move right
+
+alt + shift + left      : komorebic move left
+alt + shift + down      : komorebic move down
+alt + shift + up        : komorebic move up
+alt + shift + right     : komorebic move right
+
+# Promote window to main position
+alt + shift + return    : komorebic promote
+
+# ----------------------------------------------------------------
+# Stack Windows
+# ----------------------------------------------------------------
+
+alt + ctrl + h          : komorebic stack left
+alt + ctrl + j          : komorebic stack down
+alt + ctrl + k          : komorebic stack up
+alt + ctrl + l          : komorebic stack right
+
+alt + oem_1             : komorebic unstack
+alt + oem_4             : komorebic cycle-stack previous
+alt + oem_6             : komorebic cycle-stack next
+
+# ----------------------------------------------------------------
+# Resize Windows
+# ----------------------------------------------------------------
+
+# Horizontal resize
+alt + oem_plus          : komorebic resize-axis horizontal increase
+alt + oem_minus         : komorebic resize-axis horizontal decrease
+
+# Vertical resize
+alt + shift + oem_plus  : komorebic resize-axis vertical increase
+alt + shift + oem_minus : komorebic resize-axis vertical decrease
+
+# ----------------------------------------------------------------
+# Window State
+# ----------------------------------------------------------------
+
+# Toggle float (similar to macOS Alt+T)
+alt + t                 : komorebic toggle-float
+
+# Toggle float alternative
+alt + shift + space     : komorebic toggle-float
+
+# Toggle fullscreen/maximize (similar to macOS Alt+F)
+alt + f                 : komorebic toggle-maximize
+
+# Toggle monocle mode
+alt + shift + f         : komorebic toggle-monocle
+
+# Close window (similar to macOS Alt+W)
+alt + w                 : komorebic close
+
+# Minimize window
+alt + m                 : komorebic minimize
+
+# ----------------------------------------------------------------
+# Layout Management
+# ----------------------------------------------------------------
+
+# BSP layout (similar to macOS Alt+E)
+alt + e                 : komorebic workspace-layout bsp
+
+# Toggle float (similar to macOS Alt+R for floating layout)
+alt + r                 : komorebic toggle-float
+
+# Cycle through layouts (similar to macOS Alt+/)
+alt + oem_2             : komorebic cycle-layout next
+
+# Flip layout orientation
+alt + x                 : komorebic flip-layout horizontal
+alt + y                 : komorebic flip-layout vertical
+
+# Balance/equalize windows (similar to macOS Alt+Shift+0)
+alt + shift + 0         : komorebic equalize
+
+# ----------------------------------------------------------------
+# Workspace Navigation (Win key similar to macOS Cmd key)
+# ----------------------------------------------------------------
+
+win + 1                 : komorebic focus-workspace 0
+win + 2                 : komorebic focus-workspace 1
+win + 3                 : komorebic focus-workspace 2
+win + 4                 : komorebic focus-workspace 3
+win + 5                 : komorebic focus-workspace 4
+win + 6                 : komorebic focus-workspace 5
+win + 7                 : komorebic focus-workspace 6
+win + 8                 : komorebic focus-workspace 7
+win + 9                 : komorebic focus-workspace 8
+win + 0                 : komorebic focus-workspace 9
+
+# Cycle workspaces (similar to macOS Cmd+Left/Right)
+win + left              : komorebic cycle-workspace previous
+win + right             : komorebic cycle-workspace next
+
+# Back and forth to recent workspace (similar to macOS Alt+B)
+alt + b                 : komorebic focus-last-workspace
+
+# ----------------------------------------------------------------
+# Move Window to Workspace (Alt+Shift+Number)
+# ----------------------------------------------------------------
+
+alt + shift + 1         : komorebic move-to-workspace 0
+alt + shift + 2         : komorebic move-to-workspace 1
+alt + shift + 3         : komorebic move-to-workspace 2
+alt + shift + 4         : komorebic move-to-workspace 3
+alt + shift + 5         : komorebic move-to-workspace 4
+alt + shift + 6         : komorebic move-to-workspace 5
+alt + shift + 7         : komorebic move-to-workspace 6
+alt + shift + 8         : komorebic move-to-workspace 7
+alt + shift + 9         : komorebic move-to-workspace 8
+
+# Move to recent workspace (similar to macOS Alt+Shift+B)
+alt + shift + b         : komorebic move-to-last-workspace
+
+# ----------------------------------------------------------------
+# Monitor Management
+# ----------------------------------------------------------------
+
+# Focus monitor by index (similar to macOS Alt+Ctrl+1/2/3)
+alt + ctrl + 1          : komorebic focus-monitor 0
+alt + ctrl + 2          : komorebic focus-monitor 1
+alt + ctrl + 3          : komorebic focus-monitor 2
+
+# Cycle monitors (similar to macOS Alt+Ctrl+X/Z)
+alt + ctrl + x          : komorebic cycle-monitor next
+alt + ctrl + z          : komorebic cycle-monitor previous
+
+# Move window to monitor
+alt + shift + ctrl + 1  : komorebic move-to-monitor 0
+alt + shift + ctrl + 2  : komorebic move-to-monitor 1
+alt + shift + ctrl + 3  : komorebic move-to-monitor 2
+
+# Move workspace to monitor (similar to macOS Alt+Shift+Tab)
+alt + shift + tab       : komorebic move-workspace-to-monitor next
+
+# ----------------------------------------------------------------
+# Container Manipulation
+# ----------------------------------------------------------------
+
+# Set insertion point (join-with equivalent)
+alt + ctrl + shift + h  : komorebic stack left
+alt + ctrl + shift + j  : komorebic stack down
+alt + ctrl + shift + k  : komorebic stack up
+alt + ctrl + shift + l  : komorebic stack right

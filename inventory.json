@@ -1,0 +1,10 @@
+{
+  "machines": {
+    "pp-nas1": {
+      "installedAt": 1770955566
+    },
+    "pp-router1": {
+      "installedAt": 1769957145
+    }
+  }
+}

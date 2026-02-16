@@ -1,12 +1,9 @@
 {
   lib,
-  stdenv,
   fetchFromGitHub,
   rustPlatform,
-  darwin,
 }:
-rustPlatform.buildRustPackage
-rec {
+rustPlatform.buildRustPackage rec {
   pname = "devai";
   version = "main";
 
@@ -27,7 +24,7 @@ rec {
   meta = with lib; {
     description = "Command Agent runner to accelerate production coding.";
     homepage = "https://github.com/jeremychone/rust-devai";
-    license = with licenses; [mit];
+    license = with licenses; [ mit ];
     mainProgram = "devai";
   };
 }

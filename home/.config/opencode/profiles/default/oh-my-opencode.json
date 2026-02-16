@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
+  "google_auth": false,
+  "agents": {
+    "librarian": {
+      "model": "anthropic/claude-sonnet-4-5"
+    },
+    "explore": {
+      "model": "anthropic/claude-sonnet-4-5"
+    },
+    "oracle": {
+      "model": "anthropic/claude-opus-4-6"
+    },
+    "frontend-ui-ux-engineer": {
+      "model": "anthropic/claude-opus-4-6"
+    },
+    "document-writer": {
+      "model": "anthropic/claude-sonnet-4-5"
+    },
+    "multimodal-looker": {
+      "model": "anthropic/claude-sonnet-4-5"
+    }
+  }
+}

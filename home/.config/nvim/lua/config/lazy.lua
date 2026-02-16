@@ -42,9 +42,12 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.util.dot" },
     { import = "lazyvim.plugins.extras.editor.dial" },
     { import = "lazyvim.plugins.extras.editor.snacks_explorer" },
-    { import = "lazyvim.plugins.extras.editor.snacks_picker" },
+    -- { import = "lazyvim.plugins.extras.editor.snacks_picker" },
     { import = "lazyvim.plugins.extras.util.mini-hipatterns" },
     { import = "lazyvim.plugins.extras.ui.treesitter-context" },
+    { import = "lazyvim.plugins.extras.ai.claudecode" },
+    { import = "lazyvim.plugins.extras.ai.avante" },
+    { import = "lazyvim.plugins.extras.editor.neo-tree" },
 
     -- { import = "lazyvim.plugins.extras.ui.mini-animate" },
     -- import/override with your plugins

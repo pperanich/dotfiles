@@ -13,6 +13,55 @@ let
   routerIp = config.features.router.lan.address;
   nasHost = "pp-nas1.${config.features.router.dhcp.domainName}";
   domain = config.features.router.dhcp.domainName;
+
+  # Generate A + AAAA record pairs pointing subdomains to the router (LAN + WireGuard)
+  mkDnsRecords =
+    subdomains:
+    lib.concatMap (sub: [
+      {
+        type = "A";
+        name = "${sub}.prestonperanich.com";
+        content = routerIp;
+      }
+      {
+        type = "AAAA";
+        name = "${sub}.prestonperanich.com";
+        content = wgAddress;
+      }
+    ]) subdomains;
+
+  # Caddy vhost listening on LAN + WireGuard with custom config
+  mkVhost = extraConfig: {
+    listenAddresses = [
+      routerIp
+      wgAddress
+    ];
+    inherit extraConfig;
+  };
+
+  # Simple reverse proxy vhost (LAN + WireGuard)
+  mkProxy =
+    backend:
+    mkVhost ''
+      reverse_proxy ${backend}
+    '';
+
+  # Homepage dashboard service entry
+  mkDashboardService =
+    {
+      name,
+      icon,
+      sub,
+      desc,
+      path ? "",
+    }:
+    {
+      ${name} = {
+        inherit icon;
+        href = "https://${sub}.prestonperanich.com${path}";
+        description = desc;
+      };
+    };
 in
 {
   imports = [
@@ -37,16 +86,11 @@ in
     cloudflareTunnel
     vaultwarden
 
+    # Outbound transactional email
+    stalwart
+
     # Development environment
     rust
-
-    # System utilities
-    fileExploration
-    networkUtilities
-
-    # Virtualization (useful for mini PC/home server use)
-    # docker
-    # qemu
   ]);
 
   features.pperanich.desktop = false;
@@ -56,20 +100,40 @@ in
     enable = true;
     domain = "vault.prestonperanich.com";
     environmentFiles = [
-      config.sops.secrets.vaultwarden-env.path
       config.sops.templates."vaultwarden-admin.env".path
     ];
   };
 
-  # Cloudflare Tunnel — public service exposure without opening WAN ports
-  features.cloudflareTunnel = {
-    enable = true;
-    tunnelId = "REPLACE_WITH_TUNNEL_UUID"; # cf-tunnel-create homelab --account-id <id>
-    credentialsFile = config.sops.secrets.cloudflared-tunnel-credentials.path;
-    ingress = {
-      "vault.prestonperanich.com" = "http://localhost:8223"; # Caddy tunnel listener (blocks /admin)
-    };
+  # SMTP via local Stalwart (no auth needed for localhost)
+  services.vaultwarden.config = {
+    SMTP_HOST = "127.0.0.1";
+    SMTP_PORT = 25;
+    SMTP_SECURITY = "off";
+    SMTP_FROM = "vault@prestonperanich.com";
   };
+
+  # Stalwart — outbound transactional email (localhost relay for Vaultwarden)
+  # DKIM key generated declaratively via clan vars (run: clan vars generate pp-router1)
+  features.stalwart = {
+    enable = true;
+    hostname = "mail.prestonperanich.com";
+    domain = "prestonperanich.com";
+  };
+
+  # Cloudflare Tunnel — public service exposure without opening WAN ports
+  # tunnelId read from cf-tunnel.json (written by: cf tunnel sync --name homelab --apply)
+  features.cloudflareTunnel =
+    let
+      tunnelMeta = builtins.fromJSON (builtins.readFile ./cf-tunnel.json);
+    in
+    {
+      enable = true;
+      inherit (tunnelMeta) tunnelId;
+      credentialsFile = config.sops.secrets.cloudflared-tunnel-credentials.path;
+      ingress = {
+        "vault.prestonperanich.com" = "http://localhost:8223"; # Caddy tunnel listener (blocks /admin)
+      };
+    };
 
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-router.pp-wg";
@@ -144,6 +208,10 @@ in
     dns.extraLocalData = [
       # WSL mirrored networking shares the Windows host's IP
       "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."
+      # vault served locally (public access via Cloudflare Tunnel CNAME)
+      # "vault.prestonperanich.com. A ${routerIp}"
+      # "vault.prestonperanich.com. AAAA ${wgAddress}"
+      # vault-admin — internal only, no public DNS
     ];
     mdns.enable = true; # Enables .local device discovery (AirPlay, Chromecast, printers)
 
@@ -236,86 +304,37 @@ in
   services.cf-dns = {
     enable = true;
     zone = "prestonperanich.com";
-    records = [
-      # ntopng — network monitoring
-      {
-        type = "A";
-        name = "ntopng.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "ntopng.prestonperanich.com";
-        content = wgAddress;
-      }
-      # unifi — Ubiquiti controller
-      {
-        type = "A";
-        name = "unifi.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "unifi.prestonperanich.com";
-        content = wgAddress;
-      }
-      # immich — photo/video management on pp-nas1
-      {
-        type = "A";
-        name = "immich.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "immich.prestonperanich.com";
-        content = wgAddress;
-      }
-      # nextcloud — file sync & collaboration on pp-nas1
-      {
-        type = "A";
-        name = "nextcloud.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "nextcloud.prestonperanich.com";
-        content = wgAddress;
-      }
-      # opencloud — file sync on pp-nas1 (trial alongside nextcloud)
-      {
-        type = "A";
-        name = "opencloud.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "opencloud.prestonperanich.com";
-        content = wgAddress;
-      }
-      # home — dashboard on pp-router1
-      {
-        type = "A";
-        name = "home.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "home.prestonperanich.com";
-        content = wgAddress;
-      }
-      # vault — password manager (LAN/WG fast path)
-      # Public access uses Cloudflare Tunnel CNAME (managed in CF dashboard)
-      {
-        type = "A";
-        name = "vault.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "vault.prestonperanich.com";
-        content = wgAddress;
-      }
-    ];
+    records =
+      mkDnsRecords [
+        "ntopng" # network monitoring
+        "unifi" # Ubiquiti controller
+        "immich" # photo/video management (pp-nas1)
+        "nextcloud" # file sync & collaboration (pp-nas1)
+        "opencloud" # file sync trial (pp-nas1)
+        "jellyfin" # media server (pp-nas1)
+        "navidrome" # music server (pp-nas1)
+        "audiobookshelf" # audiobooks & podcasts (pp-nas1)
+        "home" # dashboard (pp-router1)
+        "vault-admin" # vaultwarden admin panel (pp-router1)
+      ]
+      ++ [
+        # Mail deliverability (SPF + DKIM + DMARC)
+        {
+          type = "TXT";
+          name = "prestonperanich.com";
+          content = "v=spf1 mx a:mail.prestonperanich.com ~all";
+        }
+        {
+          type = "TXT";
+          name = "${config.features.stalwart.dkimSelector}._domainkey.prestonperanich.com";
+          content = config.features.stalwart.dkimDnsRecord;
+        }
+        {
+          type = "TXT";
+          name = "_dmarc.prestonperanich.com";
+          content = "v=DMARC1; p=none; rua=mailto:dmarc@prestonperanich.com";
+        }
+      ];
   };
 
   # Homepage dashboard — landing page for all internal services
@@ -332,6 +351,10 @@ in
           style = "row";
           columns = 3;
         };
+        Media = {
+          style = "row";
+          columns = 3;
+        };
         Services = {
           style = "row";
           columns = 3;
@@ -340,59 +363,75 @@ in
     };
     services = [
       {
-        "Network" = [
+        "Network" = map mkDashboardService [
           {
-            "Unifi" = {
-              icon = "unifi";
-              href = "https://unifi.prestonperanich.com";
-              description = "Network controller";
-            };
+            name = "Unifi";
+            icon = "unifi";
+            sub = "unifi";
+            desc = "Network controller";
           }
           {
-            "ntopng" = {
-              icon = "ntopng";
-              href = "https://ntopng.prestonperanich.com";
-              description = "Network monitoring";
-            };
+            name = "ntopng";
+            icon = "ntopng";
+            sub = "ntopng";
+            desc = "Network monitoring";
           }
         ];
       }
       {
-        "Services" = [
+        "Media" = map mkDashboardService [
           {
-            "Immich" = {
-              icon = "immich";
-              href = "https://immich.prestonperanich.com";
-              description = "Photo & video backup";
-            };
+            name = "Jellyfin";
+            icon = "jellyfin";
+            sub = "jellyfin";
+            desc = "Movies, TV & music streaming";
           }
           {
-            "Nextcloud" = {
-              icon = "nextcloud";
-              href = "https://nextcloud.prestonperanich.com";
-              description = "File sync & collaboration";
-            };
+            name = "Navidrome";
+            icon = "navidrome";
+            sub = "navidrome";
+            desc = "Music server";
           }
           {
-            "OpenCloud" = {
-              icon = "open-cloud";
-              href = "https://opencloud.prestonperanich.com";
-              description = "File sync (trial)";
-            };
+            name = "Audiobookshelf";
+            icon = "audiobookshelf";
+            sub = "audiobookshelf";
+            desc = "Audiobooks & podcasts";
+          }
+        ];
+      }
+      {
+        "Services" = map mkDashboardService [
+          {
+            name = "Immich";
+            icon = "immich";
+            sub = "immich";
+            desc = "Photo & video backup";
           }
           {
-            "Vaultwarden" = {
-              icon = "vaultwarden";
-              href = "https://vault.prestonperanich.com";
-              description = "Password manager";
-            };
+            name = "Nextcloud";
+            icon = "nextcloud";
+            sub = "nextcloud";
+            desc = "File sync & collaboration";
           }
           {
-            "Vaultwarden Admin" = {
-              icon = "vaultwarden";
-              href = "https://vault.prestonperanich.com/admin";
-              description = "Admin panel";
-            };
+            name = "OpenCloud";
+            icon = "open-cloud";
+            sub = "opencloud";
+            desc = "File sync";
+          }
+          {
+            name = "Vaultwarden";
+            icon = "vaultwarden";
+            sub = "vault";
+            desc = "Password manager";
+          }
+          {
+            name = "Vaultwarden Admin";
+            icon = "vaultwarden";
+            sub = "vault-admin";
+            path = "/admin";
+            desc = "Admin panel (internal only)";
           }
         ];
       }
@@ -426,12 +465,7 @@ in
   # When adding a new virtualHost below, add matching records above.
 
   # --- Secrets wiring (sops-nix) ---
-  # Vaultwarden: env file with SMTP config + admin token template
-  sops.secrets.vaultwarden-env = {
-    owner = "vaultwarden";
-    group = "vaultwarden";
-    mode = "0400";
-  };
+  # Vaultwarden: admin token for /admin panel
   sops.secrets.vaultwarden-admin-token = {
     owner = "vaultwarden";
     mode = "0400";
@@ -444,11 +478,13 @@ in
     group = "vaultwarden";
   };
 
+  # Cloudflare API token (used by cf-dns and caddy templates)
+  sops.secrets.cloudflare-api-token = { };
+
   # Cloudflare Tunnel: credentials JSON (binary format, separate sops file)
   sops.secrets.cloudflared-tunnel-credentials = {
     sopsFile = lib.my.relativeToRoot "sops/cloudflared-tunnel.json";
     format = "binary";
-    owner = "cloudflared";
     mode = "0400";
   };
 
@@ -483,108 +519,56 @@ in
     '';
 
     virtualHosts = {
-      # Homepage dashboard (runs on this router)
-      "home.prestonperanich.com" = {
-        listenAddresses = [
-          routerIp
-          wgAddress # WireGuard VPN
-        ];
-        extraConfig = ''
-          reverse_proxy localhost:8082
-        '';
-      };
+      # --- Simple reverse proxies (router-local services) ---
+      "home.prestonperanich.com" = mkProxy "localhost:8082";
+      "ntopng.prestonperanich.com" = mkProxy "localhost:3000";
+      "vault.prestonperanich.com" = mkProxy "localhost:${toString config.features.vaultwarden.port}";
+      "vault-admin.prestonperanich.com" =
+        mkProxy "localhost:${toString config.features.vaultwarden.port}";
 
-      "ntopng.prestonperanich.com" = {
-        listenAddresses = [
-          routerIp
-          wgAddress # WireGuard VPN
-        ];
-        extraConfig = ''
-          reverse_proxy localhost:3000
-        '';
-      };
+      # Unifi controller (self-signed cert)
+      "unifi.prestonperanich.com" = mkVhost ''
+        reverse_proxy https://localhost:8443 {
+          transport http {
+            tls_insecure_skip_verify
+          }
+        }
+      '';
 
-      "unifi.prestonperanich.com" = {
-        listenAddresses = [
-          routerIp
-          wgAddress # WireGuard VPN
-        ];
-        extraConfig = ''
-          reverse_proxy https://localhost:8443 {
-            transport http {
-              tls_insecure_skip_verify
-            }
-          }
-        '';
-      };
+      # --- NAS services (pp-nas1) with upload limits ---
+      "immich.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://${nasHost}:2283 {
+          header_up X-Forwarded-Proto {scheme}
+        }
+        request_body {
+          max_size 50G
+        }
+      '';
 
-      # Immich — photo/video management on pp-nas1
-      "immich.prestonperanich.com" = {
-        listenAddresses = [
-          routerIp
-          wgAddress # WireGuard VPN
-        ];
-        extraConfig = ''
-          reverse_proxy http://${nasHost}:2283 {
-            # Large photo/video uploads
-            header_up X-Forwarded-Proto {scheme}
-          }
-          request_body {
-            max_size 50G
-          }
-        '';
-      };
+      "nextcloud.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://${nasHost}:80 {
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Forwarded-For {remote_host}
+        }
+        request_body {
+          max_size 16G
+        }
+      '';
 
-      # Nextcloud — file sync & collaboration on pp-nas1
-      "nextcloud.prestonperanich.com" = {
-        listenAddresses = [
-          routerIp
-          wgAddress # WireGuard VPN
-        ];
-        extraConfig = ''
-          reverse_proxy http://${nasHost}:80 {
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-For {remote_host}
-          }
-          request_body {
-            max_size 16G
-          }
-        '';
-      };
+      "opencloud.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://${nasHost}:9200 {
+          header_up X-Forwarded-Proto {scheme}
+        }
+        request_body {
+          max_size 16G
+        }
+      '';
 
-      # OpenCloud — file sync trial on pp-nas1
-      "opencloud.prestonperanich.com" = {
-        listenAddresses = [
-          routerIp
-          wgAddress # WireGuard VPN
-        ];
-        extraConfig = ''
-          reverse_proxy http://${nasHost}:9200 {
-            header_up X-Forwarded-Proto {scheme}
-          }
-          request_body {
-            max_size 16G
-          }
-        '';
-      };
-
-      # Vaultwarden — password manager (LAN + WireGuard: full access including /admin)
-      "vault.prestonperanich.com" = {
-        listenAddresses = [
-          routerIp
-          wgAddress # WireGuard VPN
-        ];
-        extraConfig = ''
-          reverse_proxy localhost:${toString config.features.vaultwarden.port}
-        '';
-      };
-
-      # Vaultwarden — public access via Cloudflare Tunnel (blocks /admin)
-      # CF Tunnel routes here instead of directly to Vaultwarden, so Caddy
-      # can strip /admin before it reaches the backend.
-      "vault-tunnel.prestonperanich.com:8223" = {
+      # --- Cloudflare Tunnel listener (localhost only, blocks /admin) ---
+      "http://:8223" = {
         listenAddresses = [ "127.0.0.1" ];
         extraConfig = ''
+          # Block /admin from public access (Cloudflare Tunnel)
           handle /admin* {
             respond "Forbidden" 403
           }

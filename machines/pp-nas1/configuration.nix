@@ -22,19 +22,12 @@
     # Development environment
     rust
 
-    # System utilities
-    fileExploration
-    networkUtilities
-
     # Self-hosted services
     immich
     nextcloud
     opencloud
     radicale
 
-    # Virtualization (useful for mini PC/home server use)
-    # docker
-    # qemu
   ]);
 
   features.pperanich.desktop = false;

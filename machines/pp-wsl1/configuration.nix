@@ -20,10 +20,6 @@
 
     # Development environment (minimal for WSL)
     rust
-
-    # System utilities
-    fileExploration
-    networkUtilities
   ]);
 
   clan.core = {

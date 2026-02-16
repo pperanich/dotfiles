@@ -26,60 +26,15 @@
 
         home-manager.backupFileExtension = "hm-back";
 
-        # nix = {
-        #   settings = {
-        #     # Trust configuration
-        #     trusted-users = [
-        #       "root"
-        #       "@wheel"
-        #     ];
-        #     experimental-features = [
-        #       "nix-command"
-        #       "flakes"
-        #     ];
-        #     warn-dirty = false;
-        #     system-features = [
-        #       "kvm"
-        #       "big-parallel"
-        #       "nixos-test"
-        #     ];
-        #
-        #     # Disable global flake registry
-        #     flake-registry = "";
-        #
-        #     # Substituters - include common ones that might be used across machines
-        #     substituters = [
-        #       "https://cache.nixos.org/"
-        #       "https://nix-community.cachix.org"
-        #       "https://t2linux.cachix.org" # T2Linux support for MacBooks
-        #     ];
-        #     trusted-public-keys = [
-        #       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-        #       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        #       "t2linux.cachix.org-1:P733c5Gt1qTcxsm+Bae0renWnT8OLs0u9+yfaK2Bejw=" # T2Linux support
-        #     ];
-        #   };
-        #
-        #   # Garbage collection
-        #   gc = {
-        #     automatic = true;
-        #     dates = "weekly";
-        #     options = "--delete-older-than 7d";
-        #   };
-        #
-        #   # Store optimization
-        #   optimise = {
-        #     automatic = true;
-        #     dates = [ "03:45" ];
-        #   };
-        #
-        #   # Registry will be configured by the flake itself
-        #   # No need to configure inputs here since they're not available
-        # };
+        environment.systemPackages = with pkgs; [
+          ghostty.terminfo
 
-        # System auto-upgrade (NixOS specific) - disabled by default
-        # system.autoUpgrade.enable = false;
-        environment.systemPackages = [ pkgs.ghostty.terminfo ];
+          # Merged from former file-exploration + networkUtilities modules
+          fzf
+          curl
+          wget
+          bandwhich
+        ];
 
         nixpkgs = {
           config = {
@@ -279,6 +234,7 @@
           atuin.enable = true;
           zoxide.enable = true;
           nix-index-database.comma.enable = true;
+          vscode.enable = true;
         };
 
         # Configure user nixpkgs
@@ -292,10 +248,16 @@
         };
 
         home = {
-          # User session variables for Nix
+          # User session variables
           sessionVariables = {
-            # Point to the user's flake for convenience
             FLAKE = "${config.home.homeDirectory}/dotfiles/";
+            SHELL = "${pkgs.zsh}/bin/zsh";
+            LANG = "en_US.UTF-8";
+            LC_ALL = "en_US.UTF-8";
+            EDITOR = "nvim";
+            VISUAL = "nvim";
+            PAGER = "less";
+            MANPAGER = "less -R --use-color -Dd+r -Du+b";
           };
           enableNixpkgsReleaseCheck = false;
           stateVersion = "25.11";

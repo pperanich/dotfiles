@@ -19,14 +19,9 @@
 
     # Editors
     nvim
-    vscode
 
     # Languages
     rust
-
-    # Utilities
-    networkUtilities
-    fileExploration
 
     # General cli tools
     tools

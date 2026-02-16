@@ -15,7 +15,7 @@ The private pathway is the primary method for accessing administrative interface
 
 - **Binding**: Caddy binds to the LAN IP (10.0.0.1) and the WireGuard interface address.
 - **TLS**: Certificates are obtained via the DNS-01 challenge, allowing for valid HTTPS even on a private network without opening port 80.
-- **DNS**: Managed via the `cf-dns` module, which creates A/AAAA records pointing to private internal IPs.
+- **DNS**: Managed via the `cf-dns` module, which uses `cf dns sync` to create A/AAAA records pointing to private internal IPs.
 
 ### When to use
 
@@ -66,25 +66,82 @@ Some services benefit from being available on both pathways. This provides the c
 
 ## One-Time Setup: Cloudflare Tunnel
 
-Setting up a new tunnel requires a one-time manual process to link the local daemon with the Cloudflare account.
+Provisioning a Cloudflare Tunnel is a **one-time, manual step** required before deploying any machine that uses the public pathway. It cannot be fully automated within Nix because the upstream `services.cloudflared` module needs the tunnel UUID at **Nix evaluation time** — it's used as an attrset key for the systemd service name, credential path, and cloudflared config. Since Nix evaluation is pure, it can't make API calls, so the UUID must exist as a committed file before `nixos-rebuild` runs.
+
+The `cf` CLI tool automates this provisioning step.
+
+### What it produces
+
+| File                   | Location                         | Contents                         | Committed as                   |
+| ---------------------- | -------------------------------- | -------------------------------- | ------------------------------ |
+| **Tunnel metadata**    | `machines/<host>/cf-tunnel.json` | Tunnel UUID + name               | Plaintext (no secrets)         |
+| **Tunnel credentials** | `sops/cloudflared-tunnel.json`   | Account tag, UUID, tunnel secret | sops-encrypted (binary format) |
+
+The metadata file sits next to `configuration.nix` so it can be read with a relative path:
+
+```nix
+tunnelMeta = builtins.fromJSON (builtins.readFile ./cf-tunnel.json);
+# → { tunnelId = "abc12345-..."; tunnelName = "homelab"; }
+```
+
+A nil-UUID placeholder (`00000000-...`) is committed initially. An assertion in `cloudflare-tunnel.nix` will block any build that still has the placeholder, reminding you to run the provisioning step.
 
 ### Prerequisites
 
-- A Cloudflare account with a configured domain
-- The `cloudflared` CLI installed
+- `CLOUDFLARE_API_TOKEN` — API token with **Tunnel:Edit** and **DNS:Edit** permissions
+- `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID
+- `sops` configured with a creation rule matching `cloudflared-tunnel.json` in `sops/.sops.yaml`
+- The `cf` tool (available in the devshell via `nix develop`)
 
 ### Steps
 
-1. **Login**: Run `cloudflared tunnel login` to authenticate.
-2. **Create**: Run `cloudflared tunnel create <name>` to generate the tunnel and credentials file.
-3. **Encrypt**: Move the credentials JSON to `sops/cloudflared-tunnel.json` and ensure it is encrypted.
-4. **Configure**: Set the `tunnelId` in the Nix configuration.
-5. **DNS**: Create a CNAME record for the tunnel apex.
+```bash
+# 1. Enter the devshell (provides cf + sops)
+nix develop
+
+# 2. Export credentials (both are REQUIRED — tunnel sync will fail without them)
+export CLOUDFLARE_API_TOKEN="your-token"
+export CLOUDFLARE_ACCOUNT_ID="your-account-id"  # Found in Cloudflare dashboard: Account Home → Overview (right sidebar)
+
+# 3. Dry run — shows what would be created
+cf tunnel sync \
+  --name homelab \
+  --hostname vault.prestonperanich.com \
+  --zone prestonperanich.com
+
+# 4. Apply — creates tunnel, encrypts creds, writes metadata, creates CNAME
+cf tunnel sync \
+  --name homelab \
+  --hostname vault.prestonperanich.com \
+  --zone prestonperanich.com \
+  --apply
+
+# 5. Commit both generated files
+git add machines/pp-router1/cf-tunnel.json sops/cloudflared-tunnel.json
+git commit -m "feat: provision cloudflare tunnel"
+
+# 6. Deploy
+clan machines update pp-router1
+```
+
+### Re-running is safe
+
+`cf tunnel sync` is idempotent. If the tunnel already exists and matches, it reports "Nothing to do." Pass additional `--hostname` flags to create new CNAME records for the same tunnel.
+
+### Recovery scenarios
+
+| Situation                               | What happens                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------- |
+| Tunnel exists, metadata + creds present | Verifies match, updates CNAMEs if needed                                     |
+| Tunnel exists, metadata missing         | Reconstructs metadata from API                                               |
+| Tunnel exists, creds missing            | **FATAL** — tunnel secret can't be recovered. Delete tunnel and re-provision |
+| No tunnel, stale metadata + creds       | Requires `--force` to overwrite and re-create                                |
 
 ### Secrets
 
-- **Tunnel Credentials**: Stored in `sops/cloudflared-tunnel.json`.
-- **API Token**: Stored in `sops/secrets.yaml` for DNS record management.
+- **Tunnel Credentials** (`sops/cloudflared-tunnel.json`): sops-encrypted, binary format. Contains the tunnel secret needed by cloudflared at runtime. Decrypted on the target machine by sops-nix.
+- **API Token** (`sops/secrets.yaml`): Used by the `cf-dns` systemd service for DNS record management.
+- **Tunnel Metadata** (`machines/<host>/cf-tunnel.json`): Plaintext. Contains only the tunnel UUID and name — no secrets. Read by Nix at eval time.
 
 ## Architecture Diagram
 

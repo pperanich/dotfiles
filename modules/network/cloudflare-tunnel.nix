@@ -46,6 +46,10 @@ _: {
               builtins.match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" cfg.tunnelId != null;
             message = "features.cloudflareTunnel.tunnelId must be a valid UUID, got: ${cfg.tunnelId}";
           }
+          {
+            assertion = cfg.tunnelId != "00000000-0000-0000-0000-000000000000";
+            message = "features.cloudflareTunnel.tunnelId is still the nil-UUID placeholder. Run: cf tunnel sync --name <name> --apply";
+          }
         ];
 
         services.cloudflared = {

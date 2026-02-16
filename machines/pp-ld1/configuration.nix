@@ -14,19 +14,8 @@
     # User setup
     pperanich
 
-    # System utilities
-    fileExploration
-    networkUtilities
-
     # Development environment
     rust
-
-    # Database services
-    couchdb
-
-    # Virtualization
-    docker
-    podman
   ]);
 
   nixpkgs.hostPlatform = "x86_64-linux";

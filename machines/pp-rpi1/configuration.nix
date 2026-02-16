@@ -19,10 +19,6 @@
 
     # User setup (headless — no desktop apps/fonts)
     pperanich
-
-    # System utilities
-    fileExploration
-    networkUtilities
   ]);
 
   features.pperanich.desktop = false;

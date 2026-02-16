@@ -34,7 +34,6 @@
           # Desktop
           fonts
           desktopApplications
-          vscode
         ]
       else
         [ ]

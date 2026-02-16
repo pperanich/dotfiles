@@ -13,22 +13,15 @@
 
     # Editors
     nvim
-    vscode
 
     # General cli tools
     tools
 
-    # Utilities
-    networkUtilities
-    fileExploration
-
-    # Utilities
+    # Desktop
     fonts
 
     # Work profile
     aplnis
-
-    shellEnvironment
   ];
 
   # State version set by mkHomeConfigurations

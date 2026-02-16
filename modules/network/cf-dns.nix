@@ -105,7 +105,7 @@ _: {
           serviceConfig = {
             Type = "oneshot";
             EnvironmentFile = cfg.environmentFile;
-            ExecStart = "${pkgs.cf-dns}/bin/cf-dns sync --config ${configJson} --apply";
+            ExecStart = "${pkgs.cf}/bin/cf dns sync --config ${configJson} --apply";
             DynamicUser = true;
           };
         };

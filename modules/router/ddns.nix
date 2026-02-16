@@ -183,12 +183,22 @@ _: {
               Unit = "kea-unbound-sync.service";
             };
           };
+          # Ensure the safety-net timer starts whenever Unbound does.
+          # partOf propagates stop but NOT start — without this, a manual
+          # stop→start (or NixOS rebuild) leaves the timer dead.
+          systemd.services.unbound.wants = [ "kea-unbound-sync.timer" ];
 
           # Clear tracking file when Unbound stops/restarts — dynamic records are
           # lost on restart, so the next sync must re-add everything.
           # '+' runs with full privileges (file is root-owned, Unbound runs as unbound user)
           systemd.services.unbound.serviceConfig.ExecStopPost =
             "+-${pkgs.coreutils}/bin/rm -f ${trackingFile}";
+
+          # Re-sync immediately after Unbound starts — triggers the sync service
+          # asynchronously (--no-block) so it doesn't block Unbound startup.
+          # '+' runs with root privileges (Unbound service runs as unbound user).
+          systemd.services.unbound.serviceConfig.ExecStartPost =
+            "+-${pkgs.systemd}/bin/systemctl start --no-block kea-unbound-sync.service";
 
           # Timer — periodic fallback (catches missed inotify events)
           # partOf: when Unbound restarts (losing dynamic records), this timer

@@ -165,22 +165,6 @@
           };
           roles.default.tags.all = { };
         };
-        # ZeroTier VPN - alternative to WireGuard (NixOS only, not supported on Darwin)
-        # zerotier-home = {
-        #   module = {
-        #     name = "zerotier";
-        #     input = "clan-core";
-        #   };
-        #   roles = {
-        #     controller.machines.pp-router1 = { };
-        #     peer.machines = {
-        #       pp-nas1 = { };
-        #       # Add other NixOS machines as needed:
-        #       # pp-ll1 = { };
-        #       # pp-ld1 = { };
-        #     };
-        #   };
-        # };
         pp-wg = {
           module = {
             name = "wireguard";
@@ -280,63 +264,6 @@
             };
           };
         };
-
-        # Nix cache proxy - speeds up builds for all LAN machines
-        # NOTE: Disabled - requires ncps nixpkgs module (not yet in stable nixpkgs)
-        # ncps = {
-        #   module = {
-        #     name = "ncps";
-        #     input = "clan-core";
-        #   };
-        #   roles = {
-        #     server.machines.pp-router1 = {
-        #       settings = {
-        #         dataPath = "/var/lib/ncps";
-        #         caches = [
-        #           "https://cache.nixos.org"
-        #           "https://nix-community.cachix.org"
-        #         ];
-        #         publicKeys = [
-        #           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-        #           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        #         ];
-        #       };
-        #     };
-        #     client.tags.nixos = { };
-        #   };
-        # };
-
-        # OpenClaw - AI assistant with Gateway/Node distributed architecture
-        # Gateway runs on pp-router1, nodes on development machines
-        # Token is automatically shared via clan.core.vars (share = true)
-        # openclaw = {
-        #   module = {
-        #     name = "@pperanich/openclaw";
-        #     input = "self"; # Local module from clanServices/openclaw
-        #   };
-        #   roles = {
-        #     gateway.machines.pp-router1 = {
-        #       settings = {
-        #         port = 18789;
-        #         endpoint = "vpn.prestonperanich.com";
-        #       };
-        #     };
-        #     node.machines = {
-        #       pp-wsl1 = {
-        #         settings = {
-        #           displayName = "WSL Dev Node";
-        #           gatewayEndpoint = "vpn.prestonperanich.com:18789";
-        #         };
-        #       };
-        #       pp-ml1 = {
-        #         settings = {
-        #           displayName = "MacBook Dev Node";
-        #           gatewayEndpoint = "vpn.prestonperanich.com:18789";
-        #         };
-        #       };
-        #     };
-        #   };
-        # };
 
       };
     };

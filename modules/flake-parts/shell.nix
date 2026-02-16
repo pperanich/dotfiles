@@ -16,6 +16,7 @@
           pkgs.ssh-to-age
           pkgs.gnupg
           pkgs.age
+          pkgs.age-plugin-yubikey
           pkgs.zensical
 
           inputs'.clan-core.packages.clan-cli
@@ -26,8 +27,8 @@
 
           # WireGuard peer onboarding
           (pkgs.callPackage ../../pkgs/wg-add-peer { })
-          # Cloudflare Tunnel provisioning
-          (pkgs.callPackage ../../pkgs/cf-tunnel-create { })
+          # Cloudflare CLI (DNS sync + tunnel provisioning)
+          (pkgs.callPackage ../../pkgs/cf { })
           # ]
           # ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           #   pkgs.age-plugin-se # Secure Enclave plugin - only works on macOS, requires Swift to build

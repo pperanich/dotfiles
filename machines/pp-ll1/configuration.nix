@@ -30,14 +30,6 @@ in
 
     # Development environment
     rust
-
-    # System utilities
-    fileExploration
-    networkUtilities
-
-    # # Virtualization (useful for development)
-    # docker
-    # qemu
   ]);
 
   # T2Linux-specific Nix settings

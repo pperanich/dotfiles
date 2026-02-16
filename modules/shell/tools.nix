@@ -48,6 +48,7 @@ _: {
           xh # Friendly and fast tool for sending HTTP requests
           httpie # Better curl
           wget # Tool for retrieving files using HTTP, HTTPS, and FTP
+          my-curl # Use "custom" curl so we can override with openssl1 if needed.
           bandwhich # A CLI utility for displaying current network utilization
 
           # System Monitoring

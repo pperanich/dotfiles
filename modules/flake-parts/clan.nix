@@ -44,6 +44,7 @@
             "laptop"
             "all"
           ];
+          # deploy.targetHost = "peranpl1@peranpl1-ml2.local";
         };
         "pp-nas1" = {
           machineClass = "nixos";

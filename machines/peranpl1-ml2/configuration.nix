@@ -23,7 +23,7 @@
     sketchybar
   ];
 
-  clan.core.networking.targetHost = lib.mkForce "peranpl1@peranpl1-ml2.local";
+  clan.core.networking.targetHost = lib.mkForce "peranpl1@127.0.0.1";
 
   # Host-specific configuration
   networking.hostName = "peranpl1-ml2";

@@ -13,7 +13,7 @@ in
       ...
     }:
     {
-      options.features.pperanich.desktop = lib.mkOption {
+      options.my.pperanich.desktop = lib.mkOption {
         type = lib.types.bool;
         default = true;
         description = "Whether to include desktop applications and fonts in pperanich's home environment";
@@ -61,7 +61,7 @@ in
               import (lib.my.relativeToRoot "home-profiles/pperanich") {
                 inherit (modules) homeManager;
                 config = config.home-manager.users.pperanich;
-                inherit (config.features.pperanich) desktop;
+                inherit (config.my.pperanich) desktop;
               }
             )
           ];

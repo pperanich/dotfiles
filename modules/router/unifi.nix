@@ -7,7 +7,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       unifiCfg = cfg.unifi;
       inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && unifiCfg.enable;
@@ -24,7 +24,7 @@ _: {
       );
     in
     {
-      options.features.router.unifi = {
+      options.my.router.unifi = {
         enable = lib.mkEnableOption "Unifi controller for managing Ubiquiti access points";
 
         openFirewall = lib.mkOption {
@@ -76,8 +76,8 @@ _: {
         };
 
         # Export controller interfaces and firewall rules for injection into firewall.nix
-        features.router._internal.unifiControllerInterfaces = controllerInterfaces;
-        features.router._internal.unifiFirewall = {
+        my.router._internal.unifiControllerInterfaces = controllerInterfaces;
+        my.router._internal.unifiFirewall = {
           inputRules = lib.optionalString unifiCfg.openFirewall ''
             # Unifi controller ports
             iifname @unifi_ifaces tcp dport 8080 accept comment "Unifi inform"

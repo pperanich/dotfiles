@@ -15,7 +15,7 @@ The private pathway is the primary method for accessing administrative interface
 
 - **Binding**: Caddy binds to the LAN IP (10.0.0.1) and the WireGuard interface address.
 - **TLS**: Certificates are obtained via the DNS-01 challenge, allowing for valid HTTPS even on a private network without opening port 80.
-- **DNS**: Managed via the `cf-dns` module, which uses `cf dns sync` to create A/AAAA records pointing to private internal IPs.
+- **DNS**: Managed via the `cloudflareDns` module, which uses `cf dns sync` to create A/AAAA records pointing to private internal IPs.
 
 ### When to use
 
@@ -27,7 +27,7 @@ The private pathway is the primary method for accessing administrative interface
 ### Steps to add a private service
 
 1. Define a Caddy `virtualHost` in the relevant Nix module.
-2. Add a `cf-dns` record pointing the subdomain to the internal IP.
+2. Add a `cloudflareDns` record pointing the subdomain to the internal IP.
 3. Add an entry to the `homepage` dashboard for easy access.
 
 ## Public Pathway (Cloudflare Tunnel)
@@ -183,19 +183,19 @@ services.caddy.virtualHosts."service.prestonperanich.com".extraConfig = ''
 '';
 ```
 
-### Private: cf-dns pattern
+### Private: cloudflareDns pattern
 
 ```nix
-features.cf-dns.records = [
-  { name = "service"; value = "10.0.0.1"; type = "A"; }
+my.cloudflareDns.records = [
+  { name = "service.example.com"; content = "10.0.0.1"; type = "A"; }
 ];
 ```
 
 ### Public: cloudflareTunnel.ingress pattern
 
 ```nix
-features.cloudflareTunnel.ingress = {
-  "service.prestonperanich.com" = "http://localhost:8080";
+my.cloudflareTunnel.ingress = {
+  "service.example.com" = "http://localhost:8080";
 };
 ```
 

@@ -7,7 +7,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       sqmCfg = cfg.sqm;
       wan = cfg.wan.interface;
       enabled = cfg.enable && sqmCfg.enable;
@@ -17,7 +17,7 @@ _: {
       uploadKbit = sqmCfg.uploadMbps * 1000;
     in
     {
-      options.features.router.sqm = {
+      options.my.router.sqm = {
         enable = lib.mkEnableOption "Smart Queue Management (SQM) for bufferbloat reduction";
 
         downloadMbps = lib.mkOption {

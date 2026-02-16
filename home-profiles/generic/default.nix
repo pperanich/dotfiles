@@ -8,9 +8,6 @@
     # Core
     base
 
-    # Shell
-    zsh
-
     # Editors
     nvim
 

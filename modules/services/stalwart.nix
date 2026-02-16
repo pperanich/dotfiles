@@ -7,11 +7,11 @@ _: {
       ...
     }:
     let
-      cfg = config.features.stalwart;
+      cfg = config.my.stalwart;
       dkimVars = config.clan.core.vars.generators.stalwart-dkim;
     in
     {
-      options.features.stalwart = {
+      options.my.stalwart = {
         enable = lib.mkEnableOption "Stalwart mail server for outbound transactional email";
 
         hostname = lib.mkOption {
@@ -70,7 +70,7 @@ _: {
         };
 
         # Expose the full DNS TXT record value for use in machine config
-        features.stalwart.dkimDnsRecord = "v=DKIM1; k=rsa; p=${dkimVars.files.dns-record.value}";
+        my.stalwart.dkimDnsRecord = "v=DKIM1; k=rsa; p=${dkimVars.files.dns-record.value}";
 
         services.stalwart = {
           enable = true;

@@ -10,9 +10,9 @@ let
   # WireGuard controller IPv6 address (derived from clan-managed prefix)
   wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
   wgAddress = "${wgPrefix}::1";
-  routerIp = config.features.router.lan.address;
-  nasHost = "pp-nas1.${config.features.router.dhcp.domainName}";
-  domain = config.features.router.dhcp.domainName;
+  routerIp = config.my.router.lan.address;
+  nasHost = "pp-nas1.${config.my.router.dhcp.domainName}";
+  domain = config.my.router.dhcp.domainName;
 
   # Generate A + AAAA record pairs pointing subdomains to the router (LAN + WireGuard)
   mkDnsRecords =
@@ -80,7 +80,7 @@ in
     router
 
     # Cloudflare DNS sync
-    cfDns
+    cloudflareDns
 
     # Public services (via Cloudflare Tunnel)
     cloudflareTunnel
@@ -93,10 +93,10 @@ in
     rust
   ]);
 
-  features.pperanich.desktop = false;
+  my.pperanich.desktop = false;
 
   # Vaultwarden password manager
-  features.vaultwarden = {
+  my.vaultwarden = {
     enable = true;
     domain = "vault.prestonperanich.com";
     environmentFiles = [
@@ -114,7 +114,7 @@ in
 
   # Stalwart — outbound transactional email (localhost relay for Vaultwarden)
   # DKIM key generated declaratively via clan vars (run: clan vars generate pp-router1)
-  features.stalwart = {
+  my.stalwart = {
     enable = true;
     hostname = "mail.prestonperanich.com";
     domain = "prestonperanich.com";
@@ -122,7 +122,7 @@ in
 
   # Cloudflare Tunnel — public service exposure without opening WAN ports
   # tunnelId read from cf-tunnel.json (written by: cf tunnel sync --name homelab --apply)
-  features.cloudflareTunnel =
+  my.cloudflareTunnel =
     let
       tunnelMeta = builtins.fromJSON (builtins.readFile ./cf-tunnel.json);
     in
@@ -160,7 +160,7 @@ in
   systemd.services."serial-getty@ttyS0".enable = true;
 
   # Router configuration
-  features.router = {
+  my.router = {
     enable = true;
 
     # WireGuard VPN: open UDP port on WAN and trust the tunnel interface
@@ -301,7 +301,7 @@ in
   # Records point to private IPs — unreachable from the public internet.
   # LAN clients resolve via Unbound (10.0.0.1), VPN clients via public DNS + WireGuard.
   # Synced every 12h via systemd timer. Manual: systemctl start cf-dns-sync
-  services.cf-dns = {
+  my.cloudflareDns = {
     enable = true;
     zone = "prestonperanich.com";
     records =
@@ -326,8 +326,8 @@ in
         }
         {
           type = "TXT";
-          name = "${config.features.stalwart.dkimSelector}._domainkey.prestonperanich.com";
-          content = config.features.stalwart.dkimDnsRecord;
+          name = "${config.my.stalwart.dkimSelector}._domainkey.prestonperanich.com";
+          content = config.my.stalwart.dkimDnsRecord;
         }
         {
           type = "TXT";
@@ -461,7 +461,7 @@ in
   #   1. Add cloudflare_api_token to sops/secrets.yaml (Zone:DNS:Edit + Zone:Zone:Read)
   #   2. Build once to get correct Caddy plugin hash (set hash = "" to trigger)
   #
-  # DNS records are managed declaratively above via services.cf-dns.
+  # DNS records are managed declaratively above via my.cloudflareDns.
   # When adding a new virtualHost below, add matching records above.
 
   # --- Secrets wiring (sops-nix) ---
@@ -494,7 +494,7 @@ in
       CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
     '';
   };
-  services.cf-dns.environmentFile = config.sops.templates."cf-dns.env".path;
+  my.cloudflareDns.environmentFile = config.sops.templates."cf-dns.env".path;
 
   # Caddy: Cloudflare API token for DNS challenge
   sops.templates."caddy.env" = {
@@ -522,9 +522,8 @@ in
       # --- Simple reverse proxies (router-local services) ---
       "home.prestonperanich.com" = mkProxy "localhost:8082";
       "ntopng.prestonperanich.com" = mkProxy "localhost:3000";
-      "vault.prestonperanich.com" = mkProxy "localhost:${toString config.features.vaultwarden.port}";
-      "vault-admin.prestonperanich.com" =
-        mkProxy "localhost:${toString config.features.vaultwarden.port}";
+      "vault.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
+      "vault-admin.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
 
       # Unifi controller (self-signed cert)
       "unifi.prestonperanich.com" = mkVhost ''
@@ -573,7 +572,7 @@ in
             respond "Forbidden" 403
           }
           handle {
-            reverse_proxy localhost:${toString config.features.vaultwarden.port}
+            reverse_proxy localhost:${toString config.my.vaultwarden.port}
           }
         '';
       };

@@ -7,7 +7,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       dhcpCfg = cfg.dhcp;
       inherit (cfg._internal) dhcpStart dhcpEnd;
       inherit (cfg.lan)
@@ -20,7 +20,7 @@ _: {
       enabled = cfg.enable && dhcpCfg.enable;
     in
     {
-      options.features.router.dhcp = {
+      options.my.router.dhcp = {
         leaseTime = lib.mkOption {
           type = lib.types.int;
           default = 86400;

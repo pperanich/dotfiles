@@ -9,43 +9,41 @@ The router module (`modules/router/`) provides a complete home router solution b
 ### Features
 
 - **Network Segmentation**: VLAN-based isolation (main, IoT, guest networks)
-- **WiFi Access Point**: Multi-radio hostapd with WPA2/WPA3, 802.11r/k/v roaming
 - **Firewall**: nftables with rate limiting, port forwarding, NAT
 - **DHCP**: Kea DHCP server with static reservations
 - **DNS**: Unbound recursive resolver with DNS-over-TLS
 - **Traffic Shaping**: CAKE qdisc for bufferbloat reduction (SQM)
 - **Monitoring**: ntopng traffic analysis
 - **mDNS**: Avahi for `.local` device discovery
+- **SSDP Relay**: Cross-VLAN device discovery (Chromecast, DIAL)
+- **Unifi Controller**: Ubiquiti AP management
+- **Dynamic DNS**: DHCP lease → DNS record sync
 
 ### Architecture
 
 ```
-                    ┌─────────────────────────────────────────────────┐
-                    │                  pp-router1                      │
-Internet ──────────►│  WAN (enp1s0)                                   │
-                    │       │                                          │
-                    │       ▼                                          │
-                    │  ┌─────────┐                                     │
-                    │  │ nftables│ (NAT, firewall, rate limiting)      │
-                    │  └────┬────┘                                     │
-                    │       │                                          │
-                    │       ▼                                          │
-                    │  ┌─────────┐     ┌──────────┐    ┌──────────┐   │
-                    │  │ br-lan  │────►│ br-iot   │───►│ br-guest │   │
-                    │  │ 10.0.0.1│     │10.0.20.1 │    │10.0.30.1 │   │
-                    │  └────┬────┘     └────┬─────┘    └────┬─────┘   │
-                    │       │               │               │          │
-                    │  ┌────┴────┐     ┌────┴────┐     ┌────┴────┐    │
-                    │  │ wlan24  │     │wlan24_  │     │wlan24_  │    │
-                    │  │ wlan5   │     │iot     │     │guest   │    │
-                    │  │ enp2s0  │     │wlan5_  │     │wlan5_  │    │
-                    │  └─────────┘     │iot     │     │guest   │    │
-                    │                  └─────────┘     └─────────┘    │
-                    └─────────────────────────────────────────────────┘
+                    ┌──────────────────────────────────────────────┐
+                    │                 pp-router1                    │
+Internet ──────────►│  WAN (enp4s0)                                │
+                    │       │                                       │
+                    │       ▼                                       │
+                    │  ┌─────────┐                                  │
+                    │  │ nftables│ (NAT, firewall, rate limiting)   │
+                    │  └────┬────┘                                  │
+                    │       │                                       │
+                    │       ▼                                       │
+                    │  ┌─────────┐     ┌──────────┐  ┌──────────┐  │
+                    │  │ br-lan  │────►│ br-iot   │─►│ br-guest │  │
+                    │  │ 10.0.0.1│     │10.0.20.1 │  │10.0.30.1 │  │
+                    │  └────┬────┘     └────┬─────┘  └────┬─────┘  │
+                    │       │          (VLAN 20)     (VLAN 30)      │
+                    │  LAN ports       via 802.1Q   via 802.1Q     │
+                    │  + Unifi APs     on br-lan    on br-lan      │
+                    └──────────────────────────────────────────────┘
                               │               │               │
                               ▼               ▼               ▼
-                         Main LAN        IoT Devices      Guest WiFi
-                      (full access)   (internet only)   (isolated)
+                         Main LAN        IoT Devices     Guest Network
+                      (full access)   (internet only)    (isolated)
 ```
 
 ## Quick Start
@@ -58,7 +56,7 @@ Internet ──────────►│  WAN (enp1s0)                     
 {
   imports = [ modules.nixos.router ];
 
-  features.router = {
+  my.router = {
     enable = true;
 
     wan.interface = "enp1s0";
@@ -77,7 +75,7 @@ Internet ──────────►│  WAN (enp1s0)                     
 {
   imports = [ modules.nixos.router ];
 
-  features.router = {
+  my.router = {
     enable = true;
 
     # Network interfaces
@@ -92,72 +90,25 @@ Internet ──────────►│  WAN (enp1s0)                     
     dhcp.enable = true;
     dns.enable = true;
 
-    # Network segmentation with WiFi
+    # Network segmentation
     networks = {
       enable = true;
       segments = {
         main = {
           subnet = "10.0.0";
           isolation = "none";
-          wifi = {
-            enable = true;
-            ssid = "PP-Net";
-            security = "wpa3-transition";
-            passwordSecret = "wifi_passphrase";
-            roaming = true;
-          };
         };
         iot = {
           vlan = 20;
           subnet = "10.0.20";
           isolation = "internet";
           allowAccessFrom = [ "main" ];
-          wifi = {
-            enable = true;
-            ssid = "PP-IoT";
-            security = "wpa2";
-            passwordSecret = "wifi_passphrase_iot";
-          };
+          mdns = true;
         };
         guest = {
           vlan = 30;
           subnet = "10.0.30";
           isolation = "full";
-          wifi = {
-            enable = true;
-            ssid = "PP-Guest";
-            security = "wpa2";
-            passwordSecret = "wifi_passphrase_guest";
-            clientIsolation = true;
-          };
-        };
-      };
-    };
-
-    # WiFi radios
-    hostapd = {
-      enable = true;
-      useNetworks = true;  # Auto-configure from networks.segments
-      countryCode = "US";
-      roaming.enable = true;
-      radios = {
-        radio24 = {
-          interface = "wlan24";
-          band = "2.4GHz";
-          channel = 6;
-          bridge = "br-lan";
-          ieee80211n = true;
-        };
-        radio5 = {
-          interface = "wlan5";
-          band = "5GHz";
-          channel = 36;
-          bridge = "br-lan";
-          ieee80211n = true;
-          ieee80211ac = true;
-          ieee80211ax = true;
-          vhtOperChwidth = 1;
-          vhtOperCentrFreqSeg0Idx = 42;
         };
       };
     };
@@ -229,9 +180,9 @@ machines = [
 
 ---
 
-### Networks (`networks.nix`)
+### Networks (`vlans.nix`)
 
-Unified VLAN + WiFi network segment definitions.
+VLAN network segment definitions with isolation policies.
 
 | Option              | Type  | Default | Description                 |
 | ------------------- | ----- | ------- | --------------------------- |
@@ -240,26 +191,16 @@ Unified VLAN + WiFi network segment definitions.
 
 #### Segment Options
 
-| Option            | Type                | Default    | Description                       |
-| ----------------- | ------------------- | ---------- | --------------------------------- |
-| `vlan`            | int (1-4094) / null | null       | VLAN ID (null = main LAN)         |
-| `subnet`          | str                 | required   | Subnet base (e.g., "10.0.20")     |
-| `dhcpRange.start` | int                 | 100        | DHCP start                        |
-| `dhcpRange.end`   | int                 | 200        | DHCP end                          |
-| `isolation`       | enum                | "internet" | `none`, `internet`, `full`        |
-| `allowAccessFrom` | list                | []         | Networks that can access this one |
-| `allowAccessTo`   | list                | []         | Networks this can access          |
-
-#### WiFi Options (per segment)
-
-| Option                 | Type | Default | Description                               |
-| ---------------------- | ---- | ------- | ----------------------------------------- |
-| `wifi.enable`          | bool | false   | Broadcast SSID for this segment           |
-| `wifi.ssid`            | str  | ""      | Network name                              |
-| `wifi.security`        | enum | "wpa2"  | `wpa3`, `wpa3-transition`, `wpa2`, `open` |
-| `wifi.passwordSecret`  | str  | null    | sops secret name for password             |
-| `wifi.clientIsolation` | bool | false   | Prevent clients seeing each other         |
-| `wifi.roaming`         | bool | true    | Enable 802.11r/k/v                        |
+| Option            | Type                | Default    | Description                                |
+| ----------------- | ------------------- | ---------- | ------------------------------------------ |
+| `vlan`            | int (1-4094) / null | null       | VLAN ID (null = main LAN)                  |
+| `subnet`          | str                 | required   | Subnet base (e.g., "10.0.20")              |
+| `dhcpRange.start` | int                 | 100        | DHCP start                                 |
+| `dhcpRange.end`   | int                 | 200        | DHCP end                                   |
+| `isolation`       | enum                | "internet" | `none`, `internet`, `full`                 |
+| `allowAccessFrom` | list                | []         | Networks that can access this one          |
+| `allowAccessTo`   | list                | []         | Networks this can access                   |
+| `mdns`            | bool                | false      | Enable mDNS/service discovery on this VLAN |
 
 #### Isolation Levels
 
@@ -268,68 +209,6 @@ Unified VLAN + WiFi network segment definitions.
 | `none`     | Yes | Yes                 | Yes         | Trusted devices |
 | `internet` | Yes | Via allowAccessFrom | No          | IoT devices     |
 | `full`     | Yes | No                  | No          | Guest network   |
-
----
-
-### Hostapd (`hostapd.nix`)
-
-WiFi access point configuration.
-
-| Option                | Type  | Default | Description                           |
-| --------------------- | ----- | ------- | ------------------------------------- |
-| `hostapd.enable`      | bool  | false   | Enable WiFi AP                        |
-| `hostapd.useNetworks` | bool  | false   | Auto-configure from networks.segments |
-| `hostapd.countryCode` | str   | "US"    | Regulatory domain                     |
-| `hostapd.radios`      | attrs | {}      | Radio configurations                  |
-
-#### Radio Options
-
-| Option                    | Type  | Default   | Description                                                    |
-| ------------------------- | ----- | --------- | -------------------------------------------------------------- |
-| `enable`                  | bool  | true      | Enable this radio                                              |
-| `interface`               | str   | required  | Physical wireless interface                                    |
-| `band`                    | enum  | required  | `2.4GHz`, `5GHz`, `6GHz`                                       |
-| `ssid`                    | str   | ""        | Network name (optional if useNetworks)                         |
-| `channel`                 | int   | 0         | Channel (0 = auto)                                             |
-| `driver`                  | str   | "nl80211" | Hostapd driver                                                 |
-| `bridge`                  | str   | null      | Bridge to attach to                                            |
-| `bssid`                   | str   | null      | Explicit BSSID (required for 802.11r without bridge)           |
-| `wpaPassphrase`           | str   | null      | WPA passphrase (mutually exclusive with file)                  |
-| `wpaPassphraseFile`       | path  | null      | Path to password file                                          |
-| `wpaKeyMgmt`              | str   | "WPA-PSK" | `SAE`, `WPA-PSK`, `SAE WPA-PSK`                                |
-| `ieee80211w`              | int   | 0         | MFP/PMF (0=off, 1=optional, 2=required). Auto-set to 1 for SAE |
-| `ieee80211n`              | bool  | true      | WiFi 4                                                         |
-| `ieee80211ac`             | bool  | false     | WiFi 5 (5GHz only)                                             |
-| `ieee80211ax`             | bool  | false     | WiFi 6                                                         |
-| `htCapab`                 | str   | ""        | HT capabilities for 802.11n                                    |
-| `vhtCapab`                | str   | ""        | VHT capabilities for 802.11ac                                  |
-| `vhtOperChwidth`          | int   | 1         | VHT channel width (0=20/40, 1=80, 2=160, 3=80+80MHz)           |
-| `vhtOperCentrFreqSeg0Idx` | int   | null      | VHT center frequency segment                                   |
-| `extraSettings`           | attrs | {}        | Additional hostapd settings                                    |
-| `additionalBSS`           | list  | []        | Additional SSIDs on this radio                                 |
-
-#### WiFi 6 (HE) Options
-
-When `ieee80211ax = true`, these additional options are available:
-
-| Option           | Type | Default | Description                             |
-| ---------------- | ---- | ------- | --------------------------------------- |
-| `heSuBeamformer` | bool | true    | HE single-user beamformer               |
-| `heSuBeamformee` | bool | true    | HE single-user beamformee               |
-| `heMuBeamformer` | bool | false   | HE multi-user beamformer (MU-MIMO)      |
-| `heBssColor`     | int  | 1       | HE BSS color for OBSS management (1-63) |
-
-#### Roaming Options (802.11r/k/v)
-
-| Option                          | Type | Default | Description                      |
-| ------------------------------- | ---- | ------- | -------------------------------- |
-| `roaming.enable`                | bool | false   | Enable fast roaming              |
-| `roaming.mobilityDomain`        | str  | "a1b2"  | 4-hex-char domain ID             |
-| `roaming.ft_over_ds`            | bool | false   | FT over Distribution System      |
-| `roaming.ft_psk_generate_local` | bool | true    | Generate FT keys locally         |
-| `roaming.ieee80211k`            | bool | true    | Radio Resource Management        |
-| `roaming.ieee80211v`            | bool | true    | BSS Transition Management        |
-| `roaming.bss_transition`        | bool | true    | BSS Transition Management frames |
 
 ---
 
@@ -438,38 +317,17 @@ Avahi for `.local` device discovery.
 
 ---
 
-## Secrets Management
-
-WiFi passwords and other secrets are managed via sops-nix:
-
-```yaml
-# sops/secrets.yaml
-wifi_passphrase: "your-main-wifi-password"
-wifi_passphrase_iot: "your-iot-password"
-wifi_passphrase_guest: "your-guest-password"
-```
-
-Reference in config:
-
-```nix
-wifi.passwordSecret = "wifi_passphrase";
-```
-
-The module automatically reads from `config.sops.secrets.<name>.path`.
-
----
-
 ## Troubleshooting
 
 ### Check Service Status
 
 ```bash
 # Core services
-systemctl status kea-dhcp4-server unbound hostapd-radio24 hostapd-radio5
+systemctl status kea-dhcp4-server unbound
 
 # View logs
-journalctl -u hostapd-radio24 -f
 journalctl -u kea-dhcp4-server -n 50
+journalctl -u unbound -n 50
 ```
 
 ### Network Debugging
@@ -484,10 +342,6 @@ brctl show
 ip link show br-iot
 ip link show br-guest
 
-# Check WiFi
-iw dev
-hostapd_cli -i wlan24 status
-
 # Check firewall rules
 nft list ruleset
 
@@ -501,13 +355,12 @@ dig @localhost google.com
 
 ### Common Issues
 
-| Issue                       | Cause                      | Solution                                    |
-| --------------------------- | -------------------------- | ------------------------------------------- |
-| WiFi clients can't get IP   | hostapd not bridged        | Check `bridge = "br-lan"` in radio config   |
-| VLAN clients isolated wrong | Wrong isolation level      | Check `isolation` and `allowAccessFrom`     |
-| No internet from VLAN       | Missing NAT rule           | Check `nft list chain ip natV4 postrouting` |
-| Slow speeds                 | SQM misconfigured          | Set speeds to 90-95% of actual              |
-| WiFi roaming fails          | Different mobility domains | Ensure same `mobilityDomain` on all APs     |
+| Issue                       | Cause                 | Solution                                    |
+| --------------------------- | --------------------- | ------------------------------------------- |
+| VLAN clients isolated wrong | Wrong isolation level | Check `isolation` and `allowAccessFrom`     |
+| No internet from VLAN       | Missing NAT rule      | Check `nft list chain ip natV4 postrouting` |
+| Slow speeds                 | SQM misconfigured     | Set speeds to 90-95% of actual              |
+| DHCP not serving VLANs      | Bridge not ready      | Check `systemctl status systemd-networkd`   |
 
 ### Verify VLAN Setup
 
@@ -532,15 +385,17 @@ ping 10.0.0.10    # Should fail (main LAN device)
 modules/router/
 ├── default.nix      # Aggregator - imports all sub-modules
 ├── core.nix         # Base options, computed values, machine definitions
-├── network.nix      # systemd-networkd, bridges, kernel tuning
-├── networks.nix     # Unified VLAN + WiFi segment definitions
+├── interfaces.nix   # systemd-networkd, bridges, kernel tuning
+├── vlans.nix        # VLAN network segment definitions
 ├── firewall.nix     # nftables rules, NAT, port forwarding
 ├── dhcp.nix         # Kea DHCP server
 ├── dns.nix          # Unbound DNS resolver
-├── hostapd.nix      # WiFi access point configuration
+├── ddns.nix         # Dynamic DNS (DHCP lease → DNS record sync)
 ├── sqm.nix          # Traffic shaping (CAKE)
 ├── monitoring.nix   # ntopng traffic analysis
-└── mdns.nix         # Avahi mDNS
+├── mdns.nix         # Avahi mDNS reflector
+├── ssdp-relay.nix   # Cross-VLAN SSDP relay (Chromecast, DIAL)
+└── unifi.nix        # Ubiquiti Unifi AP controller
 ```
 
 ---
@@ -548,8 +403,8 @@ modules/router/
 ## References
 
 - [NixOS Networking](https://nixos.wiki/wiki/Networking)
-- [hostapd documentation](https://w1.fi/hostapd/)
 - [Kea DHCP](https://kea.isc.org/docs/kea-guide.html)
 - [Unbound](https://nlnetlabs.nl/documentation/unbound/)
 - [CAKE qdisc](https://www.bufferbloat.net/projects/codel/wiki/Cake/)
 - [ntopng](https://www.ntop.org/products/traffic-analysis/ntopng/)
+- [nftables wiki](https://wiki.nftables.org/)

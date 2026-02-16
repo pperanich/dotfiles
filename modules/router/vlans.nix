@@ -1,12 +1,12 @@
 _: {
-  flake.modules.nixos.routerNetworks =
+  flake.modules.nixos.routerVlans =
     {
       config,
       lib,
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       netCfg = cfg.networks;
       wan = cfg.wan.interface;
       inherit (cfg.lan) bridgeName;
@@ -108,7 +108,7 @@ _: {
       ) vlanNetworks;
     in
     {
-      options.features.router.networks = {
+      options.my.router.networks = {
         enable = lib.mkEnableOption "unified network segment definitions";
 
         segments = lib.mkOption {
@@ -280,7 +280,7 @@ _: {
           ];
 
         # Export network info for other modules
-        features.router._internal.networks = lib.listToAttrs (
+        my.router._internal.networks = lib.listToAttrs (
           map (net: {
             inherit (net) name;
             value = {
@@ -294,7 +294,7 @@ _: {
         );
 
         # Export firewall rules (always export, even if empty, for proper fallback handling)
-        features.router._internal.networkFirewall = {
+        my.router._internal.networkFirewall = {
           inputRules = if vlanNetworks != [ ] then allInputRules else "";
           forwardRules =
             if vlanNetworks != [ ] then

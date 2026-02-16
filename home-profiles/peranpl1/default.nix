@@ -10,12 +10,9 @@
     base
     sops
 
-    # Shell
-    zsh
-
     # Desktop
     fonts
-    desktopApplications
+    applications
 
     # Editors
     nvim

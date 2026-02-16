@@ -37,7 +37,7 @@ in
           }
           # WiFi passphrase secret for hostapd AP mode or wpa_supplicant client mode
           (lib.mkIf
-            ((config.features.router.hostapd.enable or false) || (config.networking.wireless.enable or false))
+            ((config.my.router.hostapd.enable or false) || (config.networking.wireless.enable or false))
             {
               secrets.wifi_passphrase = {
                 sopsFile = "${sopsFolder}/secrets.yaml";
@@ -46,7 +46,7 @@ in
             }
           )
           # Additional WiFi passphrases for network segmentation (IoT, Guest SSIDs)
-          (lib.mkIf (config.features.router.networks.enable or false) {
+          (lib.mkIf (config.my.router.networks.enable or false) {
             secrets.wifi_passphrase_iot = {
               sopsFile = "${sopsFolder}/secrets.yaml";
               mode = "0400";

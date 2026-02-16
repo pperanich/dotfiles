@@ -1,12 +1,12 @@
 _: {
-  flake.modules.nixos.routerNetwork =
+  flake.modules.nixos.routerInterfaces =
     {
       config,
       lib,
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       wan = cfg.wan.interface;
       inherit (cfg.lan) bridgeName address;
       inherit (cfg.ipv6) ulaPrefix;

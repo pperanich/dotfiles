@@ -6,10 +6,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.vaultwarden;
+      cfg = config.my.vaultwarden;
     in
     {
-      options.features.vaultwarden = {
+      options.my.vaultwarden = {
         enable = lib.mkEnableOption "Vaultwarden password manager";
         port = lib.mkOption {
           type = lib.types.port;

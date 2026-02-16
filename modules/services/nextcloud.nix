@@ -14,10 +14,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.nextcloud;
+      cfg = config.my.nextcloud;
     in
     {
-      options.features.nextcloud = {
+      options.my.nextcloud = {
         hostName = lib.mkOption {
           type = lib.types.str;
           example = "nextcloud.prestonperanich.com";

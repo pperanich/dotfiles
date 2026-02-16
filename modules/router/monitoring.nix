@@ -7,7 +7,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       monCfg = cfg.monitoring;
       inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && monCfg.enable;
@@ -24,7 +24,7 @@ _: {
           ];
     in
     {
-      options.features.router.monitoring = {
+      options.my.router.monitoring = {
         enable = lib.mkEnableOption "network monitoring with ntopng";
 
         httpPort = lib.mkOption {
@@ -78,7 +78,7 @@ _: {
 
       config = lib.mkIf enabled {
         # Export firewall rules for injection into firewall.nix
-        features.router._internal.monitoringFirewall = {
+        my.router._internal.monitoringFirewall = {
           inputRules = ''
             # ntopng web UI - LAN only
             iifname "${bridgeName}" tcp dport ${toString monCfg.httpPort} accept comment "ntopng web UI"

@@ -30,7 +30,7 @@
     deployment.requireExplicitUpdate = true;
   };
 
-  features.pperanich.desktop = false;
+  my.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "x86_64-linux";
 

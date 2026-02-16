@@ -7,10 +7,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.immich;
+      cfg = config.my.immich;
     in
     {
-      options.features.immich = {
+      options.my.immich = {
         port = lib.mkOption {
           type = lib.types.port;
           default = 2283;

@@ -13,10 +13,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.opencloud;
+      cfg = config.my.opencloud;
     in
     {
-      options.features.opencloud = {
+      options.my.opencloud = {
         url = lib.mkOption {
           type = lib.types.str;
           example = "https://opencloud.prestonperanich.com";

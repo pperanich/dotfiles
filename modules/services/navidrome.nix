@@ -13,10 +13,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.navidrome;
+      cfg = config.my.navidrome;
     in
     {
-      options.features.navidrome = {
+      options.my.navidrome = {
         port = lib.mkOption {
           type = lib.types.port;
           default = 4533;

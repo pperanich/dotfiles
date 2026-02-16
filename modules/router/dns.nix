@@ -6,7 +6,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       dnsCfg = cfg.dns;
       inherit (cfg.lan) subnet address cidr;
       inherit (cfg.ipv6) ulaPrefix;
@@ -14,7 +14,7 @@ _: {
       enabled = cfg.enable && dnsCfg.enable;
     in
     {
-      options.features.router.dns = {
+      options.my.router.dns = {
         upstreamServers = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [

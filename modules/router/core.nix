@@ -6,7 +6,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       inherit (lib) mkEnableOption mkOption types;
 
       # Validated types
@@ -67,7 +67,7 @@ _: {
       };
     in
     {
-      options.features.router = {
+      options.my.router = {
         enable = mkEnableOption "router functionality";
 
         hostname = mkOption {
@@ -177,21 +177,21 @@ _: {
 
       config = lib.mkIf cfg.enable {
         # Public computed values (derived from user-facing options)
-        features.router.lan = {
+        my.router.lan = {
           address = "${cfg.lan.subnet}.1";
           cidr = "${cfg.lan.subnet}.0/24";
           bridgeName = "br-lan";
         };
 
         # Internal computed values (cross-module plumbing only)
-        features.router._internal = {
+        my.router._internal = {
           dhcpStart = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.start}";
           dhcpEnd = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.end}";
         };
 
         # Build-time warnings for security-sensitive configurations
         warnings =
-          lib.optional cfg.debugUplink.enable "router: debugUplink is enabled — this grants SSH access from an external network. Disable for production (features.router.debugUplink.enable = false)."
+          lib.optional cfg.debugUplink.enable "router: debugUplink is enabled — this grants SSH access from an external network. Disable for production (my.router.debugUplink.enable = false)."
           ++
             lib.optional (cfg.ipv6.enable && cfg.ipv6.ulaPrefix == "fd00:1234:5678:9abc")
               "router: Using default ULA prefix 'fd00:1234:5678:9abc'. Generate a unique one per RFC 4193: printf 'fd%s:%s:%s' $(openssl rand -hex 1) $(openssl rand -hex 2) $(openssl rand -hex 2)";
@@ -253,7 +253,7 @@ _: {
   flake.modules.nixos.routerCoreInternal =
     { lib, ... }:
     {
-      options.features.router._internal = lib.mkOption {
+      options.my.router._internal = lib.mkOption {
         type = lib.types.attrs;
         default = { };
         internal = true;

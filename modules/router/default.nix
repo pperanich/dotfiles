@@ -7,7 +7,7 @@ _: {
       imports = with modules.nixos; [
         routerCoreInternal
         routerCore
-        routerNetwork
+        routerInterfaces
         routerFirewall
         routerDhcp
         routerDns
@@ -15,7 +15,7 @@ _: {
         routerMdns
         routerSqm
         routerMonitoring
-        routerNetworks # Unified VLAN configuration
+        routerVlans # VLAN network segmentation
         routerUnifi # Ubiquiti Unifi controller
         routerSsdpRelay # SSDP relay for cross-VLAN device discovery
       ];

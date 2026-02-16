@@ -6,7 +6,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       fwCfg = cfg.firewall;
       networksCfg = cfg.networks;
       internal = cfg._internal;
@@ -106,7 +106,7 @@ _: {
       );
     in
     {
-      options.features.router.firewall = {
+      options.my.router.firewall = {
         trustedInterfaces = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];

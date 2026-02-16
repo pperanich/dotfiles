@@ -161,20 +161,21 @@ nix run home-manager/release-25.05 -- switch --flake .#<username>
 modules/
 ├── flake-parts/         # Flake infrastructure
 │   ├── clan.nix           # Machine inventory & services
+│   ├── clan-services.nix  # Clan service definitions
+│   ├── flake-parts.nix    # Import-tree & flake-parts config
+│   ├── fmt.nix            # Treefmt formatters
 │   ├── home.nix           # Home-manager integration
 │   ├── nixpkgs.nix        # Nixpkgs config & overlays
 │   └── shell.nix          # Development shell
-├── containers/          # k3s, podman
-├── database/            # couchdb
-├── desktop/             # fonts, yabai, skhd, sketchybar
-├── editors/             # emacs, nvim, vscode
-├── languages/           # rust, tex
-├── network/             # tailscale, ssh, home-assistant
-├── router/              # firewall, NAT, DHCP
-├── shell/               # zsh, tools, environment
-├── system/              # nix config, sops, borgbackup
+├── desktop/             # fonts, applications, sketchybar
+├── router/              # firewall, DHCP, DNS, VLANs, monitoring
+├── services/            # audiobookshelf, cloudflare-dns, cloudflare-tunnel,
+│                        # immich, jellyfin, kimaki, navidrome, nextcloud,
+│                        # opencloud, radicale, stalwart, vaultwarden
+├── shell/               # nvim, opencode, rust, tools
+├── system/              # base (nix config), sops
 ├── users/               # user account modules
-└── virtualization/      # docker, qemu, lxd
+└── work.nix             # Work profile (APL/JHU)
 
 machines/
 ├── pp-*/                # Personal machines

@@ -13,10 +13,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.audiobookshelf;
+      cfg = config.my.audiobookshelf;
     in
     {
-      options.features.audiobookshelf = {
+      options.my.audiobookshelf = {
         port = lib.mkOption {
           type = lib.types.port;
           default = 8000;

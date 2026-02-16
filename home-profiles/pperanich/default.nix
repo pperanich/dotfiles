@@ -13,9 +13,6 @@
       base
       sops
 
-      # Shell
-      zsh
-
       # Editors
       nvim
 
@@ -33,7 +30,7 @@
         [
           # Desktop
           fonts
-          desktopApplications
+          applications
         ]
       else
         [ ]

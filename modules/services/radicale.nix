@@ -15,10 +15,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.radicale;
+      cfg = config.my.radicale;
     in
     {
-      options.features.radicale = {
+      options.my.radicale = {
         address = lib.mkOption {
           type = lib.types.str;
           default = "127.0.0.1";

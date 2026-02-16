@@ -7,7 +7,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       ssdpCfg = cfg.ssdp;
       inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && ssdpCfg.enable;
@@ -28,7 +28,7 @@ _: {
       devFlags = lib.concatMapStringsSep " " (iface: "--dev ${iface}") relayInterfaces;
     in
     {
-      options.features.router.ssdp = {
+      options.my.router.ssdp = {
         enable = lib.mkEnableOption "SSDP relay for cross-VLAN device discovery (Chromecast, DIAL)";
       };
 
@@ -67,7 +67,7 @@ _: {
         # Export firewall rules for injection into the main filterV4 input/forward chains.
         # Rules MUST be in the main filter table — separate nftables tables with their own
         # base chains don't override the main chain's policy drop verdict.
-        features.router._internal.ssdpFirewall = {
+        my.router._internal.ssdpFirewall = {
           inputRules = lib.concatMapStringsSep "\n" (
             iface: ''iifname "${iface}" udp dport 1900 accept comment "SSDP relay ${iface}"''
           ) relayInterfaces;

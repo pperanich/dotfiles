@@ -30,7 +30,7 @@
 
   ]);
 
-  features.pperanich.desktop = false;
+  my.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.pp-wg";
@@ -45,7 +45,7 @@
 
   # Nextcloud — file sync, calendar, contacts
   # Accessed via Caddy reverse proxy on pp-router1 (nextcloud.prestonperanich.com)
-  features.nextcloud = {
+  my.nextcloud = {
     hostName = "nextcloud.prestonperanich.com";
     datadir = "/tank/appdata/nextcloud";
     trustedProxies = [ "10.0.0.1" ];
@@ -60,7 +60,7 @@
 
   # OpenCloud — file sync (side-by-side trial with Nextcloud)
   # Accessed via Caddy reverse proxy on pp-router1 (opencloud.prestonperanich.com)
-  features.opencloud = {
+  my.opencloud = {
     url = "https://opencloud.prestonperanich.com";
     stateDir = "/tank/appdata/opencloud";
     address = "0.0.0.0";
@@ -69,13 +69,13 @@
 
   # Radicale — CalDAV/CardDAV for OpenCloud (calendar + contacts)
   # Listens on localhost only; proxied through Caddy alongside OpenCloud
-  features.radicale = {
+  my.radicale = {
     dataDir = "/tank/appdata/radicale";
   };
 
   # Immich photo management
   # Accessed via Caddy reverse proxy on pp-router1 (immich.prestonperanich.com)
-  features.immich = {
+  my.immich = {
     address = "0.0.0.0";
     openFirewall = true;
     mediaLocation = "/tank/appdata/immich";
@@ -89,7 +89,7 @@
     owner = "nextcloud";
     mode = "0400";
   };
-  features.nextcloud.adminPasswordFile = config.sops.secrets.nextcloud-admin-pass.path;
+  my.nextcloud.adminPasswordFile = config.sops.secrets.nextcloud-admin-pass.path;
 
   # OpenCloud: admin password via environment file template
   sops.secrets.opencloud-admin-pass = {
@@ -102,7 +102,7 @@
     '';
     owner = "opencloud";
   };
-  features.opencloud.environmentFile = config.sops.templates."opencloud.env".path;
+  my.opencloud.environmentFile = config.sops.templates."opencloud.env".path;
 
   hardware = {
     enableRedistributableFirmware = true;

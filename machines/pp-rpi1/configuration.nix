@@ -21,7 +21,7 @@
     pperanich
   ]);
 
-  features.pperanich.desktop = false;
+  my.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "aarch64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-rpi1";

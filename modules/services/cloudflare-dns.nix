@@ -4,7 +4,7 @@
 # via a systemd timer. API token injected at runtime via environmentFile.
 #
 # Usage in machine config:
-#   services.cf-dns = {
+#   my.cloudflareDns = {
 #     enable = true;
 #     zone = "example.com";
 #     records = [
@@ -15,7 +15,7 @@
 # Manual trigger: systemctl start cf-dns-sync
 # View logs:      journalctl -u cf-dns-sync
 _: {
-  flake.modules.nixos.cfDns =
+  flake.modules.nixos.cloudflareDns =
     {
       config,
       lib,
@@ -23,7 +23,7 @@ _: {
       ...
     }:
     let
-      cfg = config.services.cf-dns;
+      cfg = config.my.cloudflareDns;
 
       configJson = pkgs.writeText "cf-dns-config.json" (
         builtins.toJSON {
@@ -33,7 +33,7 @@ _: {
       );
     in
     {
-      options.services.cf-dns = {
+      options.my.cloudflareDns = {
         enable = lib.mkEnableOption "Declarative Cloudflare DNS sync";
 
         zone = lib.mkOption {

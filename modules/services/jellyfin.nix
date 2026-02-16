@@ -13,10 +13,10 @@ _: {
       ...
     }:
     let
-      cfg = config.features.jellyfin;
+      cfg = config.my.jellyfin;
     in
     {
-      options.features.jellyfin = {
+      options.my.jellyfin = {
         dataDir = lib.mkOption {
           type = lib.types.path;
           default = "/var/lib/jellyfin";

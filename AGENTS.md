@@ -48,6 +48,7 @@ clan machines show <hostname>
 - `pp-ll1` - NixOS laptop (MacBook w/ T2)
 - `pp-ld1` - NixOS desktop
 - `pp-nas1` - NixOS NAS (BeeLink MeMini)
+- `pp-router1` - NixOS router
 - `pp-rpi1` - NixOS Raspberry Pi
 - `pp-wsl1` - WSL instance
 
@@ -124,23 +125,24 @@ imports = with modules.darwin; [ base rust ];
   - Type codes: `l`=laptop, `d`=desktop
   - Role names: `nas`, `rpi` for dedicated-purpose machines
   - Examples: `pp-ll1` (Linux Laptop 1), `pp-nas1` (NAS 1), `pp-rpi1` (Raspberry Pi 1)
-- **Modules**: lowercase, descriptive (e.g., `nix-configuration.nix`, `ssh-server.nix`)
+- **Modules**: lowercase, kebab-case filenames (e.g., `cloudflare-dns.nix`, `cloudflare-tunnel.nix`)
+- **Export names**: camelCase (e.g., `cloudflareDns`, `cloudflareTunnel`, `routerFirewall`)
 - **Functions**: camelCase in lib (e.g., `mkHomeConfigurations`, `relativeToRoot`)
-- **Options**: follow upstream conventions
+- **Custom options**: Use `my.*` namespace (e.g., `my.router.*`, `my.jellyfin.*`, `my.pperanich.desktop`)
+- **Upstream-style modules**: Use `services.*` only for modules structured like upstream NixOS modules (currently only `kimaki`)
 
 ### Directory Structure
 
 ```
 /modules/           # Auto-imported modules (dendritic pattern)
-  flake-parts/      # Flake infrastructure (fmt, shell, clan, nixpkgs)
-  system/           # Core system configs (nix, sops, backups)
-  shell/            # Shell environments (zsh, tools)
-  editors/          # Editor configs (nvim, emacs, vscode)
-  desktop/          # Desktop apps (fonts, yabai, skhd)
-  network/          # Network services (tailscale, ssh)
-  users/            # User account modules
-  languages/        # Language-specific (rust, tex)
-  virtualization/   # Docker, qemu, lxd
+  flake-parts/      # Flake infrastructure (clan, nixpkgs, fmt, shell)
+  desktop/          # Desktop apps (fonts, applications, sketchybar)
+  router/           # NixOS router framework (firewall, DHCP, DNS, VLANs)
+  services/         # Self-hosted services (immich, nextcloud, vaultwarden, etc.)
+  shell/            # Shell environment (nvim, opencode, rust, tools)
+  system/           # Core system configs (base, sops)
+  users/            # User account modules (pperanich, peranpl1)
+  work.nix          # Work profile (APL/JHU)
 /machines/          # Host-specific configurations
 /home-profiles/     # User environment compositions
 /home/              # Raw dotfiles (deployed via stow)

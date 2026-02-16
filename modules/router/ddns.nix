@@ -13,7 +13,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       dnsCfg = cfg.dns;
       enabled = cfg.enable && dnsCfg.enable && cfg.dhcp.enable && dnsCfg.ddns.enable;
       domain = cfg.dhcp.domainName; # "home.arpa"
@@ -131,7 +131,7 @@ _: {
       };
     in
     {
-      options.features.router.dns.ddns = {
+      options.my.router.dns.ddns = {
         enable = lib.mkEnableOption "dynamic DNS updates from DHCP leases to Unbound";
       };
 

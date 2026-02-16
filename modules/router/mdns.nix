@@ -6,7 +6,7 @@ _: {
       ...
     }:
     let
-      cfg = config.features.router;
+      cfg = config.my.router;
       mdnsCfg = cfg.mdns;
       inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && mdnsCfg.enable;
@@ -28,7 +28,7 @@ _: {
       ++ mdnsCfg.extraInterfaces;
     in
     {
-      options.features.router.mdns = {
+      options.my.router.mdns = {
         enable = lib.mkEnableOption "mDNS/Avahi for local device discovery (.local domains)";
 
         reflector = lib.mkOption {
@@ -99,7 +99,7 @@ _: {
         # their own base chains don't override the main chain's policy drop verdict.
         # In nftables, every base chain on the same hook evaluates independently and
         # ALL must accept for a packet to pass.
-        features.router._internal.mdnsFirewall = {
+        my.router._internal.mdnsFirewall = {
           inputRules = lib.concatMapStringsSep "\n" (
             iface: ''iifname "${iface}" udp dport 5353 accept comment "mDNS ${iface}"''
           ) mdnsInterfaces;

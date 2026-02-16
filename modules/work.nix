@@ -1,6 +1,6 @@
 { lib, ... }:
 let
-  aplnisOverlay = import ../../overlays/aplnis-overlay.nix;
+  aplnisOverlay = import ../overlays/aplnis-overlay.nix;
   nixpkgsConfig = {
     permittedInsecurePackages = [
       "openssl-1.1.1w"

@@ -39,6 +39,8 @@
           if [[ -f "$HOME/.ssh/id_ed25519" ]]; then
             export SOPS_AGE_KEY=$(ssh-to-age -private-key < "$HOME/.ssh/id_ed25519" 2>/dev/null)
           fi
+
+          export PATH=$PWD/bin/:$PATH
         '';
       };
     };

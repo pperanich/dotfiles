@@ -5,7 +5,7 @@
   "autoupdate": true,
   "share": "disabled",
   "plugin": [
-    "oh-my-opencode@latest",
+    // "oh-my-opencode@latest",
     "opencode-antigravity-auth@latest",
     "opencode-anthropic-auth@latest"
   ]

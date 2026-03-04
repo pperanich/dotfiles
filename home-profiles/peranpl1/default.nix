@@ -24,7 +24,7 @@
     tools
 
     # Work
-    aplnis
+    work
   ];
 
   # User identity

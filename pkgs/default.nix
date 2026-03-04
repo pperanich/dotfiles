@@ -5,7 +5,6 @@
 }:
 {
   # example = pkgs.callPackage ./example { };
-  aplnis-env = pkgs.callPackage ./aplnis-env { };
   ai-buddy = pkgs.callPackage ./ai-buddy { };
   devai = pkgs.callPackage ./devai { };
   runmat = pkgs.callPackage ./runmat { };

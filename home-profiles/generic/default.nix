@@ -18,7 +18,7 @@
     fonts
 
     # Work profile
-    aplnis
+    work
   ];
 
   # State version set by mkHomeConfigurations

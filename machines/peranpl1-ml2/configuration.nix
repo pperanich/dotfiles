@@ -17,7 +17,7 @@
     rust
 
     # Work environment
-    aplnis
+    work
 
     # Window management
     sketchybar

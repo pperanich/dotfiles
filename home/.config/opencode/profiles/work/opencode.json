@@ -17,7 +17,6 @@
     "external_directory": "allow",
     "*": "allow"
   },
-  // "plugin": ["oh-my-opencode"],
   "disabled_providers": ["opencode"],
   "provider": {
     "opal": {

@@ -1,6 +1,7 @@
 { lib, ... }:
 let
-  workOverlay = final: prev:
+  workOverlay =
+    final: prev:
     let
       apl-root-ca = builtins.fetchurl {
         url = "https://apllinuxdepot.jhuapl.edu/linux/APL-root-cert/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer";
@@ -68,7 +69,7 @@ in
 
   flake.modules = {
     nixos.work = _: {
-      nixpkgs.overlays = lib.mkAfter [ workVpnOverlay ];
+      nixpkgs.overlays = lib.mkAfter [ workOverlay ];
       nixpkgs.config = nixpkgsConfig;
       environment.variables = {
         DETSYS_IDS_TELEMETRY = "disabled";
@@ -76,7 +77,7 @@ in
     };
 
     darwin.work = _: {
-      nixpkgs.overlays = lib.mkAfter [ workVpnOverlay ];
+      nixpkgs.overlays = lib.mkAfter [ workOverlay ];
       nixpkgs.config = nixpkgsConfig;
       environment.variables = {
         DETSYS_IDS_TELEMETRY = "disabled";
@@ -89,7 +90,7 @@ in
         certBundle = "${pkgs.cacert-work}/etc/ssl/certs/ca-bundle.crt";
       in
       {
-        nixpkgs.overlays = lib.mkAfter [ workVpnOverlay ];
+        nixpkgs.overlays = lib.mkAfter [ workOverlay ];
         nixpkgs.config = nixpkgsConfig;
 
         # Uses cacert-work (Mozilla bundle + corporate root CA) so SSL works

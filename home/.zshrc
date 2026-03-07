@@ -146,6 +146,7 @@ fi
 # Helper hooks (fast initialization)
 command -v command-not-found >/dev/null && source "$(command-not-found --print-shell-hook-path zsh 2>/dev/null)"
 command -v direnv >/dev/null && eval "$(direnv hook zsh)"
+command -v mise >/dev/null && eval "$(mise activate zsh)"
 command -v atuin >/dev/null && eval "$(atuin init zsh --disable-up-arrow)"
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
 

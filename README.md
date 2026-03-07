@@ -64,7 +64,7 @@ _: {
 User modules (e.g., `modules/users/pperanich.nix`) bridge system and user config. They export to both `flake.modules.nixos.pperanich` and `flake.modules.darwin.pperanich`, handling:
 
 - System user creation (shell, groups, SSH keys)
-- Secrets deployment via sops-nix (the system decrypts secrets *before* home-manager runs, solving the bootstrap chicken-and-egg)
+- Secrets deployment via sops-nix (the system decrypts secrets _before_ home-manager runs, solving the bootstrap chicken-and-egg)
 - Home-manager activation, which loads a **home profile**
 
 **Home profiles** (`home-profiles/`) compose home-manager modules the same way machines compose system modules — by importing from the `homeManager` attrset:

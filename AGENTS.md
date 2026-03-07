@@ -39,6 +39,11 @@ home-manager switch --flake .#<username>
 clan machines update <hostname>
 clan machines list
 clan machines show <hostname>
+
+# Clan vars (machine secrets)
+clan vars generate <hostname>
+clan vars upload <hostname>
+clan vars list <hostname>
 ```
 
 ### Hostnames Reference
@@ -59,7 +64,7 @@ This is a **dendritic Nix flake** using:
 - **flake-parts**: Composable flake architecture
 - **import-tree**: Automatic module discovery (all `.nix` files in `/modules` auto-imported)
 - **clan-core**: Infrastructure-as-code machine deployment
-- **GNU Stow**: Legacy dotfiles deployment
+- **GNU Stow**: Dotfiles deployment (runs automatically as a home-manager activation script)
 
 ### Module Export Pattern
 
@@ -145,7 +150,8 @@ imports = with modules.darwin; [ base rust ];
   work.nix          # Work profile (APL/JHU)
 /machines/          # Host-specific configurations
 /home-profiles/     # User environment compositions
-/home/              # Raw dotfiles (deployed via stow)
+/home/              # Raw dotfiles (symlinked via stow activation)
+/docs/              # Guides (adding machines, troubleshooting)
 /lib/               # Custom library functions (lib.my.*)
 /overlays/          # Nixpkgs overlays
 /pkgs/              # Custom package definitions
@@ -186,13 +192,21 @@ Applied globally to nixpkgs. Use for:
 - Patch application
 - Package modifications
 
-### Secrets
+### Secrets (Hybrid Approach)
 
-Managed via sops-nix with age encryption:
+Two systems handle secrets with different strengths:
+
+- **Clan vars** — Machine bootstrap secrets (age keypairs, SSH host keys, user passwords, wireguard keys). Generated and uploaded via clan CLI.
+- **sops-nix** — Application secrets (service passwords, API tokens). Encrypted in `sops/secrets.yaml`, decrypted at activation time using the machine's age key. Modules reference secrets via `sops.secrets.<name>.path`.
 
 ```bash
-# Edit secrets (requires age key)
-sops sops/secrets.yaml
+# Clan vars
+clan vars generate <hostname>       # Generate machine secrets
+clan vars upload <hostname>         # Upload secrets to machine
+clan vars list <hostname>           # List vars for machine
+
+# sops-nix
+sops sops/secrets.yaml              # Edit secrets (requires age key)
 ```
 
 Never commit plaintext secrets.

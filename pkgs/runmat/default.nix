@@ -7,7 +7,8 @@
   openssl,
   zeromq,
   openblas,
-  darwin,
+  apple-sdk_15,
+  darwinMinVersionHook,
   gtk3,
   libglvnd,
   libxkbcommon,
@@ -23,7 +24,7 @@ rustPlatform.buildRustPackage rec {
     owner = "runmat-org";
     repo = "runmat";
     rev = "v${version}";
-    hash = lib.fakeHash;
+    hash = "sha256-Q+0tPTvPNvFJJ5cGm8ejj1vFo9QPzqGUNa8lI7uFQe0=";
   };
 
   cargoLock = {
@@ -32,17 +33,15 @@ rustPlatform.buildRustPackage rec {
     # The workspace lock includes optional git dependencies (via tools/runmatfunc).
     # `buildRustPackage` requires explicit hashes for these.
     outputHashes = {
-      "codex-apply-patch-0.0.0" = lib.fakeHash;
-      "codex-core-0.0.0" = lib.fakeHash;
-      "codex-file-search-0.0.0" = lib.fakeHash;
-      "codex-mcp-client-0.0.0" = lib.fakeHash;
-      "codex-protocol-0.0.0" = lib.fakeHash;
-      "core_test_support-0.0.0" = lib.fakeHash;
-      "mcp-types-0.0.0" = lib.fakeHash;
+      "codex-apply-patch-0.0.0" = "sha256-8L2WFm8d+YU8grC3b/+fRXetn57e6VfKRCci+DaD+4E=";
+      "codex-core-0.0.0" = "sha256-8L2WFm8d+YU8grC3b/+fRXetn57e6VfKRCci+DaD+4E=";
+      "codex-file-search-0.0.0" = "sha256-8L2WFm8d+YU8grC3b/+fRXetn57e6VfKRCci+DaD+4E=";
+      "codex-mcp-client-0.0.0" = "sha256-8L2WFm8d+YU8grC3b/+fRXetn57e6VfKRCci+DaD+4E=";
+      "codex-protocol-0.0.0" = "sha256-8L2WFm8d+YU8grC3b/+fRXetn57e6VfKRCci+DaD+4E=";
+      "core_test_support-0.0.0" = "sha256-8L2WFm8d+YU8grC3b/+fRXetn57e6VfKRCci+DaD+4E=";
+      "mcp-types-0.0.0" = "sha256-8L2WFm8d+YU8grC3b/+fRXetn57e6VfKRCci+DaD+4E=";
     };
   };
-
-  cargoHash = lib.fakeHash;
 
   nativeBuildInputs = [ pkg-config ];
 
@@ -65,22 +64,10 @@ rustPlatform.buildRustPackage rec {
     xorg.libXrandr
     xorg.libxcb
   ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin (
-    with darwin.apple_sdk.frameworks;
-    [
-      Accelerate
-      AppKit
-      Cocoa
-      CoreFoundation
-      CoreGraphics
-      CoreVideo
-      IOKit
-      Metal
-      QuartzCore
-      Security
-      SystemConfiguration
-    ]
-  );
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    apple-sdk_15
+    (darwinMinVersionHook "10.15")
+  ];
 
   # Only build the CLI crate (named `runmat`) from the workspace.
   cargoBuildFlags = [

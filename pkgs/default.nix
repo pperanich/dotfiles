@@ -5,8 +5,6 @@
 }:
 {
   # example = pkgs.callPackage ./example { };
-  ai-buddy = pkgs.callPackage ./ai-buddy { };
-  devai = pkgs.callPackage ./devai { };
   runmat = pkgs.callPackage ./runmat { };
   update-display = pkgs.callPackage ./update-display { };
   udp-broadcast-relay-redux = pkgs.callPackage ./udp-broadcast-relay-redux { };

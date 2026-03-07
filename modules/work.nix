@@ -108,6 +108,7 @@ in
           UV_HTTP_TIMEOUT = "600";
           DETSYS_IDS_TELEMETRY = "disabled";
           GODEBUG = "x509negativeserial=1";
+          COLIMA_PROFILE = "work";
         };
 
         home.packages = with pkgs; [

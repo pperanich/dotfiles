@@ -174,7 +174,49 @@ cpuType: ""
 #       touch ~/.provision
 #
 # Default: []
+provision:
+  - mode: system
+    script: |
+      set -eu
 
+      SRC="https://apllinuxdepot.jhuapl.edu/linux/APL-root-cert/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer"
+      CERT_NAME="JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt"
+      DST="/usr/local/share/ca-certificates/${CERT_NAME}"
+
+      # 1) Install enterprise root CA (best-effort).
+      if [ ! -f "$DST" ]; then
+        wget -O "$DST" "$SRC"
+        chmod 0644 "$DST"
+        /usr/sbin/update-ca-certificates
+      fi
+
+      # 2) systemd drop-in for dockerd Go TLS workaround.
+      DROPIN_DIR="/etc/systemd/system/docker.service.d"
+      DROPIN_FILE="${DROPIN_DIR}/10-godebug-x509negativeserial.conf"
+
+      mkdir -p "$DROPIN_DIR"
+
+      TMP="$(mktemp)"
+      cat > "$TMP" <<'EOF'
+      [Service]
+      Environment="GODEBUG=x509negativeserial=1"
+      EOF
+
+      NEED_RESTART=0
+      if [ ! -f "$DROPIN_FILE" ]; then
+        NEED_RESTART=1
+      elif ! cmp -s "$TMP" "$DROPIN_FILE"; then
+        NEED_RESTART=1
+      fi
+
+      if [ "$NEED_RESTART" -eq 1 ]; then
+        cp "$TMP" "$DROPIN_FILE"
+        chmod 0644 "$DROPIN_FILE"
+        systemctl daemon-reload
+        systemctl restart docker.service
+      fi
+
+      rm -f "$TMP"
 # Modify ~/.ssh/config automatically to include a SSH config for the virtual machine.
 # SSH config will still be generated in $COLIMA_HOME/ssh_config regardless.
 # Default: true
@@ -217,3 +259,5 @@ rootDisk: 20
 #   ANOTHER_KEY: another value
 #
 # Default: {}
+env:
+  GODEBUG: x509negativeserial=1

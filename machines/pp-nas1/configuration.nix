@@ -28,6 +28,8 @@
     opencloud
     radicale
 
+    # VPN (namespace mode — split tunneling for specific services)
+    # protonvpn
   ]);
 
   my.pperanich.desktop = false;
@@ -72,6 +74,27 @@
   my.radicale = {
     dataDir = "/tank/appdata/radicale";
   };
+
+  # ProtonVPN — namespace mode (split tunneling)
+  # Only services listed in confinedServices use the VPN; host traffic is unaffected.
+  # Generate a WireGuard config at: ProtonVPN Settings → WireGuard → Create config
+  # Then run `clan vars generate pp-nas1` — you'll be prompted for the private key.
+  # my.protonvpn = {
+  #   enable = true;
+  #   mode = "namespace";
+  #   verify.enable = true;
+  #
+  #   # From your ProtonVPN WireGuard config (Settings → WireGuard → Create config)
+  #   endpoint.ip = "TODO"; # Server IP (e.g., "193.148.18.68")
+  #   endpoint.publicKey = "TODO"; # Server public key
+  #   interface.ip = "10.2.0.2/32"; # Usually this default; check your config
+  #
+  #   # Add confined services here later, e.g.:
+  #   # namespace.confinedServices.transmission = {
+  #   #   serviceUnit = "transmission";
+  #   #   socketProxy."0.0.0.0:9091" = "127.0.0.1:9091";
+  #   # };
+  # };
 
   # Immich photo management
   # Accessed via Caddy reverse proxy on pp-router1 (immich.prestonperanich.com)

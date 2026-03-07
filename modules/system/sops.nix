@@ -72,7 +72,7 @@ in
 
             # Fix PATH for sops-install-secrets on Darwin
             # hdiutil is needed to create RAM disk for secrets but isn't in default PATH
-            # environment.PATH = "/usr/bin:/bin:/usr/sbin:/sbin";
+            environment.PATH = lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin";
           }
         ];
         environment.systemPackages = [ pkgs.sops ];
@@ -88,16 +88,16 @@ in
         # The home-manager module sets PATH = lib.makeBinPath cfg.age.plugins, which
         # results in empty PATH when no plugins are configured, breaking LaunchAgent.
         # We include age-plugin-yubikey in the PATH for YubiKey decryption support.
-        # launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
-        #   enable = true;
-        #   config = {
-        #     EnvironmentVariables = {
-        #       PATH = pkgs.lib.mkForce "${
-        #         pkgs.lib.makeBinPath [ pkgs.age-plugin-yubikey ]
-        #       }:/usr/bin:/bin:/usr/sbin:/sbin";
-        #     };
-        #   };
-        # };
+        launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
+          enable = true;
+          config = {
+            EnvironmentVariables = {
+              PATH = pkgs.lib.mkForce "${
+                pkgs.lib.makeBinPath [ pkgs.age-plugin-yubikey ]
+              }:/usr/bin:/bin:/usr/sbin:/sbin";
+            };
+          };
+        };
 
         sops = {
           package = pkgs.sops-install-secrets;
@@ -107,6 +107,7 @@ in
             # secrets.yaml is encrypted for the SSH-derived age key (e.g., &pperanich)
             sshKeyPaths = [
               "${config.home.homeDirectory}/.ssh/id_ed25519"
+              "/etc/ssh/ssh_host_ed25519_key"
             ];
             # YubiKey support - if plugged in, can be used for decryption
             # Secrets have both YubiKey AND machine/SSH keys as recipients,

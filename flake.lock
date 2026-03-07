@@ -27,19 +27,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1771195505,
-        "narHash": "sha256-zLeSOdCxf1g+bqgF47R2oTDVtNtIhs+rj5og+8o+oVk=",
-        "ref": "main",
-        "rev": "d3d342e025c85d6476ca2f3d401d32ae257ccdb0",
-        "shallow": true,
-        "type": "git",
-        "url": "https://git.clan.lol/pperanich/clan-core"
+        "lastModified": 1771324416,
+        "narHash": "sha256-Mav+6WGE80lhH40x9Px9DEvZsox+yOmAt4GUf3XJsME=",
+        "owner": "clan-lol",
+        "repo": "clan-core",
+        "rev": "2fc07cd53e4680c1de041f16402cfd8af833258b",
+        "type": "github"
       },
       "original": {
-        "ref": "main",
-        "shallow": true,
-        "type": "git",
-        "url": "https://git.clan.lol/pperanich/clan-core"
+        "owner": "clan-lol",
+        "repo": "clan-core",
+        "type": "github"
       }
     },
     "cuda-legacy": {
@@ -103,11 +101,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1770580383,
-        "narHash": "sha256-fEpF46+YO+jz4X+kahCbgLpRzWRB8wlPiw3lzDcWFpI=",
-        "rev": "f6d0b3d4685c9f44e2c4f479e8fcac17ea923abb",
+        "lastModified": 1771211199,
+        "narHash": "sha256-1JHyii0rZzm9oyTgSxhW3v/t5XPEzqov+QN8bRUkxnk=",
+        "rev": "541e221be610c7e89a190ab2167d866a67cb815a",
         "type": "tarball",
-        "url": "https://git.clan.lol/api/v1/repos/clan/data-mesher/archive/f6d0b3d4685c9f44e2c4f479e8fcac17ea923abb.tar.gz"
+        "url": "https://git.clan.lol/api/v1/repos/clan/data-mesher/archive/541e221be610c7e89a190ab2167d866a67cb815a.tar.gz"
       },
       "original": {
         "type": "tarball",

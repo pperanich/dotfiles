@@ -6,6 +6,6 @@ _: {
   # Register clan modules directly
   # These can be referenced with module.input = "self" in inventory
   flake.clan.modules = {
-    "@pperanich/openclaw" = ../../clanServices/openclaw;
+    # "@pperanich/test" = ../../clanServices/test;
   };
 }

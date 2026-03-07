@@ -1,6 +1,7 @@
 # Host configuration for peranpl1-ml1 (macOS laptop)
 {
   modules,
+  lib,
   ...
 }:
 {
@@ -15,8 +16,10 @@
     rust
 
     # Work environment
-    aplnis
+    work
   ];
+
+  clan.core.networking.targetHost = lib.mkForce "peranpl1@peranpl1-ml1.local";
 
   # Host-specific configuration
   networking.hostName = "peranpl1-ml1";

@@ -107,7 +107,7 @@ If hosting dynamic content, you might run:
 Internet
     |
     v
-[Cloudflare DNS] --> prestonperanich.com -> 76.100.71.70
+[Cloudflare DNS] --> prestonperanich.com -> <YOUR-PUBLIC-IP>
     |
     v
 [Comcast Modem] (bridge mode)

@@ -3,9 +3,6 @@
 # Assign a random value to the password variable
 rustdesk_pw=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 
-# Get your config string from your Web portal and Fill Below
-rustdesk_cfg="==Qfi0zcwNleydXWmdXNWRGcCFGa14mdSN1ZSJTRHpmSlJUR0FGSykWUWBFdnVnSiojI5V2aiwiIiojIpBXYiwiI1RWZuwGchVHaq5SM2xWLxwGcuFmclBnI6ISehxWZyJCLiUHZl5CbwFWdopmLxYHbtEDbw5WYyVGciojI0N3boJye"
-
 ################################### Please Do Not Edit Below This Line #########################################
 
 # Check if the script is being run as root
@@ -82,8 +79,6 @@ rustdesk_id=$(rustdesk --get-id)
 
 # Apply new password to RustDesk
 rustdesk --password $rustdesk_pw &>/dev/null
-
-rustdesk --config $rustdesk_cfg
 
 systemctl restart rustdesk
 

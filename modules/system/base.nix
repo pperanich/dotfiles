@@ -164,6 +164,7 @@
             "xcp"
             "opencode"
             "uv"
+            "colima"
           ];
           casks = [
             "slack"

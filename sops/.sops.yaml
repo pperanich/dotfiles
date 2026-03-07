@@ -15,7 +15,8 @@ keys:
   - &hosts "":
       # Darwin machines (clan-managed)
       - &peranpl1-ml1 age1rnledp55zj4sppzva9x9p8tazgnj0cceqwtvewyqmec89v02395srql42s
-      - &peranpl1-ml2 age195lwu9hw5guj6w6hjqljsg0rk5za6xg2utcsqry22g4g0mp7h5mqyq0d3s
+      # - &peranpl1-ml2 age1y30f0acru8zzqgs6e8agxaj262967uknc2hgen73panpnwamuqkqwuea3m
+      - &peranpl1-ml2 age1xjhshuvkh4ql8hppqfdxu0d9kc8nqm6lkfhxhqdmnfhk25jhxpvqjsu2wf
       - &pp-ml1 age1cmmf27yjx3qchljpzsnwpftlshy8hjmp97j2fx8gl5h2n89yjfpsfju3xa
       - &pp-ml1-ssh age1d0jvrgrtlecphg8s2svaly2ql9hlpp60qhfldeznkj8q46ggmqjq67ptcx
       # NixOS machines (clan-managed)

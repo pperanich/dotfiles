@@ -327,6 +327,7 @@ in
     zone = "prestonperanich.com";
     records =
       mkDnsRecords [
+        "feedme" # temporary address for feedme backend
         "ntopng" # network monitoring
         "unifi" # Ubiquiti controller
         "immich" # photo/video management (pp-nas1)
@@ -533,6 +534,15 @@ in
     '';
 
     virtualHosts = {
+      "feedme.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://pp-ml1.${config.my.router.dhcp.domainName}:3000 {
+          header_up X-Forwarded-Proto {scheme}
+        }
+        request_body {
+          max_size 16G
+        }
+      '';
+
       # --- Simple reverse proxies (router-local services) ---
       "home.prestonperanich.com" = mkProxy "localhost:8082";
       "ntopng.prestonperanich.com" = mkProxy "localhost:3000";

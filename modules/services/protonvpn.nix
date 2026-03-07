@@ -56,12 +56,17 @@ _: {
       nsName = cfg.namespace.name;
 
       # Unit name for the VPN tunnel (differs by mode)
+      tunnelUnit =
+        if cfg.mode == "host" then "wg-quick-${ifName}.service" else "protonvpn-tunnel.service";
 
       # Binaries (fully qualified)
       ip = "${pkgs.iproute2}/bin/ip";
       iptables = "${pkgs.iptables}/bin/iptables";
       ip6tables = "${pkgs.iptables}/bin/ip6tables";
       wg = "${pkgs.wireguard-tools}/bin/wg";
+      curl = "${pkgs.curl}/bin/curl";
+      dig = "${pkgs.dnsutils}/bin/dig";
+      awk = "${pkgs.gawk}/bin/awk";
 
       # Shared peer config (host mode wg-quick only)
       peerConfig = {
@@ -220,16 +225,16 @@ _: {
           script = "cp \"$prompts/private-key\" \"$out/private-key\"";
         };
 
-        # Prevent systemd-networkd from removing wg-quick routing rules.
-        # wg-quick creates `ip rule` entries for policy routing. Without this,
-        # systemd-networkd (used by the pp-wg mesh) may garbage-collect them.
-        systemd.network.config.networkConfig.ManageForeignRoutingPolicyRules = false;
-
         # Don't block boot waiting for the VPN interface
         systemd.network.wait-online.ignoredInterfaces = [ ifName ];
       };
 
       hostModeConfig = lib.mkIf (cfg.mode == "host") {
+        # Prevent systemd-networkd from removing wg-quick routing rules.
+        # wg-quick creates `ip rule` entries for policy routing. Without this,
+        # systemd-networkd (used by the pp-wg mesh) may garbage-collect them.
+        systemd.network.config.networkConfig.ManageForeignRoutingPolicyRules = false;
+
         networking.wg-quick.interfaces.${ifName} = {
           inherit (cfg) autostart;
           address = [ cfg.interface.ip ];
@@ -261,10 +266,6 @@ _: {
           wantedBy = lib.mkForce [ ];
         };
       };
-
-      # MTU flag for namespace tunnel
-      mtuCmd =
-        if cfg.mtu != null then "${ip} -n ${nsName} link set ${ifName} mtu ${toString cfg.mtu}" else "";
 
       namespaceModeConfig = lib.mkIf (cfg.mode == "namespace") (
         lib.mkMerge (
@@ -299,6 +300,11 @@ _: {
                   ExecStart = pkgs.writeShellScript "protonvpn-tunnel-up" ''
                     set -euo pipefail
 
+                    # Clean up stale interface from prior failed start
+                    # (could be in host or namespace depending on where failure occurred)
+                    ${ip} -n ${nsName} link del ${ifName} 2>/dev/null || true
+                    ${ip} link del ${ifName} 2>/dev/null || true
+
                     # Create WireGuard interface and configure in host namespace
                     # (key is loaded into kernel memory, then file is no longer needed)
                     ${ip} link add ${ifName} type wireguard
@@ -314,7 +320,9 @@ _: {
 
                     # Configure inside namespace
                     ${ip} -n ${nsName} addr add ${cfg.interface.ip} dev ${ifName}
-                    ${lib.optionalString (cfg.mtu != null) mtuCmd}
+                    ${lib.optionalString (
+                      cfg.mtu != null
+                    ) "${ip} -n ${nsName} link set ${ifName} mtu ${toString cfg.mtu}"}
                     ${ip} -n ${nsName} link set ${ifName} up
                     ${ip} -n ${nsName} route add default dev ${ifName}
                     ${ip} -n ${nsName} -6 route add default dev ${ifName} 2>/dev/null || true
@@ -334,6 +342,240 @@ _: {
           ++ lib.mapAttrsToList mkConfinedService cfg.namespace.confinedServices
         )
       );
+
+      # --- Verify services (on-demand, manual start only) ---
+      verifyConfig = lib.mkIf cfg.verify.enable {
+        systemd.services.protonvpn-verify = {
+          description = "Verify ProtonVPN tunnel is working";
+          after = [ tunnelUnit ];
+          # No wantedBy — manual start only: systemctl start protonvpn-verify
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = pkgs.writeShellScript "protonvpn-verify" (
+              if cfg.mode == "namespace" then
+                ''
+                  set -euo pipefail
+
+                  echo "=== ProtonVPN Verify (namespace mode) ==="
+
+                  echo "--- Tunnel interface ---"
+                  ${ip} -n ${nsName} addr show ${ifName} 2>/dev/null \
+                    || { echo "FAIL: interface ${ifName} not found in namespace ${nsName}"; exit 1; }
+
+                  echo ""
+                  echo "--- WireGuard handshake ---"
+                  HANDSHAKE=$(${ip} netns exec ${nsName} ${wg} show ${ifName} latest-handshakes \
+                    | ${awk} '{print $2}')
+                  NOW=$(date +%s)
+                  if [ -n "$HANDSHAKE" ] && [ "$HANDSHAKE" -gt 0 ]; then
+                    AGE=$((NOW - HANDSHAKE))
+                    echo "Last handshake: ''${AGE}s ago"
+                    if [ "$AGE" -gt 180 ]; then
+                      echo "WARN: handshake is stale (>3 min)"
+                    fi
+                  else
+                    echo "WARN: no WireGuard handshake yet (tunnel may need traffic to initiate)"
+                  fi
+
+                  echo ""
+                  echo "--- Public IP comparison ---"
+                  # Resolve api.ipify.org from host (host has working DNS)
+                  API_ADDR=$(${curl} -s4 --max-time 5 -o /dev/null -w '%{remote_ip}' https://api.ipify.org || echo "")
+                  if [ -z "$API_ADDR" ]; then
+                    echo "FAIL: could not resolve api.ipify.org from host"
+                    exit 1
+                  fi
+
+                  HOST_IP=$(${curl} -s4 --max-time 10 https://api.ipify.org || echo "FAILED")
+                  echo "Host IP:      $HOST_IP"
+
+                  # Use --resolve to inject host-resolved IP into namespace curl
+                  # (ip netns exec doesn't mount the namespace resolv.conf)
+                  VPN_IP=$(${ip} netns exec ${nsName} ${curl} -s4 --max-time 10 \
+                    --resolve "api.ipify.org:443:$API_ADDR" \
+                    https://api.ipify.org || echo "FAILED")
+                  echo "Namespace IP: $VPN_IP"
+
+                  if [ "$VPN_IP" = "FAILED" ]; then
+                    echo "FAIL: could not reach internet from namespace"
+                    exit 1
+                  elif [ "$HOST_IP" = "FAILED" ]; then
+                    echo "WARN: could not check host IP for comparison"
+                    echo "Namespace IP: $VPN_IP"
+                  elif [ "$VPN_IP" != "$HOST_IP" ]; then
+                    echo "PASS: namespace routes through VPN (IPs differ)"
+                  else
+                    echo "FAIL: namespace IP matches host IP — traffic may not be tunneled"
+                    exit 1
+                  fi
+
+                  echo ""
+                  echo "--- DNS (namespace -> VPN resolver) ---"
+                  DNS_RESULT=$(${ip} netns exec ${nsName} ${dig} \
+                    @${lib.head cfg.dns.addresses} +short +timeout=5 example.com A 2>/dev/null \
+                    || echo "FAILED")
+                  if [ "$DNS_RESULT" = "FAILED" ] || [ -z "$DNS_RESULT" ]; then
+                    echo "WARN: DNS query to ${lib.head cfg.dns.addresses} failed from namespace"
+                  else
+                    echo "PASS: DNS resolves via VPN (example.com -> $DNS_RESULT)"
+                  fi
+                ''
+              else
+                ''
+                  set -euo pipefail
+
+                  echo "=== ProtonVPN Verify (host mode) ==="
+
+                  echo "--- Interface ---"
+                  ${wg} show ${ifName} 2>/dev/null \
+                    || { echo "FAIL: WireGuard interface ${ifName} not found"; exit 1; }
+
+                  echo ""
+                  echo "--- Handshake ---"
+                  HANDSHAKE=$(${wg} show ${ifName} latest-handshakes | ${awk} '{print $2}')
+                  NOW=$(date +%s)
+                  if [ -n "$HANDSHAKE" ] && [ "$HANDSHAKE" -gt 0 ]; then
+                    AGE=$((NOW - HANDSHAKE))
+                    echo "Last handshake: ''${AGE}s ago"
+                    if [ "$AGE" -gt 180 ]; then
+                      echo "WARN: handshake is stale (>3 min)"
+                    fi
+                  else
+                    echo "FAIL: no WireGuard handshake recorded"
+                    exit 1
+                  fi
+
+                  echo ""
+                  echo "--- Public IP ---"
+                  CURRENT_IP=$(${curl} -s4 --max-time 10 https://api.ipify.org || echo "FAILED")
+                  if [ "$CURRENT_IP" = "FAILED" ]; then
+                    echo "FAIL: could not reach internet"
+                    exit 1
+                  fi
+                  echo "Public IP:    $CURRENT_IP"
+                  echo "VPN endpoint: ${cfg.endpoint.ip}"
+
+                  echo ""
+                  echo "--- DNS ---"
+                  DNS_RESULT=$(${dig} +short +timeout=5 example.com A 2>/dev/null || echo "FAILED")
+                  if [ "$DNS_RESULT" = "FAILED" ] || [ -z "$DNS_RESULT" ]; then
+                    echo "WARN: DNS resolution failed"
+                  else
+                    echo "PASS: DNS resolves (example.com -> $DNS_RESULT)"
+                  fi
+
+                  echo ""
+                  echo "PASS: tunnel is active"
+                ''
+            );
+          };
+        };
+
+        # Leak test — temporarily stops the tunnel to prove namespace isolation
+        # Only available in namespace mode (host mode uses kill switch instead)
+        systemd.services.protonvpn-verify-leak = lib.mkIf (cfg.mode == "namespace") {
+          description = "Verify ProtonVPN namespace is leak-proof (temporarily stops tunnel!)";
+          # No wantedBy — manual start only: systemctl start protonvpn-verify-leak
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = pkgs.writeShellScript "protonvpn-verify-leak" ''
+              set -euo pipefail
+
+              echo "=== ProtonVPN Leak Test (namespace mode) ==="
+              echo "WARNING: This temporarily stops the VPN tunnel."
+              echo ""
+
+              # --- Pre-check: resolve API address while host DNS works ---
+              API_ADDR=$(${curl} -s4 --max-time 5 -o /dev/null -w '%{remote_ip}' https://api.ipify.org || echo "")
+              if [ -z "$API_ADDR" ]; then
+                echo "FAIL: could not resolve api.ipify.org from host (needed for test)"
+                exit 1
+              fi
+
+              # --- Pre-check: confirm tunnel is working ---
+              echo "--- Step 1: Confirm tunnel is active ---"
+              PRE_IP=$(${ip} netns exec ${nsName} ${curl} -s4 --max-time 10 \
+                --resolve "api.ipify.org:443:$API_ADDR" \
+                https://api.ipify.org || echo "FAILED")
+              if [ "$PRE_IP" = "FAILED" ]; then
+                echo "FAIL: namespace has no internet — tunnel may not be running"
+                echo "Start the tunnel first: systemctl start protonvpn-tunnel"
+                exit 1
+              fi
+              echo "Namespace IP before disconnect: $PRE_IP"
+
+              # --- Stop tunnel ---
+              echo ""
+              echo "--- Step 2: Stopping tunnel ---"
+              systemctl stop protonvpn-tunnel.service
+              sleep 1
+
+              # --- Verify namespace is isolated ---
+              echo ""
+              echo "--- Step 3: Checking namespace isolation ---"
+
+              # Check 1: No non-loopback interfaces
+              IFACES=$(${ip} -n ${nsName} -o link show 2>/dev/null | grep -cv '^\s*[0-9]*: lo:' || echo "0")
+              if [ "$IFACES" -eq 0 ]; then
+                echo "PASS: no non-loopback interfaces in namespace"
+              else
+                echo "FAIL: found $IFACES non-loopback interface(s) in namespace after tunnel stop"
+                ${ip} -n ${nsName} -o link show 2>/dev/null || true
+                systemctl start protonvpn-tunnel.service
+                exit 1
+              fi
+
+              # Check 2: No default route
+              DEFAULT_ROUTES=$(${ip} -n ${nsName} route show default 2>/dev/null | wc -l)
+              if [ "$DEFAULT_ROUTES" -eq 0 ]; then
+                echo "PASS: no default route in namespace"
+              else
+                echo "FAIL: default route still exists in namespace after tunnel stop"
+                ${ip} -n ${nsName} route show 2>/dev/null || true
+                systemctl start protonvpn-tunnel.service
+                exit 1
+              fi
+
+              # Check 3: Cannot reach internet
+              LEAK_IP=$(${ip} netns exec ${nsName} ${curl} -s4 --max-time 5 \
+                --resolve "api.ipify.org:443:$API_ADDR" \
+                https://api.ipify.org 2>/dev/null || echo "BLOCKED")
+              if [ "$LEAK_IP" = "BLOCKED" ]; then
+                echo "PASS: namespace cannot reach internet without VPN"
+              else
+                echo "FAIL: LEAK DETECTED — namespace reached internet without VPN!"
+                echo "Leaked IP: $LEAK_IP"
+                systemctl start protonvpn-tunnel.service
+                exit 1
+              fi
+
+              # --- Restart tunnel ---
+              echo ""
+              echo "--- Step 4: Restarting tunnel ---"
+              systemctl start protonvpn-tunnel.service
+              sleep 2
+
+              # --- Post-check: confirm connectivity restored ---
+              echo ""
+              echo "--- Step 5: Confirming connectivity restored ---"
+              POST_IP=$(${ip} netns exec ${nsName} ${curl} -s4 --max-time 10 \
+                --resolve "api.ipify.org:443:$API_ADDR" \
+                https://api.ipify.org || echo "FAILED")
+              if [ "$POST_IP" = "FAILED" ]; then
+                echo "WARN: namespace connectivity not restored yet (tunnel may need more time)"
+                echo "Check: systemctl status protonvpn-tunnel"
+              else
+                echo "Namespace IP after reconnect: $POST_IP"
+                echo "PASS: connectivity restored"
+              fi
+
+              echo ""
+              echo "=== RESULT: Namespace is leak-proof ==="
+              echo "When the VPN disconnects, confined services have zero network access."
+            '';
+          };
+        };
+      };
     in
     {
       options.my.protonvpn = {
@@ -459,6 +701,10 @@ _: {
           '';
         };
 
+        verify = {
+          enable = lib.mkEnableOption "on-demand VPN verification service (systemctl start protonvpn-verify)";
+        };
+
         namespace = {
           name = lib.mkOption {
             type = lib.types.str;
@@ -529,11 +775,22 @@ _: {
                   my.protonvpn: interface name '${ifName}' exceeds the Linux 15-character limit.
                 '';
               }
+              {
+                assertion =
+                  let
+                    units = lib.mapAttrsToList (_: s: s.serviceUnit) cfg.namespace.confinedServices;
+                  in
+                  units == lib.unique units;
+                message = ''
+                  my.protonvpn: each confinedService must reference a unique serviceUnit.
+                '';
+              }
             ];
           }
           sharedConfig
           hostModeConfig
           namespaceModeConfig
+          verifyConfig
         ]
       );
     };

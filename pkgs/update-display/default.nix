@@ -1,4 +1,4 @@
-# Sets/unsets a few environment variables that are important if on APLNIS VPN.
+# Updates DISPLAY env variable for tmux panes after SSH reconnection.
 {
   lib,
   writeShellApplication,

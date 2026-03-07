@@ -1,6 +1,6 @@
 # Dotfiles
 
-Nix-based system configuration using the dendritic pattern with [flake-parts](https://flake.parts/) and [clan-core](https://docs.clan.lol/).
+Nix-based system configuration using [flake-parts](https://flake.parts/), [clan-core](https://docs.clan.lol/), and the dendritic pattern via [import-tree](https://github.com/vic/import-tree).
 
 ## Quick Start
 
@@ -13,9 +13,107 @@ cd ~/dotfiles
 nix develop
 
 # Deploy to a machine
-clan vars upload <hostname>
 clan machines update <hostname>
 ```
+
+## How It Works
+
+### The One-Liner Flake
+
+The entire flake output is a single expression:
+
+```nix
+outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
+```
+
+`import-tree` recursively discovers every `.nix` file under `modules/` and merges them into one flake-parts module. There are no manual import lists to maintain — drop a file into `modules/` and it becomes part of the flake.
+
+### Three Layers
+
+The configuration is organized into three layers that build on each other:
+
+**1. Flake infrastructure** (`modules/flake-parts/`) — Configures the flake itself: nixpkgs settings, the dev shell, formatting, clan-core integration, and home-manager wiring. These are standard flake-parts modules that set up the plumbing everything else depends on.
+
+**2. Reusable modules** (`modules/`) — Each file exports configuration under `flake.modules.{nixos,darwin,homeManager}.<name>`. For example, `modules/shell/tools.nix` exports `flake.modules.homeManager.tools`, which defines shell packages. A module can export to one platform or all three. This is the "dendritic pattern" — modules grow like branches, each self-contained and independently composable.
+
+```nix
+# modules/shell/rust.nix — exports a home-manager module
+_: {
+  flake.modules.homeManager.rust = { pkgs, ... }: {
+    home.packages = with pkgs; [ rustup cargo-edit ... ];
+  };
+}
+```
+
+**3. Machine configurations** (`machines/`) — Each host picks the modules it needs by name. The `modules` attrset is passed as a `specialArg` by clan-core, so machines can simply reference `modules.nixos.base`, `modules.darwin.sops`, etc.
+
+```nix
+# machines/pp-ml1/configuration.nix
+{ modules, ... }:
+{
+  imports = with modules.darwin; [
+    base sops pperanich rust sketchybar kimaki
+  ];
+  networking.hostName = "pp-ml1";
+  nixpkgs.hostPlatform = "aarch64-darwin";
+}
+```
+
+### User & Home-Manager Integration
+
+User modules (e.g., `modules/users/pperanich.nix`) bridge system and user config. They export to both `flake.modules.nixos.pperanich` and `flake.modules.darwin.pperanich`, handling:
+
+- System user creation (shell, groups, SSH keys)
+- Secrets deployment via sops-nix (the system decrypts secrets _before_ home-manager runs, solving the bootstrap chicken-and-egg)
+- Home-manager activation, which loads a **home profile**
+
+**Home profiles** (`home-profiles/`) compose home-manager modules the same way machines compose system modules — by importing from the `homeManager` attrset:
+
+```nix
+# home-profiles/pperanich/default.nix
+{ homeManager, ... }:
+{
+  imports = with homeManager; [ base sops nvim rust tools opencode fonts applications ];
+  home.username = "pperanich";
+}
+```
+
+A `generic` profile exists for shared/service accounts, and `mkHomeConfigurations` in `lib/` auto-generates standalone `homeConfigurations` from all profiles (useful for non-NixOS hosts).
+
+### Clan-Core & Inventory
+
+Clan-core manages the machine fleet. `modules/flake-parts/clan.nix` defines the **inventory** — which machines exist, their tags, and which clan services they participate in.
+
+Services are assigned by **roles and tags**. For example, the wireguard instance declares `pp-router1` as the controller and other machines as peers. The borgbackup instance makes `pp-router1` the server and `pp-nas1` a client. Tags like `"all"` or `"nixos"` apply services to groups of machines at once.
+
+Deployment is a single command:
+
+```bash
+clan machines update pp-nas1    # builds, uploads, and activates
+```
+
+### Secrets: Hybrid Approach
+
+Two systems handle secrets with different strengths:
+
+- **Clan vars** — Machine bootstrap secrets (age keypairs, SSH host keys, user passwords, wireguard keys). Generated with `clan vars generate`, uploaded with `clan vars upload`. These are the foundation that everything else decrypts with.
+- **sops-nix** — Application secrets (service passwords, API tokens). Encrypted in `sops/secrets.yaml`, decrypted at activation time using the machine's age key. Modules reference secrets via `sops.secrets.<name>.path`.
+
+### Stow for Dotfiles
+
+Non-Nix config files live in `home/` and are symlinked into `$HOME` via GNU Stow. This runs automatically as a home-manager activation script, so `home-manager switch` handles both Nix-managed and plain dotfiles in one step.
+
+### Custom Packages & Overlays
+
+Custom packages live in `pkgs/` and are built with `nix build .#<name>`. An `additions` overlay in `overlays/` makes them available as regular packages (e.g., `pkgs.runmat`, `pkgs.cf`) across all configurations.
+
+The overlays file (`overlays/default.nix`) serves three purposes:
+
+- **Input overlays** — Pulls in overlays from flake inputs (emacs, neovim-nightly, rust-overlay, ghostty, sops-nix, etc.) so their packages are available in nixpkgs.
+- **Additions** — Injects custom packages from `pkgs/` into the package set.
+- **Modifications** — Patches or overrides for upstream packages. For example, `atuin` gets a ZFS performance patch, and `my-curl`/`my-git` allow per-machine OpenSSL overrides while keeping a consistent package name.
+
+Every platform's `base` module applies all overlays automatically via `builtins.attrValues`, so there's no per-machine overlay wiring needed.
 
 ## Machines
 
@@ -31,38 +129,6 @@ clan machines update <hostname>
 | peranpl1-ml1 | Darwin | Laptop  | Work MacBook                     |
 | peranpl1-ml2 | Darwin | Laptop  | Work MacBook                     |
 
-## Architecture
-
-```
-dotfiles/
-├── machines/           # Host-specific configurations
-├── modules/            # Reusable NixOS/Darwin/home-manager modules
-│   └── flake-parts/    # Flake infrastructure (clan, nixpkgs, shell)
-├── home-profiles/      # User environment compositions
-├── sops/               # Secrets (machine keys, app secrets)
-├── vars/               # Clan-managed variables
-└── docs/               # Documentation
-```
-
-### Key Concepts
-
-| Concept               | Description                                                            |
-| --------------------- | ---------------------------------------------------------------------- |
-| **Dendritic pattern** | Auto-discovery of modules via `import-tree` - no manual imports needed |
-| **Clan-core**         | Infrastructure-as-code machine deployment with inventory and roles     |
-| **Hybrid secrets**    | Clan vars for machine bootstrap, traditional sops-nix for app secrets  |
-
-### Module Export Pattern
-
-```nix
-# modules/example/foo.nix
-_: {
-  flake.modules.homeManager.foo = { pkgs, ... }: { ... };
-  flake.modules.nixos.foo = { ... }: { ... };
-  flake.modules.darwin.foo = { ... }: { ... };
-}
-```
-
 ## Common Commands
 
 ```bash
@@ -74,6 +140,7 @@ nix flake check                       # Validate flake
 # Machine deployment
 clan machines list                    # List all machines
 clan machines update <hostname>       # Deploy to machine
+clan vars generate <hostname>         # Generate machine secrets
 clan vars upload <hostname>           # Upload secrets only
 
 # Secrets
@@ -92,36 +159,6 @@ Detailed guides are available in the [docs/](docs/) directory:
 
 - **[Adding New Machines](docs/adding-new-machines.md)** - Complete onboarding guide
 - **[Troubleshooting](docs/clan-machines-update-troubleshooting.md)** - Debug deployment issues
-
-To browse documentation locally:
-
-```bash
-nix run nixpkgs#zensical -- serve
-```
-
-## Secrets Management
-
-This repo uses a **hybrid approach**:
-
-| System                   | Purpose                                           | Location                 |
-| ------------------------ | ------------------------------------------------- | ------------------------ |
-| **Clan vars**            | Machine bootstrap (age keys, SSH keys, passwords) | `vars/`, `sops/secrets/` |
-| **Traditional sops-nix** | App secrets (tailscale, borg, k3s)                | `sops/secrets.yaml`      |
-
-### Adding a Machine to Secrets
-
-```bash
-# Generate vars (creates age keypair, SSH keys, etc.)
-clan vars generate <hostname>
-
-# Add to secrets.yaml recipients (edit sops/.sops.yaml, then:)
-cd sops && sops updatekeys secrets.yaml
-
-# Enable self-upload (optional)
-clan secrets machines add-secret <hostname> <hostname>-age.key
-```
-
-See [Adding New Machines](docs/adding-new-machines.md) for complete steps.
 
 ## Installation
 
@@ -152,57 +189,11 @@ nix run nix-darwin -- switch --flake .#<hostname>
 nix run home-manager/release-25.05 -- switch --flake .#<username>
 ```
 
-## Project Structure
-
-<details>
-<summary>Click to expand full directory structure</summary>
-
-```
-modules/
-├── flake-parts/         # Flake infrastructure
-│   ├── clan.nix           # Machine inventory & services
-│   ├── clan-services.nix  # Clan service definitions
-│   ├── flake-parts.nix    # Import-tree & flake-parts config
-│   ├── fmt.nix            # Treefmt formatters
-│   ├── home.nix           # Home-manager integration
-│   ├── nixpkgs.nix        # Nixpkgs config & overlays
-│   └── shell.nix          # Development shell
-├── desktop/             # fonts, applications, sketchybar
-├── router/              # firewall, DHCP, DNS, VLANs, monitoring
-├── services/            # audiobookshelf, cloudflare-dns, cloudflare-tunnel,
-│                        # immich, jellyfin, kimaki, navidrome, nextcloud,
-│                        # opencloud, radicale, stalwart, vaultwarden
-├── shell/               # nvim, opencode, rust, tools
-├── system/              # base (nix config), sops
-├── users/               # user account modules
-└── work.nix             # Work profile (APL/JHU)
-
-machines/
-├── pp-*/                # Personal machines
-└── peranpl1-*/          # Work machines
-
-home-profiles/
-├── pperanich/           # Primary user (NixOS)
-├── peranpl1/            # Primary user (Darwin)
-└── generic/             # Shared/service accounts
-
-sops/
-├── .sops.yaml           # SOPS config for secrets.yaml
-├── secrets.yaml         # App secrets (traditional sops-nix)
-├── machines/            # Machine public keys
-└── secrets/             # Encrypted age keys
-
-vars/
-├── per-machine/         # Machine-specific vars
-└── shared/              # Cross-machine vars (user passwords)
-```
-
-</details>
-
 ## References
 
 - [Flake-parts](https://flake.parts/)
 - [Clan-core](https://docs.clan.lol/)
+- [import-tree](https://github.com/vic/import-tree)
 - [sops-nix](https://github.com/Mic92/sops-nix)
 - [NixOS](https://nixos.org/manual/nixos/stable/)
 - [nix-darwin](https://github.com/LnL7/nix-darwin)

@@ -16,7 +16,6 @@
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
-    # Provide defaults for my-curl/my-git, but preserve if already set by aplnis-overlay
     my-curl = prev.my-curl or prev.curl;
     my-git = prev.my-git or prev.git;
     atuin = prev.atuin.overrideAttrs (_old: {

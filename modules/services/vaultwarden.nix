@@ -63,7 +63,7 @@ _: {
             ROCKET_PORT = cfg.port;
             WEB_VAULT_ENABLED = true;
             SIGNUPS_ALLOWED = false;
-            INVITATIONS_ALLOWED = false;
+            INVITATIONS_ALLOWED = true;
             SHOW_PASSWORD_HINT = false;
             IP_HEADER = cfg.ipHeader;
             LOGIN_RATELIMIT_SECONDS = 60;

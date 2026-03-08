@@ -45,6 +45,24 @@ _: {
           };
 
           settings = {
+            # Allow queue/session/route settings in local TOML config
+            config.local-keys = [
+              "store.*"
+              "directory.*"
+              "tracer.*"
+              "server.*"
+              "!server.blocked-ip.*"
+              "!server.allowed-ip.*"
+              "storage.*"
+              "certificate.*"
+              "queue.*"
+              "session.*"
+              "remote.*"
+              "resolver.*"
+              "spam-filter.*"
+              "webadmin.*"
+            ];
+
             server.hostname = cfg.hostname;
 
             # Localhost-only SMTP listener — accepts mail from local services only
@@ -54,25 +72,8 @@ _: {
               tls.implicit = false;
             };
 
-            # Storage — RocksDB (minimal, all-in-one)
-            store.db = {
-              type = "rocksdb";
-              path = "%{base_path}%/db";
-              compression = "lz4";
-            };
-
-            storage = {
-              data = "db";
-              fts = "db";
-              blob = "db";
-              lookup = "db";
-              directory = "internal";
-            };
-
-            directory.internal = {
-              type = "internal";
-              store = "db";
-            };
+            # Localhost-only — allow non-FQDN EHLO (e.g. vaultwarden sends bare hostname)
+            session.ehlo.reject-non-fqdn = false;
 
             # Relay policy — accept from localhost, reject everything else
             session.rcpt.relay = [
@@ -83,36 +84,32 @@ _: {
               { "else" = false; }
             ];
 
-            # Outbound routing — relay through Resend
+            # Outbound routing — all mail relayed through Resend
             queue.outbound.hostname = cfg.hostname;
 
-            remote.resend = {
+            queue.route.resend = {
+              type = "relay";
               protocol = "smtp";
               address = "smtp.resend.com";
               port = 587;
               tls = {
-                starttls = "require";
+                implicit = false;
                 allow-invalid-certs = false;
               };
               auth = {
                 username = "resend";
-                password = "%{file:/run/credentials/stalwart.service/relay-token}%";
+                secret = "%{file:/run/credentials/stalwart.service/relay-token}%";
               };
             };
 
-            queue.routing.default = {
-              relay = "resend";
-            };
-
-            # DNS resolver
-            resolver.type = "system";
-
-            # Logging
-            tracer.stdout = {
-              type = "stdout";
-              level = "info";
-              enable = true;
-            };
+            # Route all outbound mail through the Resend relay
+            queue.strategy.route = [
+              {
+                "if" = "is_local_domain('', rcpt_domain)";
+                "then" = "'local'";
+              }
+              { "else" = "'resend'"; }
+            ];
           };
         };
       };

@@ -43,6 +43,16 @@ _: {
           default = null;
           description = "Path to a file containing the plaintext admin token. Will be Argon2id-hashed at service start.";
         };
+        smtpFrom = lib.mkOption {
+          type = lib.types.str;
+          example = "vaultwarden@example.com";
+          description = "Email address used as the sender for Vaultwarden emails";
+        };
+        smtpFromName = lib.mkOption {
+          type = lib.types.str;
+          default = "Vaultwarden";
+          description = "Display name for the sender";
+        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -58,6 +68,11 @@ _: {
             IP_HEADER = cfg.ipHeader;
             LOGIN_RATELIMIT_SECONDS = 60;
             LOGIN_RATELIMIT_MAX_BURST = 5;
+            SMTP_HOST = "127.0.0.1";
+            SMTP_PORT = 25;
+            SMTP_SECURITY = "off";
+            SMTP_FROM = cfg.smtpFrom;
+            SMTP_FROM_NAME = cfg.smtpFromName;
           }
           // lib.optionalAttrs (cfg.domain != null) {
             DOMAIN = "https://${cfg.domain}";

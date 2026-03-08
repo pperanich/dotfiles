@@ -100,22 +100,14 @@ in
     enable = true;
     domain = "vault.prestonperanich.com";
     adminTokenFile = config.sops.secrets.vaultwarden-admin-token.path;
+    smtpFrom = "vault@prestonperanich.com";
   };
 
-  # SMTP via local Stalwart (no auth needed for localhost)
-  services.vaultwarden.config = {
-    SMTP_HOST = "127.0.0.1";
-    SMTP_PORT = 25;
-    SMTP_SECURITY = "off";
-    SMTP_FROM = "vault@prestonperanich.com";
-  };
-
-  # Stalwart — outbound transactional email (localhost relay for Vaultwarden)
-  # DKIM key generated declaratively via clan vars (run: clan vars generate pp-router1)
+  # Stalwart — outbound transactional email relay via Resend
   my.stalwart = {
     enable = true;
     hostname = "mail.prestonperanich.com";
-    domain = "prestonperanich.com";
+    relayCredentialFile = config.sops.secrets.resend-api-key.path;
   };
 
   # Cloudflare Tunnel — public service exposure without opening WAN ports
@@ -344,12 +336,8 @@ in
         {
           type = "TXT";
           name = "prestonperanich.com";
-          content = "v=spf1 mx a:mail.prestonperanich.com ~all";
-        }
-        {
-          type = "TXT";
-          name = "${config.my.stalwart.dkimSelector}._domainkey.prestonperanich.com";
-          content = config.my.stalwart.dkimDnsRecord;
+          # TODO: Update with Resend-provided SPF after domain verification
+          content = "v=spf1 include:_spf.resend.com ~all";
         }
         {
           type = "TXT";
@@ -490,6 +478,12 @@ in
   # Vaultwarden: admin token for /admin panel
   sops.secrets.vaultwarden-admin-token = {
     owner = "vaultwarden";
+    mode = "0400";
+  };
+
+  # Resend: API key for SMTP relay
+  sops.secrets.resend-api-key = {
+    owner = "stalwart-mail";
     mode = "0400";
   };
 

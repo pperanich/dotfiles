@@ -125,10 +125,8 @@ in
             "api_keys/openai_enterprise_api_key" = { };
             "api_keys/openai_api_key" = { };
             "api_keys/opencode_api_key" = { };
-            "api_keys/assemblyai_api_key" = { };
             "api_keys/hugging_face_hub_token" = { };
             "api_keys/anthropic_api_key" = { };
-            "api_keys/mistral_api_key" = { };
             "api_keys/openrouter_api_key" = { };
             "api_keys/gemini_api_key" = { };
             "api_keys/artificial_analysis_api_key" = { };

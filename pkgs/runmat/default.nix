@@ -14,7 +14,11 @@
   libxkbcommon,
   vulkan-loader,
   wayland,
-  xorg,
+  libX11,
+  libXcursor,
+  libXi,
+  libXrandr,
+  libxcb,
 }:
 rustPlatform.buildRustPackage rec {
   pname = "runmat";
@@ -58,11 +62,11 @@ rustPlatform.buildRustPackage rec {
     libxkbcommon
     vulkan-loader
     wayland
-    xorg.libX11
-    xorg.libXcursor
-    xorg.libXi
-    xorg.libXrandr
-    xorg.libxcb
+    libX11
+    libXcursor
+    libXi
+    libXrandr
+    libxcb
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     apple-sdk_15

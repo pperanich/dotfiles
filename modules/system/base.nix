@@ -55,7 +55,7 @@
               glib # libglib-2.0.so.0
               libGL # libGL.so.1
               libxkbcommon # libxkbcommon.so.0
-              xorg.libX11 # libX11.so.6
+              libX11 # libX11.so.6
               wayland
             ]);
 
@@ -165,6 +165,9 @@
             "opencode"
             "uv"
             "colima"
+            "docker-credential-helper"
+            "docker"
+            "docker-compose"
           ];
           casks = [
             "slack"

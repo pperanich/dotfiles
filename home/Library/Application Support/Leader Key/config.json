@@ -21,6 +21,11 @@
       "value": "/System/Library/CoreServices/Finder.app"
     },
     {
+      "key": "g",
+      "type": "application",
+      "value": "/Applications/GIMP.app"
+    },
+    {
       "key": "m",
       "type": "application",
       "value": "/System/Applications/Messages.app"

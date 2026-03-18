@@ -10,3 +10,13 @@
 - Any variation of "AI-generated" or "AI-assisted" messaging
 
 Commit messages should be clean, professional, and focus solely on describing the changes made.
+They should follow the patterns specified by Conventional Commits unless otherwise specified,
+such as differences in contributor guidelines in repos.
+
+## Using Python
+
+When using python, always remember to run via the `uv` tool.
+
+## Tests
+
+- Do not write tests for files in examples/ or scripts/, only for files in packages.

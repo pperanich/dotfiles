@@ -164,10 +164,9 @@
             "xcp"
             "opencode"
             "uv"
-            "colima"
-            "docker-credential-helper"
             "docker"
             "docker-compose"
+            "docker-credential-helper"
           ];
           casks = [
             "slack"
@@ -195,7 +194,7 @@
 
         environment.systemPackages = with pkgs; [
           openssh
-          python313Packages.pymobiledevice3
+          # python313Packages.pymobiledevice3
         ];
 
         nixpkgs = {

@@ -16,6 +16,9 @@
     # Development environment
     rust
 
+    # Container runtime
+    colima
+
     # Work environment
     work
 

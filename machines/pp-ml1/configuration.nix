@@ -19,6 +19,9 @@
     # Window management
     sketchybar
 
+    # Container runtime
+    colima
+
     # Remote development via Discord
     kimaki
   ];

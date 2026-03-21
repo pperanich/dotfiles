@@ -159,7 +159,6 @@ in
     wget
     git
     htop
-    neofetch
 
     # IDE
     code-cursor

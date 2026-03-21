@@ -280,7 +280,6 @@ in
     git
     htop
     btop
-    neofetch
     dmidecode
     pciutils
     lm_sensors

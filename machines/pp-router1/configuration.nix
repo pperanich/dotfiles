@@ -118,8 +118,10 @@ in
     in
     {
       enable = true;
-      inherit (tunnelMeta) tunnelId;
+      inherit (tunnelMeta) tunnelId tunnelName;
+      zone = "prestonperanich.com";
       credentialsFile = config.sops.secrets.cloudflared-tunnel-credentials.path;
+      environmentFile = config.sops.templates."cf-dns.env".path;
       ingress = {
         "prestonperanich.com" = "http://localhost:8224"; # Personal site
         "www.prestonperanich.com" = "http://localhost:8224"; # Redirect to apex
@@ -201,10 +203,6 @@ in
     dns.extraLocalData = [
       # WSL mirrored networking shares the Windows host's IP
       "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."
-      # vault served locally (public access via Cloudflare Tunnel CNAME)
-      # "vault.prestonperanich.com. A ${routerIp}"
-      # "vault.prestonperanich.com. AAAA ${wgAddress}"
-      # vault-admin — internal only, no public DNS
     ];
 
     # DNS ad-blocking via Blocky (sits in front of Unbound on port 53)
@@ -489,8 +487,11 @@ in
     mode = "0400";
   };
 
-  # Cloudflare API token (used by cf-dns and caddy templates)
+  # Cloudflare API token (used by cf-dns, cf-tunnel, and caddy templates)
   sops.secrets.cloudflare-api-token = { };
+
+  # Cloudflare account ID (used by cf-tunnel sync)
+  sops.secrets.cloudflare-account-id = { };
 
   # Cloudflare Tunnel: credentials JSON (binary format, separate sops file)
   sops.secrets.cloudflared-tunnel-credentials = {
@@ -503,6 +504,7 @@ in
   sops.templates."cf-dns.env" = {
     content = ''
       CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
+      CLOUDFLARE_ACCOUNT_ID=${config.sops.placeholder."cloudflare-account-id"}
     '';
   };
   my.cloudflareDns.environmentFile = config.sops.templates."cf-dns.env".path;

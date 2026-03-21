@@ -3,11 +3,13 @@ _: {
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
       cfg = config.my.cloudflareTunnel;
-      tunnelCnameTarget = "${cfg.tunnelId}.cfargotunnel.com";
+      hostnames = builtins.attrNames cfg.ingress;
+      hostnameFlags = lib.concatMapStringsSep " " (h: "--hostname ${lib.escapeShellArg h}") hostnames;
     in
     {
       options.my.cloudflareTunnel = {
@@ -19,9 +21,26 @@ _: {
           example = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
         };
 
+        tunnelName = lib.mkOption {
+          type = lib.types.str;
+          description = "Cloudflare tunnel name (must match the name used during `cf tunnel sync`)";
+          example = "homelab";
+        };
+
+        zone = lib.mkOption {
+          type = lib.types.str;
+          description = "Cloudflare zone for tunnel CNAME records";
+          example = "example.com";
+        };
+
         credentialsFile = lib.mkOption {
           type = lib.types.path;
           description = "Path to the cloudflared tunnel credentials JSON file";
+        };
+
+        environmentFile = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to environment file containing CLOUDFLARE_API_TOKEN";
         };
 
         ingress = lib.mkOption {
@@ -63,15 +82,29 @@ _: {
 
         environment.systemPackages = [ config.services.cloudflared.package ];
 
-        # Auto-create CNAME records for tunnel ingress hostnames via cloudflareDns
-        # TTL=1 = Cloudflare "automatic" (matches cf tunnel sync behaviour)
-        my.cloudflareDns.records = lib.mapAttrsToList (hostname: _origin: {
-          type = "CNAME";
-          name = hostname;
-          content = tunnelCnameTarget;
-          proxied = true;
-          ttl = 1;
-        }) cfg.ingress;
+        # Auto-sync tunnel CNAME records for ingress hostnames
+        systemd.services.cf-tunnel-dns-sync = lib.mkIf (hostnames != [ ]) {
+          description = "Sync Cloudflare Tunnel DNS records";
+          after = [ "network-online.target" ];
+          wants = [ "network-online.target" ];
+          serviceConfig = {
+            Type = "oneshot";
+            EnvironmentFile = cfg.environmentFile;
+            ExecStart = "${pkgs.cf}/bin/cf tunnel sync --name ${lib.escapeShellArg cfg.tunnelName} --zone ${lib.escapeShellArg cfg.zone} ${hostnameFlags} --apply";
+            DynamicUser = true;
+          };
+        };
+
+        systemd.timers.cf-tunnel-dns-sync = lib.mkIf (hostnames != [ ]) {
+          description = "Periodic Cloudflare Tunnel DNS sync";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnBootSec = "5min";
+            OnUnitActiveSec = "12h";
+            RandomizedDelaySec = "5min";
+            Persistent = true;
+          };
+        };
       };
     };
 }

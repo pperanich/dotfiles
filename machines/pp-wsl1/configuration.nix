@@ -24,7 +24,8 @@
 
   clan.core = {
     networking = {
-      targetHost = lib.mkForce "root@pp-wsl1.pp-wg";
+      # targetHost = lib.mkForce "root@pp-wsl1.pp-wg";
+      targetHost = lib.mkForce "root@pp-wsl1.home.arpa";
     };
     enableRecommendedDefaults = false;
     deployment.requireExplicitUpdate = true;

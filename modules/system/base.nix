@@ -44,6 +44,12 @@
             allowBroken = true;
           };
         };
+
+        nix.settings = {
+          extra-substituters = [ "https://nix-community.cachix.org" ];
+          extra-trusted-public-keys = [ "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
+        };
+
         programs.nix-ld.dev = {
           enable = true;
           libraries =
@@ -235,7 +241,10 @@
           gpg.enable = true;
           dircolors.enable = true;
           direnv.enable = true;
-          atuin.enable = true;
+          atuin = {
+            enable = true;
+            daemon.enable = true;
+          };
           zoxide.enable = true;
           nix-index-database.comma.enable = true;
           vscode.enable = true;

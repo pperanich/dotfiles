@@ -12,17 +12,23 @@
   bun2nix = inputs.bun2nix.overlays.default;
 
   # This one brings my packages from the 'pkgs' directory
-  additions = final: _prev: import ../pkgs { pkgs = final; inherit inputs; };
+  additions =
+    final: _prev:
+    import ../pkgs {
+      pkgs = final;
+      inherit inputs;
+    };
+
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
     my-curl = prev.my-curl or prev.curl;
     my-git = prev.my-git or prev.git;
-    atuin = prev.atuin.overrideAttrs (_old: {
-      # as cursed as doing mitigations=off in the kernel command line
-      patches = [ ./patches/0001-make-atuin-on-zfs-fast-again.patch ];
-    });
+    # atuin = prev.atuin.overrideAttrs (_old: {
+    #   # as cursed as doing mitigations=off in the kernel command line
+    #   patches = [ ./patches/0001-make-atuin-on-zfs-fast-again.patch ];
+    # });
     glibtool = final.libtool.overrideAttrs (oldAttrs: {
       configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--program-prefix=g" ];
     });

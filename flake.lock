@@ -873,11 +873,11 @@
     "personal-site": {
       "flake": false,
       "locked": {
-        "lastModified": 1774053393,
-        "narHash": "sha256-ZWIh1YstZHh8UXeUqZ+M+l61v0Lfn69ld6/JfAHiXKw=",
+        "lastModified": 1774132232,
+        "narHash": "sha256-o8GSjEoaBU2TQdwvhG8MASMrSvLYSfHpqp5s6O1I1G0=",
         "owner": "pperanich",
         "repo": "personal-site",
-        "rev": "1c40c4ca41e65bcbea4647662d42fdd79395a0b8",
+        "rev": "64945615b78c3a0bb301b65aee39e358d9fd0d4d",
         "type": "github"
       },
       "original": {

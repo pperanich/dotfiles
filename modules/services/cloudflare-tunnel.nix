@@ -7,6 +7,7 @@ _: {
     }:
     let
       cfg = config.my.cloudflareTunnel;
+      tunnelCnameTarget = "${cfg.tunnelId}.cfargotunnel.com";
     in
     {
       options.my.cloudflareTunnel = {
@@ -61,6 +62,16 @@ _: {
         };
 
         environment.systemPackages = [ config.services.cloudflared.package ];
+
+        # Auto-create CNAME records for tunnel ingress hostnames via cloudflareDns
+        # TTL=1 = Cloudflare "automatic" (matches cf tunnel sync behaviour)
+        my.cloudflareDns.records = lib.mapAttrsToList (hostname: _origin: {
+          type = "CNAME";
+          name = hostname;
+          content = tunnelCnameTarget;
+          proxied = true;
+          ttl = 1;
+        }) cfg.ingress;
       };
     };
 }

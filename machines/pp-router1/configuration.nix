@@ -130,7 +130,7 @@ in
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-router1.home.arpa";
   # clan.core.networking.targetHost = lib.mkForce "root@pp-router1";
-  clan.core.networking.buildHost = "root@pp-wsl1.home.arpa";
+  # clan.core.networking.buildHost = "root@pp-wsl1.home.arpa";
 
   # Networking configuration
   networking.hostName = "pp-router1";

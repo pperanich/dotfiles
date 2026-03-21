@@ -9,9 +9,10 @@
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
   jetpack-nixos = inputs.jetpack-nixos.overlays.default;
+  bun2nix = inputs.bun2nix.overlays.default;
 
   # This one brings my packages from the 'pkgs' directory
-  additions = final: _prev: import ../pkgs { pkgs = final; };
+  additions = final: _prev: import ../pkgs { pkgs = final; inherit inputs; };
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays

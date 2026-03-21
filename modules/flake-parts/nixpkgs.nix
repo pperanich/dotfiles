@@ -24,13 +24,13 @@ in
     {
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;
+        overlays = builtins.attrValues overlays;
         config = {
           allowUnfree = true;
           allowBroken = true;
           permittedInsecurePackages = [
             "openssl-1.1.1w"
           ];
-          overlays = builtins.attrValues overlays;
         };
       };
       clan.pkgs = pkgs;

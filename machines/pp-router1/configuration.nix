@@ -121,6 +121,8 @@ in
       inherit (tunnelMeta) tunnelId;
       credentialsFile = config.sops.secrets.cloudflared-tunnel-credentials.path;
       ingress = {
+        "prestonperanich.com" = "http://localhost:8224"; # Personal site
+        "www.prestonperanich.com" = "http://localhost:8224"; # Redirect to apex
         "vault.prestonperanich.com" = "http://localhost:8223"; # Caddy tunnel listener (blocks /admin)
       };
     };
@@ -528,6 +530,15 @@ in
     '';
 
     virtualHosts = {
+      # --- Personal site (static, built by bun2nix) ---
+      "prestonperanich.com" = mkVhost ''
+        root * ${pkgs.personal-site}
+        file_server
+      '';
+      "www.prestonperanich.com" = mkVhost ''
+        redir https://prestonperanich.com{uri} permanent
+      '';
+
       "feedme.prestonperanich.com" = mkVhost ''
         reverse_proxy http://pp-ml1.${config.my.router.dhcp.domainName}:3000 {
           header_up X-Forwarded-Proto {scheme}
@@ -581,7 +592,17 @@ in
         }
       '';
 
-      # --- Cloudflare Tunnel listener (localhost only, blocks /admin) ---
+      # --- Cloudflare Tunnel listeners (localhost only) ---
+      # Personal site (public via tunnel)
+      "http://:8224" = {
+        listenAddresses = [ "127.0.0.1" ];
+        extraConfig = ''
+          root * ${pkgs.personal-site}
+          file_server
+        '';
+      };
+
+      # Vaultwarden (public via tunnel, blocks /admin)
       "http://:8223" = {
         listenAddresses = [ "127.0.0.1" ];
         extraConfig = ''

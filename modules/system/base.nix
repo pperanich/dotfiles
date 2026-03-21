@@ -37,12 +37,12 @@
         ];
 
         nixpkgs = {
+          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
           config = {
             allowUnfree = true;
             allowUnfreePredicate = _: true;
             allowBroken = true;
           };
-          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
         };
         programs.nix-ld.dev = {
           enable = true;
@@ -198,12 +198,12 @@
         ];
 
         nixpkgs = {
+          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
           config = {
             allowUnfree = true;
             allowUnfreePredicate = _: true;
             allowBroken = true;
           };
-          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
         };
       };
 
@@ -243,12 +243,12 @@
 
         # Configure user nixpkgs
         nixpkgs = {
+          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
           config = {
             allowUnfree = true;
             allowUnfreePredicate = _: true;
             allowBroken = true;
           };
-          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
         };
 
         home = {

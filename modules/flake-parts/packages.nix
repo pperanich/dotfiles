@@ -2,14 +2,19 @@
   perSystem =
     { pkgs, lib, ... }:
     {
+      # Custom packages are added to pkgs via the additions overlay (overlays/default.nix).
+      # We re-export them here as flake outputs (nix build .#<name>).
       packages = {
-        runmat = pkgs.callPackage ../../pkgs/runmat { };
-        update-display = pkgs.callPackage ../../pkgs/update-display { };
-        wg-add-peer = pkgs.callPackage ../../pkgs/wg-add-peer { };
-        cf = pkgs.callPackage ../../pkgs/cf { };
+        inherit (pkgs)
+          runmat
+          update-display
+          wg-add-peer
+          cf
+          personal-site
+          ;
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-        udp-broadcast-relay-redux = pkgs.callPackage ../../pkgs/udp-broadcast-relay-redux { };
+        inherit (pkgs) udp-broadcast-relay-redux;
       };
     };
 }

@@ -143,5 +143,15 @@
       url = "github:pperanich/nix-apple-fonts";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    personal-site = {
+      url = "github:pperanich/personal-site";
+      flake = false;
+    };
+
+    bun2nix = {
+      url = "github:nix-community/bun2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 }

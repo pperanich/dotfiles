@@ -22,7 +22,7 @@ _: {
       };
 
       environment.systemPackages = [
-        (pkgs.lua5_4.withPackages (_: [
+        (pkgs.lua5_5.withPackages (_: [
           pkgs.sbarlua
         ]))
       ];

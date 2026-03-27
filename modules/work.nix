@@ -1,5 +1,16 @@
-{ lib, ... }:
+{ lib, inputs, ... }:
 let
+  nixpkgsConfig = {
+    permittedInsecurePackages = [
+      "openssl-1.1.1w"
+    ];
+  };
+
+  legacyNixpkgsConfig = nixpkgsConfig // {
+    allowBroken = true;
+    allowUnfree = true;
+  };
+
   workOverlay =
     final: prev:
     let
@@ -7,20 +18,26 @@ let
         url = "https://apllinuxdepot.jhuapl.edu/linux/APL-root-cert/JHUAPL-MS-Root-CA-05-21-2038-B64-text.cer";
         sha256 = "faaadfb3803bbe659906c5a3abdea6a8c5b5e13c0321c3ca098213c5ca893f99";
       };
+      pkgs2505 = import inputs.nixpkgs-2505 {
+        system = prev.stdenv.hostPlatform.system;
+        config = legacyNixpkgsConfig;
+      };
     in
     {
       cacert-work = prev.cacert.override {
         extraCertificateFiles = [ apl-root-ca ];
       };
-      my-curl = prev.curl.override {
-        openssl = prev.openssl_1_1;
+      inherit (pkgs2505) openssl_1_1;
+      my-curl = pkgs2505.curl.override {
+        openssl = final.openssl_1_1;
         # OpenSSL 1.1 is required in this environment; disable HTTP/3 (ngtcp2)
         # because recent curl builds require QUIC-capable TLS for --with-ngtcp2.
         http3Support = false;
       };
+      # curl = final.my-curl;
       my-git =
-        (prev.git.override {
-          openssl = prev.openssl_1_1;
+        (pkgs2505.git.override {
+          openssl = final.openssl_1_1;
           curl = final.my-curl;
         }).overrideAttrs
           (_: {
@@ -30,10 +47,9 @@ let
             doInstallCheck = false;
           });
 
-      buildPackages = prev.buildPackages // {
-        openssl = prev.openssl_1_1;
-        buildInputs = (prev.buildInputs or [ ]) // [ prev.openssl_1_1 ];
-      };
+      # buildPackages = prev.buildPackages // {
+      #   openssl = final.openssl_1_1;
+      # };
 
       buildGoModule = prev.buildGoModule.override { cacert = final.cacert-work; };
 
@@ -55,12 +71,6 @@ let
         };
       });
     };
-
-  nixpkgsConfig = {
-    permittedInsecurePackages = [
-      "openssl-1.1.1w"
-    ];
-  };
 in
 {
   # Work environment configuration

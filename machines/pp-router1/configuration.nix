@@ -85,6 +85,7 @@ in
     # Public services (via Cloudflare Tunnel)
     cloudflareTunnel
     vaultwarden
+    observability
 
     # Outbound transactional email
     stalwart
@@ -108,6 +109,11 @@ in
     enable = true;
     hostname = "mail.prestonperanich.com";
     relayCredentialFile = config.sops.secrets.resend-api-key.path;
+  };
+
+  my.observability = {
+    enable = true;
+    grafana.hostname = "grafana.prestonperanich.com";
   };
 
   # Cloudflare Tunnel — public service exposure without opening WAN ports
@@ -329,6 +335,7 @@ in
         "navidrome" # music server (pp-nas1)
         "audiobookshelf" # audiobooks & podcasts (pp-nas1)
         "home" # dashboard (pp-router1)
+        "grafana" # observability dashboard
         "vault-admin" # vaultwarden admin panel (pp-router1)
       ]
       ++ [
@@ -385,6 +392,12 @@ in
             icon = "ntopng";
             sub = "ntopng";
             desc = "Network monitoring";
+          }
+          {
+            name = "Grafana";
+            icon = "grafana";
+            sub = "grafana";
+            desc = "Metrics, logs & alerts";
           }
         ];
       }
@@ -493,6 +506,9 @@ in
   # Cloudflare account ID (used by cf-tunnel sync)
   sops.secrets.cloudflare-account-id = { };
 
+  sops.secrets.grafana-admin-password = { };
+  sops.secrets.grafana-secret-key = { };
+
   # Cloudflare Tunnel: credentials JSON (binary format, separate sops file)
   sops.secrets.cloudflared-tunnel-credentials = {
     sopsFile = lib.my.relativeToRoot "sops/cloudflared-tunnel.json";
@@ -552,6 +568,7 @@ in
 
       # --- Simple reverse proxies (router-local services) ---
       "home.prestonperanich.com" = mkProxy "localhost:8082";
+      "grafana.prestonperanich.com" = mkProxy "localhost:3010";
       "ntopng.prestonperanich.com" = mkProxy "localhost:3000";
       "vault.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
       "vault-admin.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";

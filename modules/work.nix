@@ -19,7 +19,7 @@ let
         sha256 = "faaadfb3803bbe659906c5a3abdea6a8c5b5e13c0321c3ca098213c5ca893f99";
       };
       pkgs2505 = import inputs.nixpkgs-2505 {
-        system = prev.stdenv.hostPlatform.system;
+        inherit (prev.stdenv.hostPlatform) system;
         config = legacyNixpkgsConfig;
       };
     in

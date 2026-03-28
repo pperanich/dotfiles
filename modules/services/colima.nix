@@ -1,5 +1,4 @@
-_:
-{
+_: {
   flake.modules.darwin.colima =
     {
       config,
@@ -10,7 +9,7 @@ _:
     let
       # Inherit session variables so XDG_CONFIG_HOME, COLIMA_PROFILE, etc.
       # are baked into the plist — no dependency on launchctl setenv ordering.
-      primaryUser = config.system.primaryUser;
+      inherit (config.system) primaryUser;
       sessionVars = config.home-manager.users.${primaryUser}.home.sessionVariables;
     in
     {
@@ -32,12 +31,14 @@ _:
           ThrottleInterval = 30;
           WorkingDirectory = config.home-manager.users.${primaryUser}.home.homeDirectory;
           EnvironmentVariables = sessionVars // {
-            PATH = lib.makeBinPath [
-              pkgs.colima
-              pkgs.docker-client
-              pkgs.docker-compose
-              pkgs.docker-credential-helpers
-            ] + ":/usr/bin:/bin:/usr/sbin:/sbin";
+            PATH =
+              lib.makeBinPath [
+                pkgs.colima
+                pkgs.docker-client
+                pkgs.docker-compose
+                pkgs.docker-credential-helpers
+              ]
+              + ":/usr/bin:/bin:/usr/sbin:/sbin";
           };
           StandardOutPath = "/tmp/colima.stdout.log";
           StandardErrorPath = "/tmp/colima.stderr.log";

@@ -1,0 +1,31 @@
+modules:
+  icmp_v4:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: ip4
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: ip4
+  dns_udp:
+    prober: dns
+    timeout: 5s
+    dns:
+      transport_protocol: udp
+      preferred_ip_protocol: ip4
+      recursion_desired: true
+      query_name: google.com
+      query_type: A
+      validate_answer_rrs:
+        fail_if_matches_regexp:
+          - "^$"
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      method: GET
+      valid_status_codes: []
+      no_follow_redirects: false

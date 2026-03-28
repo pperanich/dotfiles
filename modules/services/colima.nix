@@ -22,11 +22,14 @@ _:
             "${pkgs.colima}/bin/colima"
             "start"
             "--foreground"
+            "--save-config=false"
           ];
           RunAtLoad = true;
           KeepAlive = {
-            SuccessfulExit = true;
+            # Restart on unexpected failures, but allow a clean manual stop.
+            SuccessfulExit = false;
           };
+          ThrottleInterval = 30;
           WorkingDirectory = config.home-manager.users.${primaryUser}.home.homeDirectory;
           EnvironmentVariables = sessionVars // {
             PATH = lib.makeBinPath [

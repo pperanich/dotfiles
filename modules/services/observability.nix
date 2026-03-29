@@ -10,9 +10,8 @@ _: {
       enabled = cfg.enable;
 
       dashboardDir = "/var/lib/grafana/dashboards";
-      grafanaHost = cfg.grafana.hostname;
 
-      mkDashboardCopyRule = name: src: "C+ ${dashboardDir}/${name} - - - - ${src}";
+      mkDashboardCopyRule = name: src: "C+ ${dashboardDir}/${name} 0640 grafana grafana - ${src}";
 
       dashboardFiles = {
         "router-overview.json" = ./observability-assets/dashboards/router-overview.json;
@@ -27,6 +26,21 @@ _: {
         labels.severity = "warning";
         annotations.description = description;
       };
+
+      blackboxRelabelConfigs = [
+        {
+          source_labels = [ "__address__" ];
+          target_label = "__param_target";
+        }
+        {
+          source_labels = [ "__param_target" ];
+          target_label = "instance";
+        }
+        {
+          target_label = "__address__";
+          replacement = "127.0.0.1:${toString config.services.prometheus.exporters.blackbox.port}";
+        }
+      ];
     in
     {
       options.my.observability = {
@@ -48,6 +62,12 @@ _: {
           type = lib.types.str;
           default = "168h";
           description = "Loki retention window";
+        };
+
+        blackbox.httpTargets = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ "https://${cfg.grafana.hostname}" ];
+          description = "HTTP endpoints to probe with blackbox exporter";
         };
       };
 
@@ -87,12 +107,6 @@ _: {
               ];
             }
             {
-              job_name = "systemd";
-              static_configs = [
-                { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.systemd.port}" ]; }
-              ];
-            }
-            {
               job_name = "unbound";
               static_configs = [
                 { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.unbound.port}" ]; }
@@ -124,20 +138,7 @@ _: {
                   ];
                 }
               ];
-              relabel_configs = [
-                {
-                  source_labels = [ "__address__" ];
-                  target_label = "__param_target";
-                }
-                {
-                  source_labels = [ "__param_target" ];
-                  target_label = "instance";
-                }
-                {
-                  target_label = "__address__";
-                  replacement = "127.0.0.1:${toString config.services.prometheus.exporters.blackbox.port}";
-                }
-              ];
+              relabel_configs = blackboxRelabelConfigs;
             }
             {
               job_name = "blackbox-tcp";
@@ -153,20 +154,7 @@ _: {
                   ];
                 }
               ];
-              relabel_configs = [
-                {
-                  source_labels = [ "__address__" ];
-                  target_label = "__param_target";
-                }
-                {
-                  source_labels = [ "__param_target" ];
-                  target_label = "instance";
-                }
-                {
-                  target_label = "__address__";
-                  replacement = "127.0.0.1:${toString config.services.prometheus.exporters.blackbox.port}";
-                }
-              ];
+              relabel_configs = blackboxRelabelConfigs;
             }
             {
               job_name = "blackbox-dns";
@@ -176,20 +164,7 @@ _: {
                 target = [ "google.com" ];
               };
               static_configs = [ { targets = [ "127.0.0.1:53" ]; } ];
-              relabel_configs = [
-                {
-                  source_labels = [ "__address__" ];
-                  target_label = "__param_target";
-                }
-                {
-                  source_labels = [ "__param_target" ];
-                  target_label = "instance";
-                }
-                {
-                  target_label = "__address__";
-                  replacement = "127.0.0.1:${toString config.services.prometheus.exporters.blackbox.port}";
-                }
-              ];
+              relabel_configs = blackboxRelabelConfigs;
             }
             {
               job_name = "blackbox-http";
@@ -197,21 +172,8 @@ _: {
               params = {
                 module = [ "http_2xx" ];
               };
-              static_configs = [ { targets = [ "https://${grafanaHost}" ]; } ];
-              relabel_configs = [
-                {
-                  source_labels = [ "__address__" ];
-                  target_label = "__param_target";
-                }
-                {
-                  source_labels = [ "__param_target" ];
-                  target_label = "instance";
-                }
-                {
-                  target_label = "__address__";
-                  replacement = "127.0.0.1:${toString config.services.prometheus.exporters.blackbox.port}";
-                }
-              ];
+              static_configs = [ { targets = cfg.blackbox.httpTargets; } ];
+              relabel_configs = blackboxRelabelConfigs;
             }
           ];
           rules = [
@@ -220,7 +182,7 @@ _: {
                 {
                   name = "observability";
                   rules = [
-                    (mkPromRule "up{job=~\"prometheus|grafana|loki|blocky|node|systemd|unbound|kea|wireguard\"} == 0"
+                    (mkPromRule "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard\"} == 0"
                       "ObservabilityTargetDown"
                       "An observability target has been down for 5 minutes."
                     )
@@ -262,10 +224,6 @@ _: {
             listenAddress = "127.0.0.1";
             enabledCollectors = [ "systemd" ];
           };
-          systemd = {
-            enable = true;
-            listenAddress = "127.0.0.1";
-          };
           blackbox = {
             enable = true;
             listenAddress = "127.0.0.1";
@@ -301,8 +259,8 @@ _: {
             server = {
               http_addr = "127.0.0.1";
               http_port = 3010;
-              domain = grafanaHost;
-              root_url = "https://${grafanaHost}";
+              domain = cfg.grafana.hostname;
+              root_url = "https://${cfg.grafana.hostname}";
               enforce_domain = true;
             };
             security = {
@@ -362,6 +320,7 @@ _: {
             server = {
               http_listen_address = "127.0.0.1";
               http_listen_port = 3100;
+              grpc_listen_address = "127.0.0.1";
               grpc_listen_port = 9096;
             };
             common = {
@@ -427,7 +386,7 @@ _: {
                 relabel_configs = [
                   {
                     source_labels = [ "__journal__systemd_unit" ];
-                    regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|prometheus|grafana|loki)\\.service";
+                    regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|prometheus|grafana|loki|promtail|homepage-dashboard)\\.service";
                     action = "keep";
                   }
                   {

@@ -114,6 +114,11 @@ in
   my.observability = {
     enable = true;
     grafana.hostname = "grafana.prestonperanich.com";
+    blackbox.httpTargets = [
+      "https://${config.my.observability.grafana.hostname}"
+      "https://home.prestonperanich.com"
+      "https://${config.my.vaultwarden.domain}"
+    ];
   };
 
   # Cloudflare Tunnel — public service exposure without opening WAN ports

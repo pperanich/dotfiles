@@ -889,11 +889,11 @@
     "personal-site": {
       "flake": false,
       "locked": {
-        "lastModified": 1774132232,
-        "narHash": "sha256-o8GSjEoaBU2TQdwvhG8MASMrSvLYSfHpqp5s6O1I1G0=",
+        "lastModified": 1774868425,
+        "narHash": "sha256-YjZqKYshiDLsFaoFu+3sYhCR44SmFnnZssXe9dVZp6I=",
         "owner": "pperanich",
         "repo": "personal-site",
-        "rev": "64945615b78c3a0bb301b65aee39e358d9fd0d4d",
+        "rev": "1205fa4f76a5714b85b05d0981f160e1b209f603",
         "type": "github"
       },
       "original": {

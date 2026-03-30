@@ -119,6 +119,10 @@ in
       "https://home.prestonperanich.com"
       "https://${config.my.vaultwarden.domain}"
     ];
+    unpoller = {
+      enable = true;
+      passwordFile = config.sops.secrets.unpoller-password.path;
+    };
   };
 
   # Cloudflare Tunnel — public service exposure without opening WAN ports
@@ -513,6 +517,7 @@ in
 
   sops.secrets.grafana-admin-password = { };
   sops.secrets.grafana-secret-key = { };
+  sops.secrets.unpoller-password = { };
 
   # Cloudflare Tunnel: credentials JSON (binary format, separate sops file)
   sops.secrets.cloudflared-tunnel-credentials = {

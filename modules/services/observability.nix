@@ -69,6 +69,27 @@ _: {
           default = [ "https://${cfg.grafana.hostname}" ];
           description = "HTTP endpoints to probe with blackbox exporter";
         };
+
+        unpoller = {
+          enable = lib.mkEnableOption "UniFi metrics collection via unpoller";
+
+          controllerUrl = lib.mkOption {
+            type = lib.types.str;
+            default = "https://127.0.0.1:8443";
+            description = "URL of the UniFi controller to poll";
+          };
+
+          user = lib.mkOption {
+            type = lib.types.str;
+            default = "unpoller";
+            description = "Read-only UniFi controller user for metrics collection";
+          };
+
+          passwordFile = lib.mkOption {
+            type = lib.types.path;
+            description = "Path to file containing the unpoller user's password";
+          };
+        };
       };
 
       config = lib.mkIf enabled {
@@ -124,6 +145,14 @@ _: {
                 { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.wireguard.port}" ]; }
               ];
             }
+            ]
+            ++ lib.optionals cfg.unpoller.enable [
+            {
+              job_name = "unpoller";
+              static_configs = [ { targets = [ "127.0.0.1:9130" ]; } ];
+            }
+            ]
+            ++ [
             {
               job_name = "blackbox-icmp";
               metrics_path = "/probe";
@@ -182,7 +211,7 @@ _: {
                 {
                   name = "observability";
                   rules = [
-                    (mkPromRule "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard\"} == 0"
+                    (mkPromRule "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard|unpoller\"} == 0"
                       "ObservabilityTargetDown"
                       "An observability target has been down for 5 minutes."
                     )
@@ -210,6 +239,21 @@ _: {
                       "increase(node_systemd_unit_state{name=~\"systemd-networkd.service|unbound.service|blocky.service|kea-dhcp4-server.service\",state=\"failed\"}[15m]) > 0"
                       "RouterCoreServiceFailed"
                       "A core router service entered failed state in the last 15 minutes."
+                    )
+                    (mkPromRule
+                      "node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8"
+                      "RouterConntrackHigh"
+                      "Connection tracking table is above 80 percent capacity."
+                    )
+                    (mkPromRule
+                      "rate(node_network_receive_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
+                      "RouterInterfaceRxDrops"
+                      "Network interface is dropping incoming packets."
+                    )
+                    (mkPromRule
+                      "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
+                      "RouterInterfaceTxDrops"
+                      "Network interface is dropping outgoing packets."
                     )
                   ];
                 }
@@ -421,6 +465,27 @@ _: {
                 ];
               }
             ];
+          };
+        };
+
+        services.unpoller = lib.mkIf cfg.unpoller.enable {
+          enable = true;
+          unifi = {
+            controllers = [
+              {
+                url = cfg.unpoller.controllerUrl;
+                user = cfg.unpoller.user;
+                pass = cfg.unpoller.passwordFile;
+                save_sites = true;
+                save_events = true;
+                save_alarms = true;
+                save_dpi = false;
+                verify_ssl = false;
+              }
+            ];
+          };
+          prometheus = {
+            http_listen = "127.0.0.1:9130";
           };
         };
 

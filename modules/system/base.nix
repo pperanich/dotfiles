@@ -254,7 +254,6 @@
 
         # Configure user nixpkgs
         nixpkgs = {
-          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
           config = {
             allowUnfree = true;
             allowUnfreePredicate = _: true;

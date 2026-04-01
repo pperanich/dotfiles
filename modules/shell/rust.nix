@@ -26,6 +26,7 @@ _: {
             "thumbv7em-none-eabihf"
             "thumbv8m.main-none-eabihf"
             "riscv32imac-unknown-none-elf"
+            "armv7a-none-eabihf"
 
             # Desktop targets
             "aarch64-apple-darwin"

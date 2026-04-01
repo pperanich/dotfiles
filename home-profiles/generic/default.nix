@@ -19,6 +19,8 @@
 
     # Work profile
     work
+
+    rust
   ];
 
   # State version set by mkHomeConfigurations

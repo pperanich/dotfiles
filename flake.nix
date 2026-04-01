@@ -147,7 +147,7 @@
 
     personal-site = {
       url = "github:pperanich/personal-site";
-      flake = false;
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     bun2nix = {

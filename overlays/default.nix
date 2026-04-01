@@ -5,6 +5,7 @@
   sops-nix = inputs.sops-nix.overlays.default;
   ghostty = inputs.ghostty.overlays.default;
   nix-apple-fonts = inputs.nix-apple-fonts.overlays.default;
+  personal-site = inputs.personal-site.overlays.default;
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;

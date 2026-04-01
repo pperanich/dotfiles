@@ -11,7 +11,4 @@
   udp-broadcast-relay-redux = pkgs.callPackage ./udp-broadcast-relay-redux { };
   wg-add-peer = pkgs.callPackage ./wg-add-peer { };
   cf = pkgs.callPackage ./cf { };
-  personal-site = pkgs.callPackage ./personal-site {
-    personal-site-src = inputs.personal-site;
-  };
 }

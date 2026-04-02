@@ -17,7 +17,6 @@
     final: _prev:
     import ../pkgs {
       pkgs = final;
-      inherit inputs;
     };
 
   # This one contains whatever you want to overlay

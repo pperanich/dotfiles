@@ -515,8 +515,8 @@ in
   # Cloudflare account ID (used by cf-tunnel sync)
   sops.secrets.cloudflare-account-id = { };
 
-  sops.secrets.grafana-admin-password = { };
-  sops.secrets.grafana-secret-key = { };
+  sops.secrets.grafana-admin-password = { owner = "grafana"; };
+  sops.secrets.grafana-secret-key = { owner = "grafana"; };
   sops.secrets.unpoller-password = { };
 
   # Cloudflare Tunnel: credentials JSON (binary format, separate sops file)

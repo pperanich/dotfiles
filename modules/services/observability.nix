@@ -145,14 +145,14 @@ _: {
                 { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.wireguard.port}" ]; }
               ];
             }
-            ]
-            ++ lib.optionals cfg.unpoller.enable [
+          ]
+          ++ lib.optionals cfg.unpoller.enable [
             {
               job_name = "unpoller";
               static_configs = [ { targets = [ "127.0.0.1:9130" ]; } ];
             }
-            ]
-            ++ [
+          ]
+          ++ [
             {
               job_name = "blackbox-icmp";
               metrics_path = "/probe";
@@ -240,18 +240,15 @@ _: {
                       "RouterCoreServiceFailed"
                       "A core router service entered failed state in the last 15 minutes."
                     )
-                    (mkPromRule
-                      "node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8"
+                    (mkPromRule "node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8"
                       "RouterConntrackHigh"
                       "Connection tracking table is above 80 percent capacity."
                     )
-                    (mkPromRule
-                      "rate(node_network_receive_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
+                    (mkPromRule "rate(node_network_receive_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
                       "RouterInterfaceRxDrops"
                       "Network interface is dropping incoming packets."
                     )
-                    (mkPromRule
-                      "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
+                    (mkPromRule "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
                       "RouterInterfaceTxDrops"
                       "Network interface is dropping outgoing packets."
                     )
@@ -474,7 +471,7 @@ _: {
             controllers = [
               {
                 url = cfg.unpoller.controllerUrl;
-                user = cfg.unpoller.user;
+                inherit (cfg.unpoller) user;
                 pass = cfg.unpoller.passwordFile;
                 save_sites = true;
                 save_events = true;

@@ -40,6 +40,21 @@
 
   # Networking configuration
   networking.hostName = "pp-nas1";
+  networking = {
+    # Bridge the two Ethernet ports so a downstream device on enp2s0 can
+    # obtain DHCP from the upstream LAN on enp1s0. The NAS itself gets its
+    # address on br0 rather than on either physical NIC.
+    useDHCP = false;
+    bridges.br0.interfaces = [
+      "enp1s0"
+      "enp2s0"
+    ];
+    interfaces = {
+      br0.useDHCP = true;
+      enp1s0.useDHCP = false;
+      enp2s0.useDHCP = false;
+    };
+  };
 
   security = {
     polkit.enable = true;

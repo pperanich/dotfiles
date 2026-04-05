@@ -87,13 +87,7 @@
         # We are using the Determinate daemon
         nix.enable = false;
         # Custom settings written to /etc/nix/nix.custom.conf
-        determinateNix = {
-          enable = true;
-          customSettings = {
-            eval-cores = 0;
-            extra-experimental-features = "external-builders parallel-eval";
-          };
-        };
+        determinateNix.enable = true;
 
         programs.zsh.enableCompletion = false;
         programs.zsh.enableBashCompletion = false;

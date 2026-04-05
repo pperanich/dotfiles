@@ -100,14 +100,14 @@ nix flake check                       # Validate flake
 
 ## Machines
 
-| Hostname     | Type    | OS     | Description            |
-| ------------ | ------- | ------ | ---------------------- |
-| pp-ml1       | Laptop  | Darwin | Personal MacBook       |
-| pp-ll1       | Laptop  | NixOS  | Personal Linux laptop  |
-| pp-ld1       | Desktop | NixOS  | Personal Linux desktop |
-| pp-nas1      | Server  | NixOS  | NAS (BeeLink)          |
-| pp-router1   | Server  | NixOS  | Router                 |
-| pp-rpi1      | SBC     | NixOS  | Raspberry Pi           |
-| pp-wsl1      | VM      | NixOS  | WSL instance           |
-| peranpl1-ml1 | Laptop  | Darwin | Work MacBook           |
-| peranpl1-ml2 | Laptop  | Darwin | Work MacBook           |
+| Hostname     | Type    | OS     | Description                    |
+| ------------ | ------- | ------ | ------------------------------ |
+| pp-ml1       | Laptop  | Darwin | Personal MacBook               |
+| pp-ll1       | Laptop  | NixOS  | Personal Linux laptop          |
+| pp-ld1       | Desktop | NixOS  | Personal Linux desktop         |
+| pp-nas1      | Server  | NixOS  | NAS (BeeLink)                  |
+| pp-router1   | Server  | NixOS  | Router                         |
+| pp-rpi1      | SBC     | NixOS  | Raspberry Pi 3B+ GPIO debugger |
+| pp-wsl1      | VM      | NixOS  | WSL instance                   |
+| peranpl1-ml1 | Laptop  | Darwin | Work MacBook                   |
+| peranpl1-ml2 | Laptop  | Darwin | Work MacBook                   |

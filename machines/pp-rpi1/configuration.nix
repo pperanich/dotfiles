@@ -89,12 +89,19 @@ in
 
   # Networking configuration
   networking.hostName = "pp-rpi1";
-  sops.templates."wireless.conf".content = ''
-    psk_passphrase=${config.sops.placeholder.wifi_passphrase}
-  '';
+  sops.templates."wireless.conf" = {
+    content = "psk_passphrase=${config.sops.placeholder.wifi_passphrase}";
+    # wpa_supplicant runs as the wpa_supplicant user in a sandboxed service,
+    # so the secrets file must be readable by that user.
+    owner = "wpa_supplicant";
+    group = "wpa_supplicant";
+    mode = "0400";
+  };
   networking.wireless = {
     enable = true;
     secretsFile = config.sops.templates."wireless.conf".path;
-    networks."PS-Net".pskRaw = "ext:psk_passphrase";
+    networks."PS-Net" = {
+      pskRaw = "ext:psk_passphrase";
+    };
   };
 }

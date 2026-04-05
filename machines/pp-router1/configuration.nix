@@ -587,12 +587,15 @@ in
       "vault.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
       "vault-admin.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
 
-      # Unifi controller (self-signed cert)
+      # Unifi controller (self-signed cert, requires origin header rewrite for CSRF)
       "unifi.prestonperanich.com" = mkVhost ''
         reverse_proxy https://localhost:8443 {
           transport http {
             tls_insecure_skip_verify
           }
+          header_up X-Forwarded-Proto {scheme}
+          header_up Origin https://localhost:8443
+          header_up Referer https://localhost:8443
         }
       '';
 

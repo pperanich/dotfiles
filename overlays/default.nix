@@ -3,7 +3,6 @@
   emacs-overlay = inputs.emacs-overlay.overlays.default;
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
   sops-nix = inputs.sops-nix.overlays.default;
-  ghostty = inputs.ghostty.overlays.default;
   nix-apple-fonts = inputs.nix-apple-fonts.overlays.default;
   personal-site = inputs.personal-site.overlays.default;
 

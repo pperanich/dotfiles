@@ -7,8 +7,6 @@ _: {
         [
           # Shell Environment
           direnv # Shell extension that manages your environment
-          oh-my-posh # Prompt theme engine for any shell
-          sheldon # Fast and configurable shell plugin manager
 
           # Modern CLI Replacements
           uutils-coreutils-noprefix # Cross-platform Rust rewrite of the GNU coreutils
@@ -30,7 +28,7 @@ _: {
           # Terminal Multiplexers
           tmux # Terminal multiplexer
           tmux-sessionizer # The fastest way to manage projects as tmux sessions
-          zellij # A terminal workspace with batteries included
+          # zellij # A terminal workspace with batteries included
 
           # Version Control
           my-git # Use "custom" git so we can override with openssl1 if needed.
@@ -89,14 +87,10 @@ _: {
           nix-output-monitor # Processes output of Nix commands to show helpful and pretty information
           nvd # Nix/NixOS package version diff tool
           statix # Lints and suggestions for the nix programming language
-          devenv
+          # devenv
 
           # DevOps & Infrastructure
           kubectl # Kubernetes CLI
-
-          # AI Assistants
-          heygpt # A simple command-line interface for ChatGPT API
-          shell-gpt # Access ChatGPT from your terminal
 
           # Security & Credentials
           rbw # Unofficial Bitwarden CLI
@@ -105,10 +99,6 @@ _: {
           # Media
           ffmpeg # A complete, cross-platform solution to record, convert and stream audio and video
           spotify-player # Terminal spotify player that has feature parity with the official client
-
-          # Diagrams & Visualization
-          plantuml # Draw UML diagrams using a simple and human readable text description
-          graphviz # Graph visualization tools
 
           # Clipboard
           xsel # Command-line program for getting and setting the contents of the X selection

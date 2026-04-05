@@ -92,8 +92,6 @@
           customSettings = {
             eval-cores = 0;
             extra-experimental-features = "external-builders parallel-eval";
-            # extra-substituters = "nix-apple-fonts.cachix.org";
-            # extra-trusted-public-keys = "nix-apple-fonts.cachix.org-1:+IufU9qEralI2eCib9vH4bv093Xo1F9l0rw24KzLEdg=";
           };
         };
 
@@ -249,7 +247,7 @@
           };
           zoxide.enable = true;
           nix-index-database.comma.enable = true;
-          vscode.enable = true;
+          # vscode.enable = true;
         };
 
         # Configure user nixpkgs
@@ -282,7 +280,7 @@
               DOTFILES_DIR="${config.home.homeDirectory}/dotfiles"
               if [ ! -d "$DOTFILES_DIR" ]; then
                 echo "Cloning dotfiles repo to $DOTFILES_DIR..."
-                ${pkgs.git}/bin/git clone git@github.com:pperanich/dotfiles.git "$DOTFILES_DIR"
+                GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -o StrictHostKeyChecking=accept-new" ${pkgs.git}/bin/git clone git@github.com:pperanich/dotfiles.git "$DOTFILES_DIR"
               fi
               pushd "$DOTFILES_DIR" >/dev/null
               ${pkgs.stow}/bin/stow home

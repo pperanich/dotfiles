@@ -62,6 +62,14 @@
             "all"
           ];
         };
+        "pp-rpi1" = {
+          machineClass = "nixos";
+          tags = [
+            "rpi"
+            "nixos"
+            "all"
+          ];
+        };
         "pp-wsl1" = {
           machineClass = "nixos";
           tags = [
@@ -135,6 +143,7 @@
             machines = {
               pp-ll1 = { };
               pp-nas1 = { };
+              pp-rpi1 = { };
               pp-router1 = { };
             };
             settings = {
@@ -178,6 +187,7 @@
             peer.machines = {
               pp-nas1 = { };
               pp-wsl1 = { };
+              pp-rpi1 = { };
               pp-ml1 = { };
               peranpl1-ml1 = { };
               peranpl1-ml2 = { };

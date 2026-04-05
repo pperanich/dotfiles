@@ -1,5 +1,6 @@
 # Host configuration for pp-rpi1 (Raspberry Pi 3B+ GPIO debugger host)
 {
+  config,
   inputs,
   lib,
   modules,
@@ -46,8 +47,8 @@ in
   my.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "aarch64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pp-rpi1";
-  clan.core.networking.buildHost = "root@pp-rpi1";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-rpi1.pp-wg";
+  clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
 
   hardware = {
     enableRedistributableFirmware = true;
@@ -88,4 +89,12 @@ in
 
   # Networking configuration
   networking.hostName = "pp-rpi1";
+  sops.templates."wireless.conf".content = ''
+    psk_passphrase=${config.sops.placeholder.wifi_passphrase}
+  '';
+  networking.wireless = {
+    enable = true;
+    secretsFile = config.sops.templates."wireless.conf".path;
+    networks."PS-Net".pskRaw = "ext:psk_passphrase";
+  };
 }

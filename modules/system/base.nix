@@ -280,7 +280,7 @@
               DOTFILES_DIR="${config.home.homeDirectory}/dotfiles"
               if [ ! -d "$DOTFILES_DIR" ]; then
                 echo "Cloning dotfiles repo to $DOTFILES_DIR..."
-                ${pkgs.git}/bin/git clone git@github.com:pperanich/dotfiles.git "$DOTFILES_DIR"
+                GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -o StrictHostKeyChecking=accept-new" ${pkgs.git}/bin/git clone git@github.com:pperanich/dotfiles.git "$DOTFILES_DIR"
               fi
               pushd "$DOTFILES_DIR" >/dev/null
               ${pkgs.stow}/bin/stow home

@@ -187,6 +187,7 @@
             peer.machines = {
               pp-nas1 = { };
               pp-wsl1 = { };
+              pp-rpi1 = { };
               pp-ml1 = { };
               peranpl1-ml1 = { };
               peranpl1-ml2 = { };

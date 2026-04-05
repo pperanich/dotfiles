@@ -8,8 +8,13 @@ let
     defaultSopsFile = "${sopsFolder}/secrets.yaml";
     validateSopsFiles = false;
     age = {
-      # automatically import host SSH keys as age keys
-      sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+      # Use clan-managed age key for decryption
+      keyFile = "/var/lib/sops-nix/key.txt";
+      # Also import host SSH keys as age keys
+      sshKeyPaths = [
+        # "/etc/ssh/ssh_host_ed25519_key"
+        # "/run/secrets/vars/openssh/ssh.id_ed25519"
+      ];
     };
     # secrets will be output to /run/secrets
     # e.g. /run/secrets/msmtp-password

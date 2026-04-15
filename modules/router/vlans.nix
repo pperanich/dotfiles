@@ -15,12 +15,15 @@ _: {
       # Convert networks attrset to list with names
       networkList = lib.mapAttrsToList (name: net: net // { inherit name; }) netCfg.segments;
 
-      # Networks with VLANs (exclude main LAN)
-      vlanNetworks = lib.filter (n: n.vlan != null) networkList;
+      # The primary LAN L3 interface — the per-VLAN bridge for the network
+      # matching the main LAN subnet (cfg.lan.subnet).
+      lanInterface =
+        let mainSeg = lib.findFirst (n: n.subnet == cfg.lan.subnet) null networkList;
+        in if mainSeg != null then "br-${mainSeg.name}" else bridgeName;
 
-      # Get interface name for a network (used in firewall rules)
-      # For VLAN networks, this is the dedicated bridge; for main LAN, it's the main bridge
-      netIfaceName = net: if net.vlan != null then "br-${net.name}" else bridgeName;
+      # Every network gets its own bridge: br-${name}
+      netIfaceName = net: "br-${net.name}";
+      netBridge = net: "br-${net.name}";
 
       # Get router IP for a network
       netRouterIp = net: "${net.subnet}.1";
@@ -28,11 +31,12 @@ _: {
       # Get CIDR for a network
       netCidr = net: "${net.subnet}.0/24";
 
-      # Get bridge name - VLAN networks get their own bridge
-      netBridge = net: if net.vlan != null then "br-${net.name}" else bridgeName;
-
-      # Get VLAN interface name (the 802.1Q tagged interface on the main bridge)
-      netVlanIface = net: "${bridgeName}.${toString net.vlan}";
+      # Veth pair names for connecting br-lan (trunk) to per-VLAN bridges.
+      # Using veth pairs instead of VLAN subinterfaces because VLAN-aware
+      # bridge egress untagging doesn't work for frames injected via VLAN
+      # subinterface tx handlers — the bridge sends them out still tagged.
+      netVethTrunk = net: "v-${net.name}"; # end in br-lan
+      netVethBridge = net: "v-${net.name}-br"; # end in br-${name}
 
       # Build input rules (services on router)
       mkInputRules =
@@ -68,15 +72,11 @@ _: {
         in
         if net.isolation == "none" then
           ''
-            # ${net.name}: Trusted - full access to WAN, LAN, and all networks
+            # ${net.name}: Trusted - full access to WAN and all networks
             iifname "${iface}" oifname "${wan}" accept comment "${net.name} to WAN"
-            ${lib.optionalString (net.vlan != null) ''
-              iifname "${iface}" oifname "${bridgeName}" accept comment "${net.name} to LAN"
-              iifname "${bridgeName}" oifname "${iface}" accept comment "LAN to ${net.name}"
-            ''}
             ${lib.concatMapStringsSep "\n" (
               n:
-              lib.optionalString (n.name != net.name && n.vlan != null) ''
+              lib.optionalString (n.name != net.name) ''
                 iifname "${iface}" oifname "${netIfaceName n}" accept comment "${net.name} to ${n.name}"
               ''
             ) networkList}
@@ -99,13 +99,11 @@ _: {
           '';
 
       # Collected rules for firewall
-
-      # Only generate VLAN-specific input/forward rules for VLAN networks
-      allInputRules = lib.concatMapStringsSep "\n" mkInputRules vlanNetworks;
-      allForwardRules = lib.concatMapStringsSep "\n" mkForwardRules vlanNetworks;
+      allInputRules = lib.concatMapStringsSep "\n" mkInputRules networkList;
+      allForwardRules = lib.concatMapStringsSep "\n" mkForwardRules networkList;
       allNatRules = lib.concatMapStringsSep "\n" (
         net: ''oifname "${wan}" ip saddr ${netCidr net} masquerade comment "NAT ${net.name}"''
-      ) vlanNetworks;
+      ) networkList;
     in
     {
       options.my.router.networks = {
@@ -116,10 +114,9 @@ _: {
             lib.types.submodule (_: {
               options = {
                 vlan = lib.mkOption {
-                  type = lib.types.nullOr (lib.types.ints.between 1 4094);
-                  default = null;
+                  type = lib.types.ints.between 1 4094;
                   example = 20;
-                  description = "VLAN ID (1-4094). Null means main LAN (no VLAN tagging).";
+                  description = "VLAN ID (1-4094). All segments must be tagged.";
                 };
 
                 subnet = lib.mkOption {
@@ -176,33 +173,13 @@ _: {
                   description = ''
                     Enable mDNS/service discovery on this network segment.
                     Allows devices on this VLAN to be discovered via AirPlay, Chromecast, etc.
-                    Only meaningful for VLAN networks (main LAN always has mDNS).
                   '';
                 };
               };
             })
           );
           default = { };
-          example = lib.literalExpression ''
-            {
-              main = {
-                subnet = "10.0.0";
-                isolation = "none";
-              };
-              iot = {
-                vlan = 20;
-                subnet = "10.0.20";
-                isolation = "internet";
-                allowAccessFrom = [ "main" ];
-              };
-              guest = {
-                vlan = 30;
-                subnet = "10.0.30";
-                isolation = "full";
-              };
-            }
-          '';
-          description = "Network segment definitions with VLAN configuration";
+          description = "Network segment definitions. All segments must have a VLAN tag.";
         };
       };
 
@@ -210,9 +187,8 @@ _: {
         # Validation assertions
         assertions =
           let
-            vlanIds = map (n: n.vlan) (lib.filter (n: n.vlan != null) networkList);
+            vlanIds = map (n: n.vlan) networkList;
             subnets = map (n: n.subnet) networkList;
-            mainNetworks = lib.filter (n: n.vlan == null) networkList;
           in
           # Check dhcpRange validity
           (map (net: {
@@ -255,12 +231,6 @@ _: {
                 message = "Network ${net.name}: cannot reference itself in allowAccessFrom";
               }) net.allowAccessFrom
             ) networkList)
-          ++
-            # mdns only valid on VLAN networks (main LAN always has mDNS)
-            (map (net: {
-              assertion = !net.mdns || net.vlan != null;
-              message = "Network ${net.name}: mdns can only be enabled on VLAN networks (main LAN already has mDNS)";
-            }) networkList)
           ++ [
             # Unique VLAN IDs
             {
@@ -272,12 +242,10 @@ _: {
               assertion = lib.length subnets == lib.length (lib.unique subnets);
               message = "Network subnets must be unique";
             }
-            # At most one main network (no VLAN)
-            {
-              assertion = lib.length mainNetworks <= 1;
-              message = "Only one network can be the main LAN (vlan = null)";
-            }
           ];
+
+        # Export computed values for other modules
+        my.router._internal.lanInterface = lanInterface;
 
         # Export network info for other modules
         my.router._internal.networks = lib.listToAttrs (
@@ -295,38 +263,54 @@ _: {
 
         # Export firewall rules (always export, even if empty, for proper fallback handling)
         my.router._internal.networkFirewall = {
-          inputRules = if vlanNetworks != [ ] then allInputRules else "";
+          inputRules = if networkList != [ ] then allInputRules else "";
           forwardRules =
-            if vlanNetworks != [ ] then
+            if networkList != [ ] then
               ''
                 # Network-specific forwarding rules
                 ${allForwardRules}
               ''
             else
               "";
-          natRules = if vlanNetworks != [ ] then allNatRules else "";
+          natRules = if networkList != [ ] then allNatRules else "";
         };
 
-        # Create VLAN interfaces and bridges for each VLAN network
-        systemd.network = lib.mkIf (vlanNetworks != [ ]) {
+        # br-lan is a pure L2 trunk bridge with VLAN filtering — no IP address.
+        # All L3 lives on per-VLAN bridges (br-main, br-iot, br-guest), each
+        # connected to br-lan via a veth pair. This prevents Kea's raw
+        # (PF_PACKET) socket from seeing DHCP discovers for other VLANs.
+        #
+        # We use veth pairs (not VLAN subinterfaces) because a VLAN-aware
+        # bridge's egress untagging does not apply to frames injected via a
+        # VLAN subinterface's tx handler — they exit physical ports still
+        # tagged, breaking untagged clients. Veth ports are real bridge
+        # ports with proper VLAN filtering and egress untagging support.
+        systemd.network = lib.mkIf (networkList != [ ]) {
           netdevs =
-            # VLAN interfaces (802.1Q tagged on main bridge)
-            lib.listToAttrs (
-              map (net: {
-                name = "40-vlan-${net.name}";
-                value = {
-                  netdevConfig = {
-                    Kind = "vlan";
-                    Name = netVlanIface net;
-                  };
-                  vlanConfig = {
-                    Id = net.vlan;
-                  };
-                };
-              }) vlanNetworks
-            )
+            # Enable VLAN filtering on br-lan trunk bridge
+            {
+              "20-br-lan" = {
+                bridgeConfig.VLANFiltering = true;
+              };
+            }
             //
-              # Bridge for each VLAN network (external APs/devices attach here)
+              # Veth pair for each VLAN: one end in br-lan, other in br-${name}
+              lib.listToAttrs (
+                map (net: {
+                  name = "40-veth-${net.name}";
+                  value = {
+                    netdevConfig = {
+                      Kind = "veth";
+                      Name = netVethTrunk net;
+                    };
+                    peerConfig = {
+                      Name = netVethBridge net;
+                    };
+                  };
+                }) networkList
+              )
+            //
+              # Bridge for each VLAN network
               lib.listToAttrs (
                 map (net: {
                   name = "30-br-${net.name}";
@@ -336,63 +320,127 @@ _: {
                       Name = netBridge net;
                     };
                     # Disable IGMP snooping on discovery-enabled bridges so reflected
-                    # mDNS/SSDP multicast floods to all ports. Phones don't send IGMP
-                    # joins for link-local multicast (224.0.0.x), causing snooping to
-                    # silently drop reflected discovery packets.
+                    # mDNS/SSDP multicast floods to all ports.
                     bridgeConfig = lib.mkIf net.mdns {
                       MulticastSnooping = false;
                     };
                   };
-                }) vlanNetworks
+                }) networkList
               );
 
           networks =
-            # Attach VLANs to main bridge (creates the .20, .30 interfaces)
+            # Trunk bridge: no IP, no IPv6 RA/PD
             {
               "10-lan" = {
-                vlan = map netVlanIface vlanNetworks;
+                address = lib.mkForce [ ];
+                networkConfig = {
+                  IPv6SendRA = lib.mkForce false;
+                  DHCPPrefixDelegation = lib.mkForce false;
+                };
+                ipv6Prefixes = lib.mkForce [ ];
               };
             }
             //
-              # Add VLAN interface to its dedicated bridge
+              # BridgeVLAN on each physical port: all VLANs, PVID for main LAN
+              lib.listToAttrs (
+                map (iface: {
+                  name = "30-${iface}-lan";
+                  value = {
+                    bridgeVLANs = map (net: {
+                      bridgeVLANConfig = {
+                        VLAN = net.vlan;
+                      } // lib.optionalAttrs (net.subnet == cfg.lan.subnet) {
+                        PVID = net.vlan;
+                        EgressUntagged = net.vlan;
+                      };
+                    }) networkList;
+                  };
+                }) cfg.lan.interfaces
+              )
+            //
+              # Veth trunk end: bridge into br-lan with single-VLAN membership
               lib.listToAttrs (
                 map (net: {
-                  name = "45-vlan-${net.name}";
+                  name = "41-veth-${net.name}-trunk";
                   value = {
-                    matchConfig.Name = netVlanIface net;
+                    matchConfig.Name = netVethTrunk net;
+                    networkConfig = {
+                      Bridge = bridgeName;
+                      ConfigureWithoutCarrier = true;
+                    };
+                    bridgeVLANs = [
+                      {
+                        bridgeVLANConfig = {
+                          VLAN = net.vlan;
+                          PVID = net.vlan;
+                          EgressUntagged = net.vlan;
+                        };
+                      }
+                    ];
+                  };
+                }) networkList
+              )
+            //
+              # Veth bridge end: bridge into per-VLAN bridge
+              lib.listToAttrs (
+                map (net: {
+                  name = "42-veth-${net.name}-bridge";
+                  value = {
+                    matchConfig.Name = netVethBridge net;
                     networkConfig = {
                       Bridge = netBridge net;
                       ConfigureWithoutCarrier = true;
                     };
                   };
-                }) vlanNetworks
+                }) networkList
               )
             //
-              # Configure bridge with IP address
+              # Configure each VLAN bridge with IP address.
+              # The main LAN bridge also gets IPv6 (ULA, RA, DHCPv6-PD).
               lib.listToAttrs (
-                map (net: {
-                  name = "50-br-${net.name}";
-                  value = {
-                    matchConfig.Name = netBridge net;
-                    address = [ "${netRouterIp net}/24" ];
-                    networkConfig = {
-                      ConfigureWithoutCarrier = true;
+                map (
+                  net:
+                  let
+                    isMain = net.subnet == cfg.lan.subnet;
+                    inherit (cfg.ipv6) ulaPrefix;
+                  in
+                  {
+                    name = "50-br-${net.name}";
+                    value = {
+                      matchConfig.Name = netBridge net;
+                      address = [ "${netRouterIp net}/24" ]
+                        ++ lib.optional (isMain && cfg.ipv6.enable) "${ulaPrefix}::1/64";
+                      networkConfig = {
+                        ConfigureWithoutCarrier = true;
+                      } // lib.optionalAttrs isMain {
+                        DHCPPrefixDelegation = cfg.ipv6.enable;
+                        IPv6SendRA = cfg.ipv6.enable;
+                        IPv6AcceptRA = false;
+                      };
+                      ipv6Prefixes = lib.mkIf (isMain && cfg.ipv6.enable) [
+                        {
+                          AddressAutoconfiguration = true;
+                          OnLink = true;
+                          Prefix = "${ulaPrefix}::/64";
+                        }
+                      ];
                     };
-                  };
-                }) vlanNetworks
+                  }
+                ) networkList
               );
         };
 
-        # DHCP: Add VLAN bridge interfaces so Kea can serve these networks
-        services.kea.dhcp4.settings.interfaces-config.interfaces = lib.mkIf (vlanNetworks != [ ]) (
-          map (net: "br-${net.name}") vlanNetworks
+        # DHCP: Kea listens on per-VLAN bridge interfaces (not br-lan)
+        services.kea.dhcp4.settings.interfaces-config.interfaces = lib.mkIf (networkList != [ ]) (
+          map (net: netBridge net) networkList
         );
 
-        # DHCP pools for VLAN networks
-        services.kea.dhcp4.settings.subnet4 = lib.mkIf (vlanNetworks != [ ]) (
+        # DHCP pools for all networks
+        services.kea.dhcp4.settings.subnet4 = lib.mkIf (networkList != [ ]) (
           map (net: {
             id = 1000 + net.vlan;
             subnet = netCidr net;
+            interface = netBridge net;
             pools = [
               {
                 pool = "${net.subnet}.${toString net.dhcpRange.start} - ${net.subnet}.${toString net.dhcpRange.end}";
@@ -412,15 +460,15 @@ _: {
                 data = "${net.name}.${cfg.dhcp.domainName}";
               }
             ];
-          }) vlanNetworks
+          }) networkList
         );
 
         # DNS: VLAN listener config handled by dns.nix (Unbound) and blocky.nix (Blocky)
         # via _internal.networks — see routerDns and routerBlocky modules
 
-        # Chrony: Allow NTP from VLAN networks
-        services.chrony.extraConfig = lib.mkIf (vlanNetworks != [ ]) (
-          lib.concatMapStringsSep "\n" (net: "allow ${netCidr net}") vlanNetworks
+        # Chrony: Allow NTP from all networks
+        services.chrony.extraConfig = lib.mkIf (networkList != [ ]) (
+          lib.concatMapStringsSep "\n" (net: "allow ${netCidr net}") networkList
         );
       };
     };

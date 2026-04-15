@@ -180,10 +180,10 @@ in
       hairpinNat.enable = true;
       # Open HTTPS for Caddy on LAN (WireGuard is already trusted via @trusted_ifaces)
       extraInputRules = ''
-        iifname "br-lan" tcp dport 443 accept comment "Caddy HTTPS from LAN"
+        iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
       '';
       extraInputRulesV6 = ''
-        iifname "br-lan" tcp dport 443 accept comment "Caddy HTTPS from LAN"
+        iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
       '';
     };
 
@@ -261,9 +261,13 @@ in
     networks = {
       enable = true;
       segments = {
-        # Main network - no VLAN tag, uses primary LAN subnet
-        # TVs and media devices live here for Chromecast compatibility
+        # Main network - VLAN 1 (native/untagged via PVID)
+        # TVs and media devices live here for Chromecast compatibility.
+        # Tagging the main LAN prevents Kea's raw (PF_PACKET) socket on
+        # br-lan from capturing VLAN-tagged DHCP discovers meant for other
+        # networks — br-lan becomes a pure L2 trunk with no DHCP listener.
         main = {
+          vlan = 10;
           subnet = "10.0.0";
           isolation = "none"; # Full access to everything
         };

@@ -18,18 +18,21 @@ _: {
       dnsCfg = cfg.dns;
       enabled = cfg.enable && dnsCfg.enable && blockyCfg.enable;
 
-      # VLAN networks (exclude main LAN — its IP is already in cfg.lan.address)
+      # All VLAN networks (every segment is tagged)
       vlanNets = lib.filterAttrs (_: n: (n.vlan or null) != null) (cfg._internal.networks or { });
 
-      # All addresses Blocky should listen on (same set Unbound currently uses)
-      listenAddresses = [
-        "127.0.0.1"
-        "::1"
-        cfg.lan.address
-      ]
-      ++ lib.optional cfg.ipv6.enable "${cfg.ipv6.ulaPrefix}::1"
-      ++ dnsCfg.extraInterfaces
-      ++ lib.mapAttrsToList (_: net: net.routerIp) vlanNets;
+      # All addresses Blocky should listen on — deduplicated because
+      # cfg.lan.address overlaps with the main VLAN's routerIp
+      listenAddresses = lib.unique (
+        [
+          "127.0.0.1"
+          "::1"
+          cfg.lan.address
+        ]
+        ++ lib.optional cfg.ipv6.enable "${cfg.ipv6.ulaPrefix}::1"
+        ++ dnsCfg.extraInterfaces
+        ++ lib.mapAttrsToList (_: net: net.routerIp) vlanNets
+      );
 
       # Format address for Blocky ports.dns (IPv6 needs brackets)
       formatDnsAddr = addr: if lib.hasInfix ":" addr then "[${addr}]:53" else "${addr}:53";

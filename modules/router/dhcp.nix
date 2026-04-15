@@ -9,14 +9,7 @@ _: {
     let
       cfg = config.my.router;
       dhcpCfg = cfg.dhcp;
-      inherit (cfg._internal) dhcpStart dhcpEnd;
-      inherit (cfg.lan)
-        address
-        cidr
-        subnet
-        bridgeName
-        ;
-      inherit (cfg) machines;
+      inherit (cfg.lan) bridgeName;
       enabled = cfg.enable && dhcpCfg.enable;
     in
     {
@@ -36,9 +29,6 @@ _: {
       config = lib.mkIf enabled {
         services.kea = {
           # M4: Control agent bound to localhost but lacks authentication.
-          # Any local process can issue Kea commands (modify leases, change config).
-          # Consider adding basic auth via settings.authentication if running
-          # untrusted services on this host, or disable if not needed.
           ctrl-agent = {
             enable = true;
             settings = {
@@ -50,7 +40,12 @@ _: {
             enable = true;
             settings = {
               interfaces-config = {
-                interfaces = [ bridgeName ];
+                # Kea does NOT listen on br-lan (the L2 trunk bridge).
+                # Per-VLAN bridge interfaces are added by vlans.nix.
+                # This avoids Kea's raw (PF_PACKET) socket on br-lan
+                # capturing VLAN-tagged DHCP discovers before the kernel's
+                # VLAN rx_handler can redirect them.
+                interfaces = [ ];
                 re-detect = true;
                 service-sockets-max-retries = 10;
                 service-sockets-retry-wait-time = 2000;
@@ -64,32 +59,7 @@ _: {
               valid-lifetime = dhcpCfg.leaseTime;
               renew-timer = dhcpCfg.leaseTime / 2;
               rebind-timer = dhcpCfg.leaseTime * 7 / 8;
-              subnet4 = [
-                {
-                  id = 1;
-                  subnet = cidr;
-                  pools = [ { pool = "${dhcpStart} - ${dhcpEnd}"; } ];
-                  reservations = map (machine: {
-                    hw-address = machine.mac;
-                    ip-address = "${subnet}.${toString machine.ip}";
-                    hostname = machine.name;
-                  }) machines;
-                  option-data = [
-                    {
-                      name = "routers";
-                      data = address;
-                    }
-                    {
-                      name = "domain-name-servers";
-                      data = address;
-                    }
-                    {
-                      name = "domain-name";
-                      data = dhcpCfg.domainName;
-                    }
-                  ];
-                }
-              ];
+              # All DHCP subnets are created by vlans.nix (every network is a tagged VLAN)
             };
           };
         };
@@ -97,9 +67,7 @@ _: {
         systemd.services.kea-dhcp4-server =
           let
             bridgeDevice = "sys-subsystem-net-devices-${utils.escapeSystemdPath bridgeName}.device";
-            # Wait for bridge to have carrier using netlink events (no polling).
-            # br-lan gets its IP immediately via ConfigureWithoutCarrier, but Kea
-            # needs the interface to be RUNNING (have carrier from a bridge member).
+            # Wait for trunk bridge to have carrier (bridge member link up)
             waitForCarrier = "${config.systemd.package}/lib/systemd/systemd-networkd-wait-online --interface=${bridgeName}:carrier --timeout=30";
           in
           {

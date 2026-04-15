@@ -10,12 +10,13 @@ _: {
       cfg = config.my.router;
       unifiCfg = cfg.unifi;
       inherit (cfg.lan) bridgeName;
+      lanIface = cfg._internal.lanInterface or bridgeName;
       enabled = cfg.enable && unifiCfg.enable;
 
       # All LAN interfaces that need access to the controller
-      # Main bridge + any VLAN bridges where APs might be
+      # Main LAN bridge + any VLAN bridges where APs might be
       controllerInterfaces = [
-        bridgeName
+        lanIface
       ]
       ++ lib.optionals cfg.networks.enable (
         lib.mapAttrsToList (name: _: "br-${name}") (

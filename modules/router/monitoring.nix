@@ -10,6 +10,7 @@ _: {
       cfg = config.my.router;
       monCfg = cfg.monitoring;
       inherit (cfg.lan) bridgeName;
+      lanIface = cfg._internal.lanInterface or bridgeName;
       enabled = cfg.enable && monCfg.enable;
 
       # Build list of interfaces to monitor
@@ -17,11 +18,9 @@ _: {
         if monCfg.interfaces != [ ] then
           monCfg.interfaces
         else
-          # Default: monitor bridge + WAN
-          [
-            bridgeName
-            cfg.wan.interface
-          ];
+          # Default: monitor trunk bridge + WAN (+ main LAN bridge if separate)
+          [ bridgeName cfg.wan.interface ]
+          ++ lib.optional (lanIface != bridgeName) lanIface;
     in
     {
       options.my.router.monitoring = {
@@ -81,7 +80,7 @@ _: {
         my.router._internal.monitoringFirewall = {
           inputRules = ''
             # ntopng web UI - LAN only
-            iifname "${bridgeName}" tcp dport ${toString monCfg.httpPort} accept comment "ntopng web UI"
+            iifname "${lanIface}" tcp dport ${toString monCfg.httpPort} accept comment "ntopng web UI"
           '';
         };
 

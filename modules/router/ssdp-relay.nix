@@ -10,6 +10,7 @@ _: {
       cfg = config.my.router;
       ssdpCfg = cfg.ssdp;
       inherit (cfg.lan) bridgeName;
+      lanIface = cfg._internal.lanInterface or bridgeName;
       enabled = cfg.enable && ssdpCfg.enable;
 
       # Auto-discover VLAN bridges that opted into discovery (mdns = true)
@@ -22,7 +23,7 @@ _: {
           [ ];
 
       # All interfaces the relay should operate on (main LAN + discovery-enabled VLANs)
-      relayInterfaces = [ bridgeName ] ++ discoveryBridges;
+      relayInterfaces = [ lanIface ] ++ discoveryBridges;
 
       # Build --dev flags for the relay command
       devFlags = lib.concatMapStringsSep " " (iface: "--dev ${iface}") relayInterfaces;
@@ -74,7 +75,7 @@ _: {
           forwardRules = lib.optionalString (discoveryBridges != [ ]) (
             lib.concatMapStringsSep "\n" (
               iface:
-              ''iifname "${iface}" oifname "${bridgeName}" udp sport 1900 accept comment "SSDP unicast responses ${iface}"''
+              ''iifname "${iface}" oifname "${lanIface}" udp sport 1900 accept comment "SSDP unicast responses ${iface}"''
             ) discoveryBridges
           );
         };

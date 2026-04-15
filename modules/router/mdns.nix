@@ -9,6 +9,7 @@ _: {
       cfg = config.my.router;
       mdnsCfg = cfg.mdns;
       inherit (cfg.lan) bridgeName;
+      lanIface = cfg._internal.lanInterface or bridgeName;
       enabled = cfg.enable && mdnsCfg.enable;
 
       # VLAN bridges that opted into mDNS via per-segment `mdns = true`
@@ -22,7 +23,7 @@ _: {
 
       # Build list of interfaces to allow mDNS on
       mdnsInterfaces = [
-        bridgeName
+        lanIface
       ]
       ++ mdnsNetworkBridges
       ++ mdnsCfg.extraInterfaces;

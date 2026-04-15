@@ -13,6 +13,10 @@ _: {
       inherit (cfg.lan) subnet bridgeName;
       wan = cfg.wan.interface;
 
+      # L3 interface for the main LAN (per-VLAN bridge, e.g. br-main).
+      # bridgeName is the L2 trunk bridge (br-lan) — no L3 services.
+      lanIface = internal.lanInterface or bridgeName;
+
       # Get network firewall rules (from networks.nix)
       netFw =
         internal.networkFirewall or {
@@ -74,7 +78,7 @@ _: {
           lib.concatStringsSep "\n" (
             map (
               pf:
-              "iifname \"${wan}\" oifname \"${bridgeName}\" ip daddr ${subnet}.${toString machine.ip} ${pf.protocol} dport ${toString pf.port} accept"
+              "iifname \"${wan}\" oifname \"${lanIface}\" ip daddr ${subnet}.${toString machine.ip} ${pf.protocol} dport ${toString pf.port} accept"
             ) machine.portForwards
           )
         ) machinesByName
@@ -99,7 +103,7 @@ _: {
           lib.concatStringsSep "\n" (
             map (
               pf:
-              "iifname \"${bridgeName}\" ${pf.protocol} dport ${toString pf.port} dnat to ${subnet}.${toString machine.ip} comment \"Hairpin DNAT\""
+              "iifname \"${lanIface}\" ${pf.protocol} dport ${toString pf.port} dnat to ${subnet}.${toString machine.ip} comment \"Hairpin DNAT\""
             ) machine.portForwards
           )
         ) machinesByName
@@ -224,12 +228,7 @@ _: {
                   iifname "${wan}" tcp flags & (syn|rst) == (syn|rst) drop comment "SYN+RST scan"
                   iifname "${wan}" tcp flags == 0x0 drop comment "NULL scan"
 
-                  # LAN input rules
-                  iifname "${bridgeName}" udp dport 67 limit rate 10/second burst 50 packets accept comment "DHCP (rate limited)"
-                  iifname "${bridgeName}" tcp dport 53 accept comment "DNS TCP"
-                  iifname "${bridgeName}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
-                  iifname "${bridgeName}" udp dport { 53, 123 } accept comment "DNS, NTP UDP"
-                  iifname "${bridgeName}" icmp type { echo-request, echo-reply } accept
+                  # LAN input rules are handled by vlans.nix (all segments are tagged VLANs)
 
                   # Trusted interfaces (VPN tunnels, etc.)
                   ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
@@ -281,10 +280,10 @@ _: {
 
                   # Hairpin NAT: accept WAN-facing ports from LAN (for router-local services like WireGuard)
                   ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.tcp != [ ]) ''
-                    iifname "${bridgeName}" tcp dport { ${tcpPortsStr} } accept comment "Hairpin: open TCP ports from LAN"
+                    iifname "${lanIface}" tcp dport { ${tcpPortsStr} } accept comment "Hairpin: open TCP ports from LAN"
                   ''}
                   ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.udp != [ ]) ''
-                    iifname "${bridgeName}" udp dport { ${udpPortsStr} } accept comment "Hairpin: open UDP ports from LAN"
+                    iifname "${lanIface}" udp dport { ${udpPortsStr} } accept comment "Hairpin: open UDP ports from LAN"
                   ''}
 
                   # L1: Log dropped packets for forensics (rate limited to prevent log flooding)
@@ -301,14 +300,12 @@ _: {
                   ct state established,related accept
                   ct state invalid drop
 
-                  # LAN forwarding
-                  iifname "${bridgeName}" oifname "${wan}" accept
-                  iifname "${bridgeName}" oifname "${bridgeName}" accept
+                  # LAN forwarding is handled by vlans.nix (all segments are tagged VLANs)
 
-                  # Trusted interfaces
+                  # Trusted interfaces (VPN tunnels) ↔ main LAN
                   ${lib.optionalString (allTrustedInterfaces != [ ]) ''
-                    iifname @trusted_ifaces oifname "${bridgeName}" accept
-                    iifname "${bridgeName}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname "${lanIface}" accept
+                    iifname "${lanIface}" oifname @trusted_ifaces accept
                     iifname @trusted_ifaces oifname @trusted_ifaces accept comment "VPN peer-to-peer"
                     iifname @trusted_ifaces oifname "${wan}" accept''}
 
@@ -341,7 +338,7 @@ _: {
                   ip saddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } oifname "${wan}" masquerade
                   # Hairpin NAT: masquerade LAN-to-LAN DNAT'd traffic so return path goes through router
                   ${lib.optionalString fwCfg.hairpinNat.enable ''
-                    iifname "${bridgeName}" oifname "${bridgeName}" ct status dnat masquerade comment "Hairpin NAT"
+                    iifname "${lanIface}" oifname "${lanIface}" ct status dnat masquerade comment "Hairpin NAT"
                   ''}
                   ${netFw.natRules}
                 }
@@ -377,11 +374,7 @@ _: {
                     ff00::/8          # Multicast as source
                   } drop comment "IPv6 anti-spoofing bogons"
 
-                  # LAN input rules
-                  iifname "${bridgeName}" tcp dport 53 accept comment "DNS TCP"
-                  iifname "${bridgeName}" ct state new tcp dport 22 limit rate 5/minute burst 10 packets accept comment "SSH (rate limited)"
-                  iifname "${bridgeName}" udp dport 53 accept comment "DNS UDP"
-                  iifname "${bridgeName}" icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-neighbor-advert } accept comment "ICMPv6"
+                  # LAN IPv6 input rules are handled by vlans.nix
 
                   # mDNS input rules (injected from mdns.nix)
                   ${mdnsFw.inputRulesV6}
@@ -405,7 +398,7 @@ _: {
 
                   # RA Guard: Block rogue router advertisements from LAN clients (input chain)
                   # Note: This only protects the router — see raGuard bridge table for LAN client protection
-                  iifname "${bridgeName}" icmpv6 type nd-router-advert drop comment "RA Guard - block rogue RAs from LAN"
+                  iifname "${lanIface}" icmpv6 type nd-router-advert drop comment "RA Guard - block rogue RAs from LAN"
 
                   # L1: Log dropped packets for forensics (rate limited)
                   limit rate 5/minute burst 10 packets log prefix "nft6-drop-input: " level info
@@ -421,13 +414,12 @@ _: {
                   ct state established,related accept
                   ct state invalid drop
 
-                  # LAN forwarding
-                  iifname "${bridgeName}" oifname "${wan}" accept
+                  # LAN IPv6 forwarding is handled by vlans.nix
 
-                  # Trusted interfaces
+                  # Trusted interfaces (VPN tunnels) ↔ main LAN
                   ${lib.optionalString (allTrustedInterfaces != [ ]) ''
-                    iifname @trusted_ifaces oifname "${bridgeName}" accept
-                    iifname "${bridgeName}" oifname @trusted_ifaces accept
+                    iifname @trusted_ifaces oifname "${lanIface}" accept
+                    iifname "${lanIface}" oifname @trusted_ifaces accept
                     iifname @trusted_ifaces oifname @trusted_ifaces accept comment "VPN peer-to-peer"
                     iifname @trusted_ifaces oifname "${wan}" accept''}
 

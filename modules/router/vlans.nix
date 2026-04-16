@@ -347,12 +347,10 @@ _: {
                   name = "30-${iface}-lan";
                   value = {
                     bridgeVLANs = map (net: {
-                      bridgeVLANConfig = {
-                        VLAN = net.vlan;
-                      } // lib.optionalAttrs (net.subnet == cfg.lan.subnet) {
-                        PVID = net.vlan;
-                        EgressUntagged = net.vlan;
-                      };
+                      VLAN = net.vlan;
+                    } // lib.optionalAttrs (net.subnet == cfg.lan.subnet) {
+                      PVID = net.vlan;
+                      EgressUntagged = net.vlan;
                     }) networkList;
                   };
                 }) cfg.lan.interfaces
@@ -370,11 +368,9 @@ _: {
                     };
                     bridgeVLANs = [
                       {
-                        bridgeVLANConfig = {
-                          VLAN = net.vlan;
-                          PVID = net.vlan;
-                          EgressUntagged = net.vlan;
-                        };
+                        VLAN = net.vlan;
+                        PVID = net.vlan;
+                        EgressUntagged = net.vlan;
                       }
                     ];
                   };

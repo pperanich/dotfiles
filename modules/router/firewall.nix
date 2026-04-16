@@ -465,8 +465,16 @@ _: {
                 )
               else
                 [ "br-lan" ];
-            # WAN + all bridges (kernel discovers bridge ports for flow offload)
-            flowDevices = [ wan ] ++ bridges;
+            # Veth pairs connecting br-lan to per-VLAN bridges
+            veths =
+              if networksCfg.enable then
+                lib.concatMap (name: [ "v-${name}" "v-${name}-br" ]) (
+                  lib.attrNames (lib.filterAttrs (_: seg: seg.vlan != null) networksCfg.segments)
+                )
+              else
+                [ ];
+            # WAN + all bridges + veth pairs (all devices in the forwarding path)
+            flowDevices = [ wan ] ++ bridges ++ veths;
             deviceList = lib.concatStringsSep ", " flowDevices;
           in
           {

@@ -80,6 +80,17 @@ _: {
           };
         };
 
+        # Tunnel resolves Cloudflare edge via local DNS on boot. If cloudflared
+        # starts before Blocky binds :53, the SRV lookup fails and systemd's
+        # default burst limit (5 restarts / 10s) marks it permanently failed.
+        # Wait for Blocky and disable the burst cap so it keeps retrying.
+        systemd.services."cloudflared-tunnel-${cfg.tunnelId}" = {
+          after = [ "blocky.service" ];
+          wants = [ "blocky.service" ];
+          unitConfig.StartLimitIntervalSec = 0;
+          serviceConfig.RestartSec = "10s";
+        };
+
         environment.systemPackages = [ config.services.cloudflared.package ];
 
         # Auto-sync tunnel CNAME records for ingress hostnames

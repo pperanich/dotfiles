@@ -1,0 +1,6 @@
+outer.left = 6
+outer.bottom = 6
+outer.right = 6
+# Top gap = sketchybar height 32 + 2*y_offset 4 = 40; +1 border = 41
+# Built-in notch (M3 MBP 16") = 32 logical px, so 41 - 32 = 9
+outer.top = [{ monitor."built-in" = 9 }, 41]

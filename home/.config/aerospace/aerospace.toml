@@ -75,16 +75,12 @@ persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8']
 inner.horizontal = 6
 inner.vertical = 6
 
-# Outer gaps at screen edges (matching yabai's padding = 6)
+# >>> MANAGED_GAPS (toggled by ~/.config/sketchybar/bin/toggle-profile.sh) >>>
 outer.left = 6
-outer.bottom = 6
+outer.bottom = 28
 outer.right = 6
-# Top gap is bar height 32px + 2 * y_offset 4px = 40
-# Notch on M3 Macbook Pro 16in = 64 physical px / 2 = 32 points (logical pixels)
-# Add 1 for janky borders width
-# => gap should be 41 - 32 = 9
-# => just 41 on all other monitors
-outer.top = [{ monitor."built-in" = 9 }, 41]
+outer.top = 6
+# <<< MANAGED_GAPS <<<
 
 # ========================================
 # KEYBOARD MAPPING
@@ -144,6 +140,9 @@ preset = 'qwerty'
 # ----------------------------------------
 # Reload AeroSpace config
 alt-shift-r = 'reload-config'
+
+# Toggle sketchybar profile (pill <-> i3)
+alt-shift-b = 'exec-and-forget ~/.config/sketchybar/bin/toggle-profile.sh'
 
 # ----------------------------------------
 # Window Focus (Arrow Keys + HJKL)

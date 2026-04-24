@@ -9,4 +9,4 @@ DEFAULT_COLOR=magenta
 SYSTEM_ROLES=false
 DEFAULT_EXECUTE_SHELL_CMD=false
 DISABLE_STREAMING=false
-ROLE_STORAGE_PATH=/Users/peranpl1/.config/shell_gpt/roles
+ROLE_STORAGE_PATH=/Users/pperanich/.config/shell_gpt/roles

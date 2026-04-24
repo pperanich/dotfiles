@@ -17,9 +17,6 @@ fetch_status = true
 fetch_upstream_icon = true
 source = "cli"
 
-# [blocks.segments.properties.untracked_modes]
-# "/Users/peranpl1/Projects/oh-my-posh/" = "no"
-
 [blocks.segments.properties.mapped_branches]
 "feat/*" = "🚀 "
 "bug/*" = "🐛 "

@@ -48,7 +48,6 @@ clan vars list <hostname>
 
 ### Hostnames Reference
 
-- `peranpl1-ml1`, `peranpl1-ml2` - Darwin laptops (work)
 - `pp-ml1` - Darwin laptop (Apple Silicon)
 - `pp-ll1` - NixOS laptop (MacBook w/ T2)
 - `pp-ld1` - NixOS desktop
@@ -125,7 +124,7 @@ imports = with modules.darwin; [ base rust ];
 ### Naming Conventions
 
 - **Machines**: `{prefix}-{os}{type}{num}` or `{prefix}-{role}{num}` for dedicated-role machines
-  - Prefix: `pp` for personal, `peranpl1` for work
+  - Prefix: `pp` for personal
   - OS codes: `l`=Linux, `m`=macOS, `wsl`=WSL
   - Type codes: `l`=laptop, `d`=desktop
   - Role names: `nas`, `rpi` for dedicated-purpose machines
@@ -146,8 +145,7 @@ imports = with modules.darwin; [ base rust ];
   services/         # Self-hosted services (immich, nextcloud, vaultwarden, etc.)
   shell/            # Shell environment (nvim, opencode, rust, tools)
   system/           # Core system configs (base, sops)
-  users/            # User account modules (pperanich, peranpl1)
-  work.nix          # Work profile (APL/JHU)
+  users/            # User account modules (pperanich)
 /machines/          # Host-specific configurations
 /home-profiles/     # User environment compositions
 /home/              # Raw dotfiles (symlinked via stow activation)

@@ -19,7 +19,10 @@ _: {
           monCfg.interfaces
         else
           # Default: monitor trunk bridge + WAN (+ main LAN bridge if separate)
-          [ bridgeName cfg.wan.interface ]
+          [
+            bridgeName
+            cfg.wan.interface
+          ]
           ++ lib.optional (lanIface != bridgeName) lanIface;
     in
     {

@@ -18,7 +18,7 @@ The `pp-wg` WireGuard network connects all clan-managed machines and external de
 
 | Type               | Managed by                                                | Examples                       |
 | ------------------ | --------------------------------------------------------- | ------------------------------ |
-| **Clan peers**     | `clan-core` wireguard module (automatic keys + addresses) | pp-nas1, pp-ml1, peranpl1-ml1  |
+| **Clan peers**     | `clan-core` wireguard module (automatic keys + addresses) | pp-nas1, pp-ml1                |
 | **External peers** | `wg-add-peer` tool + `wg-external-peers.json`             | phones, tablets, guest devices |
 
 Clan peers are defined in `modules/flake-parts/clan.nix` under the `pp-wg` instance. External peers are defined in `machines/pp-router1/wg-external-peers.json`.

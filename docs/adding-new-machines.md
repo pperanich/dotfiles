@@ -17,12 +17,12 @@ This guide covers adding a new machine to the clan-managed infrastructure and co
 
 | Component  | Options                                            |
 | ---------- | -------------------------------------------------- |
-| **Prefix** | `pp` (personal), `peranpl1` (work)                 |
+| **Prefix** | `pp` (personal)                                    |
 | **OS**     | `l` (Linux/NixOS), `m` (macOS/Darwin), `wsl` (WSL) |
 | **Type**   | `l` (laptop), `d` (desktop)                        |
 | **Role**   | `nas`, `rpi`, `router`, etc.                       |
 
-Examples: `pp-ll1` (personal Linux laptop), `pp-nas1` (personal NAS), `peranpl1-ml2` (work Mac laptop)
+Examples: `pp-ll1` (personal Linux laptop), `pp-nas1` (personal NAS), `pp-ml1` (personal Mac laptop)
 
 ## Step 1: Create Machine Configuration
 

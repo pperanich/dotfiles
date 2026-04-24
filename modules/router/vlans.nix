@@ -18,8 +18,10 @@ _: {
       # The primary LAN L3 interface — the per-VLAN bridge for the network
       # matching the main LAN subnet (cfg.lan.subnet).
       lanInterface =
-        let mainSeg = lib.findFirst (n: n.subnet == cfg.lan.subnet) null networkList;
-        in if mainSeg != null then "br-${mainSeg.name}" else bridgeName;
+        let
+          mainSeg = lib.findFirst (n: n.subnet == cfg.lan.subnet) null networkList;
+        in
+        if mainSeg != null then "br-${mainSeg.name}" else bridgeName;
 
       # Every network gets its own bridge: br-${name}
       netIfaceName = net: "br-${net.name}";
@@ -346,12 +348,16 @@ _: {
                 map (iface: {
                   name = "30-${iface}-lan";
                   value = {
-                    bridgeVLANs = map (net: {
-                      VLAN = net.vlan;
-                    } // lib.optionalAttrs (net.subnet == cfg.lan.subnet) {
-                      PVID = net.vlan;
-                      EgressUntagged = net.vlan;
-                    }) networkList;
+                    bridgeVLANs = map (
+                      net:
+                      {
+                        VLAN = net.vlan;
+                      }
+                      // lib.optionalAttrs (net.subnet == cfg.lan.subnet) {
+                        PVID = net.vlan;
+                        EgressUntagged = net.vlan;
+                      }
+                    ) networkList;
                   };
                 }) cfg.lan.interfaces
               )
@@ -404,11 +410,14 @@ _: {
                     name = "50-br-${net.name}";
                     value = {
                       matchConfig.Name = netBridge net;
-                      address = [ "${netRouterIp net}/24" ]
-                        ++ lib.optional (isMain && cfg.ipv6.enable) "${ulaPrefix}::1/64";
+                      address = [
+                        "${netRouterIp net}/24"
+                      ]
+                      ++ lib.optional (isMain && cfg.ipv6.enable) "${ulaPrefix}::1/64";
                       networkConfig = {
                         ConfigureWithoutCarrier = true;
-                      } // lib.optionalAttrs isMain {
+                      }
+                      // lib.optionalAttrs isMain {
                         DHCPPrefixDelegation = cfg.ipv6.enable;
                         IPv6SendRA = cfg.ipv6.enable;
                         IPv6AcceptRA = false;
@@ -428,7 +437,7 @@ _: {
 
         # DHCP: Kea listens on per-VLAN bridge interfaces (not br-lan)
         services.kea.dhcp4.settings.interfaces-config.interfaces = lib.mkIf (networkList != [ ]) (
-          map (net: netBridge net) networkList
+          map netBridge networkList
         );
 
         # DHCP pools for all networks

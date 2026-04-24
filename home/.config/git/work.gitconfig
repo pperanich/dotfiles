@@ -1,8 +1,0 @@
-[user]
-name = Preston Peranich
-email = preston.peranich@jhuapl.edu
-
-; [http "https://gitlab.jhuapl.edu/"]
-;   sslCAInfo = /etc/ssl/certs/ca-certificates.crt
-; [http]
-;   sslCAInfo = /usr/local/share/ca-certificates/JHUAPL-MS-Root-CA-05-21-2038-B64-text.crt

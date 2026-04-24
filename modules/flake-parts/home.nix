@@ -27,10 +27,6 @@ in
       inherit (inputs) home-manager;
       extraSpecialArgs = { };
       additionalUsers = [
-        "hst"
-        "holo"
-        "magic"
-        "mxwbio"
         "prest"
       ];
     }

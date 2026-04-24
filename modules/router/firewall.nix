@@ -468,9 +468,10 @@ _: {
             # Veth pairs connecting br-lan to per-VLAN bridges
             veths =
               if networksCfg.enable then
-                lib.concatMap (name: [ "v-${name}" "v-${name}-br" ]) (
-                  lib.attrNames (lib.filterAttrs (_: seg: seg.vlan != null) networksCfg.segments)
-                )
+                lib.concatMap (name: [
+                  "v-${name}"
+                  "v-${name}-br"
+                ]) (lib.attrNames (lib.filterAttrs (_: seg: seg.vlan != null) networksCfg.segments))
               else
                 [ ];
             # WAN + all bridges + veth pairs (all devices in the forwarding path)

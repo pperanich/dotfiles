@@ -20,9 +20,6 @@ email = pperanich@gmail.com
 [includeIf "gitdir:~/.cache/uv/**"]
   path = "./lfs-fix.gitconfig"
 
-[http "https://gitlab.jhuapl.edu/"]
-sslCAInfo = /etc/ssl/certs/ca-certificates.crt
-
 [core]
     pager = delta
     excludesFile = "~/.config/git/ignore"
@@ -36,6 +33,3 @@ sslCAInfo = /etc/ssl/certs/ca-certificates.crt
 
 ; [merge]
 ;     conflictstyle = zdiff3
-[credential "https://gitlab.sitcore.net"]
-	helper = 
-	helper = !/nix/store/gwm0q042mjybkbid3chx7qchb09lacgb-glab-1.56.0/bin/glab auth git-credential

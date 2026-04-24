@@ -31,21 +31,6 @@
             "all"
           ];
         };
-        "peranpl1-ml1" = {
-          machineClass = "darwin";
-          tags = [
-            "laptop"
-            "all"
-          ];
-        };
-        "peranpl1-ml2" = {
-          machineClass = "darwin";
-          tags = [
-            "laptop"
-            "all"
-          ];
-          # deploy.targetHost = "peranpl1@peranpl1-ml2.local";
-        };
         "pp-nas1" = {
           machineClass = "nixos";
           tags = [
@@ -189,8 +174,6 @@
               pp-wsl1 = { };
               pp-rpi1 = { };
               pp-ml1 = { };
-              peranpl1-ml1 = { };
-              peranpl1-ml2 = { };
             };
           };
         };

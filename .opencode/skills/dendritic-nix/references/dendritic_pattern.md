@@ -352,7 +352,7 @@ Machine configurations can then import modules cleanly:
   imports = with modules.darwin; [
     base        # from modules/system/base.nix
     sops        # from modules/system/sops.nix
-    peranpl1    # from modules/users/peranpl1.nix
+    pperanich   # from modules/users/pperanich.nix
     rust        # from modules/languages/rust.nix
     yabai       # from modules/desktop/yabai.nix
     skhd        # from modules/desktop/skhd.nix

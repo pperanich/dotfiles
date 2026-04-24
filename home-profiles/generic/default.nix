@@ -17,9 +17,6 @@
     # Desktop
     fonts
 
-    # Work profile
-    work
-
     rust
   ];
 

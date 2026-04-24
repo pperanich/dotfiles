@@ -29,8 +29,10 @@
     });
     # Enable GSSAPI support on macOS to suppress "Unsupported option gssapiauthentication"
     # warnings from colima's auto-generated ssh_config
-    openssh = prev.openssh.override (prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
-      withKerberos = true;
-    });
+    openssh = prev.openssh.override (
+      prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
+        withKerberos = true;
+      }
+    );
   };
 }

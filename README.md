@@ -117,17 +117,15 @@ Every platform's `base` module applies all overlays automatically via `builtins.
 
 ## Machines
 
-| Hostname     | OS     | Type    | Description                      |
-| ------------ | ------ | ------- | -------------------------------- |
-| pp-ml1       | Darwin | Laptop  | Personal MacBook (Apple Silicon) |
-| pp-ll1       | NixOS  | Laptop  | Personal Linux laptop            |
-| pp-ld1       | NixOS  | Desktop | Personal Linux desktop           |
-| pp-nas1      | NixOS  | Server  | NAS (BeeLink)                    |
-| pp-router1   | NixOS  | Server  | Router                           |
-| pp-rpi1      | NixOS  | SBC     | Raspberry Pi 3B+ GPIO debugger   |
-| pp-wsl1      | NixOS  | VM      | WSL instance                     |
-| peranpl1-ml1 | Darwin | Laptop  | Work MacBook                     |
-| peranpl1-ml2 | Darwin | Laptop  | Work MacBook                     |
+| Hostname   | OS     | Type    | Description                      |
+| ---------- | ------ | ------- | -------------------------------- |
+| pp-ml1     | Darwin | Laptop  | Personal MacBook (Apple Silicon) |
+| pp-ll1     | NixOS  | Laptop  | Personal Linux laptop            |
+| pp-ld1     | NixOS  | Desktop | Personal Linux desktop           |
+| pp-nas1    | NixOS  | Server  | NAS (BeeLink)                    |
+| pp-router1 | NixOS  | Server  | Router                           |
+| pp-rpi1    | NixOS  | SBC     | Raspberry Pi 3B+ GPIO debugger   |
+| pp-wsl1    | NixOS  | VM      | WSL instance                     |
 
 ## Common Commands
 

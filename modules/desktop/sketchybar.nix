@@ -31,8 +31,6 @@ _: {
         pkgs.sketchybar-app-font
       ];
 
-      system.defaults.NSGlobalDomain._HIHideMenuBar = true;
-
       # For sketchybar debugging
       launchd.user.agents.sketchybar.serviceConfig.StandardErrorPath = "/tmp/sketchybar.err.log";
       launchd.user.agents.sketchybar.serviceConfig.StandardOutPath = "/tmp/sketchybar.out.log";

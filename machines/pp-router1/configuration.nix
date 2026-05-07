@@ -181,9 +181,11 @@ in
       # Open HTTPS for Caddy on LAN (WireGuard is already trusted via @trusted_ifaces)
       extraInputRules = ''
         iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
+        iifname "br-main" tcp dport 631 accept comment "CUPS IPP from LAN"
       '';
       extraInputRulesV6 = ''
         iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
+        iifname "br-main" tcp dport 631 accept comment "CUPS IPP from LAN"
       '';
     };
 
@@ -277,6 +279,14 @@ in
           subnet = "10.0.20";
           isolation = "internet"; # Internet only, no inter-VLAN
           allowAccessFrom = [ "main" ]; # Main network can access IoT devices
+          mdns = true; # Reflect Bonjour so AirPrint (Canon TR4500) is discoverable from main
+          reservations = [
+            {
+              hostname = "pp-printer1";
+              mac = "f8:a2:6d:00:6c:b2";
+              ip = 50;
+            }
+          ];
         };
         # Guest network - fully isolated
         guest = {
@@ -347,6 +357,7 @@ in
         "jellyfin" # media server (pp-nas1)
         "navidrome" # music server (pp-nas1)
         "audiobookshelf" # audiobooks & podcasts (pp-nas1)
+        "scan" # scanservjs web UI (pp-nas1)
         "home" # dashboard (pp-router1)
         "grafana" # observability dashboard
         "vault-admin" # vaultwarden admin panel (pp-router1)
@@ -365,6 +376,61 @@ in
           content = "v=DMARC1; p=none; rua=mailto:dmarc@prestonperanich.com";
         }
       ];
+  };
+
+  # CUPS print broker
+  #
+  # Bridges AirPrint clients on PP-Net (br-main, 10.0.0.0/24) to the Canon
+  # TR4500 on PP-IoT (br-iot, 10.0.20.50). The printer can't be discovered
+  # directly because Apple's Bonjour same-subnet sanity check rejects
+  # service announcements that advertise an off-subnet IP.
+  #
+  # CUPS imports the printer via IPP Everywhere (no Canon driver needed) and
+  # re-advertises a local queue on br-main via avahi. Clients see it in
+  # Printers & Scanners on their own subnet, jobs flow:
+  #   Mac (10.0.0.x) -> CUPS @ 10.0.0.1 -> Canon @ 10.0.20.50
+  services.printing = {
+    enable = true;
+    listenAddresses = [
+      "localhost:631"
+      "${routerIp}:631" # only br-main; iot/wan never see CUPS
+    ];
+    allowFrom = [
+      "localhost"
+      "${config.my.router.lan.cidr}"
+    ];
+    browsing = true; # publish queues via Bonjour (cups-browsed + avahi)
+    defaultShared = true;
+    openFirewall = false; # router module owns nft input rules above
+  };
+
+  # CUPS publishes its shared queue via avahi. The router's mdns module
+  # defaults disable-user-service-publishing=yes, which causes
+  # "DNS-SD registration ... failed: Not permitted" in cupsd logs.
+  # userServices=true flips that to allow per-service publishing.
+  services.avahi.publish.userServices = true;
+
+  hardware.printers = {
+    ensurePrinters = [
+      {
+        name = "Canon-TR4500";
+        location = "Home";
+        description = "Canon TR4500 series";
+        # FQDN from segments.iot.reservations.pp-printer1 above (DDNS-registered).
+        deviceUri = "ipp://pp-printer1.home.arpa/ipp/print";
+        # Generic PPD avoids lpadmin's IPP-Everywhere probe (TR4500 returns
+        # incomplete attrs and lpadmin errors with "No IPP attributes").
+        # CUPS still negotiates URF/PWG-Raster with the printer at job time.
+        model = "drv:///sample.drv/generic.ppd";
+        ppdOptions = {
+          PageSize = "Letter";
+          # Required for CUPS to publish the queue via avahi (the broker's
+          # whole purpose). lpadmin doesn't honor cupsd's DefaultShared.
+          printer-is-shared = "true";
+        };
+      }
+    ];
+    ensureDefaultPrinter = "Canon-TR4500";
   };
 
   # Homepage dashboard — landing page for all internal services
@@ -461,6 +527,12 @@ in
             icon = "vaultwarden";
             sub = "vault";
             desc = "Password manager";
+          }
+          {
+            name = "Scan";
+            icon = "scrutiny"; # placeholder icon; swap later
+            sub = "scan";
+            desc = "Network scanner (Canon TR4500)";
           }
           {
             name = "Vaultwarden Admin";
@@ -631,6 +703,9 @@ in
           max_size 16G
         }
       '';
+
+      # scanservjs — Canon TR4500 web scan UI on pp-nas1
+      "scan.prestonperanich.com" = mkProxy "${nasHost}:8080";
 
       # --- Cloudflare Tunnel listeners (localhost only) ---
       # Personal site (public via tunnel)

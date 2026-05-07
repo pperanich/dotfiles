@@ -86,7 +86,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     systems = {
-      url = "github:nix-systems/default";
+      url = "github:nix-systems/triplet";
     };
     nix-ld = {
       url = "github:Mic92/nix-ld";

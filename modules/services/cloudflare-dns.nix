@@ -100,8 +100,16 @@ _: {
       config = lib.mkIf cfg.enable {
         systemd.services.cf-dns-sync = {
           description = "Sync Cloudflare DNS records";
+          # Run on activation + boot so a `nixos-rebuild switch` that changes
+          # the records list pushes immediately. Combined with restartTriggers
+          # below, switch-to-configuration only re-fires when configJson
+          # actually differs — unchanged deploys are no-ops.
+          wantedBy = [ "multi-user.target" ];
           after = [ "network-online.target" ];
           wants = [ "network-online.target" ];
+          # Hash of the rendered config — when records change, Nix store path
+          # changes, switch-to-configuration restarts (re-runs) the unit.
+          restartTriggers = [ configJson ];
           serviceConfig = {
             Type = "oneshot";
             EnvironmentFile = cfg.environmentFile;

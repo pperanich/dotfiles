@@ -177,6 +177,32 @@ _: {
                     Allows devices on this VLAN to be discovered via AirPlay, Chromecast, etc.
                   '';
                 };
+
+                reservations = lib.mkOption {
+                  type = lib.types.listOf (
+                    lib.types.submodule {
+                      options = {
+                        hostname = lib.mkOption {
+                          type = lib.types.strMatching "^[a-zA-Z0-9-]+$";
+                          description = "Hostname for DHCP/DDNS registration (no domain).";
+                        };
+                        mac = lib.mkOption {
+                          type = lib.types.strMatching "^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$";
+                          description = "Client MAC address (XX:XX:XX:XX:XX:XX).";
+                        };
+                        ip = lib.mkOption {
+                          type = lib.types.ints.between 2 254;
+                          description = "Reserved IP (last octet only — combined with segment subnet).";
+                        };
+                      };
+                    }
+                  );
+                  default = [ ];
+                  example = lib.literalExpression ''
+                    [ { hostname = "pp-printer1"; mac = "f8:a2:6d:00:6c:b2"; ip = 50; } ]
+                  '';
+                  description = "Kea DHCPv4 host reservations for this segment (MAC → fixed IP + hostname).";
+                };
               };
             })
           );
@@ -232,6 +258,34 @@ _: {
                 assertion = ref != net.name;
                 message = "Network ${net.name}: cannot reference itself in allowAccessFrom";
               }) net.allowAccessFrom
+            ) networkList)
+          ++
+            # Reservation IPs must be within 2-254 of the subnet (already constrained by type),
+            # not collide with router (.1), and unique per segment.
+            (lib.concatMap (
+              net:
+              [
+                {
+                  assertion =
+                    let
+                      ips = map (r: r.ip) net.reservations;
+                    in
+                    ips == lib.unique ips;
+                  message = "Network ${net.name}: duplicate reservation IPs";
+                }
+                {
+                  assertion =
+                    let
+                      macs = map (r: lib.toLower r.mac) net.reservations;
+                    in
+                    macs == lib.unique macs;
+                  message = "Network ${net.name}: duplicate reservation MAC addresses";
+                }
+              ]
+              ++ map (r: {
+                assertion = r.ip != 1;
+                message = "Network ${net.name}: reservation '${r.hostname}' cannot use .1 (reserved for router)";
+              }) net.reservations
             ) networkList)
           ++ [
             # Unique VLAN IDs
@@ -465,6 +519,11 @@ _: {
                 data = "${net.name}.${cfg.dhcp.domainName}";
               }
             ];
+            reservations = map (r: {
+              hw-address = lib.toLower r.mac;
+              ip-address = "${net.subnet}.${toString r.ip}";
+              hostname = r.hostname;
+            }) net.reservations;
           }) networkList
         );
 

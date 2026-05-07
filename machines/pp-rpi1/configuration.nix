@@ -42,6 +42,9 @@ in
 
     # User setup (headless — no desktop apps/fonts)
     pperanich
+
+    # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
+    wireguardReresolve
   ]);
 
   my.pperanich.desktop = false;

@@ -22,11 +22,15 @@
     # Development environment
     rust
 
+    # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
+    wireguardReresolve
+
     # Self-hosted services
     immich
     nextcloud
     opencloud
     radicale
+    scanservjs
 
     # VPN (namespace mode — split tunneling for specific services)
     # protonvpn
@@ -35,8 +39,9 @@
   my.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.pp-wg";
-  clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.home.arpa";
+  # clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.pp-wg";
+  # clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
 
   # Networking configuration
   networking.hostName = "pp-nas1";
@@ -110,6 +115,22 @@
   #   #   socketProxy."0.0.0.0:9091" = "127.0.0.1:9091";
   #   # };
   # };
+
+  # scanservjs — web UI for pulling scans from the Canon TR4500 on PP-IoT.
+  # Reverse-proxied at scan.prestonperanich.com via Caddy on pp-router1.
+  # Scans land directly on the ZFS pool at /tank/scans.
+  my.scanservjs = {
+    address = "0.0.0.0";
+    openFirewall = true;
+    outputDir = "/tank/scans";
+    scanner = {
+      name = "Canon TR4500";
+      # FQDN comes from the Kea reservation in pp-router1.configuration.nix
+      # (segments.iot.reservations -> pp-printer1) registered via DDNS.
+      url = "http://pp-printer1.home.arpa/eSCL";
+      discovery = false;
+    };
+  };
 
   # Immich photo management
   # Accessed via Caddy reverse proxy on pp-router1 (immich.prestonperanich.com)

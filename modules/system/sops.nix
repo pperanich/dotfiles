@@ -126,10 +126,7 @@ in
           # chicken-and-egg problem where home-manager sops needs the SSH key
           # to decrypt, but the SSH key is itself a secret.
           secrets = {
-            "api_keys/opal_api_key" = { };
-            "api_keys/openai_enterprise_api_key" = { };
             "api_keys/openai_api_key" = { };
-            "api_keys/opencode_api_key" = { };
             "api_keys/hugging_face_hub_token" = { };
             "api_keys/anthropic_api_key" = { };
             "api_keys/openrouter_api_key" = { };

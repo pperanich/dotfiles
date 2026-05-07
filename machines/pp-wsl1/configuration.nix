@@ -20,6 +20,9 @@
 
     # Development environment (minimal for WSL)
     rust
+
+    # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
+    wireguardReresolve
   ]);
 
   clan.core = {

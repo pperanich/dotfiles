@@ -397,7 +397,27 @@ _: {
               };
             }
             //
-              # BridgeVLAN on each physical port: all VLANs, PVID for main LAN
+              # Bridge VLAN membership per physical trunk port.
+              #
+              # Every segment's VLAN is registered on every LAN port so any
+              # port can carry any VLAN. The segment whose `subnet` equals
+              # `cfg.lan.subnet` is treated as the **native / untagged** VLAN:
+              # it gets `PVID` (untagged ingress inferred as this VLAN) and
+              # `EgressUntagged` (frames leave the port without an 802.1Q tag).
+              # Other segments are tagged-only — VLAN registered, no PVID, no
+              # untagged egress.
+              #
+              # The native VLAN is still logically tagged inside the router
+              # (used for Kea server-id derivation, segment isolation rules,
+              # veth trunk membership) — only the wire is untagged.
+              #
+              # Downstream AP must match this asymmetry:
+              #   - SSIDs for the native segment → AP "untagged" network
+              #     (UniFi: bind SSID to the "Default" network, NOT to a
+              #     `vlan-only` network with the matching VLAN ID — AP would
+              #     then tag frames and mismatch router's untagged egress,
+              #     breaking wired→Wi-Fi multicast for that SSID).
+              #   - SSIDs for other segments → AP tagged network with VID.
               lib.listToAttrs (
                 map (iface: {
                   name = "30-${iface}-lan";

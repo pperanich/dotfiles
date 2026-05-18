@@ -85,6 +85,7 @@ in
     # Public services (via Cloudflare Tunnel)
     cloudflareTunnel
     vaultwarden
+    gitea
     observability
 
     # Outbound transactional email
@@ -102,6 +103,21 @@ in
     domain = "vault.prestonperanich.com";
     adminTokenFile = config.sops.secrets.vaultwarden-admin-token.path;
     smtpFrom = "vault@prestonperanich.com";
+  };
+
+  # Gitea — self-hosted git over LAN + WireGuard
+  my.gitea = {
+    enable = true;
+    domain = "gitea.prestonperanich.com";
+    mail = {
+      enable = true;
+      from = "gitea@prestonperanich.com";
+    };
+    admin = {
+      username = "pperanich";
+      email = "pperanich@gmail.com";
+      passwordFile = config.sops.secrets.gitea-admin-password.path;
+    };
   };
 
   # Stalwart — outbound transactional email relay via Resend
@@ -387,6 +403,7 @@ in
         "home" # dashboard (pp-router1)
         "grafana" # observability dashboard
         "vault-admin" # vaultwarden admin panel (pp-router1)
+        "gitea" # self-hosted git (pp-router1)
       ]
       ++ [
         # Mail deliverability (SPF + DKIM + DMARC)
@@ -597,6 +614,12 @@ in
             desc = "Network scanner (Canon TR4500)";
           }
           {
+            name = "Gitea";
+            icon = "gitea";
+            sub = "gitea";
+            desc = "Self-hosted git";
+          }
+          {
             name = "Vaultwarden Admin";
             icon = "vaultwarden";
             sub = "vault-admin";
@@ -638,6 +661,12 @@ in
   # Vaultwarden: admin token for /admin panel
   sops.secrets.vaultwarden-admin-token = {
     owner = "vaultwarden";
+    mode = "0400";
+  };
+
+  # Gitea: initial admin password (consumed by gitea-admin-bootstrap.service)
+  sops.secrets.gitea-admin-password = {
+    owner = "git";
     mode = "0400";
   };
 
@@ -724,6 +753,16 @@ in
       "ntopng.prestonperanich.com" = mkProxy "localhost:3000";
       "vault.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
       "vault-admin.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
+
+      # Gitea web UI + HTTPS clone. LFS uploads benefit from a high body cap.
+      "gitea.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://localhost:${toString config.my.gitea.port} {
+          header_up X-Forwarded-Proto {scheme}
+        }
+        request_body {
+          max_size 5G
+        }
+      '';
 
       # Unifi controller (self-signed cert, requires origin header rewrite for CSRF)
       "unifi.prestonperanich.com" = mkVhost ''

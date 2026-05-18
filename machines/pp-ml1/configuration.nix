@@ -23,14 +23,14 @@
     colima
 
     # Remote development via Discord
-    kimaki
+    # kimaki
   ];
 
   # Kimaki Discord bot for remote development
-  services.kimaki = {
-    enable = true;
-    enableVoiceChannels = true;
-  };
+  # services.kimaki = {
+  #   enable = true;
+  #   enableVoiceChannels = true;
+  # };
 
   clan.core.networking.targetHost = lib.mkForce "pperanich@pp-ml1.local";
 

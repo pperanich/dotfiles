@@ -179,7 +179,7 @@
         };
 
         # Dynamic DNS - keep DNS records updated with home IP
-        # Records: vpn.prestonperanich.com, www.prestonperanich.com, prestonperanich.com
+        # Records: vpn.prestonperanich.com
         dyndns = {
           module = {
             name = "dyndns";
@@ -196,26 +196,6 @@
                 extraSettings = {
                   ip_version = "ipv4";
                   ttl = 300; # 5 minutes (integer required by ddns-updater)
-                  zone_identifier = "2604f1538bb4baa51662edac3bd91fc9";
-                };
-              };
-              www-prestonperanich = {
-                provider = "cloudflare";
-                domain = "www.prestonperanich.com";
-                secret_field_name = "token";
-                extraSettings = {
-                  ip_version = "ipv4";
-                  ttl = 300;
-                  zone_identifier = "2604f1538bb4baa51662edac3bd91fc9";
-                };
-              };
-              root-prestonperanich = {
-                provider = "cloudflare";
-                domain = "prestonperanich.com";
-                secret_field_name = "token";
-                extraSettings = {
-                  ip_version = "ipv4";
-                  ttl = 300;
                   zone_identifier = "2604f1538bb4baa51662edac3bd91fc9";
                 };
               };

@@ -31,6 +31,14 @@
     opencloud
     radicale
     scanservjs
+    paperless
+    homeAssistant
+    jellyfin
+    navidrome
+    audiobookshelf
+
+    # Disk health (scraped by pp-router1's Prometheus)
+    smartMonitoring
 
     # VPN (namespace mode — split tunneling for specific services)
     # protonvpn
@@ -132,6 +140,65 @@
     };
   };
 
+  # Paperless — document archive with OCR.
+  # Ingests from a subdir of the scanservjs output so plain scans stay put;
+  # drop files into /tank/scans/paperless to archive them.
+  my.paperless = {
+    address = "0.0.0.0";
+    openFirewall = true;
+    dataDir = "/tank/appdata/paperless";
+    consumptionDir = "/tank/scans/paperless";
+    domain = "paperless.prestonperanich.com";
+    passwordFile = config.sops.secrets.paperless-admin-pass.path;
+  };
+  # Consume dir lives under scanservjs's 0750 output dir
+  users.users.paperless.extraGroups = [ "scanservjs" ];
+
+  # Home Assistant — automation for the IoT VLAN
+  my.homeAssistant = {
+    openFirewall = true;
+    configDir = "/tank/appdata/hass";
+    trustedProxies = [ "10.0.0.1" ];
+  };
+
+  # Media servers — all proxied via Caddy on pp-router1
+  my.jellyfin = {
+    openFirewall = true;
+    enableHardwareAcceleration = true;
+    mediaDirectories = [
+      "/tank/media/movies"
+      "/tank/media/tv"
+    ];
+  };
+
+  my.navidrome = {
+    address = "0.0.0.0";
+    openFirewall = true;
+    musicFolder = "/tank/media/music";
+  };
+
+  my.audiobookshelf = {
+    address = "0.0.0.0";
+    openFirewall = true;
+    mediaDirectories = [
+      "/tank/media/audiobooks"
+      "/tank/media/podcasts"
+    ];
+  };
+
+  # Disk health monitoring — exporter open to LAN for the router's Prometheus
+  my.smartMonitoring = {
+    enable = true;
+    listenAddress = "0.0.0.0";
+    openFirewall = true;
+  };
+
+  # Borg backup to pp-router1: user data only, service dirs stay on the mirror
+  clan.core.state.userdata.folders = [
+    "/home/pperanich"
+    "/tank/scans"
+  ];
+
   # Immich photo management
   # Accessed via Caddy reverse proxy on pp-router1 (immich.prestonperanich.com)
   my.immich = {
@@ -143,6 +210,12 @@
   };
 
   # --- Secrets wiring (sops-nix) ---
+  # Paperless: initial admin password
+  sops.secrets.paperless-admin-pass = {
+    owner = "paperless";
+    mode = "0400";
+  };
+
   # Nextcloud: admin password file
   sops.secrets.nextcloud-admin-pass = {
     owner = "nextcloud";

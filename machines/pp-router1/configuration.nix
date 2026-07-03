@@ -314,6 +314,15 @@ in
           vlan = 10;
           subnet = "10.0.0";
           isolation = "none"; # Full access to everything
+          # Pin nas1 to a stable lease so its DNS record stops drifting
+          # (it was floating across DHCP leases, breaking hostname deploys).
+          reservations = [
+            {
+              hostname = "pp-nas1";
+              mac = "b2:96:cc:f4:c8:bc";
+              ip = 105;
+            }
+          ];
         };
         # IoT network - isolated with controlled access
         iot = {

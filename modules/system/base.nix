@@ -26,6 +26,14 @@
 
         home-manager.backupFileExtension = "hm-back";
 
+        # Resolve bare fleet hostnames (e.g. borg repo host "pp-router1").
+        # home.arpa first = direct LAN address; pp-wg second = WireGuard
+        # fallback (static /etc/hosts, works off-LAN or if LAN DNS is down).
+        networking.search = [
+          "home.arpa"
+          "pp-wg"
+        ];
+
         environment.systemPackages = with pkgs; [
           ghostty.terminfo
           # Merged from former file-exploration + networkUtilities modules

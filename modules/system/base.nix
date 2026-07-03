@@ -17,7 +17,7 @@
           inputs.nix-ld.nixosModules.nix-ld
         ];
 
-        system.stateVersion = "25.11";
+        system.stateVersion = "26.05";
 
         # Disable NixOS manual/options doc generation to avoid builtins.toFile warning
         # (options.json references store paths without proper context)
@@ -269,7 +269,7 @@
             MANPAGER = "less -R --use-color -Dd+r -Du+b";
           };
           enableNixpkgsReleaseCheck = false;
-          stateVersion = "25.11";
+          stateVersion = "26.05";
           homeDirectory = "/${homePrefix}/${config.home.username}";
 
           activation = {

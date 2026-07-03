@@ -3,6 +3,7 @@ _: {
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -18,6 +19,7 @@ _: {
         "dns-stack.json" = ./observability-assets/dashboards/dns-stack.json;
         "service-health.json" = ./observability-assets/dashboards/service-health.json;
         "logs-overview.json" = ./observability-assets/dashboards/logs-overview.json;
+        "wan-remote-access.json" = ./observability-assets/dashboards/wan-remote-access.json;
       };
 
       mkPromRule = expr: alert: description: {
@@ -263,7 +265,13 @@ _: {
           node = {
             enable = true;
             listenAddress = "127.0.0.1";
-            enabledCollectors = [ "systemd" ];
+            enabledCollectors = [
+              "systemd"
+              "textfile"
+            ];
+            extraFlags = [
+              "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text"
+            ];
           };
           blackbox = {
             enable = true;
@@ -284,6 +292,43 @@ _: {
             listenAddress = "127.0.0.1";
             interfaces = [ "pp-wg" ];
             latestHandshakeDelay = true;
+          };
+        };
+
+        # Export nftables named counters (wan_input_drop, wan_new_accept_*)
+        # as Prometheus metrics via the node-exporter textfile collector.
+        # (Textfile dir tmpfiles rule lives in the shared list below.)
+        systemd.services.nftables-metrics = lib.mkIf config.networking.nftables.enable {
+          description = "Export nftables named counters for node-exporter";
+          path = [
+            pkgs.nftables
+            pkgs.jq
+            pkgs.coreutils
+          ];
+          serviceConfig.Type = "oneshot";
+          script = ''
+            out=/var/lib/prometheus-node-exporter-text/nftables.prom
+            tmp="$out.tmp"
+            {
+              echo "# HELP nftables_counter_packets Packets seen by nftables named counter"
+              echo "# TYPE nftables_counter_packets counter"
+              echo "# HELP nftables_counter_bytes Bytes seen by nftables named counter"
+              echo "# TYPE nftables_counter_bytes counter"
+              nft --json list counters | jq -r '
+                .nftables[] | select(.counter) | .counter |
+                "nftables_counter_packets{family=\"\(.family)\",table=\"\(.table)\",name=\"\(.name)\"} \(.packets)",
+                "nftables_counter_bytes{family=\"\(.family)\",table=\"\(.table)\",name=\"\(.name)\"} \(.bytes)"
+              '
+            } > "$tmp" && mv "$tmp" "$out"
+          '';
+        };
+
+        systemd.timers.nftables-metrics = lib.mkIf config.networking.nftables.enable {
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnBootSec = "30s";
+            OnUnitActiveSec = "15s";
+            AccuracySec = "1s";
           };
         };
 
@@ -404,66 +449,96 @@ _: {
           };
         };
 
-        services.promtail = {
+        # Log shipping via Grafana Alloy (promtail was removed in NixOS 26.05).
+        # Same pipeline as the old promtail config: journal (filtered to the
+        # services we care about) + blocky query-log files → local Loki.
+        services.alloy = {
           enable = true;
-          configuration = {
-            server = {
-              http_listen_address = "127.0.0.1";
-              http_listen_port = 9080;
-              grpc_listen_port = 0;
-            };
-            clients = [ { url = "http://127.0.0.1:3100/loki/api/v1/push"; } ];
-            scrape_configs = [
-              {
-                job_name = "journal";
-                journal = {
-                  json = false;
-                  max_age = "12h";
-                  labels = {
-                    job = "journal";
-                    host = config.networking.hostName;
-                  };
-                };
-                relabel_configs = [
-                  {
-                    source_labels = [ "__journal__systemd_unit" ];
-                    regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|prometheus|grafana|loki|promtail|homepage-dashboard)\\.service";
-                    action = "keep";
-                  }
-                  {
-                    source_labels = [ "__journal__systemd_unit" ];
-                    target_label = "unit";
-                  }
-                  {
-                    source_labels = [ "__journal__syslog_identifier" ];
-                    target_label = "syslog_identifier";
-                  }
-                  {
-                    source_labels = [ "__journal_priority_keyword" ];
-                    target_label = "priority";
-                  }
-                  {
-                    source_labels = [ "__journal__transport" ];
-                    target_label = "transport";
-                  }
-                ];
-              }
-              {
-                job_name = "blocky-file";
-                static_configs = [
-                  {
-                    targets = [ "localhost" ];
-                    labels = {
-                      job = "blocky-file";
-                      host = config.networking.hostName;
-                      __path__ = "/var/log/blocky/*";
-                    };
-                  }
-                ];
-              }
-            ];
-          };
+          # Alloy's own HTTP/UI port — keep it loopback-only
+          extraFlags = [ "--server.http.listen-addr=127.0.0.1:9080" ];
         };
+
+        # Journal access for the DynamicUser'd alloy service
+        systemd.services.alloy.serviceConfig.SupplementaryGroups = [ "systemd-journal" ];
+
+        environment.etc."alloy/config.alloy".text = ''
+          loki.write "local" {
+            endpoint {
+              url = "http://127.0.0.1:3100/loki/api/v1/push"
+            }
+          }
+
+          loki.relabel "journal" {
+            forward_to = []
+
+            rule {
+              source_labels = ["__journal__systemd_unit"]
+              regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|prometheus|grafana|loki|alloy|homepage-dashboard|sshd)\\.service"
+              action = "keep"
+            }
+            rule {
+              source_labels = ["__journal__systemd_unit"]
+              target_label = "unit"
+            }
+            rule {
+              source_labels = ["__journal__syslog_identifier"]
+              target_label = "syslog_identifier"
+            }
+            rule {
+              source_labels = ["__journal_priority_keyword"]
+              target_label = "priority"
+            }
+            rule {
+              source_labels = ["__journal__transport"]
+              target_label = "transport"
+            }
+          }
+
+          loki.source.journal "journal" {
+            max_age = "12h"
+            relabel_rules = loki.relabel.journal.rules
+            labels = {
+              job = "journal",
+              host = "${config.networking.hostName}",
+            }
+            forward_to = [loki.write.local.receiver]
+          }
+
+          local.file_match "blocky" {
+            path_targets = [{
+              __path__ = "/var/log/blocky/*",
+              job = "blocky-file",
+              host = "${config.networking.hostName}",
+            }]
+          }
+
+          loki.source.file "blocky" {
+            targets = local.file_match.blocky.targets
+            forward_to = [loki.write.local.receiver]
+          }
+
+          // Kernel messages carry no systemd unit, so the journal source
+          // above never ships them. nftables log rules (nft-drop-wan:,
+          // nft-wan-accept:, nft-drop-input:, ...) are kernel messages —
+          // ship only those, drop the rest of the kernel firehose.
+          loki.source.journal "kernel" {
+            max_age = "12h"
+            matches = "_TRANSPORT=kernel"
+            labels = {
+              job = "kernel",
+              host = "${config.networking.hostName}",
+            }
+            forward_to = [loki.process.nftlogs.receiver]
+          }
+
+          loki.process "nftlogs" {
+            forward_to = [loki.write.local.receiver]
+            stage.match {
+              selector = "{job=\"kernel\"} !~ \"nft6?-\""
+              action = "drop"
+            }
+          }
+        '';
 
         services.unpoller = lib.mkIf cfg.unpoller.enable {
           enable = true;
@@ -488,6 +563,7 @@ _: {
 
         systemd.tmpfiles.rules = [
           "d ${dashboardDir} 0750 grafana grafana -"
+          "d /var/lib/prometheus-node-exporter-text 0755 root root -"
         ]
         ++ lib.mapAttrsToList mkDashboardCopyRule dashboardFiles;
       };

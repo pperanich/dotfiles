@@ -28,7 +28,7 @@ _: {
           firefox # Web browser
           bitwarden-desktop # Password manager
           vlc # Media player
-          protonvpn-gui # VPN client
+          proton-vpn # VPN client (renamed from protonvpn-gui)
           ghostty # Fast, native, feature-rich terminal emulator pushing modern features
           gimp # GNU Image Manipulation Program
         ];

@@ -40,6 +40,11 @@ _: {
         services.stalwart = {
           enable = true;
 
+          # NixOS release when stalwart was first enabled on this machine.
+          # Pre-26.05 keeps the "stalwart-mail" user/state-dir naming that the
+          # existing deployment (and sops secret ownership) relies on.
+          stateVersion = "25.11";
+
           credentials = {
             "relay-token" = cfg.relayCredentialFile;
           };

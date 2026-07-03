@@ -4,7 +4,12 @@
   neovim-overlay = inputs.neovim-nightly-overlay.overlays.default;
   sops-nix = inputs.sops-nix.overlays.default;
   nix-apple-fonts = inputs.nix-apple-fonts.overlays.default;
-  personal-site = inputs.personal-site.overlays.default;
+  # Use the flake's own package output (built with personal-site's locked
+  # nixpkgs) rather than its overlay — the Astro/sharp build breaks under
+  # 26.05's bun. Revert to overlays.default once fixed upstream.
+  personal-site = final: _prev: {
+    personal-site = inputs.personal-site.packages.${final.stdenv.hostPlatform.system}.personal-site;
+  };
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;

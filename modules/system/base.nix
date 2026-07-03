@@ -42,6 +42,10 @@
             allowUnfree = true;
             allowUnfreePredicate = _: true;
             allowBroken = true;
+            permittedInsecurePackages = [
+              # TODO: drop once nixos-26.05 bumps bitwarden-desktop off EOL electron 39
+              "electron-39.8.10"
+            ];
           };
         };
 

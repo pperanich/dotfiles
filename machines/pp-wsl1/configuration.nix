@@ -66,6 +66,9 @@
 
   networking = {
     hostName = "pp-wsl1";
+    # WSL generates /etc/resolv.conf (wslConf.network.generateResolvConf);
+    # 26.05 asserts resolvconf must be off when something else owns the file.
+    resolvconf.enable = false;
     interfaces = {
       # eth0 = {
       #   useDHCP = true;

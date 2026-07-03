@@ -93,7 +93,7 @@ _: {
             scanservjs = prev.scanservjs.overrideAttrs (_old: {
               postInstall = ''
                 mkdir -p $out/bin
-                makeWrapper ${lib.getExe prev.nodejs_20} $out/bin/scanservjs \
+                makeWrapper ${lib.getExe prev.nodejs_22} $out/bin/scanservjs \
                   --set NODE_ENV production \
                   --add-flags "$out/lib/node_modules/scanservjs/app-server/src/server.js"
 

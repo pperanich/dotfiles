@@ -28,9 +28,6 @@ in
         config = {
           allowUnfree = true;
           allowBroken = true;
-          permittedInsecurePackages = [
-            "openssl-1.1.1w"
-          ];
         };
       };
       clan.pkgs = pkgs;

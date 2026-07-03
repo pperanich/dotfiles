@@ -46,6 +46,21 @@ let
       reverse_proxy ${backend}
     '';
 
+  # Proxy to the NAS's own Caddy over TLS (split-horizon: LAN clients reach
+  # it directly, this vhost carries the WG/hairpin path). Dial the stable
+  # .home.arpa name but verify the upstream cert against the public name —
+  # resolving the public name here could self-loop via our own vhost.
+  mkNasProxy =
+    fqdn: extra:
+    mkVhost ''
+      reverse_proxy https://${nasHost} {
+        transport http {
+          tls_server_name ${fqdn}
+        }
+      }
+      ${extra}
+    '';
+
   # Homepage dashboard service entry
   mkDashboardService =
     {
@@ -137,6 +152,11 @@ in
       "https://${config.my.observability.grafana.hostname}"
       "https://home.prestonperanich.com"
       "https://${config.my.vaultwarden.domain}"
+      # End-to-end probe of the public site through the Cloudflare tunnel
+      "https://prestonperanich.com"
+      # Resolves to the NAS via split-horizon — covers the NAS Caddy's
+      # independent cert renewal via CertExpiringSoon
+      "https://jellyfin.prestonperanich.com"
     ];
     unpoller = {
       enable = true;
@@ -297,6 +317,22 @@ in
     dns.extraLocalData = [
       # WSL mirrored networking shares the Windows host's IP
       "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."
+    ]
+    # Split-horizon: LAN clients resolve NAS-hosted services to the NAS
+    # itself (direct route, TLS terminates at its Caddy) instead of the
+    # public records pointing here. Unbound's transparent local-zone
+    # returns NODATA for AAAA on these names, so v6 won't pull clients
+    # back to the router. See docs/split-horizon-tls.md.
+    ++ map (sub: "${sub}.prestonperanich.com. A 10.0.0.105") [
+      "jellyfin"
+      "immich"
+      "nextcloud"
+      "opencloud"
+      "navidrome"
+      "audiobookshelf"
+      "scan"
+      "paperless"
+      "hass"
     ];
 
     # Clients search home.arpa (LAN hosts via DDNS) then pp-wg (WireGuard
@@ -900,66 +936,41 @@ in
         }
       '';
 
-      # --- NAS services (pp-nas1) with upload limits ---
-      "immich.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://${nasHost}:2283 {
-          header_up X-Forwarded-Proto {scheme}
-        }
+      # --- NAS services (pp-nas1) ---
+      # TLS re-proxy to the NAS's local Caddy; body caps live NAS-side.
+      # LAN clients bypass these vhosts entirely via split-horizon DNS.
+      "immich.prestonperanich.com" = mkNasProxy "immich.prestonperanich.com" ''
         request_body {
           max_size 50G
         }
       '';
-
-      "nextcloud.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://${nasHost}:80 {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote_host}
-        }
+      "nextcloud.prestonperanich.com" = mkNasProxy "nextcloud.prestonperanich.com" ''
         request_body {
           max_size 16G
         }
       '';
-
-      "opencloud.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://${nasHost}:9200 {
-          header_up X-Forwarded-Proto {scheme}
-        }
+      "opencloud.prestonperanich.com" = mkNasProxy "opencloud.prestonperanich.com" ''
         request_body {
           max_size 16G
         }
       '';
-
-      # scanservjs — Canon TR4500 web scan UI on pp-nas1
-      "scan.prestonperanich.com" = mkProxy "${nasHost}:8080";
-
-      # paperless — document archive on pp-nas1
-      "paperless.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://${nasHost}:28981 {
-          header_up X-Forwarded-Proto {scheme}
-        }
-        request_body {
-          max_size 1G
-        }
-      '';
-
-      # Home Assistant on pp-nas1 (websockets proxied automatically)
-      "hass.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://${nasHost}:8123 {
-          header_up X-Forwarded-Proto {scheme}
-        }
-      '';
-
-      # Media servers on pp-nas1
-      "jellyfin.prestonperanich.com" = mkProxy "${nasHost}:8096";
-      "navidrome.prestonperanich.com" = mkProxy "${nasHost}:4533";
-      "audiobookshelf.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://${nasHost}:8000 {
-          header_up X-Forwarded-Proto {scheme}
-        }
+      "audiobookshelf.prestonperanich.com" = mkNasProxy "audiobookshelf.prestonperanich.com" ''
         request_body {
           max_size 10G
         }
       '';
+      "paperless.prestonperanich.com" = mkNasProxy "paperless.prestonperanich.com" ''
+        request_body {
+          max_size 1G
+        }
+      '';
+      # scanservjs — Canon TR4500 web scan UI
+      "scan.prestonperanich.com" = mkNasProxy "scan.prestonperanich.com" "";
+      # Home Assistant (websockets proxied automatically)
+      "hass.prestonperanich.com" = mkNasProxy "hass.prestonperanich.com" "";
+      # Media servers
+      "jellyfin.prestonperanich.com" = mkNasProxy "jellyfin.prestonperanich.com" "";
+      "navidrome.prestonperanich.com" = mkNasProxy "navidrome.prestonperanich.com" "";
 
       # --- Cloudflare Tunnel listeners (localhost only) ---
       # Personal site (public via tunnel)

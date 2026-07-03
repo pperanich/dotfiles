@@ -79,7 +79,13 @@
   my.nextcloud = {
     hostName = "nextcloud.prestonperanich.com";
     datadir = "/tank/appdata/nextcloud";
-    trustedProxies = [ "10.0.0.1" ];
+    # Router Caddy (WG/hairpin path) + local Caddy (direct LAN path,
+    # dials localhost so both loopback families must be trusted)
+    trustedProxies = [
+      "10.0.0.1"
+      "127.0.0.1"
+      "::1"
+    ];
     extraTrustedDomains = [ "pp-nas1.home.arpa" ];
     extraApps = [
       "calendar"
@@ -159,7 +165,13 @@
   my.homeAssistant = {
     openFirewall = true;
     configDir = "/tank/appdata/hass";
-    trustedProxies = [ "10.0.0.1" ];
+    # Router Caddy (WG/hairpin path) + local Caddy (direct LAN path,
+    # dials localhost so both loopback families must be trusted)
+    trustedProxies = [
+      "10.0.0.1"
+      "127.0.0.1"
+      "::1"
+    ];
   };
 
   # Media servers — all proxied via Caddy on pp-router1
@@ -208,6 +220,65 @@
     ip saddr 10.0.0.1 tcp dport { 9633, 9640 } accept
   '';
 
+  # Caddy — local TLS termination for split-horizon routing. The router's
+  # Unbound answers these names with this host's IP for LAN clients (direct
+  # route, no hairpin); WG/public clients resolve to the router, whose Caddy
+  # re-proxies here over TLS. Certs via Cloudflare DNS-01, same pattern as
+  # pp-router1. See docs/split-horizon-tls.md.
+  sops.secrets.cloudflare-api-token = { };
+  sops.templates."caddy.env" = {
+    content = ''
+      CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
+    '';
+    owner = "caddy";
+  };
+
+  services.caddy = {
+    enable = true;
+
+    package = pkgs.caddy.withPlugins {
+      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
+      hash = "sha256-7g8zDx5RhbptXFyEPtexxkHX8hw/gF001bZ7wX4Mjhs=";
+    };
+
+    environmentFile = config.sops.templates."caddy.env".path;
+
+    globalConfig = ''
+      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      # nginx (nextcloud) owns :80; certs come via DNS-01 so Caddy never
+      # needs the HTTP port — skip the auto-HTTPS redirect listener
+      auto_https disable_redirects
+    '';
+
+    # Caddy sets X-Forwarded-For/-Proto automatically; only body caps differ
+    virtualHosts =
+      let
+        mkLocalProxy = port: extra: {
+          extraConfig = ''
+            reverse_proxy localhost:${toString port}
+            ${extra}
+          '';
+        };
+        mkUpload = size: ''
+          request_body {
+            max_size ${size}
+          }
+        '';
+      in
+      {
+        "jellyfin.prestonperanich.com" = mkLocalProxy 8096 "";
+        "navidrome.prestonperanich.com" = mkLocalProxy 4533 "";
+        "scan.prestonperanich.com" = mkLocalProxy 8080 "";
+        "hass.prestonperanich.com" = mkLocalProxy 8123 "";
+        "immich.prestonperanich.com" = mkLocalProxy 2283 (mkUpload "50G");
+        "nextcloud.prestonperanich.com" = mkLocalProxy 80 (mkUpload "16G");
+        "opencloud.prestonperanich.com" = mkLocalProxy 9200 (mkUpload "16G");
+        "audiobookshelf.prestonperanich.com" = mkLocalProxy 8000 (mkUpload "10G");
+        "paperless.prestonperanich.com" = mkLocalProxy 28981 (mkUpload "1G");
+      };
+  };
+
+  networking.firewall.allowedTCPPorts = [ 443 ];
 
   # Borg backup to pp-router1: user data only, service dirs stay on the mirror
   clan.core.state.userdata.folders = [

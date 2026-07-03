@@ -79,6 +79,9 @@ in
     # Router functionality
     router
 
+    # Disk health (local NVMe)
+    smartMonitoring
+
     # Cloudflare DNS sync
     cloudflareDns
 
@@ -139,7 +142,25 @@ in
       enable = true;
       passwordFile = config.sops.secrets.unpoller-password.path;
     };
+    alerts = {
+      email = {
+        # Plus-addressing: Gmail delivers to pperanich@gmail.com but keeps
+        # the +alerts tag in the To: header for filtering
+        to = "pperanich+alerts@gmail.com";
+        from = "alerts@prestonperanich.com";
+      };
+      externalUrl = "https://alerts.prestonperanich.com";
+      # 10G trunk to the switch — carrier loss here takes down the whole LAN
+      carrierInterfaces = [ "enp1s0f1np1" ];
+      deadman.pingUrlFile = config.sops.secrets.healthchecks-ping-url.path;
+    };
+    smartctlTargets = [
+      "127.0.0.1:9633"
+      "pp-nas1.home.arpa:9633"
+    ];
   };
+
+  my.smartMonitoring.enable = true;
 
   # Cloudflare Tunnel — public service exposure without opening WAN ports
   # tunnelId read from cf-tunnel.json (written by: cf tunnel sync --name homelab --apply)
@@ -168,6 +189,9 @@ in
   # Networking configuration
   networking.hostName = "pp-router1";
 
+  # Local time for logs and alert email timestamps
+  time.timeZone = "America/New_York";
+
   # Serial console for debugging (ttyS0 at 115200 baud, 8N1)
   boot.kernelParams = [
     "console=tty0"
@@ -184,6 +208,42 @@ in
 
   services.irqbalance.enable = true;
   systemd.services."serial-getty@ttyS0".enable = true;
+
+  # 10G trunk dropped carrier (2026-07-03) and needed a power cycle: bounce
+  # link at 30s down, rebind PCI function at 90s (equivalent of NIC reset).
+  systemd.services.trunk-link-watchdog = {
+    description = "Auto-recover the 10G LAN trunk after sustained carrier loss";
+    wantedBy = [ "multi-user.target" ];
+    path = [ pkgs.iproute2 ];
+    serviceConfig = {
+      Restart = "always";
+      RestartSec = 10;
+    };
+    script = ''
+      IFACE=enp1s0f1np1
+      PCI=0000:01:00.1
+      DOWN=0
+      while sleep 5; do
+        if [ "$(cat /sys/class/net/$IFACE/carrier 2>/dev/null)" = 1 ]; then
+          DOWN=0
+          continue
+        fi
+        DOWN=$((DOWN + 5))
+        if [ "$DOWN" -eq 30 ]; then
+          echo "carrier down 30s, bouncing $IFACE"
+          ip link set "$IFACE" down
+          sleep 2
+          ip link set "$IFACE" up
+        elif [ "$DOWN" -ge 90 ]; then
+          echo "carrier still down after link bounce, rebinding $PCI"
+          echo "$PCI" > /sys/bus/pci/drivers/i40e/unbind
+          sleep 2
+          echo "$PCI" > /sys/bus/pci/drivers/i40e/bind
+          DOWN=0
+        fi
+      done
+    '';
+  };
 
   # Router configuration
   my.router = {
@@ -238,10 +298,27 @@ in
       "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."
     ];
 
+    # Clients search home.arpa (LAN hosts via DDNS) then pp-wg (WireGuard
+    # overlay, served from /etc/hosts by blocky below)
+    dhcp.searchDomains = [
+      config.my.router.dhcp.domainName
+      "pp-wg"
+    ];
+
     # DNS ad-blocking via Blocky (sits in front of Unbound on port 53)
     # Unbound retreats to localhost:5335 as DNSSEC/DoT backend
     blocky = {
       enable = true;
+      # Serve /etc/hosts over DNS: *.pp-wg peer names (clan fleet + external
+      # peers) become resolvable by every LAN/VPN client, not just this host
+      extraSettings.hostsFile = {
+        sources = [ "/etc/hosts" ];
+        hostsTTL = "5m";
+        loading.refreshPeriod = "5m";
+        # Never serve loopback entries (e.g. clan's "127.0.0.2 pp-router1")
+        # to LAN clients
+        filterLoopback = true;
+      };
       # Per-VLAN blocking (override auto-derived defaults for explicit control)
       clientGroupsBlock = {
         default = [
@@ -409,8 +486,11 @@ in
         "navidrome" # music server (pp-nas1)
         "audiobookshelf" # audiobooks & podcasts (pp-nas1)
         "scan" # scanservjs web UI (pp-nas1)
+        "paperless" # document archive (pp-nas1)
+        "hass" # home assistant (pp-nas1)
         "home" # dashboard (pp-router1)
         "grafana" # observability dashboard
+        "alerts" # alertmanager UI
         "vault-admin" # vaultwarden admin panel (pp-router1)
         "gitea" # self-hosted git (pp-router1)
       ]
@@ -539,7 +619,7 @@ in
       layout = {
         Network = {
           style = "row";
-          columns = 3;
+          columns = 4;
         };
         Media = {
           style = "row";
@@ -571,6 +651,12 @@ in
             icon = "grafana";
             sub = "grafana";
             desc = "Metrics, logs & alerts";
+          }
+          {
+            name = "Alertmanager";
+            icon = "alertmanager";
+            sub = "alerts";
+            desc = "Alert routing & silences";
           }
         ];
       }
@@ -627,6 +713,18 @@ in
             icon = "scrutiny"; # placeholder icon; swap later
             sub = "scan";
             desc = "Network scanner (Canon TR4500)";
+          }
+          {
+            name = "Paperless";
+            icon = "paperless-ngx";
+            sub = "paperless";
+            desc = "Document archive & OCR";
+          }
+          {
+            name = "Home Assistant";
+            icon = "home-assistant";
+            sub = "hass";
+            desc = "Home automation";
           }
           {
             name = "Gitea";
@@ -704,7 +802,15 @@ in
   sops.secrets.grafana-secret-key = {
     owner = "grafana";
   };
-  sops.secrets.unpoller-password = { };
+  # Must be readable by unpoller's service user (reads via file:// at runtime)
+  sops.secrets.unpoller-password = {
+    owner = "unifi-poller";
+    mode = "0400";
+  };
+
+  # Dead-man's switch ping URL (create a check at healthchecks.io, then:
+  # sops set sops/secrets.yaml '["healthchecks-ping-url"]' '"https://hc-ping.com/<uuid>"')
+  sops.secrets.healthchecks-ping-url = { };
 
   # Cloudflare Tunnel: credentials JSON (binary format, separate sops file)
   sops.secrets.cloudflared-tunnel-credentials = {
@@ -766,6 +872,7 @@ in
       # --- Simple reverse proxies (router-local services) ---
       "home.prestonperanich.com" = mkProxy "localhost:8082";
       "grafana.prestonperanich.com" = mkProxy "localhost:3010";
+      "alerts.prestonperanich.com" = mkProxy "localhost:9093";
       "ntopng.prestonperanich.com" = mkProxy "localhost:3000";
       "vault.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
       "vault-admin.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
@@ -823,6 +930,35 @@ in
 
       # scanservjs — Canon TR4500 web scan UI on pp-nas1
       "scan.prestonperanich.com" = mkProxy "${nasHost}:8080";
+
+      # paperless — document archive on pp-nas1
+      "paperless.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://${nasHost}:28981 {
+          header_up X-Forwarded-Proto {scheme}
+        }
+        request_body {
+          max_size 1G
+        }
+      '';
+
+      # Home Assistant on pp-nas1 (websockets proxied automatically)
+      "hass.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://${nasHost}:8123 {
+          header_up X-Forwarded-Proto {scheme}
+        }
+      '';
+
+      # Media servers on pp-nas1
+      "jellyfin.prestonperanich.com" = mkProxy "${nasHost}:8096";
+      "navidrome.prestonperanich.com" = mkProxy "${nasHost}:4533";
+      "audiobookshelf.prestonperanich.com" = mkVhost ''
+        reverse_proxy http://${nasHost}:8000 {
+          header_up X-Forwarded-Proto {scheme}
+        }
+        request_body {
+          max_size 10G
+        }
+      '';
 
       # --- Cloudflare Tunnel listeners (localhost only) ---
       # Personal site (public via tunnel)

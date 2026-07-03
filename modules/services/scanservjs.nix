@@ -75,83 +75,18 @@ _: {
       };
 
       config = lib.mkIf (cfg.address != null) {
-        # Patch upstream scanservjs to ship the built UI assets.
-        #
-        # nixpkgs uses buildNpmPackage's `npm pack` install path, which
-        # respects scanservjs's .gitignore — and `dist/` (the very directory
-        # `node build.js --assemble` produces, containing the built Vue UI
-        # at `dist/client/`) is gitignored. The shipped wrapper launches
-        # `app-server/src/server.js`, whose `express.static('client')` has
-        # no `client/` to serve, so every non-API route returns 404.
-        #
-        # The upstream source server is otherwise functional (the API works);
-        # we just need the static assets reachable from cwd. We copy
-        # `dist/client/` into $out and (below, via systemd.tmpfiles) symlink
-        # it into the runtime working dir so express.static('client') resolves.
-        nixpkgs.overlays = [
-          (_final: prev: {
-            scanservjs = prev.scanservjs.overrideAttrs (_old: {
-              postInstall = ''
-                mkdir -p $out/bin
-                makeWrapper ${lib.getExe prev.nodejs_22} $out/bin/scanservjs \
-                  --set NODE_ENV production \
-                  --add-flags "$out/lib/node_modules/scanservjs/app-server/src/server.js"
-
-                if [ ! -d ./dist/client ]; then
-                  echo "scanservjs override: ./dist/client missing — UI build did not produce expected files" >&2
-                  exit 1
-                fi
-                cp -r ./dist/client "$out/lib/node_modules/scanservjs/client"
-
-                # Vite build doesn't emit app-ui/src/icons/ into dist/client/.
-                # The PWA manifest + index.html reference /icons/*.png at runtime,
-                # so ship them alongside the built bundle.
-                if [ -d ./app-ui/src/icons ]; then
-                  cp -r ./app-ui/src/icons "$out/lib/node_modules/scanservjs/client/icons"
-                fi
-
-                # nixpkgs's NixOS module exports NIX_SCANSERVJS_CONFIG_PATH but
-                # upstream user-options.js only loads config.local.js from a
-                # hardcoded relative path. Without this patch the env var is
-                # ignored and all module config (scanimage path, output dir,
-                # host/port) silently falls back to defaults — most visibly
-                # the bundled "/usr/bin/scanimage" which doesn't exist on NixOS.
-                substituteInPlace $out/lib/node_modules/scanservjs/app-server/src/classes/user-options.js \
-                  --replace-fail \
-                    'const localPath = path.join(__dirname, localConfigPath);' \
-                    'const localPath = process.env.NIX_SCANSERVJS_CONFIG_PATH || path.join(__dirname, localConfigPath);'
-              '';
-            });
-          })
-        ];
-
+        # scanservjs 3.1.0 (nixos-26.05) ships the built Vue UI at
+        # $out/lib/client (express-configurer.js patched via @client@) and the
+        # module sets NIX_SCANSERVJS_CONFIG_PATH + a preview tmpfiles link
+        # itself. The old override that patched the pre-3.1.0
+        # $out/lib/node_modules/scanservjs layout is obsolete and broke the
+        # build, so stock scanservjs is used directly now.
         services.scanservjs = {
           enable = true;
           settings = {
             host = cfg.address;
             port = cfg.port;
             outputDirectory = cfg.outputDir;
-          };
-        };
-
-        # Make `client/` reachable from scanservjs's WorkingDirectory so the
-        # express.static('client') middleware (relative path in upstream
-        # source) finds the built UI assets we shipped in the package.
-        # Also stage data/preview/default.jpg — scanservjs reads this stock
-        # placeholder via Config.previewDirectory ('data/preview' relative to
-        # cwd) when the UI mounts and there's no scan to show; without it
-        # /api/v1/preview returns 500 and the UI tries to atob() the error.
-        systemd.tmpfiles.settings."10-scanservjs-ui" = {
-          "/var/lib/scanservjs/client"."L+" = {
-            argument = "${pkgs.scanservjs}/lib/node_modules/scanservjs/client";
-          };
-          "/var/lib/scanservjs/data/preview"."d" = {
-            user = "scanservjs";
-            group = "scanservjs";
-            mode = "0750";
-          };
-          "/var/lib/scanservjs/data/preview/default.jpg"."L+" = {
-            argument = "${pkgs.scanservjs}/lib/node_modules/scanservjs/app-server/data/preview/default.jpg";
           };
         };
 

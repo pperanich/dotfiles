@@ -27,6 +27,22 @@
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
+    # 3.x logs the device-tags 404 once at debug instead of ERROR per poll.
+    # Not backported to 26.05 (major bump) — revisit on next release bump
+    # (likely 26.11): drop once `nixpkgs#unpoller.version` >= 3.3.1.
+    unpoller = prev.unpoller.overrideAttrs (
+      finalAttrs: _old: {
+        version = "3.3.1";
+        src = prev.fetchFromGitHub {
+          owner = "unpoller";
+          repo = "unpoller";
+          rev = "v${finalAttrs.version}";
+          hash = "sha256-MivEuI/XjRDlX+VjSAMLjRl0WlRVnhP18qVujbvwjeQ=";
+        };
+        vendorHash = "sha256-3DBUrKTvwRqaNuYtBlP5DlF1SNmU+ZNeH7ATVQjgLsA=";
+      }
+    );
+
     my-curl = prev.my-curl or prev.curl;
     my-git = prev.my-git or prev.git;
     glibtool = final.libtool.overrideAttrs (oldAttrs: {

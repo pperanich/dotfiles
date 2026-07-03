@@ -22,6 +22,9 @@ _: {
         "wan-remote-access.json" = ./observability-assets/dashboards/wan-remote-access.json;
       };
 
+      # Render alert email timestamps in the host timezone (UTC if unset)
+      alertTimezone = if config.time.timeZone != null then config.time.timeZone else "Etc/UTC";
+
       mkPromRule = expr: alert: description: {
         inherit alert expr;
         for = "5m";
@@ -70,6 +73,49 @@ _: {
           type = lib.types.listOf lib.types.str;
           default = [ "https://${cfg.grafana.hostname}" ];
           description = "HTTP endpoints to probe with blackbox exporter";
+        };
+
+        alerts = {
+          email = {
+            to = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "Deliver Prometheus alerts to this address via Alertmanager (null disables Alertmanager)";
+            };
+            from = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              example = "alerts@example.com";
+              description = "Envelope sender for alert emails; domain must be accepted by the local SMTP relay";
+            };
+          };
+
+          deadman.pingUrlFile = lib.mkOption {
+            type = lib.types.nullOr lib.types.path;
+            default = null;
+            description = "File containing a healthchecks.io ping URL, hit every 5 minutes; missed pings alert externally when this host is down";
+          };
+
+          externalUrl = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            example = "https://alerts.example.com";
+            description = "External URL used for Alertmanager links in notifications";
+          };
+
+          carrierInterfaces = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            example = [ "enp1s0f1np1" ];
+            description = "Interfaces to alert on for sustained carrier loss and link flapping";
+          };
+        };
+
+        smartctlTargets = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "pp-nas1.home.arpa:9633" ];
+          description = "smartctl exporter targets to scrape for disk health";
         };
 
         unpoller = {
@@ -146,6 +192,12 @@ _: {
               static_configs = [
                 { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.wireguard.port}" ]; }
               ];
+            }
+          ]
+          ++ lib.optionals (cfg.smartctlTargets != [ ]) [
+            {
+              job_name = "smartctl";
+              static_configs = [ { targets = cfg.smartctlTargets; } ];
             }
           ]
           ++ lib.optionals cfg.unpoller.enable [
@@ -254,11 +306,117 @@ _: {
                       "RouterInterfaceTxDrops"
                       "Network interface is dropping outgoing packets."
                     )
-                  ];
+                  ]
+                  ++ lib.optionals (cfg.smartctlTargets != [ ]) [
+                    {
+                      alert = "DiskSmartFailure";
+                      expr = "smartctl_device_smart_status == 0";
+                      for = "5m";
+                      labels.severity = "critical";
+                      annotations.description = "SMART reports failing status for {{ $labels.device }} on {{ $labels.instance }}.";
+                    }
+                    (mkPromRule "smartctl_device_media_errors > 0" "DiskMediaErrors"
+                      "A disk is reporting media errors."
+                    )
+                    (mkPromRule "smartctl_device_available_spare < 50" "DiskSpareLow"
+                      "NVMe available spare below 50 percent."
+                    )
+                    (mkPromRule "smartctl_device_temperature{temperature_type=\"current\"} > 70" "DiskTemperatureHigh"
+                      "Disk temperature above 70C for 5 minutes."
+                    )
+                    (mkPromRule "up{job=\"smartctl\"} == 0" "SmartctlExporterDown"
+                      "A smartctl exporter target has been down for 5 minutes."
+                    )
+                  ]
+                  ++ lib.concatMap (iface: [
+                    {
+                      alert = "InterfaceCarrierLost";
+                      expr = "node_network_carrier{device=\"${iface}\"} == 0";
+                      for = "1m";
+                      labels.severity = "critical";
+                      annotations.description = "Interface ${iface} has had no carrier for 1 minute.";
+                    }
+                    {
+                      alert = "InterfaceFlapping";
+                      expr = "increase(node_network_carrier_changes_total{device=\"${iface}\"}[15m]) > 4";
+                      labels.severity = "warning";
+                      annotations.description = "Interface ${iface} carrier changed more than 4 times in 15 minutes.";
+                    }
+                  ]) cfg.alerts.carrierInterfaces;
                 }
               ];
             })
           ];
+        };
+
+        # Alerts leave via local Stalwart relay over WAN — independent of the
+        # LAN path, so delivery survives a dead trunk (local dashboards don't).
+        services.prometheus.alertmanager = lib.mkIf (cfg.alerts.email.to != null) {
+          enable = true;
+          listenAddress = "127.0.0.1";
+          port = 9093;
+          webExternalUrl = lib.mkIf (cfg.alerts.externalUrl != null) cfg.alerts.externalUrl;
+          configuration = {
+            global = {
+              smtp_smarthost = "127.0.0.1:25";
+              smtp_from = cfg.alerts.email.from;
+              smtp_require_tls = false;
+            };
+            route = {
+              receiver = "email";
+              group_by = [ "alertname" ];
+              group_wait = "30s";
+              group_interval = "5m";
+              repeat_interval = "4h";
+            };
+            receivers = [
+              {
+                name = "email";
+                email_configs = [
+                  {
+                    to = cfg.alerts.email.to;
+                    send_resolved = true;
+                    # Default subject plus alert start time rendered in the
+                    # host timezone (Alertmanager templates emit UTC otherwise)
+                    headers.Subject = ''{{ template "email.default.subject" . }} [{{ (index .Alerts 0).StartsAt | tz "${alertTimezone}" | date "Jan 2 3:04PM MST" }}]'';
+                  }
+                ];
+              }
+            ];
+          };
+        };
+
+        services.prometheus.alertmanagers = lib.mkIf (cfg.alerts.email.to != null) [
+          { static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ]; }
+        ];
+
+        assertions = [
+          {
+            assertion = cfg.alerts.email.to == null || cfg.alerts.email.from != null;
+            message = "my.observability.alerts.email.from must be set when alerts.email.to is set";
+          }
+        ];
+
+        # Dead-man's switch: external service alerts when pings stop arriving,
+        # covering whole-host failure that local alerting can't report.
+        systemd.services.deadman-ping = lib.mkIf (cfg.alerts.deadman.pingUrlFile != null) {
+          description = "Dead-man's switch ping";
+          serviceConfig.Type = "oneshot";
+          script = ''
+            url=$(cat ${cfg.alerts.deadman.pingUrlFile})
+            case "$url" in
+              https://*) ${pkgs.curl}/bin/curl -fsS -m 10 --retry 3 -o /dev/null "$url" ;;
+              *) echo "ping URL not configured yet, skipping" ;;
+            esac
+          '';
+        };
+
+        systemd.timers.deadman-ping = lib.mkIf (cfg.alerts.deadman.pingUrlFile != null) {
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnBootSec = "2m";
+            OnUnitActiveSec = "5m";
+          };
         };
 
         services.prometheus.exporters = {
@@ -413,6 +571,9 @@ _: {
               path_prefix = "/var/lib/loki";
               replication_factor = 1;
               ring.kvstore.store = "inmemory";
+              # Default advertises first non-loopback addr in the ring, but
+              # gRPC only listens on loopback
+              instance_addr = "127.0.0.1";
             };
             schema_config.configs = [
               {
@@ -542,6 +703,8 @@ _: {
 
         services.unpoller = lib.mkIf cfg.unpoller.enable {
           enable = true;
+          # No local InfluxDB; Prometheus scrapes the exporter instead
+          influxdb.disable = true;
           unifi = {
             controllers = [
               {
@@ -549,7 +712,8 @@ _: {
                 inherit (cfg.unpoller) user;
                 pass = cfg.unpoller.passwordFile;
                 save_sites = true;
-                save_events = true;
+                # Controller lacks /stat/event endpoint (404 on every poll)
+                save_events = false;
                 save_alarms = true;
                 save_dpi = false;
                 verify_ssl = false;

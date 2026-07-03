@@ -158,6 +158,7 @@ in
       "127.0.0.1:9633"
       "pp-nas1.home.arpa:9633"
     ];
+    nodeTargets = [ "pp-nas1.home.arpa:9640" ];
   };
 
   my.smartMonitoring.enable = true;

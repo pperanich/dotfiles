@@ -37,8 +37,9 @@
     navidrome
     audiobookshelf
 
-    # Disk health (scraped by pp-router1's Prometheus)
+    # Disk health + host metrics (scraped by pp-router1's Prometheus)
     smartMonitoring
+    nodeMetrics
 
     # VPN (namespace mode — split tunneling for specific services)
     # protonvpn
@@ -186,18 +187,47 @@
     ];
   };
 
-  # Disk health monitoring — exporter open to LAN for the router's Prometheus
+  # Disk health monitoring — scraped only by the router's Prometheus
   my.smartMonitoring = {
     enable = true;
     listenAddress = "0.0.0.0";
-    openFirewall = true;
   };
+
+  # Host metrics (CPU/memory/ZFS/systemd) — scraped only by the router's Prometheus
+  my.nodeMetrics = {
+    enable = true;
+    listenAddress = "0.0.0.0";
+    # OpenCloud's debug endpoints occupy the whole 9100-9199 band
+    port = 9640;
+  };
+
+  # Exporters are router-only: Prometheus on pp-router1 is the sole scraper.
+  # User-facing services stay LAN-open for the direct .home.arpa route.
+  networking.nftables.enable = true;
+  networking.firewall.extraInputRules = ''
+    ip saddr 10.0.0.1 tcp dport { 9633, 9640 } accept
+  '';
+
 
   # Borg backup to pp-router1: user data only, service dirs stay on the mirror
   clan.core.state.userdata.folders = [
     "/home/pperanich"
     "/tank/scans"
   ];
+
+  # Stamp last successful backup for the node-exporter textfile collector.
+  # The unit runs under ProtectSystem=strict, so the textfile dir must be
+  # explicitly writable.
+  systemd.services."borgbackup-job-pp-router1".serviceConfig.ReadWritePaths = [
+    "/var/lib/prometheus-node-exporter-text"
+  ];
+  services.borgbackup.jobs."pp-router1".postHook = ''
+    if [ "$exitStatus" = "0" ]; then
+      dir=/var/lib/prometheus-node-exporter-text
+      printf 'borg_last_success_timestamp_seconds %s\n' "$(date +%s)" > "$dir/borgbackup.prom.tmp"
+      mv "$dir/borgbackup.prom.tmp" "$dir/borgbackup.prom"
+    fi
+  '';
 
   # Immich photo management
   # Accessed via Caddy reverse proxy on pp-router1 (immich.prestonperanich.com)

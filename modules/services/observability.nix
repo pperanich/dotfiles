@@ -20,6 +20,7 @@ _: {
         "service-health.json" = ./observability-assets/dashboards/service-health.json;
         "logs-overview.json" = ./observability-assets/dashboards/logs-overview.json;
         "wan-remote-access.json" = ./observability-assets/dashboards/wan-remote-access.json;
+        "fleet-health.json" = ./observability-assets/dashboards/fleet-health.json;
       };
 
       # Render alert email timestamps in the host timezone (UTC if unset)
@@ -118,6 +119,13 @@ _: {
           description = "smartctl exporter targets to scrape for disk health";
         };
 
+        nodeTargets = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "pp-nas1.home.arpa:9100" ];
+          description = "Additional node exporter targets to scrape for host metrics";
+        };
+
         unpoller = {
           enable = lib.mkEnableOption "UniFi metrics collection via unpoller";
 
@@ -172,7 +180,12 @@ _: {
             {
               job_name = "node";
               static_configs = [
-                { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.node.port}" ]; }
+                {
+                  targets = [
+                    "127.0.0.1:${toString config.services.prometheus.exporters.node.port}"
+                  ]
+                  ++ cfg.nodeTargets;
+                }
               ];
             }
             {
@@ -278,16 +291,16 @@ _: {
                     (mkPromRule "probe_success{job=\"blackbox-dns\"} == 0" "RouterDnsProbeFailing"
                       "DNS probing through the local resolver has been failing for 5 minutes."
                     )
-                    (mkPromRule "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1" "RouterLowMemory"
-                      "Router memory available is below 10 percent."
+                    (mkPromRule "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1" "HostLowMemory"
+                      "Memory available on {{ $labels.instance }} is below 10 percent."
                     )
                     (mkPromRule
-                      "(node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) < 0.15"
-                      "RouterLowDiskSpace"
-                      "Router root filesystem available space is below 15 percent."
+                      "(node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|ramfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|ramfs\"}) < 0.15"
+                      "HostLowDiskSpace"
+                      "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is below 15 percent available."
                     )
-                    (mkPromRule "rate(node_cpu_seconds_total{mode!=\"idle\"}[5m]) > 0.9" "RouterHighCpu"
-                      "Router CPU busy time has remained high for 5 minutes."
+                    (mkPromRule "avg by (instance) (1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) > 0.9" "HostHighCpu"
+                      "CPU on {{ $labels.instance }} has been above 90 percent busy for 5 minutes."
                     )
                     (mkPromRule
                       "increase(node_systemd_unit_state{name=~\"systemd-networkd.service|unbound.service|blocky.service|kea-dhcp4-server.service\",state=\"failed\"}[15m]) > 0"
@@ -305,6 +318,74 @@ _: {
                     (mkPromRule "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
                       "RouterInterfaceTxDrops"
                       "Network interface is dropping outgoing packets."
+                    )
+                    (mkPromRule "node_hwmon_temp_celsius{chip=~\".*coretemp.*\"} > 85" "HostCpuHot"
+                      "CPU sensor {{ $labels.sensor }} on {{ $labels.instance }} above 85C for 5 minutes."
+                    )
+                    {
+                      # DDR5 SPD sensors — join via chip_names since i2c bus ids can renumber
+                      alert = "HostMemoryDimmHot";
+                      expr = "(node_hwmon_temp_celsius and on (instance, chip) node_hwmon_chip_names{chip_name=\"spd5118\"}) > 55";
+                      for = "10m";
+                      labels.severity = "warning";
+                      annotations.description = "DIMM sensor {{ $labels.chip }} on {{ $labels.instance }} above 55C for 10 minutes.";
+                    }
+                    (mkPromRule "(probe_ssl_earliest_cert_expiry - time()) < 14 * 86400" "CertExpiringSoon"
+                      "TLS certificate for {{ $labels.instance }} expires in less than 14 days."
+                    )
+                    (mkPromRule "probe_success{job=\"blackbox-http\"} == 0" "HttpProbeFailing"
+                      "HTTP probe against {{ $labels.instance }} has been failing for 5 minutes."
+                    )
+                    {
+                      alert = "SystemdUnitFailed";
+                      expr = "node_systemd_unit_state{state=\"failed\"} == 1";
+                      for = "10m";
+                      labels.severity = "warning";
+                      annotations.description = "Unit {{ $labels.name }} on {{ $labels.instance }} has been failed for 10 minutes.";
+                    }
+                    {
+                      alert = "ZfsPoolUnhealthy";
+                      expr = "node_zfs_zpool_state{state!=\"online\"} == 1";
+                      for = "5m";
+                      labels.severity = "critical";
+                      annotations.description = "ZFS pool {{ $labels.zpool }} on {{ $labels.instance }} is {{ $labels.state }}.";
+                    }
+                    {
+                      # Informational: fires for ~10 minutes after any boot, planned or not
+                      alert = "HostRebooted";
+                      expr = "time() - node_boot_time_seconds < 600";
+                      for = "1m";
+                      labels.severity = "warning";
+                      annotations.description = "{{ $labels.instance }} rebooted less than 10 minutes ago.";
+                    }
+                    {
+                      # 250ms sustained is ~100x healthy NTP jitter yet under the ~0.5s step threshold
+                      alert = "HostClockDrift";
+                      expr = "abs(node_timex_offset_seconds) > 0.25";
+                      for = "15m";
+                      labels.severity = "warning";
+                      annotations.description = "Clock on {{ $labels.instance }} has drifted more than 250ms from NTP for 15 minutes.";
+                    }
+                    (mkPromRule "increase(node_vmstat_oom_kill[1h]) > 0" "HostOomKills"
+                      "The OOM killer fired on {{ $labels.instance }} within the last hour."
+                    )
+                    {
+                      alert = "BackupStale";
+                      expr = "time() - borg_last_success_timestamp_seconds > 172800";
+                      for = "30m";
+                      labels.severity = "critical";
+                      annotations.description = "Borg backup on {{ $labels.instance }} has not succeeded in over 48 hours.";
+                    }
+                    {
+                      # Expected to fire once after deploy until the first successful backup stamps the metric
+                      alert = "BackupMetricMissing";
+                      expr = "absent(borg_last_success_timestamp_seconds)";
+                      for = "6h";
+                      labels.severity = "warning";
+                      annotations.description = "No borg backup success metric has been scraped for 6 hours.";
+                    }
+                    (mkPromRule "kea_dhcp4_addresses_assigned_total / kea_dhcp4_addresses_total > 0.9" "DhcpPoolNearlyFull"
+                      "DHCP subnet {{ $labels.subnet }} is above 90 percent lease utilization."
                     )
                   ]
                   ++ lib.optionals (cfg.smartctlTargets != [ ]) [
@@ -443,7 +524,9 @@ _: {
           kea = {
             enable = true;
             listenAddress = "127.0.0.1";
-            targets = [ "http://127.0.0.1:8000" ];
+            # Query dhcp4's unix control socket directly (ctrl-agent lacks a
+            # control-sockets forwarding map, so stats never flowed over HTTP)
+            targets = [ "/run/kea/kea-dhcp4.socket" ];
           };
           wireguard = {
             enable = true;

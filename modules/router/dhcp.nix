@@ -65,6 +65,13 @@ _: {
               valid-lifetime = dhcpCfg.leaseTime;
               renew-timer = dhcpCfg.leaseTime / 2;
               rebind-timer = dhcpCfg.leaseTime * 7 / 8;
+              # Unix control socket so the Prometheus kea exporter can pull lease stats
+              control-sockets = [
+                {
+                  socket-type = "unix";
+                  socket-name = "/run/kea/kea-dhcp4.socket";
+                }
+              ];
               # All DHCP subnets are created by vlans.nix (every network is a tagged VLAN)
             };
           };

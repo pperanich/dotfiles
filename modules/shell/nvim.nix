@@ -8,6 +8,12 @@ _: {
       };
 
       home.packages = with pkgs; [
+        # nvim config is managed manually (~/.config/nvim symlinked into this
+        # repo's home/.config/nvim, plugins via LazyVim/lazy.nvim). Install the
+        # binary only — do NOT use programs.neovim, which since home-manager
+        # 868d0a6 emits ~/.config/nvim/init.lua and clobbers the manual config.
+        neovim
+
         # Common dependencies for modern text editing
         ripgrep # Required for modern text search
         fd # Required for file finding
@@ -17,10 +23,5 @@ _: {
         # gcc
         python3
       ];
-
-      programs.neovim = {
-        enable = true;
-        package = pkgs.neovim;
-      };
     };
 }

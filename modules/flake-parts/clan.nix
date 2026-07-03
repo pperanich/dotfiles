@@ -204,21 +204,23 @@
         };
 
         # Borgbackup - pp-router1 as backup server for NixOS machines
-        borgbackup = {
-          module = {
-            name = "borgbackup";
-            input = "clan-core";
-          };
-          roles = {
-            server.machines.pp-router1 = { };
-            # Clients automatically backup to all servers in this instance
-            client.machines = {
-              pp-nas1 = { };
-              # Add other NixOS machines as needed:
-              # pp-ll1 = { };
-            };
-          };
-        };
+        # Borgbackup disabled: nas1's data lives on a ZFS mirror with
+        # auto-snapshots (disk-failure + accidental-deletion protection), so
+        # a same-site copy to the router adds little. Re-enable by restoring
+        # the instance below and declaring `clan.core.state.*.folders` on the
+        # clients (empty state => borg generates a unit with no ExecStart).
+        # borgbackup = {
+        #   module = {
+        #     name = "borgbackup";
+        #     input = "clan-core";
+        #   };
+        #   roles = {
+        #     server.machines.pp-router1 = { };
+        #     client.machines = {
+        #       pp-nas1 = { };
+        #     };
+        #   };
+        # };
 
         # Syncthing - P2P file sync across machines
         syncthing = {

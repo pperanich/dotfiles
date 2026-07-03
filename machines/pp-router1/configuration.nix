@@ -10,77 +10,15 @@ let
   # WireGuard controller IPv6 address (derived from clan-managed prefix)
   wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
   wgAddress = "${wgPrefix}::1";
-  routerIp = config.my.router.lan.address;
-  nasHost = "pp-nas1.${config.my.router.dhcp.domainName}";
   domain = config.my.router.dhcp.domainName;
-
-  # Generate A + AAAA record pairs pointing subdomains to the router (LAN + WireGuard)
-  mkDnsRecords =
-    subdomains:
-    lib.concatMap (sub: [
-      {
-        type = "A";
-        name = "${sub}.prestonperanich.com";
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = "${sub}.prestonperanich.com";
-        content = wgAddress;
-      }
-    ]) subdomains;
-
-  # Caddy vhost listening on LAN + WireGuard with custom config
-  mkVhost = extraConfig: {
-    listenAddresses = [
-      routerIp
-      wgAddress
-    ];
-    inherit extraConfig;
-  };
-
-  # Simple reverse proxy vhost (LAN + WireGuard)
-  mkProxy =
-    backend:
-    mkVhost ''
-      reverse_proxy ${backend}
-    '';
-
-  # Proxy to the NAS's own Caddy over TLS (split-horizon: LAN clients reach
-  # it directly, this vhost carries the WG/hairpin path). Dial the stable
-  # .home.arpa name but verify the upstream cert against the public name —
-  # resolving the public name here could self-loop via our own vhost.
-  mkNasProxy =
-    fqdn: extra:
-    mkVhost ''
-      reverse_proxy https://${nasHost} {
-        transport http {
-          tls_server_name ${fqdn}
-        }
-      }
-      ${extra}
-    '';
-
-  # Homepage dashboard service entry
-  mkDashboardService =
-    {
-      name,
-      icon,
-      sub,
-      desc,
-      path ? "",
-    }:
-    {
-      ${name} = {
-        inherit icon;
-        href = "https://${sub}.prestonperanich.com${path}";
-        description = desc;
-      };
-    };
+  inherit (lib.my.homelab) publicDomain mkSub;
 in
 {
   imports = [
     ./disko.nix
+    ./caddy.nix
+    ./printing.nix
+    ./homepage.nix
     inputs.nixos-facter-modules.nixosModules.facter
   ]
   ++ (with modules.nixos; [
@@ -100,6 +38,9 @@ in
     # Cloudflare DNS sync
     cloudflareDns
 
+    # Caddy + DNS-01 certificates (vhosts in ./caddy.nix)
+    caddyDns01
+
     # Public services (via Cloudflare Tunnel)
     cloudflareTunnel
     vaultwarden
@@ -118,18 +59,18 @@ in
   # Vaultwarden password manager
   my.vaultwarden = {
     enable = true;
-    domain = "vault.prestonperanich.com";
+    domain = mkSub "vault";
     adminTokenFile = config.sops.secrets.vaultwarden-admin-token.path;
-    smtpFrom = "vault@prestonperanich.com";
+    smtpFrom = "vault@${publicDomain}";
   };
 
   # Gitea — self-hosted git over LAN + WireGuard
   my.gitea = {
     enable = true;
-    domain = "gitea.prestonperanich.com";
+    domain = mkSub "gitea";
     mail = {
       enable = true;
-      from = "gitea@prestonperanich.com";
+      from = "gitea@${publicDomain}";
     };
     admin = {
       username = "pperanich";
@@ -141,22 +82,22 @@ in
   # Stalwart — outbound transactional email relay via Resend
   my.stalwart = {
     enable = true;
-    hostname = "mail.prestonperanich.com";
+    hostname = mkSub "mail";
     relayCredentialFile = config.sops.secrets.resend-api-key.path;
   };
 
   my.observability = {
     enable = true;
-    grafana.hostname = "grafana.prestonperanich.com";
+    grafana.hostname = mkSub "grafana";
     blackbox.httpTargets = [
       "https://${config.my.observability.grafana.hostname}"
-      "https://home.prestonperanich.com"
+      "https://${mkSub "home"}"
       "https://${config.my.vaultwarden.domain}"
       # End-to-end probe of the public site through the Cloudflare tunnel
-      "https://prestonperanich.com"
+      "https://${publicDomain}"
       # Resolves to the NAS via split-horizon — covers the NAS Caddy's
       # independent cert renewal via CertExpiringSoon
-      "https://jellyfin.prestonperanich.com"
+      "https://${mkSub "jellyfin"}"
     ];
     unpoller = {
       enable = true;
@@ -167,9 +108,9 @@ in
         # Plus-addressing: Gmail delivers to pperanich@gmail.com but keeps
         # the +alerts tag in the To: header for filtering
         to = "pperanich+alerts@gmail.com";
-        from = "alerts@prestonperanich.com";
+        from = "alerts@${publicDomain}";
       };
-      externalUrl = "https://alerts.prestonperanich.com";
+      externalUrl = "https://${mkSub "alerts"}";
       # 10G trunk to the switch — carrier loss here takes down the whole LAN
       carrierInterfaces = [ "enp1s0f1np1" ];
       deadman.pingUrlFile = config.sops.secrets.healthchecks-ping-url.path;
@@ -192,13 +133,13 @@ in
     {
       enable = true;
       inherit (tunnelMeta) tunnelId tunnelName;
-      zone = "prestonperanich.com";
+      zone = publicDomain;
       credentialsFile = config.sops.secrets.cloudflared-tunnel-credentials.path;
       environmentFile = config.sops.templates."cf-dns.env".path;
       ingress = {
-        "prestonperanich.com" = "http://localhost:8224"; # Personal site
-        "www.prestonperanich.com" = "http://localhost:8224"; # Redirect to apex
-        "vault.prestonperanich.com" = "http://localhost:8223"; # Caddy tunnel listener (blocks /admin)
+        "${publicDomain}" = "http://localhost:8224"; # Personal site
+        "${mkSub "www"}" = "http://localhost:8224"; # Redirect to apex
+        "${mkSub "vault"}" = "http://localhost:8223"; # Caddy tunnel listener (blocks /admin)
       };
     };
 
@@ -310,7 +251,7 @@ in
     # Enable services
     dhcp.enable = true;
     dns.enable = true;
-    dns.privateDomains = [ "prestonperanich.com" ]; # Allow private IP responses for Caddy subdomains
+    dns.privateDomains = [ publicDomain ]; # Allow private IP responses for Caddy subdomains
     dns.extraInterfaces = [ wgAddress ]; # Serve DNS to WireGuard VPN clients
     dns.extraAccessControl = [ "${wgPrefix}::/40 allow" ]; # Allow queries from WireGuard subnet
     dns.ddns.enable = true; # Auto-register DHCP client hostnames in DNS
@@ -323,7 +264,7 @@ in
     # public records pointing here. Unbound's transparent local-zone
     # returns NODATA for AAAA on these names, so v6 won't pull clients
     # back to the router. See docs/split-horizon-tls.md.
-    ++ map (sub: "${sub}.prestonperanich.com. A 10.0.0.105") [
+    ++ map (sub: "${mkSub sub}. A 10.0.0.105") [
       "jellyfin"
       "immich"
       "nextcloud"
@@ -504,308 +445,7 @@ in
     MaxStartups = "10:30:60"; # Rate limit: start:rate:full
   };
 
-  # Declarative Cloudflare DNS records for internal services
-  # Records point to private IPs — unreachable from the public internet.
-  # LAN clients resolve via Unbound (10.0.0.1), VPN clients via public DNS + WireGuard.
-  # Synced every 12h via systemd timer. Manual: systemctl start cf-dns-sync
-  my.cloudflareDns = {
-    enable = true;
-    zone = "prestonperanich.com";
-    records =
-      mkDnsRecords [
-        "feedme" # temporary address for feedme backend
-        "ntopng" # network monitoring
-        "unifi" # Ubiquiti controller
-        "immich" # photo/video management (pp-nas1)
-        "nextcloud" # file sync & collaboration (pp-nas1)
-        "opencloud" # file sync trial (pp-nas1)
-        "jellyfin" # media server (pp-nas1)
-        "navidrome" # music server (pp-nas1)
-        "audiobookshelf" # audiobooks & podcasts (pp-nas1)
-        "scan" # scanservjs web UI (pp-nas1)
-        "paperless" # document archive (pp-nas1)
-        "hass" # home assistant (pp-nas1)
-        "home" # dashboard (pp-router1)
-        "grafana" # observability dashboard
-        "alerts" # alertmanager UI
-        "vault-admin" # vaultwarden admin panel (pp-router1)
-        "gitea" # self-hosted git (pp-router1)
-      ]
-      ++ [
-        # Mail deliverability (SPF + DKIM + DMARC)
-        {
-          type = "TXT";
-          name = "prestonperanich.com";
-          # TODO: Update with Resend-provided SPF after domain verification
-          content = "v=spf1 include:_spf.resend.com ~all";
-        }
-        {
-          type = "TXT";
-          name = "_dmarc.prestonperanich.com";
-          content = "v=DMARC1; p=none; rua=mailto:dmarc@prestonperanich.com";
-        }
-      ];
-  };
 
-  # CUPS print broker (cups-browsed auto-discovery)
-  #
-  # Bridges AirPrint clients on PP-Net (br-main) to the Canon TR4500 on
-  # PP-IoT (br-iot, 10.0.20.50). Apple's Bonjour same-subnet check rejects
-  # the printer's off-subnet announcement reflected directly to br-main, so
-  # we run cupsd here and re-publish a queue with router IP as the endpoint.
-  #
-  # cups-browsed subscribes to local avahi (which sees the printer via the
-  # iot.mdns reflector), and at runtime auto-creates an IPP Everywhere queue
-  # mirroring the printer's TXT (URF/PWG-Raster/mopria-certified). No static
-  # `hardware.printers` block — earlier attempts hit lpadmin's "No IPP
-  # attributes" error on the TR4500 because lpadmin probes attrs at boot.
-  # Runtime queue creation sidesteps that.
-  services.printing = {
-    enable = true;
-    listenAddresses = [
-      "localhost:631"
-      "${routerIp}:631" # only br-main; iot/wan never see CUPS
-    ];
-    allowFrom = [
-      "localhost"
-      "${config.my.router.lan.cidr}"
-    ];
-    browsing = true; # publish queues via Bonjour (cups-browsed + avahi)
-    defaultShared = true;
-    openFirewall = false; # router module owns nft input rules above
-    extraConf = ''
-      BrowseLocalProtocols dnssd
-      # Drop the _cups DNS-SD subtype. With it, macOS treats the queue as
-      # "Bonjour Shared" and refuses to auto-install a driver (it expects a
-      # pre-installed CUPS driver). Advertising only _print + _universal lets
-      # macOS treat it as IPP Everywhere and auto-derive the PPD via
-      # ipp2ppd — i.e., AirPrint behavior, no driver prompt.
-      # Ref: https://github.com/OpenPrinting/cups/discussions/841
-      BrowseDNSSDSubTypes _print,_universal
-    '';
-    browsedConf = ''
-      BrowseRemoteProtocols dnssd
-      BrowseLocalProtocols dnssd
-      CreateIPPPrinterQueues All
-      # Skip cupsd's own broker republish to break the feedback loop —
-      # without this, cups-browsed sees `... @ pp-router1` on br-main and
-      # creates a duplicate `<name>_pp_router1` queue chained to itself.
-      BrowseFilter NOT name @ pp-router1
-    '';
-  };
-
-  # cups.socket binds the router LAN IP (10.0.0.1:631), which systemd-networkd
-  # assigns to br-main. On boot the socket races ahead of the address and dies
-  # with "Cannot assign requested address", breaking AirPrint until a manual
-  # restart. FreeBind (IP_FREEBIND) lets it bind the not-yet-present address.
-  systemd.sockets.cups.socketConfig.FreeBind = true;
-
-  # cups-browsed-created queues default to printer-is-shared=false (avoids
-  # republishing loops when an upstream CUPS would re-discover). We need the
-  # opposite — broker the queue onto br-main. Force shared=true post-start.
-  systemd.services.cups-browsed = {
-    postStart = ''
-      for _ in $(seq 1 30); do
-        if ${pkgs.cups}/bin/lpstat -e 2>/dev/null | grep -q .; then
-          break
-        fi
-        sleep 1
-      done
-      for q in $(${pkgs.cups}/bin/lpstat -e 2>/dev/null); do
-        ${pkgs.cups}/bin/lpadmin -p "$q" -o printer-is-shared=true || true
-      done
-    '';
-  };
-
-  # NixOS' cups pre-start only symlinks /var/lib/cups/cupsd.conf when missing,
-  # so once cupsd self-rewrites the file (which it does on lpadmin/cupsctl),
-  # subsequent rebuilds never replace it — stale config persists. Drop it
-  # before cups starts so the pre-start re-symlinks to the latest store conf
-  # (carrying our extraConf directives like BrowseDNSSDSubTypes).
-  systemd.services.cups.preStart = lib.mkBefore ''
-    if [ -e /var/lib/cups/cupsd.conf ] && [ ! -L /var/lib/cups/cupsd.conf ]; then
-      rm -f /var/lib/cups/cupsd.conf
-    fi
-  '';
-
-  # CUPS publishes its shared queue via avahi. The router's mdns module
-  # defaults disable-user-service-publishing=yes, which causes
-  # "DNS-SD registration ... failed: Not permitted" in cupsd logs.
-  # userServices=true flips that to allow per-service publishing.
-  services.avahi.publish.userServices = true;
-
-  # Disable IPv6 NSS resolution for .local names. The Canon TR4500 only
-  # advertises an IPv6 link-local A record (no global v6) for its mDNS
-  # hostname. Without nssmdns6=false, getaddrinfo on `<printer>.local`
-  # returns the link-local first, and cups-browsed's IPP probe to
-  # `ipp://<printer>.local:631/ipp/print` fails (no zone-id, link-local
-  # unreachable from a kernel-level connect()). Restricting NSS to IPv4 mDNS
-  # forces cups-browsed onto 10.0.20.107 directly. avahi itself still
-  # publishes/reflects v6 for everything else.
-  services.avahi.nssmdns6 = lib.mkForce false;
-
-  # Homepage dashboard — landing page for all internal services
-  services.homepage-dashboard = {
-    enable = true;
-    # Internal-only — not exposed to WAN, Caddy handles access control
-    allowedHosts = "*";
-    settings = {
-      title = "Homelab";
-      favicon = "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png";
-      headerStyle = "clean";
-      layout = {
-        Network = {
-          style = "row";
-          columns = 4;
-        };
-        Media = {
-          style = "row";
-          columns = 3;
-        };
-        Services = {
-          style = "row";
-          columns = 3;
-        };
-      };
-    };
-    services = [
-      {
-        "Network" = map mkDashboardService [
-          {
-            name = "Unifi";
-            icon = "unifi";
-            sub = "unifi";
-            desc = "Network controller";
-          }
-          {
-            name = "ntopng";
-            icon = "ntopng";
-            sub = "ntopng";
-            desc = "Network monitoring";
-          }
-          {
-            name = "Grafana";
-            icon = "grafana";
-            sub = "grafana";
-            desc = "Metrics, logs & alerts";
-          }
-          {
-            name = "Alertmanager";
-            icon = "alertmanager";
-            sub = "alerts";
-            desc = "Alert routing & silences";
-          }
-        ];
-      }
-      {
-        "Media" = map mkDashboardService [
-          {
-            name = "Jellyfin";
-            icon = "jellyfin";
-            sub = "jellyfin";
-            desc = "Movies, TV & music streaming";
-          }
-          {
-            name = "Navidrome";
-            icon = "navidrome";
-            sub = "navidrome";
-            desc = "Music server";
-          }
-          {
-            name = "Audiobookshelf";
-            icon = "audiobookshelf";
-            sub = "audiobookshelf";
-            desc = "Audiobooks & podcasts";
-          }
-        ];
-      }
-      {
-        "Services" = map mkDashboardService [
-          {
-            name = "Immich";
-            icon = "immich";
-            sub = "immich";
-            desc = "Photo & video backup";
-          }
-          {
-            name = "Nextcloud";
-            icon = "nextcloud";
-            sub = "nextcloud";
-            desc = "File sync & collaboration";
-          }
-          {
-            name = "OpenCloud";
-            icon = "open-cloud";
-            sub = "opencloud";
-            desc = "File sync";
-          }
-          {
-            name = "Vaultwarden";
-            icon = "vaultwarden";
-            sub = "vault";
-            desc = "Password manager";
-          }
-          {
-            name = "Scan";
-            icon = "scrutiny"; # placeholder icon; swap later
-            sub = "scan";
-            desc = "Network scanner (Canon TR4500)";
-          }
-          {
-            name = "Paperless";
-            icon = "paperless-ngx";
-            sub = "paperless";
-            desc = "Document archive & OCR";
-          }
-          {
-            name = "Home Assistant";
-            icon = "home-assistant";
-            sub = "hass";
-            desc = "Home automation";
-          }
-          {
-            name = "Gitea";
-            icon = "gitea";
-            sub = "gitea";
-            desc = "Self-hosted git";
-          }
-          {
-            name = "Vaultwarden Admin";
-            icon = "vaultwarden";
-            sub = "vault-admin";
-            path = "/admin";
-            desc = "Admin panel (internal only)";
-          }
-        ];
-      }
-    ];
-    widgets = [
-      {
-        resources = {
-          cpu = true;
-          memory = true;
-          disk = "/";
-        };
-      }
-      {
-        search = {
-          provider = "duckduckgo";
-          target = "_blank";
-        };
-      }
-    ];
-  };
-
-  # Caddy reverse proxy for internal services
-  # Provides HTTPS via Cloudflare DNS challenge — no public ports exposed
-  # Access from LAN (10.0.0.1) and WireGuard VPN
-  #
-  # Prerequisites:
-  #   1. Add cloudflare_api_token to sops/secrets.yaml (Zone:DNS:Edit + Zone:Zone:Read)
-  #   2. Build once to get correct Caddy plugin hash (set hash = "" to trigger)
-  #
-  # DNS records are managed declaratively above via my.cloudflareDns.
-  # When adding a new virtualHost below, add matching records above.
 
   # --- Secrets wiring (sops-nix) ---
   # Vaultwarden: admin token for /admin panel
@@ -865,138 +505,6 @@ in
   };
   my.cloudflareDns.environmentFile = config.sops.templates."cf-dns.env".path;
 
-  # Caddy: Cloudflare API token for DNS challenge
-  sops.templates."caddy.env" = {
-    content = ''
-      CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
-    '';
-    owner = "caddy";
-  };
-
-  services.caddy = {
-    enable = true;
-
-    package = pkgs.caddy.withPlugins {
-      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-      hash = "sha256-7g8zDx5RhbptXFyEPtexxkHX8hw/gF001bZ7wX4Mjhs="; # Build once to get correct hash — nix will print it on failure (caddy 2.11.4 / nixos-26.05)
-    };
-
-    environmentFile = config.sops.templates."caddy.env".path;
-
-    globalConfig = ''
-      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-    '';
-
-    virtualHosts = {
-      # --- Personal site (static, built by bun2nix) ---
-      "prestonperanich.com" = mkVhost ''
-        root * ${pkgs.personal-site}
-        file_server
-      '';
-      "www.prestonperanich.com" = mkVhost ''
-        redir https://prestonperanich.com{uri} permanent
-      '';
-
-      "feedme.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://pp-ml1.${config.my.router.dhcp.domainName}:3000 {
-          header_up X-Forwarded-Proto {scheme}
-        }
-        request_body {
-          max_size 16G
-        }
-      '';
-
-      # --- Simple reverse proxies (router-local services) ---
-      "home.prestonperanich.com" = mkProxy "localhost:8082";
-      "grafana.prestonperanich.com" = mkProxy "localhost:3010";
-      "alerts.prestonperanich.com" = mkProxy "localhost:9093";
-      "ntopng.prestonperanich.com" = mkProxy "localhost:3000";
-      "vault.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
-      "vault-admin.prestonperanich.com" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
-
-      # Gitea web UI + HTTPS clone. LFS uploads benefit from a high body cap.
-      "gitea.prestonperanich.com" = mkVhost ''
-        reverse_proxy http://localhost:${toString config.my.gitea.port} {
-          header_up X-Forwarded-Proto {scheme}
-        }
-        request_body {
-          max_size 5G
-        }
-      '';
-
-      # Unifi controller (self-signed cert, requires origin header rewrite for CSRF)
-      "unifi.prestonperanich.com" = mkVhost ''
-        reverse_proxy https://localhost:8443 {
-          transport http {
-            tls_insecure_skip_verify
-          }
-          header_up X-Forwarded-Proto {scheme}
-          header_up Origin https://localhost:8443
-          header_up Referer https://localhost:8443
-        }
-      '';
-
-      # --- NAS services (pp-nas1) ---
-      # TLS re-proxy to the NAS's local Caddy; body caps live NAS-side.
-      # LAN clients bypass these vhosts entirely via split-horizon DNS.
-      "immich.prestonperanich.com" = mkNasProxy "immich.prestonperanich.com" ''
-        request_body {
-          max_size 50G
-        }
-      '';
-      "nextcloud.prestonperanich.com" = mkNasProxy "nextcloud.prestonperanich.com" ''
-        request_body {
-          max_size 16G
-        }
-      '';
-      "opencloud.prestonperanich.com" = mkNasProxy "opencloud.prestonperanich.com" ''
-        request_body {
-          max_size 16G
-        }
-      '';
-      "audiobookshelf.prestonperanich.com" = mkNasProxy "audiobookshelf.prestonperanich.com" ''
-        request_body {
-          max_size 10G
-        }
-      '';
-      "paperless.prestonperanich.com" = mkNasProxy "paperless.prestonperanich.com" ''
-        request_body {
-          max_size 1G
-        }
-      '';
-      # scanservjs — Canon TR4500 web scan UI
-      "scan.prestonperanich.com" = mkNasProxy "scan.prestonperanich.com" "";
-      # Home Assistant (websockets proxied automatically)
-      "hass.prestonperanich.com" = mkNasProxy "hass.prestonperanich.com" "";
-      # Media servers
-      "jellyfin.prestonperanich.com" = mkNasProxy "jellyfin.prestonperanich.com" "";
-      "navidrome.prestonperanich.com" = mkNasProxy "navidrome.prestonperanich.com" "";
-
-      # --- Cloudflare Tunnel listeners (localhost only) ---
-      # Personal site (public via tunnel)
-      "http://:8224" = {
-        listenAddresses = [ "127.0.0.1" ];
-        extraConfig = ''
-          root * ${pkgs.personal-site}
-          file_server
-        '';
-      };
-
-      # Vaultwarden (public via tunnel, blocks /admin)
-      "http://:8223" = {
-        listenAddresses = [ "127.0.0.1" ];
-        extraConfig = ''
-          # Block /admin from public access (Cloudflare Tunnel)
-          handle /admin* {
-            respond "Forbidden" 403
-          }
-          handle {
-            reverse_proxy localhost:${toString config.my.vaultwarden.port}
-          }
-        '';
-      };
-    };
-  };
 
   # External WireGuard peers (non-clan devices like phones, tablets)
   # Managed via wg-external-peers.json — use `wg-add-peer` in devshell to add new devices

@@ -9,6 +9,12 @@
     pperanich = lib.strings.trim (builtins.readFile ./pperanich_id_ed25519.pub);
   };
 
+  # Homelab-wide constants — single source of truth for the public zone
+  homelab = rec {
+    publicDomain = "prestonperanich.com";
+    mkSub = sub: "${sub}.${publicDomain}";
+  };
+
   # Get all home-manager directories that contain a default.nix file
   getHomeDirs =
     homePath:

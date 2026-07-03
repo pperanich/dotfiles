@@ -6,6 +6,9 @@
   lib,
   ...
 }:
+let
+  inherit (lib.my.homelab) mkSub;
+in
 {
   imports = [
     ./disko.nix
@@ -40,6 +43,9 @@
     # Disk health + host metrics (scraped by pp-router1's Prometheus)
     smartMonitoring
     nodeMetrics
+
+    # Caddy + DNS-01 certificates (split-horizon TLS termination)
+    caddyDns01
 
     # VPN (namespace mode — split tunneling for specific services)
     # protonvpn
@@ -77,7 +83,7 @@
   # Nextcloud — file sync, calendar, contacts
   # Accessed via Caddy reverse proxy on pp-router1 (nextcloud.prestonperanich.com)
   my.nextcloud = {
-    hostName = "nextcloud.prestonperanich.com";
+    hostName = mkSub "nextcloud";
     datadir = "/tank/appdata/nextcloud";
     # Router Caddy (WG/hairpin path) + local Caddy (direct LAN path,
     # dials localhost so both loopback families must be trusted)
@@ -98,7 +104,7 @@
   # OpenCloud — file sync (side-by-side trial with Nextcloud)
   # Accessed via Caddy reverse proxy on pp-router1 (opencloud.prestonperanich.com)
   my.opencloud = {
-    url = "https://opencloud.prestonperanich.com";
+    url = "https://${mkSub "opencloud"}";
     stateDir = "/tank/appdata/opencloud";
     address = "0.0.0.0";
     openFirewall = true;
@@ -155,7 +161,7 @@
     openFirewall = true;
     dataDir = "/tank/appdata/paperless";
     consumptionDir = "/tank/scans/paperless";
-    domain = "paperless.prestonperanich.com";
+    domain = mkSub "paperless";
     passwordFile = config.sops.secrets.paperless-admin-pass.path;
   };
   # Consume dir lives under scanservjs's 0750 output dir
@@ -225,26 +231,10 @@
   # route, no hairpin); WG/public clients resolve to the router, whose Caddy
   # re-proxies here over TLS. Certs via Cloudflare DNS-01, same pattern as
   # pp-router1. See docs/split-horizon-tls.md.
-  sops.secrets.cloudflare-api-token = { };
-  sops.templates."caddy.env" = {
-    content = ''
-      CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
-    '';
-    owner = "caddy";
-  };
+  my.caddyDns01.enable = true;
 
   services.caddy = {
-    enable = true;
-
-    package = pkgs.caddy.withPlugins {
-      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-      hash = "sha256-7g8zDx5RhbptXFyEPtexxkHX8hw/gF001bZ7wX4Mjhs=";
-    };
-
-    environmentFile = config.sops.templates."caddy.env".path;
-
     globalConfig = ''
-      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       # nginx (nextcloud) owns :80; certs come via DNS-01 so Caddy never
       # needs the HTTP port — skip the auto-HTTPS redirect listener
       auto_https disable_redirects
@@ -266,15 +256,15 @@
         '';
       in
       {
-        "jellyfin.prestonperanich.com" = mkLocalProxy 8096 "";
-        "navidrome.prestonperanich.com" = mkLocalProxy 4533 "";
-        "scan.prestonperanich.com" = mkLocalProxy 8080 "";
-        "hass.prestonperanich.com" = mkLocalProxy 8123 "";
-        "immich.prestonperanich.com" = mkLocalProxy 2283 (mkUpload "50G");
-        "nextcloud.prestonperanich.com" = mkLocalProxy 80 (mkUpload "16G");
-        "opencloud.prestonperanich.com" = mkLocalProxy 9200 (mkUpload "16G");
-        "audiobookshelf.prestonperanich.com" = mkLocalProxy 8000 (mkUpload "10G");
-        "paperless.prestonperanich.com" = mkLocalProxy 28981 (mkUpload "1G");
+        "${mkSub "jellyfin"}" = mkLocalProxy 8096 "";
+        "${mkSub "navidrome"}" = mkLocalProxy 4533 "";
+        "${mkSub "scan"}" = mkLocalProxy 8080 "";
+        "${mkSub "hass"}" = mkLocalProxy 8123 "";
+        "${mkSub "immich"}" = mkLocalProxy 2283 (mkUpload "50G");
+        "${mkSub "nextcloud"}" = mkLocalProxy 80 (mkUpload "16G");
+        "${mkSub "opencloud"}" = mkLocalProxy 9200 (mkUpload "16G");
+        "${mkSub "audiobookshelf"}" = mkLocalProxy 8000 (mkUpload "10G");
+        "${mkSub "paperless"}" = mkLocalProxy 28981 (mkUpload "1G");
       };
   };
 

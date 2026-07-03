@@ -146,6 +146,17 @@
               "com.sun:auto-snapshot" = "true";
             };
           };
+
+          # Bulk archive storage (e.g. iPhone/device backups). recordsize=1M
+          # suits the large media blobs; snapshots on for point-in-time recovery.
+          "tank/backups" = {
+            type = "zfs_fs";
+            mountpoint = "/tank/backups";
+            options = {
+              recordsize = "1M";
+              "com.sun:auto-snapshot" = "true";
+            };
+          };
         };
       };
     };

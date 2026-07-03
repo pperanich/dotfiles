@@ -13,6 +13,10 @@ Commit messages should be clean, professional, and focus solely on describing th
 They should follow the patterns specified by Conventional Commits unless otherwise specified,
 such as differences in contributor guidelines in repos.
 
+## Writing
+
+- Do not use em dashes (—) when writing. Use commas, parentheses, colons, or separate sentences instead.
+
 ## Using Python
 
 When using python, always remember to run via the `uv` tool.

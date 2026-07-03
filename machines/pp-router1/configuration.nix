@@ -678,7 +678,8 @@ in
 
   # Resend: API key for SMTP relay
   sops.secrets.resend-api-key = {
-    owner = "stalwart-mail";
+    # stalwart stateVersion 26.05 renamed the service user stalwart-mail -> stalwart
+    owner = "stalwart";
     mode = "0400";
   };
 

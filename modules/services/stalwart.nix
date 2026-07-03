@@ -40,10 +40,12 @@ _: {
         services.stalwart = {
           enable = true;
 
-          # NixOS release when stalwart was first enabled on this machine.
-          # Pre-26.05 keeps the "stalwart-mail" user/state-dir naming that the
-          # existing deployment (and sops secret ownership) relies on.
-          stateVersion = "25.11";
+          # 26.05 adopts the upstream user/state-dir rename: user + group
+          # "stalwart" and state dir /var/lib/stalwart (was stalwart-mail).
+          # Relay-only server (no local mailboxes), so it re-derives its store
+          # from the declarative config on first start with a fresh state dir;
+          # the old /var/lib/stalwart-mail is orphaned and safe to remove.
+          stateVersion = "26.05";
 
           credentials = {
             "relay-token" = cfg.relayCredentialFile;

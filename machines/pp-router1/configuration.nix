@@ -468,6 +468,12 @@ in
     '';
   };
 
+  # cups.socket binds the router LAN IP (10.0.0.1:631), which systemd-networkd
+  # assigns to br-main. On boot the socket races ahead of the address and dies
+  # with "Cannot assign requested address", breaking AirPrint until a manual
+  # restart. FreeBind (IP_FREEBIND) lets it bind the not-yet-present address.
+  systemd.sockets.cups.socketConfig.FreeBind = true;
+
   # cups-browsed-created queues default to printer-is-shared=false (avoids
   # republishing loops when an upstream CUPS would re-discover). We need the
   # opposite — broker the queue onto br-main. Force shared=true post-start.

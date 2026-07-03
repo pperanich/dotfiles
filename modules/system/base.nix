@@ -27,12 +27,28 @@
         home-manager.backupFileExtension = "hm-back";
 
         # Resolve bare fleet hostnames (e.g. borg repo host "pp-router1").
-        # home.arpa first = direct LAN address; pp-wg second = WireGuard
-        # fallback (static /etc/hosts, works off-LAN or if LAN DNS is down).
+        # home.arpa expands via the LAN's DHCP-provided search domains and is
+        # answered by the router's DNS; pp-wg expands via these global search
+        # domains and is answered by router DNS (blocky hostsFile) on-LAN, or
+        # resolved's own /etc/hosts parsing off-LAN.
         networking.search = [
           "home.arpa"
           "pp-wg"
         ];
+
+        # With systemd-resolved, the global search domains above also become
+        # routing domains; resolved's compiled-in fallback (Cloudflare/Google)
+        # would then answer *.home.arpa with NXDOMAIN. No fallback → queries
+        # fall through to the LAN link's DHCP-provided DNS instead.
+        services.resolved.fallbackDns = [ ];
+
+        # networkd ignores DHCP/RA-provided search domains (option 119 / DNSSL)
+        # unless UseDomains is set; without a per-link domain, resolved won't
+        # expand bare fleet hostnames
+        systemd.network.config = {
+          dhcpV4Config.UseDomains = true;
+          dhcpV6Config.UseDomains = true;
+        };
 
         environment.systemPackages = with pkgs; [
           ghostty.terminfo

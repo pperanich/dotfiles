@@ -24,6 +24,12 @@ _: {
           default = "home.arpa";
           description = "Domain name for DHCP clients (RFC 8375)";
         };
+        searchDomains = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ config.my.router.dhcp.domainName ];
+          defaultText = lib.literalExpression "[ config.my.router.dhcp.domainName ]";
+          description = "Search domains sent to DHCP clients via option 119";
+        };
       };
 
       config = lib.mkIf enabled {

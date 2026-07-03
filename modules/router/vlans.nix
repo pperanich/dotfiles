@@ -535,8 +535,16 @@ _: {
                 data = netRouterIp net;
               }
               {
+                # Plain domainName, not segment-prefixed: DDNS registers all
+                # hosts flat under domainName
                 name = "domain-name";
-                data = "${net.name}.${cfg.dhcp.domainName}";
+                data = cfg.dhcp.domainName;
+              }
+              {
+                # Option 119: resolved-based clients only take per-link search
+                # domains from this
+                name = "domain-search";
+                data = lib.concatStringsSep ", " cfg.dhcp.searchDomains;
               }
             ];
             reservations = map (r: {

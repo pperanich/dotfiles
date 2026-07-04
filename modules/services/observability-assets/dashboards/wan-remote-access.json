@@ -64,7 +64,7 @@
       },
       "targets": [
         {
-          "expr": "count(wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\"} < 300)",
+          "expr": "sum(wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\"} < bool 300)",
           "legendFormat": "active",
           "refId": "A"
         }
@@ -259,13 +259,14 @@
       },
       "targets": [
         {
-          "expr": "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\"}",
+          "expr": "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\"} < 1e9",
           "legendFormat": "{{public_key}}",
           "refId": "A"
         }
       ],
       "title": "WG Handshake Age Per Peer",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Peers that have never handshaked since interface creation report epoch-sized values and are filtered out (< 1e9)."
     },
     {
       "datasource": {

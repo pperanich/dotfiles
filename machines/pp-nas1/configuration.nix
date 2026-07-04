@@ -45,6 +45,9 @@ in
     smartMonitoring
     nodeMetrics
 
+    # Journal shipping to the router's Loki (context for SystemdUnitFailed)
+    logShipping
+
     # Caddy + DNS-01 certificates (split-horizon TLS termination)
     caddyDns01
 
@@ -210,6 +213,32 @@ in
   # the TLS names (docuseal.prestonperanich.com), no raw LAN port.
   my.docuseal = {
     secretKeyBaseFile = config.sops.secrets.docuseal-secret-key-base.path;
+  };
+
+  # Ship service journals to the router's Loki so fleet alerts have log
+  # context. IP instead of hostname: log delivery must not depend on DNS.
+  my.logShipping = {
+    lokiUrl = "http://10.0.0.1:3100";
+    keepUnits = [
+      "sshd"
+      "smartd"
+      "caddy"
+      "docuseal"
+      "jellyfin"
+      "navidrome"
+      "audiobookshelf"
+      "scanservjs"
+      "home-assistant"
+      "opencloud"
+      "radicale"
+      "nginx"
+      "phpfpm-nextcloud"
+      "nextcloud-setup"
+      "immich-server"
+      "immich-machine-learning"
+      "paperless-.*"
+      "borgbackup-job-pp-router1"
+    ];
   };
 
   # Disk health monitoring — scraped only by the router's Prometheus

@@ -149,6 +149,12 @@ _: {
           description = "Loki retention window";
         };
 
+        loki.listenAddress = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Loki HTTP listen address; widen (with a firewall rule) to accept log pushes from other fleet hosts";
+        };
+
         blackbox.httpTargets = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ "https://${cfg.grafana.hostname}" ];
@@ -324,6 +330,22 @@ _: {
           ]
           ++ [
             {
+              # Caddy admin endpoint; per-request metrics need the `metrics`
+              # global option in the Caddyfile (set on pp-router1)
+              job_name = "caddy";
+              relabel_configs = friendlyInstance;
+              static_configs = [ { targets = [ "127.0.0.1:2019" ]; } ];
+            }
+          ]
+          ++ lib.optionals (cfg.alerts.email.to != null) [
+            {
+              job_name = "alertmanager";
+              relabel_configs = friendlyInstance;
+              static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ];
+            }
+          ]
+          ++ [
+            {
               job_name = "blackbox-icmp";
               metrics_path = "/probe";
               params = {
@@ -381,7 +403,11 @@ _: {
                 {
                   name = "observability";
                   rules = [
-                    (mkPromRule "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard|unpoller\"} == 0"
+                    # blackbox-.* matters most here: if the blackbox exporter
+                    # dies, every probe_success series goes absent and all
+                    # probe/cert alerts stop evaluating without this rule.
+                    (mkPromRule
+                      "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard|unpoller|caddy|alertmanager|blackbox-.*\"} == 0"
                       "ObservabilityTargetDown"
                       "An observability target has been down for 5 minutes."
                     )
@@ -394,15 +420,21 @@ _: {
                     (mkPromRule "probe_success{job=\"blackbox-dns\"} == 0" "RouterDnsProbeFailing"
                       "DNS probing through the local resolver has been failing for 5 minutes."
                     )
-                    (mkPromRule "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1" "HostLowMemory"
-                      "Memory available on {{ $labels.instance }} is below 10 percent."
+                    # ZFS ARC is reclaimable but not counted in MemAvailable;
+                    # without the correction the NAS false-alarms under ARC
+                    # pressure. The `or` fallback keeps ARC-less hosts working.
+                    (mkPromRule
+                      "(node_memory_MemAvailable_bytes + (node_zfs_arc_size or node_memory_MemAvailable_bytes * 0)) / node_memory_MemTotal_bytes < 0.1"
+                      "HostLowMemory"
+                      "Memory available (including reclaimable ZFS ARC) on {{ $labels.instance }} is below 10 percent."
                     )
                     (mkPromRule
                       "(node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|ramfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|ramfs\"}) < 0.15"
                       "HostLowDiskSpace"
                       "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is below 15 percent available."
                     )
-                    (mkPromRule "avg by (instance) (1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) > 0.9" "HostHighCpu"
+                    (mkPromRule "avg by (instance) (1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) > 0.9"
+                      "HostHighCpu"
                       "CPU on {{ $labels.instance }} has been above 90 percent busy for 5 minutes."
                     )
                     (mkPromRule
@@ -501,8 +533,35 @@ _: {
                       labels.severity = "warning";
                       annotations.description = "No borg backup success metric has been scraped for 6 hours.";
                     }
-                    (mkPromRule "kea_dhcp4_addresses_assigned_total / kea_dhcp4_addresses_total > 0.9" "DhcpPoolNearlyFull"
+                    # The kea exporter emits each subnet twice (with and
+                    # without a pool label); match only the pool-less series
+                    # so a full subnet raises one alert, not two.
+                    (mkPromRule
+                      "kea_dhcp4_addresses_assigned_total{pool=\"\"} / kea_dhcp4_addresses_total{pool=\"\"} > 0.9"
+                      "DhcpPoolNearlyFull"
                       "DHCP subnet {{ $labels.subnet }} is above 90 percent lease utilization."
+                    )
+                    # Fleet peers (routed /96 allowed_ips, always-on hosts)
+                    # should handshake every ~2 minutes. Phones (/128) roam
+                    # and sleep — excluded. The < 1e9 guard skips peers that
+                    # have never handshaked since interface creation (the
+                    # exporter reports epoch-now for those).
+                    {
+                      alert = "WireguardFleetPeerSilent";
+                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"} > 900 < 1e9";
+                      for = "5m";
+                      labels.severity = "warning";
+                      annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has not handshaked in over 15 minutes.";
+                    }
+                  ]
+                  ++ lib.optionals (cfg.alerts.email.to != null) [
+                    # Alertmanager delivers everything above; if Prometheus
+                    # loses it, rules keep evaluating and nothing arrives.
+                    (mkPromRule "prometheus_notifications_alertmanagers_discovered < 1" "AlertmanagerUnreachable"
+                      "Prometheus has no reachable Alertmanager; alert delivery is broken."
+                    )
+                    (mkPromRule "rate(prometheus_notifications_errors_total[5m]) > 0" "AlertmanagerNotificationErrors"
+                      "Prometheus is failing to deliver alerts to Alertmanager."
                     )
                   ]
                   ++ lib.optionals (cfg.smartctlTargets != [ ]) [
@@ -780,7 +839,7 @@ _: {
           configuration = {
             auth_enabled = false;
             server = {
-              http_listen_address = "127.0.0.1";
+              http_listen_address = cfg.loki.listenAddress;
               http_listen_port = 3100;
               grpc_listen_address = "127.0.0.1";
               grpc_listen_port = 9096;
@@ -840,6 +899,15 @@ _: {
         # Journal access for the DynamicUser'd alloy service
         systemd.services.alloy.serviceConfig.SupplementaryGroups = [ "systemd-journal" ];
 
+        # Blocky's LogsDirectory resolves to /var/log/private/blocky because
+        # of DynamicUser, and /var/log/private is 0700 root — alloy (also
+        # DynamicUser) cannot traverse it. Bind the real directory to a
+        # neutral path inside alloy's mount namespace; binding over the
+        # /var/log/blocky symlink would still resolve through the 0700 dir.
+        systemd.services.alloy.serviceConfig.BindReadOnlyPaths = [
+          "/var/log/private/blocky:/run/blocky-logs"
+        ];
+
         environment.etc."alloy/config.alloy".text = ''
           loki.write "local" {
             endpoint {
@@ -852,7 +920,7 @@ _: {
 
             rule {
               source_labels = ["__journal__systemd_unit"]
-              regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|prometheus|grafana|loki|alloy|homepage-dashboard|sshd)\\.service"
+              regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|prometheus|grafana|loki|alloy|homepage-dashboard|sshd|alertmanager|vaultwarden|gitea|stalwart|unifi|smartd|trunk-link-watchdog)\\.service"
               action = "keep"
             }
             rule {
@@ -885,7 +953,7 @@ _: {
 
           local.file_match "blocky" {
             path_targets = [{
-              __path__ = "/var/log/blocky/*",
+              __path__ = "/run/blocky-logs/*",
               job = "blocky-file",
               host = "${config.networking.hostName}",
             }]

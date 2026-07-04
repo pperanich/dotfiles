@@ -89,15 +89,37 @@ in
   my.observability = {
     enable = true;
     grafana.hostname = mkSub "grafana";
+    # Accept journal pushes from fleet hosts (firewall restricts to the NAS)
+    loki.listenAddress = "0.0.0.0";
     blackbox.httpTargets = [
       "https://${config.my.observability.grafana.hostname}"
       "https://${mkSub "home"}"
       "https://${config.my.vaultwarden.domain}"
       # End-to-end probe of the public site through the Cloudflare tunnel
       "https://${publicDomain}"
-      # Resolves to the NAS via split-horizon — covers the NAS Caddy's
-      # independent cert renewal via CertExpiringSoon
-      "https://${mkSub "jellyfin"}"
+    ]
+    # Router-terminated vhosts: every name carries an independently renewed
+    # DNS-01 cert, so each needs its own probe for CertExpiringSoon
+    ++ map (sub: "https://${mkSub sub}") [
+      "gitea"
+      "alerts"
+      "vault-admin"
+      "ntopng"
+      "unifi"
+    ]
+    # NAS vhosts: resolve to the NAS via split-horizon, exercising the NAS
+    # Caddy's per-name certs and the service behind each one
+    ++ map (sub: "https://${mkSub sub}") [
+      "jellyfin"
+      "immich"
+      "nextcloud"
+      "opencloud"
+      "navidrome"
+      "audiobookshelf"
+      "scan"
+      "paperless"
+      "hass"
+      "docuseal"
     ];
     dropMonitor = {
       enable = true;
@@ -227,6 +249,7 @@ in
       extraInputRules = ''
         iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
         iifname "br-main" tcp dport 631 accept comment "CUPS IPP from LAN"
+        iifname "br-main" ip saddr 10.0.0.105 tcp dport 3100 accept comment "Loki ingest from pp-nas1"
       '';
       extraInputRulesV6 = ''
         iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"

@@ -69,6 +69,14 @@ in
 {
   my.caddyDns01.enable = true;
 
+  # Per-request metrics (latency/status per vhost) on the admin endpoint,
+  # scraped by the local Prometheus as job "caddy"
+  services.caddy.globalConfig = ''
+    servers {
+      metrics
+    }
+  '';
+
   my.cloudflareDns = {
     enable = true;
     zone = publicDomain;

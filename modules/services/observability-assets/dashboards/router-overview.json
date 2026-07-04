@@ -44,7 +44,24 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red",
+                  "index": 1
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -70,7 +87,7 @@
       },
       "targets": [
         {
-          "expr": "up{job=\"node\"}",
+          "expr": "up{job=\"node\",instance=\"pp-router1\"}",
           "legendFormat": "router",
           "refId": "A"
         }
@@ -110,7 +127,7 @@
       },
       "targets": [
         {
-          "expr": "1 - avg(rate(node_cpu_seconds_total{job=\"node\",mode=\"idle\"}[5m]))",
+          "expr": "1 - avg(rate(node_cpu_seconds_total{job=\"node\",instance=\"pp-router1\",mode=\"idle\"}[5m]))",
           "legendFormat": "cpu busy",
           "refId": "A"
         }
@@ -150,7 +167,7 @@
       },
       "targets": [
         {
-          "expr": "1 - (node_memory_MemAvailable_bytes{job=\"node\"} / node_memory_MemTotal_bytes{job=\"node\"})",
+          "expr": "1 - (node_memory_MemAvailable_bytes{job=\"node\",instance=\"pp-router1\"} / node_memory_MemTotal_bytes{job=\"node\",instance=\"pp-router1\"})",
           "legendFormat": "memory used",
           "refId": "A"
         }
@@ -190,7 +207,7 @@
       },
       "targets": [
         {
-          "expr": "1 - (node_filesystem_avail_bytes{job=\"node\",mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{job=\"node\",mountpoint=\"/\",fstype!=\"tmpfs\"})",
+          "expr": "1 - (node_filesystem_avail_bytes{job=\"node\",instance=\"pp-router1\",mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{job=\"node\",instance=\"pp-router1\",mountpoint=\"/\",fstype!=\"tmpfs\"})",
           "legendFormat": "rootfs used",
           "refId": "A"
         }
@@ -230,12 +247,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (device) (rate(node_network_receive_bytes_total{job=\"node\",device!=\"lo\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_receive_bytes_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
           "legendFormat": "{{device}} rx",
           "refId": "A"
         },
         {
-          "expr": "sum by (device) (rate(node_network_transmit_bytes_total{job=\"node\",device!=\"lo\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_transmit_bytes_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
           "legendFormat": "{{device}} tx",
           "refId": "B"
         }
@@ -275,16 +292,17 @@
       },
       "targets": [
         {
-          "expr": "sum by (device) (rate(node_network_receive_drop_total{job=\"node\",device!=\"lo\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_receive_drop_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
           "legendFormat": "{{device}} rx drops",
           "refId": "A"
         },
         {
-          "expr": "sum by (device) (rate(node_network_transmit_drop_total{job=\"node\",device!=\"lo\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_transmit_drop_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
           "legendFormat": "{{device}} tx drops",
           "refId": "B"
         }
       ],
+      "description": "br-main rx drops at a low steady rate are benign: UniFi 802.11r FT-over-DS frames (ethertype 0x890d) the bridge cannot parse. Investigate only sustained rate changes or drops on other interfaces.",
       "title": "Interface Drops",
       "type": "timeseries"
     },
@@ -322,7 +340,7 @@
       },
       "targets": [
         {
-          "expr": "node_nf_conntrack_entries / node_nf_conntrack_entries_limit",
+          "expr": "node_nf_conntrack_entries{instance=\"pp-router1\"} / node_nf_conntrack_entries_limit{instance=\"pp-router1\"}",
           "legendFormat": "conntrack used",
           "refId": "A"
         }

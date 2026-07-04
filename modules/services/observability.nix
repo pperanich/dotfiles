@@ -12,7 +12,27 @@ _: {
 
       dashboardDir = "/var/lib/grafana/dashboards";
 
-      mkDashboardCopyRule = name: src: "C+ ${dashboardDir}/${name} 0640 grafana grafana - ${src}";
+      # L+ replaces whatever exists at the path on every activation; the old
+      # C+ copy rule never refreshed dashboards once the file existed.
+      mkDashboardLinkRule = name: src: "L+ ${dashboardDir}/${name} - - - - ${src}";
+
+      # Rewrite scrape instance labels to short hostnames: 127.0.0.1 targets
+      # become this host, FQDN targets keep their first label. Blackbox jobs
+      # are excluded — their instance is the probed URL.
+      friendlyInstance = [
+        {
+          source_labels = [ "__address__" ];
+          regex = "127\\.0\\.0\\.1(:[0-9]+)?";
+          target_label = "instance";
+          replacement = config.networking.hostName;
+        }
+        {
+          source_labels = [ "__address__" ];
+          regex = "([a-zA-Z][a-zA-Z0-9-]*)\\..*";
+          target_label = "instance";
+          replacement = "$1";
+        }
+      ];
 
       dashboardFiles = {
         "router-overview.json" = ./observability-assets/dashboards/router-overview.json;
@@ -234,24 +254,29 @@ _: {
           scrapeConfigs = [
             {
               job_name = "prometheus";
+              relabel_configs = friendlyInstance;
               static_configs = [ { targets = [ "127.0.0.1:9090" ]; } ];
             }
             {
               job_name = "grafana";
+              relabel_configs = friendlyInstance;
               static_configs = [ { targets = [ "127.0.0.1:3010" ]; } ];
             }
             {
               job_name = "loki";
+              relabel_configs = friendlyInstance;
               metrics_path = "/metrics";
               static_configs = [ { targets = [ "127.0.0.1:3100" ]; } ];
             }
             {
               job_name = "blocky";
+              relabel_configs = friendlyInstance;
               metrics_path = "/metrics";
               static_configs = [ { targets = [ "127.0.0.1:${toString config.my.router.blocky.httpPort}" ]; } ];
             }
             {
               job_name = "node";
+              relabel_configs = friendlyInstance;
               static_configs = [
                 {
                   targets = [
@@ -263,18 +288,21 @@ _: {
             }
             {
               job_name = "unbound";
+              relabel_configs = friendlyInstance;
               static_configs = [
                 { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.unbound.port}" ]; }
               ];
             }
             {
               job_name = "kea";
+              relabel_configs = friendlyInstance;
               static_configs = [
                 { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.kea.port}" ]; }
               ];
             }
             {
               job_name = "wireguard";
+              relabel_configs = friendlyInstance;
               static_configs = [
                 { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.wireguard.port}" ]; }
               ];
@@ -283,12 +311,14 @@ _: {
           ++ lib.optionals (cfg.smartctlTargets != [ ]) [
             {
               job_name = "smartctl";
+              relabel_configs = friendlyInstance;
               static_configs = [ { targets = cfg.smartctlTargets; } ];
             }
           ]
           ++ lib.optionals cfg.unpoller.enable [
             {
               job_name = "unpoller";
+              relabel_configs = friendlyInstance;
               static_configs = [ { targets = [ "127.0.0.1:9130" ]; } ];
             }
           ]
@@ -917,7 +947,7 @@ _: {
           "d ${dashboardDir} 0750 grafana grafana -"
           "d /var/lib/prometheus-node-exporter-text 0755 root root -"
         ]
-        ++ lib.mapAttrsToList mkDashboardCopyRule dashboardFiles;
+        ++ lib.mapAttrsToList mkDashboardLinkRule dashboardFiles;
       };
     };
 }

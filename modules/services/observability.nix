@@ -396,10 +396,13 @@ _: {
                     # Constant router background, excluded: OTHERHOST (flooded
                     # frames for other MACs), NETFILTER_DROP (firewall doing
                     # its job), NOT_SPECIFIED (catch-all for routine stack
-                    # discards like non-member multicast; never increments
-                    # rx_dropped, so the counter alerts above still cover it).
+                    # discards like non-member multicast), NEIGH_FAILED (ARP
+                    # timeouts for sleeping phones; infra hosts going dark are
+                    # caught by blackbox/target-down alerts instead). None of
+                    # these increment rx_dropped, so the counter alerts above
+                    # still cover real interface loss.
                     (mkPromRule
-                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason!~\"OTHERHOST|NETFILTER_DROP|NOT_SPECIFIED\"}[5m])) > 0.1"
+                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason!~\"OTHERHOST|NETFILTER_DROP|NOT_SPECIFIED|NEIGH_FAILED\"}[5m])) > 0.1"
                       "RouterInterfaceDropReasons"
                       "Interface {{ $labels.device }} dropping packets, kernel reason {{ $labels.reason }} ({{ $value | humanize }}/s)."
                     )

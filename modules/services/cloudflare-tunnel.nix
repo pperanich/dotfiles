@@ -101,7 +101,7 @@ _: {
           serviceConfig = {
             Type = "oneshot";
             EnvironmentFile = cfg.environmentFile;
-            ExecStart = "${pkgs.cf}/bin/cf tunnel sync --name ${lib.escapeShellArg cfg.tunnelName} --zone ${lib.escapeShellArg cfg.zone} ${hostnameFlags} --apply";
+            ExecStart = "${pkgs.cf}/bin/cf tunnel sync-dns --tunnel-id ${lib.escapeShellArg cfg.tunnelId} --zone ${lib.escapeShellArg cfg.zone} ${hostnameFlags} --apply";
             DynamicUser = true;
           };
         };

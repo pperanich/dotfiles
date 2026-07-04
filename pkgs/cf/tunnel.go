@@ -61,6 +61,57 @@ func tunnelListCmd(args []string) {
 	}
 }
 
+// tunnelSyncDNSCmd is the stateless runtime reconciler: it ensures CNAME
+// records point at an already-provisioned tunnel. Unlike `tunnel sync`, it
+// needs no repo checkout, metadata, or credentials, so it can run on the
+// target host itself (e.g. from a systemd timer).
+func tunnelSyncDNSCmd(args []string) {
+	fs := flag.NewFlagSet("tunnel sync-dns", flag.ExitOnError)
+	tunnelID := fs.String("tunnel-id", "", "Tunnel UUID (required)")
+	accountID := fs.String("account-id", "", "Cloudflare account ID (overrides CLOUDFLARE_ACCOUNT_ID)")
+	apply := fs.Bool("apply", false, "Apply changes (default: dry run)")
+	var hostnames multiFlag
+	fs.Var(&hostnames, "hostname", "Hostname for tunnel CNAME (repeatable)")
+	zoneName := fs.String("zone", "", "Zone name for CNAME records (overrides CLOUDFLARE_ZONE)")
+	fs.Parse(args)
+
+	if *tunnelID == "" {
+		fmt.Fprintln(os.Stderr, "Error: --tunnel-id is required")
+		fs.Usage()
+		os.Exit(1)
+	}
+	if len(hostnames) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: at least one --hostname is required")
+		fs.Usage()
+		os.Exit(1)
+	}
+
+	acctID := resolveAccountID(*accountID)
+	zone := resolveZoneName(*zoneName)
+	client := newClient()
+	ctx := context.Background()
+
+	// Refuse to point DNS at a tunnel that no longer exists.
+	tunnel, err := client.ZeroTrust.Tunnels.Cloudflared.Get(ctx, *tunnelID, zero_trust.TunnelCloudflaredGetParams{
+		AccountID: cloudflare.F(acctID),
+	})
+	if err != nil {
+		log.Fatalf("Failed to fetch tunnel %s: %v", *tunnelID, err)
+	}
+	if !tunnel.DeletedAt.IsZero() {
+		log.Fatalf("Tunnel %s (%s) was deleted at %s. Re-provision with: cf tunnel sync --name %s --apply",
+			*tunnelID, tunnel.Name, tunnel.DeletedAt.Format("2006-01-02 15:04"), tunnel.Name)
+	}
+
+	fmt.Printf("Tunnel: %s (%s)\n", tunnel.Name, *tunnelID)
+	fmt.Printf("Action: Ensure CNAME records for %v\n", hostnames)
+	if !*apply {
+		fmt.Println("\n(DRY RUN - Run with --apply to execute)")
+		os.Exit(2)
+	}
+	createTunnelCNAMEs(ctx, client, zone, *tunnelID, hostnames)
+}
+
 func tunnelSyncCmd(args []string) {
 	fs := flag.NewFlagSet("tunnel sync", flag.ExitOnError)
 	name := fs.String("name", "", "Tunnel name (required)")

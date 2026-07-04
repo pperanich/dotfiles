@@ -34,12 +34,14 @@ func main() {
 		}
 	case "tunnel":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: cf tunnel <sync|list>")
+			fmt.Println("Usage: cf tunnel <sync|sync-dns|list>")
 			os.Exit(1)
 		}
 		switch os.Args[2] {
 		case "sync":
 			tunnelSyncCmd(os.Args[3:])
+		case "sync-dns":
+			tunnelSyncDNSCmd(os.Args[3:])
 		case "list":
 			tunnelListCmd(os.Args[3:])
 		default:
@@ -57,10 +59,11 @@ func printUsage() {
 	fmt.Println("Usage: cf <command> <subcommand> [options]")
 	fmt.Println()
 	fmt.Println("Commands:")
-	fmt.Println("  dns sync     Sync DNS records from config to Cloudflare")
-	fmt.Println("  dns list     List DNS records for a zone")
-	fmt.Println("  tunnel sync  Provision/sync a Cloudflare Tunnel")
-	fmt.Println("  tunnel list  List Cloudflare Tunnels")
+	fmt.Println("  dns sync         Sync DNS records from config to Cloudflare")
+	fmt.Println("  dns list         List DNS records for a zone")
+	fmt.Println("  tunnel sync      Provision/sync a Cloudflare Tunnel (dev machine, repo checkout)")
+	fmt.Println("  tunnel sync-dns  Ensure tunnel CNAME records exist (stateless, runs on host)")
+	fmt.Println("  tunnel list      List Cloudflare Tunnels")
 	fmt.Println()
 	fmt.Println("Environment:")
 	fmt.Println("  CLOUDFLARE_API_TOKEN   API token (required)")

@@ -393,11 +393,13 @@ _: {
                       "Interface {{ $labels.device }} is dropping outgoing packets ({{ $value | humanize }}/s)."
                     )
                     # Reason-attributed companion to the drop alerts above.
-                    # OTHERHOST (flooded frames for other MACs reaching the
-                    # bridge) and NETFILTER_DROP (firewall doing its job) are
-                    # constant background on a router.
+                    # Constant router background, excluded: OTHERHOST (flooded
+                    # frames for other MACs), NETFILTER_DROP (firewall doing
+                    # its job), NOT_SPECIFIED (catch-all for routine stack
+                    # discards like non-member multicast; never increments
+                    # rx_dropped, so the counter alerts above still cover it).
                     (mkPromRule
-                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason!~\"OTHERHOST|NETFILTER_DROP\"}[5m])) > 0.1"
+                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason!~\"OTHERHOST|NETFILTER_DROP|NOT_SPECIFIED\"}[5m])) > 0.1"
                       "RouterInterfaceDropReasons"
                       "Interface {{ $labels.device }} dropping packets, kernel reason {{ $labels.reason }} ({{ $value | humanize }}/s)."
                     )

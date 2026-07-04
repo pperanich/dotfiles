@@ -455,16 +455,15 @@ _: {
                       "Interface {{ $labels.device }} is dropping outgoing packets ({{ $value | humanize }}/s)."
                     )
                     # Reason-attributed companion to the drop alerts above.
-                    # Constant router background, excluded: OTHERHOST (flooded
-                    # frames for other MACs), NETFILTER_DROP (firewall doing
-                    # its job), NOT_SPECIFIED (catch-all for routine stack
-                    # discards like non-member multicast), NEIGH_FAILED (ARP
-                    # timeouts for sleeping phones; infra hosts going dark are
-                    # caught by blackbox/target-down alerts instead). None of
-                    # these increment rx_dropped, so the counter alerts above
-                    # still cover real interface loss.
+                    # Whitelist of actionable reasons only — normal traffic
+                    # constantly logs benign ones (OTHERHOST, NETFILTER_DROP,
+                    # NO_SOCKET teardown races, NEIGH_FAILED sleeping phones,
+                    # NOT_SPECIFIED multicast), and excluding them one at a
+                    # time is whack-a-mole. Alert on resource exhaustion,
+                    # queue overload, NIC trouble, and checksum corruption;
+                    # everything else stays visible in the metric.
                     (mkPromRule
-                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason!~\"OTHERHOST|NETFILTER_DROP|NOT_SPECIFIED|NEIGH_FAILED\"}[5m])) > 0.1"
+                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason=~\"CPU_BACKLOG|QDISC_.*|CAKE_FLOOD|FQ_.*|NOMEM|PROTO_MEM|PFMEMALLOC|FULL_RING|DEV_HDR|DEV_READY|.*_CSUM|IP_RPFILTER\"}[5m])) > 0.1"
                       "RouterInterfaceDropReasons"
                       "Interface {{ $labels.device }} dropping packets, kernel reason {{ $labels.reason }} ({{ $value | humanize }}/s)."
                     )

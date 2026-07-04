@@ -39,6 +39,7 @@ in
     jellyfin
     navidrome
     audiobookshelf
+    docuseal
 
     # Disk health + host metrics (scraped by pp-router1's Prometheus)
     smartMonitoring
@@ -205,6 +206,12 @@ in
     ];
   };
 
+  # DocuSeal — document signing. Localhost-only; reached exclusively through
+  # the TLS names (docuseal.prestonperanich.com), no raw LAN port.
+  my.docuseal = {
+    secretKeyBaseFile = config.sops.secrets.docuseal-secret-key-base.path;
+  };
+
   # Disk health monitoring — scraped only by the router's Prometheus
   my.smartMonitoring = {
     enable = true;
@@ -265,6 +272,7 @@ in
         "${mkSub "opencloud"}" = mkLocalProxy 9200 (mkUpload "16G");
         "${mkSub "audiobookshelf"}" = mkLocalProxy 8000 (mkUpload "10G");
         "${mkSub "paperless"}" = mkLocalProxy 28981 (mkUpload "1G");
+        "${mkSub "docuseal"}" = mkLocalProxy 3000 (mkUpload "1G");
       };
   };
 
@@ -306,6 +314,10 @@ in
     owner = "paperless";
     mode = "0400";
   };
+
+  # DocuSeal: Rails secret key base (root-owned; service reads it via
+  # LoadCredential since it runs under DynamicUser)
+  sops.secrets.docuseal-secret-key-base = { };
 
   # Nextcloud: admin password file
   sops.secrets.nextcloud-admin-pass = {

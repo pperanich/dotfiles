@@ -280,6 +280,7 @@ in
       "audiobookshelf"
       "scan"
       "paperless"
+      "docuseal"
       "hass"
     ];
 
@@ -452,8 +453,6 @@ in
     MaxStartups = "10:30:60"; # Rate limit: start:rate:full
   };
 
-
-
   # --- Secrets wiring (sops-nix) ---
   # Vaultwarden: admin token for /admin panel
   sops.secrets.vaultwarden-admin-token = {
@@ -511,7 +510,6 @@ in
     '';
   };
   my.cloudflareDns.environmentFile = config.sops.templates."cf-dns.env".path;
-
 
   # External WireGuard peers (non-clan devices like phones, tablets)
   # Managed via wg-external-peers.json — use `wg-add-peer` in devshell to add new devices

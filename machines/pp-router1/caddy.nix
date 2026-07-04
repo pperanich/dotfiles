@@ -85,6 +85,7 @@ in
         "audiobookshelf" # audiobooks & podcasts (pp-nas1)
         "scan" # scanservjs web UI (pp-nas1)
         "paperless" # document archive (pp-nas1)
+        "docuseal" # document signing (pp-nas1)
         "hass" # home assistant (pp-nas1)
         "home" # dashboard (pp-router1)
         "grafana" # observability dashboard
@@ -181,6 +182,11 @@ in
       }
     '';
     "${mkSub "paperless"}" = mkNasProxy (mkSub "paperless") ''
+      request_body {
+        max_size 1G
+      }
+    '';
+    "${mkSub "docuseal"}" = mkNasProxy (mkSub "docuseal") ''
       request_body {
         max_size 1G
       }

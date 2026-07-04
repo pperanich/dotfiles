@@ -134,6 +134,12 @@ in
             desc = "Document archive & OCR";
           }
           {
+            name = "DocuSeal";
+            icon = "docuseal";
+            sub = "docuseal";
+            desc = "Document signing";
+          }
+          {
             name = "Home Assistant";
             icon = "home-assistant";
             sub = "hass";

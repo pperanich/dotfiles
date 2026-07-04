@@ -53,6 +53,10 @@ _: {
           enable = true;
           host = cfg.address;
           inherit (cfg) port;
+          # The nixpkgs module only exports HOST, which Rails >= 6 ignores
+          # for socket binding; BINDING is what `rails server` actually reads.
+          # Without it puma listens on 0.0.0.0.
+          extraConfig.BINDING = cfg.address;
           # Read via the credential mount, not the sops path directly:
           # the service runs as DynamicUser and cannot read root-owned files
           secretKeyBaseFile = "/run/credentials/docuseal.service/secret-key-base";

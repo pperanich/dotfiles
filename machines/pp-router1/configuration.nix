@@ -99,6 +99,13 @@ in
       # independent cert renewal via CertExpiringSoon
       "https://${mkSub "jellyfin"}"
     ];
+    dropMonitor = {
+      enable = true;
+      interfaces = [
+        "br-lan"
+        "br-main"
+      ];
+    };
     unpoller = {
       enable = true;
       passwordFile = config.sops.secrets.unpoller-password.path;

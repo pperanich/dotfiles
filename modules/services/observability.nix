@@ -33,6 +33,65 @@ _: {
         annotations.description = description;
       };
 
+      # Count kfree_skb tracepoint events per (device, drop reason) in a BPF
+      # map; print the cumulative map every 30s for the converter to consume.
+      dropMonitorCond = lib.concatMapStringsSep " || " (
+        i: "$name == \"${i}\""
+      ) cfg.dropMonitor.interfaces;
+      dropMonitorScript = pkgs.writeText "netdev-drops.bt" ''
+        tracepoint:skb:kfree_skb {
+          $skb = (struct sk_buff *)args->skbaddr;
+          if ($skb->dev != 0) {
+            $name = str($skb->dev->name);
+            if (${dropMonitorCond}) {
+              @drops[$name, (uint64)args->reason] = count();
+            }
+          }
+        }
+        interval:s:30 { print(@drops); }
+      '';
+      # Resolve numeric reason ids against the running kernel's tracepoint
+      # format (enum values shift between kernel versions) and publish
+      # counters via the node-exporter textfile collector.
+      dropMetricsConverter = pkgs.writeText "netdev-drop-metrics.py" ''
+        import os
+        import re
+        import sys
+
+        FMT = "/sys/kernel/tracing/events/skb/kfree_skb/format"
+        OUT = "/var/lib/prometheus-node-exporter-text/netdev_drops.prom"
+        HEADER = (
+            "# HELP netdev_drop_reasons_total Packets freed with a kernel"
+            " drop reason, by device (resets on service restart)\n"
+            "# TYPE netdev_drop_reasons_total counter\n"
+        )
+
+        with open(FMT) as f:
+            reasons = dict(re.findall(r'\{ (\d+), "([A-Z0-9_]+)" \}', f.read()))
+        counts = {}
+        line_re = re.compile(r'@drops\[(\S+), (\d+)\]: (\d+)')
+
+        def write_out():
+            tmp = OUT + ".tmp"
+            with open(tmp, "w") as f:
+                f.write(HEADER)
+                for (dev, reason), cnt in sorted(counts.items()):
+                    f.write(
+                        'netdev_drop_reasons_total'
+                        f'{{device="{dev}",reason="{reason}"}} {cnt}\n'
+                    )
+            os.replace(tmp, OUT)
+
+        write_out()
+        for line in sys.stdin:
+            m = line_re.match(line)
+            if not m:
+                continue
+            dev, num, cnt = m.groups()
+            counts[(dev, reasons.get(num, "reason_" + num))] = cnt
+            write_out()
+      '';
+
       blackboxRelabelConfigs = [
         {
           source_labels = [ "__address__" ];
@@ -124,6 +183,20 @@ _: {
           default = [ ];
           example = [ "pp-nas1.home.arpa:9100" ];
           description = "Additional node exporter targets to scrape for host metrics";
+        };
+
+        dropMonitor = {
+          enable = lib.mkEnableOption "per-reason packet drop metrics via the kfree_skb tracepoint";
+
+          interfaces = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            example = [
+              "br-lan"
+              "br-main"
+            ];
+            description = "Interfaces to count dropped packets on, labeled by kernel drop reason";
+          };
         };
 
         unpoller = {
@@ -311,13 +384,22 @@ _: {
                       "RouterConntrackHigh"
                       "Connection tracking table is above 80 percent capacity."
                     )
-                    (mkPromRule "rate(node_network_receive_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
+                    (mkPromRule "rate(node_network_receive_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0.1"
                       "RouterInterfaceRxDrops"
-                      "Network interface is dropping incoming packets."
+                      "Interface {{ $labels.device }} is dropping incoming packets ({{ $value | humanize }}/s)."
                     )
-                    (mkPromRule "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0"
+                    (mkPromRule "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0.1"
                       "RouterInterfaceTxDrops"
-                      "Network interface is dropping outgoing packets."
+                      "Interface {{ $labels.device }} is dropping outgoing packets ({{ $value | humanize }}/s)."
+                    )
+                    # Reason-attributed companion to the drop alerts above.
+                    # OTHERHOST (flooded frames for other MACs reaching the
+                    # bridge) and NETFILTER_DROP (firewall doing its job) are
+                    # constant background on a router.
+                    (mkPromRule
+                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason!~\"OTHERHOST|NETFILTER_DROP\"}[5m])) > 0.1"
+                      "RouterInterfaceDropReasons"
+                      "Interface {{ $labels.device }} dropping packets, kernel reason {{ $labels.reason }} ({{ $value | humanize }}/s)."
                     )
                     (mkPromRule "node_hwmon_temp_celsius{chip=~\".*coretemp.*\"} > 85" "HostCpuHot"
                       "CPU sensor {{ $labels.sensor }} on {{ $labels.instance }} above 85C for 5 minutes."
@@ -572,6 +654,24 @@ _: {
             AccuracySec = "1s";
           };
         };
+
+        # Attribute interface packet drops to kernel drop reasons so the
+        # RxDrops-style alerts can say *why* packets were dropped.
+        systemd.services.netdev-drop-metrics =
+          lib.mkIf (cfg.dropMonitor.enable && cfg.dropMonitor.interfaces != [ ])
+            {
+              description = "Per-reason packet drop metrics for node-exporter";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "network.target" ];
+              serviceConfig = {
+                Restart = "always";
+                RestartSec = "10s";
+              };
+              script = ''
+                ${pkgs.bpftrace}/bin/bpftrace ${dropMonitorScript} \
+                  | ${pkgs.python3}/bin/python3 ${dropMetricsConverter}
+              '';
+            };
 
         services.grafana = {
           enable = true;

@@ -58,6 +58,10 @@ let
     fqdn: extra:
     mkVhost ''
       reverse_proxy https://${nasHost} {
+        # Caddy >= 2.9 rewrites Host to the upstream dial address when
+        # proxying to an https hostname; the NAS Caddy routes on the
+        # original name, so pin it or every request 200s with empty body
+        header_up Host {host}
         transport http {
           tls_server_name ${fqdn}
         }

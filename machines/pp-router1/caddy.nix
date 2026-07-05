@@ -19,21 +19,20 @@ let
   nasHost = "pp-nas1.${config.my.router.dhcp.domainName}";
   inherit (lib.my.homelab) publicDomain mkSub;
 
-  # Generate A + AAAA record pairs pointing subdomains to the router (LAN + WireGuard)
+  # AAAA-only records pointing subdomains at the router's WireGuard address.
+  # No A records on purpose: LAN clients get split-horizon answers from
+  # Unbound, and a public A of 10.0.0.1 poisoned WireGuard clients — the
+  # IPv6-only tunnel can't route it, so Happy Eyeballs raced a dead
+  # (carrier-CGNAT) path and page loads stalled intermittently. WG clients
+  # reach wgAddress through the tunnel; LAN DoH clients reach it via the
+  # router's v6 default route. Both land on the same Caddy.
   mkDnsRecords =
     subdomains:
-    lib.concatMap (sub: [
-      {
-        type = "A";
-        name = mkSub sub;
-        content = routerIp;
-      }
-      {
-        type = "AAAA";
-        name = mkSub sub;
-        content = wgAddress;
-      }
-    ]) subdomains;
+    map (sub: {
+      type = "AAAA";
+      name = mkSub sub;
+      content = wgAddress;
+    }) subdomains;
 
   # Caddy vhost listening on LAN + WireGuard with custom config
   mkVhost = extraConfig: {

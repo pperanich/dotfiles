@@ -112,6 +112,66 @@ _: {
             write_out()
       '';
 
+      # Blackbox modules generated here (not static YAML) so the proxy-path
+      # canary can embed the router's WireGuard address at eval time.
+      blackboxConfig = (pkgs.formats.yaml { }).generate "blackbox.yml" {
+        modules = {
+          icmp_v4 = {
+            prober = "icmp";
+            timeout = "5s";
+            icmp.preferred_ip_protocol = "ip4";
+          };
+          tcp_connect = {
+            prober = "tcp";
+            timeout = "5s";
+            tcp.preferred_ip_protocol = "ip4";
+          };
+          dns_udp = {
+            prober = "dns";
+            timeout = "5s";
+            dns = {
+              transport_protocol = "udp";
+              preferred_ip_protocol = "ip4";
+              recursion_desired = true;
+              query_name = "google.com";
+              query_type = "A";
+              validate_answer_rrs.fail_if_matches_regexp = [ "^$" ];
+            };
+          };
+          http_2xx = {
+            prober = "http";
+            timeout = "5s";
+            http = {
+              preferred_ip_protocol = "ip4";
+              method = "GET";
+              valid_status_codes = [ ];
+              no_follow_redirects = false;
+              # A 200 with an empty body is how Caddy answers an unmatched
+              # vhost — treat it as a failure, not success
+              fail_if_body_not_matches_regexp = [ "(?s)." ];
+            };
+          };
+        }
+        // lib.optionalAttrs (cfg.blackbox.proxyCanary.url != null) {
+          # Exercises the router Caddy → NAS Caddy leg that WireGuard
+          # clients use; LAN probes take the split-horizon direct path and
+          # can't see it break
+          http_via_proxy = {
+            prober = "http";
+            timeout = "5s";
+            http = {
+              preferred_ip_protocol = "ip6";
+              method = "GET";
+              headers.Host = cfg.blackbox.proxyCanary.serverName;
+              no_follow_redirects = true;
+              valid_status_codes = [ ];
+              fail_if_body_not_matches_regexp = [ "(?s)." ];
+              tls_config.server_name = cfg.blackbox.proxyCanary.serverName;
+            };
+          };
+        };
+      };
+
       blackboxRelabelConfigs = [
         {
           source_labels = [ "__address__" ];
@@ -159,6 +219,20 @@ _: {
           type = lib.types.listOf lib.types.str;
           default = [ "https://${cfg.grafana.hostname}" ];
           description = "HTTP endpoints to probe with blackbox exporter";
+        };
+
+        blackbox.proxyCanary = {
+          url = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            example = "https://[fd00::1]/web/";
+            description = "IP-literal URL probing the router-to-NAS proxy path that WireGuard clients traverse";
+          };
+          serverName = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            description = "TLS SNI and Host header for the proxy canary probe";
+          };
         };
 
         alerts = {
@@ -396,7 +470,16 @@ _: {
               static_configs = [ { targets = cfg.blackbox.httpTargets; } ];
               relabel_configs = blackboxRelabelConfigs;
             }
-          ];
+          ]
+          ++ lib.optional (cfg.blackbox.proxyCanary.url != null) {
+            job_name = "blackbox-proxy-canary";
+            metrics_path = "/probe";
+            params = {
+              module = [ "http_via_proxy" ];
+            };
+            static_configs = [ { targets = [ cfg.blackbox.proxyCanary.url ]; } ];
+            relabel_configs = blackboxRelabelConfigs;
+          };
           rules = [
             (builtins.toJSON {
               groups = [
@@ -483,6 +566,9 @@ _: {
                     )
                     (mkPromRule "probe_success{job=\"blackbox-http\"} == 0" "HttpProbeFailing"
                       "HTTP probe against {{ $labels.instance }} has been failing for 5 minutes."
+                    )
+                    (mkPromRule "probe_success{job=\"blackbox-proxy-canary\"} == 0" "NasProxyPathBroken"
+                      "The router-to-NAS Caddy proxy path (used by WireGuard clients) has been failing for 5 minutes."
                     )
                     {
                       alert = "SystemdUnitFailed";
@@ -690,7 +776,7 @@ _: {
           blackbox = {
             enable = true;
             listenAddress = "127.0.0.1";
-            configFile = ./observability-assets/blackbox.yml;
+            configFile = blackboxConfig;
           };
           unbound = {
             enable = true;

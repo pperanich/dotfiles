@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	cloudflare "github.com/cloudflare/cloudflare-go/v6"
@@ -70,6 +71,7 @@ func dnsSyncCmd(args []string) {
 	configFile := fs.String("config", "", "Path to JSON config file (default: stdin)")
 	apply := fs.Bool("apply", false, "Apply changes to Cloudflare")
 	zoneOverride := fs.String("zone", "", "Override zone name from config")
+	prune := fs.Bool("prune", false, "Delete managed records (managed-by:cf-dns) absent from config")
 	fs.Parse(args)
 
 	// Read config
@@ -211,7 +213,38 @@ func dnsSyncCmd(args []string) {
 		}
 	}
 
-	fmt.Printf("\nSummary: %d create, %d update, %d unchanged\n", created, updated, unchanged)
+	// Prune stale managed records: only ones we tagged, never hand-made or
+	// cf-tunnel records. Sorted for stable dry-run output.
+	pruned := 0
+	if *prune {
+		desiredKeys := make(map[string]bool)
+		for _, d := range cfg.Records {
+			desiredKeys[fmt.Sprintf("%s|%s", d.Type, d.Name)] = true
+		}
+		staleKeys := []string{}
+		for key, existing := range existingMap {
+			if !desiredKeys[key] && strings.Contains(existing.Comment, "managed-by:cf-dns") {
+				staleKeys = append(staleKeys, key)
+			}
+		}
+		sort.Strings(staleKeys)
+		for _, key := range staleKeys {
+			existing := existingMap[key]
+			fmt.Printf("  DELETE  %-6s %-30s -> %s (stale managed record)\n", existing.Type, existing.Name, existing.Content)
+			pruned++
+			changesNeeded = true
+			if *apply {
+				_, err := client.DNS.Records.Delete(ctx, existing.ID, dns.RecordDeleteParams{
+					ZoneID: cloudflare.F(zoneID),
+				})
+				if err != nil {
+					log.Printf("Error deleting record %s: %v", existing.Name, err)
+				}
+			}
+		}
+	}
+
+	fmt.Printf("\nSummary: %d create, %d update, %d unchanged, %d delete\n", created, updated, unchanged, pruned)
 
 	if !*apply {
 		fmt.Println("Run with --apply to execute changes.")

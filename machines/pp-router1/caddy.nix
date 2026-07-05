@@ -118,6 +118,14 @@ in
           name = "_dmarc.${publicDomain}";
           content = "v=DMARC1; p=none; rua=mailto:dmarc@${publicDomain}";
         }
+        # Resend DKIM public key. Was created in Cloudflare but never
+        # declared here; dns sync --prune would have deleted it and broken
+        # outbound mail signing.
+        {
+          type = "TXT";
+          name = "default._domainkey.${publicDomain}";
+          content = "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvnCJ3Oc30P1xR61+fsYkatoEMjENrhXyBCmb6rddMf/6ugdihRoEtZpveJtg/CNtgWx7DZOOMSMhY0vWSKlOXSvC+C8v7zZNIYLTtxMyWqnOu0MtMJvuO+YZVxR9ZmF4vzR3SAWbDw+NTza16Xt2LEjVO1sjlBdhLVPaLNkRRec/86pxsXiD+8BPIaBZV3TziCIHwEkH288xnUG6CB/vNZXBA9nV9NEG78rxXTx4fX6ZGa7VUu5IWxf1RGt6efbKUWMW9C5fJQVFn2lN+KuJI9nwePygSBI7T08tZs+B4KB3XHOXBFDJ9tf3Ah4jksrNxFilFoUjbC2Hd9VqT2NNFQIDAQAB";
+        }
       ];
   };
 

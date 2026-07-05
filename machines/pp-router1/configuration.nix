@@ -121,6 +121,13 @@ in
       "hass"
       "docuseal"
     ];
+    # One probe through the router Caddy → NAS Caddy leg (the WireGuard
+    # client path). Regular probes resolve via split-horizon straight to
+    # the NAS and never exercise it.
+    blackbox.proxyCanary = {
+      url = "https://[${wgAddress}]/web/";
+      serverName = mkSub "jellyfin";
+    };
     dropMonitor = {
       enable = true;
       interfaces = [

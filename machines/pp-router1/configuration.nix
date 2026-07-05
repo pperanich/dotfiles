@@ -304,6 +304,7 @@ in
       "scan"
       "paperless"
       "docuseal"
+      "dav"
       "hass"
     ];
 

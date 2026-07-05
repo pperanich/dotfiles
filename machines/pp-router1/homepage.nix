@@ -140,6 +140,12 @@ in
             desc = "Document signing";
           }
           {
+            name = "Radicale";
+            icon = "radicale";
+            sub = "dav";
+            desc = "Calendar & contacts sync";
+          }
+          {
             name = "Home Assistant";
             icon = "home-assistant";
             sub = "hass";

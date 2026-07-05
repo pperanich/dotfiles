@@ -114,11 +114,25 @@ in
     openFirewall = true;
   };
 
-  # Radicale — CalDAV/CardDAV for OpenCloud (calendar + contacts)
-  # Listens on localhost only; proxied through Caddy alongside OpenCloud
+  # Radicale — CalDAV/CardDAV (calendar + contacts)
+  # Listens on localhost only; reached via the dav vhost below, where Caddy
+  # authenticates and passes the identity via X-Remote-User
   my.radicale = {
     dataDir = "/tank/appdata/radicale";
   };
+
+  # Caddy basic-auth bcrypt hash for the dav vhost, injected as an env var.
+  # The matching plaintext lives in sops as radicale-password for client setup.
+  sops.secrets.radicale-password-hash = { };
+  sops.templates."caddy-radicale.env" = {
+    content = ''
+      RADICALE_PASSWORD_HASH=${config.sops.placeholder."radicale-password-hash"}
+    '';
+    owner = "caddy";
+  };
+  systemd.services.caddy.serviceConfig.EnvironmentFile = [
+    config.sops.templates."caddy-radicale.env".path
+  ];
 
   # ProtonVPN — namespace mode (split tunneling)
   # Only services listed in confinedServices use the VPN; host traffic is unaffected.
@@ -302,6 +316,20 @@ in
         "${mkSub "audiobookshelf"}" = mkLocalProxy 8000 (mkUpload "10G");
         "${mkSub "paperless"}" = mkLocalProxy 28981 (mkUpload "1G");
         "${mkSub "docuseal"}" = mkLocalProxy 3000 (mkUpload "1G");
+        # Radicale: Caddy owns authentication; header_up overrides any
+        # client-supplied X-Remote-User, which Radicale trusts blindly
+        "${mkSub "dav"}" = {
+          extraConfig = ''
+            redir /.well-known/caldav / 301
+            redir /.well-known/carddav / 301
+            basic_auth {
+              pperanich {$RADICALE_PASSWORD_HASH}
+            }
+            reverse_proxy localhost:${toString config.my.radicale.port} {
+              header_up X-Remote-User {http.auth.user.id}
+            }
+          '';
+        };
       };
   };
 

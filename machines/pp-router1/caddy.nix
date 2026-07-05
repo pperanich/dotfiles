@@ -94,6 +94,7 @@ in
         "scan" # scanservjs web UI (pp-nas1)
         "paperless" # document archive (pp-nas1)
         "docuseal" # document signing (pp-nas1)
+        "dav" # radicale caldav/carddav (pp-nas1)
         "hass" # home assistant (pp-nas1)
         "home" # dashboard (pp-router1)
         "grafana" # observability dashboard
@@ -199,6 +200,8 @@ in
         max_size 1G
       }
     '';
+    # Radicale CalDAV/CardDAV — auth happens at the NAS Caddy (basic auth)
+    "${mkSub "dav"}" = mkNasProxy (mkSub "dav") "";
     # scanservjs — Canon TR4500 web scan UI
     "${mkSub "scan"}" = mkNasProxy (mkSub "scan") "";
     # Home Assistant (websockets proxied automatically)

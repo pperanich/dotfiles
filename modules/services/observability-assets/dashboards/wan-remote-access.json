@@ -217,7 +217,7 @@
       },
       "targets": [
         {
-          "expr": "sum(count_over_time({unit=\"sshd.service\"} |~ \"Failed|Invalid user\" [1h]))",
+          "expr": "sum(count_over_time({unit=\"sshd.service\", host=\"pp-router1\"} |~ \"Failed|Invalid user\" [1h]))",
           "legendFormat": "failed",
           "refId": "A",
           "instant": true,
@@ -497,12 +497,12 @@
       },
       "targets": [
         {
-          "expr": "sum(count_over_time({unit=\"sshd.service\"} |= \"Accepted\" [5m]))",
+          "expr": "sum(count_over_time({unit=\"sshd.service\", host=\"pp-router1\"} |= \"Accepted\" [5m]))",
           "legendFormat": "accepted",
           "refId": "A"
         },
         {
-          "expr": "sum(count_over_time({unit=\"sshd.service\"} |~ \"Failed|Invalid user\" [5m]))",
+          "expr": "sum(count_over_time({unit=\"sshd.service\", host=\"pp-router1\"} |~ \"Failed|Invalid user\" [5m]))",
           "legendFormat": "failed",
           "refId": "B"
         }
@@ -536,7 +536,7 @@
       },
       "targets": [
         {
-          "expr": "topk(15, sum by (src) (count_over_time({unit=\"sshd.service\"} |~ \"Failed|Invalid user\" | regexp \"from (?P<src>[0-9a-fA-F.:]+)\" [24h])))",
+          "expr": "topk(15, sum by (src) (count_over_time({unit=\"sshd.service\", host=\"pp-router1\"} |~ \"Failed|Invalid user\" | regexp \"from (?P<src>[0-9a-fA-F.:]+)\" [24h])))",
           "legendFormat": "",
           "refId": "A",
           "instant": true,
@@ -623,7 +623,7 @@
       },
       "targets": [
         {
-          "expr": "node_nf_conntrack_entries / node_nf_conntrack_entries_limit",
+          "expr": "node_nf_conntrack_entries{instance=\"pp-router1\"} / node_nf_conntrack_entries_limit{instance=\"pp-router1\"}",
           "legendFormat": "used",
           "refId": "A"
         }

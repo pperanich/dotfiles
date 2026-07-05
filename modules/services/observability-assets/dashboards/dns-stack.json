@@ -514,7 +514,7 @@
       },
       "targets": [
         {
-          "expr": "rate(unbound_cache_hits_total[15m]) / (rate(unbound_cache_hits_total[15m]) + rate(unbound_cache_misses_total[15m]))",
+          "expr": "sum(rate(unbound_cache_hits_total[15m])) / (sum(rate(unbound_cache_hits_total[15m])) + sum(rate(unbound_cache_misses_total[15m])))",
           "legendFormat": "hit ratio",
           "refId": "A"
         }

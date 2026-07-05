@@ -46,6 +46,11 @@ _: {
           loki.write "remote" {
             endpoint {
               url = "${cfg.lokiUrl}/loki/api/v1/push"
+              // Retry forever: the default budget gives up after ~9 minutes
+              // and the journal cursor has already advanced, losing exactly
+              // the logs from a receiver outage window. Backpressure stalls
+              // the cursor instead, and entries survive in journald.
+              max_backoff_retries = 0
             }
           }
 

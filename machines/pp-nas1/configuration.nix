@@ -252,6 +252,9 @@ in
       "immich-machine-learning"
       "paperless-.*"
       "borgbackup-job-pp-router1"
+      # Databases behind the services above — likelier to fail than the apps
+      "postgresql"
+      "redis-.*"
     ];
   };
 

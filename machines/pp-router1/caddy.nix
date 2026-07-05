@@ -76,7 +76,9 @@ in
   # scraped by the local Prometheus as job "caddy"
   services.caddy.globalConfig = ''
     servers {
-      metrics
+      metrics {
+        per_host
+      }
     }
   '';
 

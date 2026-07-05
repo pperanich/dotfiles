@@ -18,7 +18,9 @@ _: {
 
       # Rewrite scrape instance labels to short hostnames: 127.0.0.1 targets
       # become this host, FQDN targets keep their first label. Blackbox jobs
-      # are excluded — their instance is the probed URL.
+      # are excluded — their instance is the probed URL. Note: the port is
+      # dropped, so two same-job exporters on one host would collapse into
+      # one series — give such exporters distinct job names.
       friendlyInstance = [
         {
           source_labels = [ "__address__" ];
@@ -638,6 +640,17 @@ _: {
                       labels.severity = "warning";
                       annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has not handshaked in over 15 minutes.";
                     }
+                    # Companion for the epoch-sized values the guard above
+                    # excludes: a router reboot resets handshake state, so a
+                    # fleet peer that stays down would otherwise go silently
+                    # unmonitored forever.
+                    {
+                      alert = "WireguardFleetPeerNeverHandshaked";
+                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"} > 1e9";
+                      for = "30m";
+                      labels.severity = "warning";
+                      annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has never handshaked since the interface came up.";
+                    }
                   ]
                   ++ lib.optionals (cfg.alerts.email.to != null) [
                     # Alertmanager delivers everything above; if Prometheus
@@ -989,8 +1002,11 @@ _: {
         # DynamicUser) cannot traverse it. Bind the real directory to a
         # neutral path inside alloy's mount namespace; binding over the
         # /var/log/blocky symlink would still resolve through the 0700 dir.
+        # The leading "-" tolerates a missing source (fresh install before
+        # blocky's first start) — without it namespace setup fails and five
+        # fast restarts would permanently stop alloy.
         systemd.services.alloy.serviceConfig.BindReadOnlyPaths = [
-          "/var/log/private/blocky:/run/blocky-logs"
+          "-/var/log/private/blocky:/run/blocky-logs"
         ];
 
         environment.etc."alloy/config.alloy".text = ''

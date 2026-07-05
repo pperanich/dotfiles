@@ -48,7 +48,7 @@ _: {
         # root:root 0600; the exporter's disk group + CAP_SYS_ADMIN cannot
         # open them. Widen to group disk like the block devices.
         services.udev.extraRules = ''
-          SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", GROUP="disk", MODE="0660"
+          SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", GROUP="disk", MODE="0640"
         '';
       };
     };

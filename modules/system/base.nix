@@ -120,6 +120,14 @@
         programs.zsh.enableCompletion = false;
         programs.zsh.enableBashCompletion = false;
 
+        # Per-power-source sleep policy (nix-darwin's power.sleep.* is global
+        # via systemsetup, so use pmset directly): sleep on battery, stay
+        # awake with wake-on-LAN on AC. Reasserted on every activation;
+        # System Settings toggles can drift it between rebuilds.
+        system.activationScripts.extraActivation.text = ''
+          pmset -c sleep 0 womp 1
+        '';
+
         system.defaults = {
           spaces.spans-displays = false;
           # universalaccess.reduceMotion = true;

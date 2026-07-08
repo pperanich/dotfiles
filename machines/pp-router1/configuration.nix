@@ -89,6 +89,8 @@ in
   my.observability = {
     enable = true;
     grafana.hostname = mkSub "grafana";
+    # pp-rpi1 is offline; drop its never-handshaked WireGuard peer from alerts.
+    alerts.wireguardFleetPeerExcludes = [ "AGteAW+gpAUywy7ITC6A+uzZaIYC9AwMl/96d1CM3Xw=" ];
     # Accept journal pushes from fleet hosts (firewall restricts to the NAS)
     loki.listenAddress = "0.0.0.0";
     blackbox.httpTargets = [

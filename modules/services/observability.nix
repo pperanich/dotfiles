@@ -48,6 +48,13 @@ _: {
       # Render alert email timestamps in the host timezone (UTC if unset)
       alertTimezone = if config.time.timeZone != null then config.time.timeZone else "Etc/UTC";
 
+      # Negative label matchers appended to the fleet WireGuard rules so
+      # named peers (offline/retired hosts) stop firing without dropping
+      # coverage for the rest of the mesh.
+      wgFleetExcludeMatchers = lib.concatMapStrings (
+        k: ",public_key!=\"${k}\""
+      ) cfg.alerts.wireguardFleetPeerExcludes;
+
       mkPromRule = expr: alert: description: {
         inherit alert expr;
         for = "5m";
@@ -270,6 +277,13 @@ _: {
             default = [ ];
             example = [ "enp1s0f1np1" ];
             description = "Interfaces to alert on for sustained carrier loss and link flapping";
+          };
+
+          wireguardFleetPeerExcludes = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            example = [ "AGteAW+gpAUywy7ITC6A+uzZaIYC9AwMl/96d1CM3Xw=" ];
+            description = "WireGuard fleet peer public keys to exclude from the silent/never-handshaked alerts (e.g. an offline or retired host)";
           };
         };
 
@@ -635,7 +649,7 @@ _: {
                     # exporter reports epoch-now for those).
                     {
                       alert = "WireguardFleetPeerSilent";
-                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"} > 900 < 1e9";
+                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 900 < 1e9";
                       for = "5m";
                       labels.severity = "warning";
                       annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has not handshaked in over 15 minutes.";
@@ -646,7 +660,7 @@ _: {
                     # unmonitored forever.
                     {
                       alert = "WireguardFleetPeerNeverHandshaked";
-                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"} > 1e9";
+                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 1e9";
                       for = "30m";
                       labels.severity = "warning";
                       annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has never handshaked since the interface came up.";

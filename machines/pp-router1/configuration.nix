@@ -10,10 +10,12 @@ let
   # WireGuard controller IPv6 address (derived from clan-managed prefix)
   wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
   wgAddress = "${wgPrefix}::1";
+  routerIp = config.my.router.lan.address;
   # A fleet host's clan-generated pp-wg public key (committed plaintext var).
   # Peer vars belong to other machines, so read the file rather than config.
   fleetPeerPubkey =
-    host: lib.trim (builtins.readFile ../../vars/per-machine/${host}/wireguard-keys-pp-wg/publickey/value);
+    host:
+    lib.trim (builtins.readFile ../../vars/per-machine/${host}/wireguard-keys-pp-wg/publickey/value);
   domain = config.my.router.dhcp.domainName;
   inherit (lib.my.homelab) publicDomain mkSub;
 in
@@ -193,7 +195,7 @@ in
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-router1.home.arpa";
   # clan.core.networking.targetHost = lib.mkForce "root@pp-router1";
-  clan.core.networking.buildHost = "root@pp-wsl1.home.arpa";
+  # clan.core.networking.buildHost = "root@pp-wsl1.home.arpa";
 
   # Networking configuration
   networking.hostName = "pp-router1";
@@ -324,6 +326,21 @@ in
       "docuseal"
       "dav"
       "hass"
+    ]
+    # Router-terminated vhosts: public DNS is AAAA-only (the wg ULA) so
+    # off-net WireGuard clients aren't poisoned by an unroutable A. LAN
+    # clients need a v4 answer though — an AAAA-only name backed by a ULA is
+    # unresolvable under getaddrinfo's AI_ADDRCONFIG (no global v6), so give
+    # them a split-horizon A pointing at this router's Caddy.
+    ++ map (sub: "${mkSub sub}. A ${routerIp}") [
+      "home"
+      "grafana"
+      "alerts"
+      "vault-admin"
+      "gitea"
+      "ntopng"
+      "unifi"
+      "feedme"
     ];
 
     # Clients search home.arpa (LAN hosts via DDNS) then pp-wg (WireGuard

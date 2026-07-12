@@ -54,43 +54,45 @@ _: {
           firewall.enable = false; # We use nftables directly
         };
 
-        services.resolved.enable = false;
+        services = {
+          resolved.enable = false;
 
-        # NTP server for LAN clients
-        services.chrony = {
-          enable = true;
-          servers = [
-            "time.cloudflare.com"
-            "time.google.com"
-            "pool.ntp.org"
-          ];
-          extraConfig = ''
-            # Allow NTP client access from LAN
-            allow ${cfg.lan.subnet}.0/24
-            ${lib.optionalString cfg.ipv6.enable "allow ${ulaPrefix}::/64"}
+          # NTP server for LAN clients
+          chrony = {
+            enable = true;
+            servers = [
+              "time.cloudflare.com"
+              "time.google.com"
+              "pool.ntp.org"
+            ];
+            extraConfig = ''
+              # Allow NTP client access from LAN
+              allow ${cfg.lan.subnet}.0/24
+              ${lib.optionalString cfg.ipv6.enable "allow ${ulaPrefix}::/64"}
 
-            # Serve time even when not synchronized (stratum 10)
-            local stratum 10
-          '';
-        };
+              # Serve time even when not synchronized (stratum 10)
+              local stratum 10
+            '';
+          };
 
-        # SSH: Don't use NixOS firewall module (we control via nftables)
-        services.openssh.openFirewall = false;
+          # SSH: Don't use NixOS firewall module (we control via nftables)
+          openssh.openFirewall = false;
 
-        # UPnP/NAT-PMP for automatic port forwarding
-        # H4: ACL rules restrict forwards to non-privileged ports only (1024-65535)
-        # Prevents LAN devices from exposing privileged services (SSH, DNS, etc.) via UPnP
-        services.miniupnpd = lib.mkIf cfg.upnp.enable {
-          enable = true;
-          externalInterface = wan;
-          internalIPs = [ "${cfg.lan.subnet}.0/24" ];
-          natpmp = true;
-          upnp = true;
-          appendConfig = ''
-            # Security: Only allow forwarding to/from non-privileged ports
-            allow 1024-65535 ${cfg.lan.subnet}.0/24 1024-65535
-            deny 0-65535 0.0.0.0/0 0-65535
-          '';
+          # UPnP/NAT-PMP for automatic port forwarding
+          # H4: ACL rules restrict forwards to non-privileged ports only (1024-65535)
+          # Prevents LAN devices from exposing privileged services (SSH, DNS, etc.) via UPnP
+          miniupnpd = lib.mkIf cfg.upnp.enable {
+            enable = true;
+            externalInterface = wan;
+            internalIPs = [ "${cfg.lan.subnet}.0/24" ];
+            natpmp = true;
+            upnp = true;
+            appendConfig = ''
+              # Security: Only allow forwarding to/from non-privileged ports
+              allow 1024-65535 ${cfg.lan.subnet}.0/24 1024-65535
+              deny 0-65535 0.0.0.0/0 0-65535
+            '';
+          };
         };
 
         systemd.network = {

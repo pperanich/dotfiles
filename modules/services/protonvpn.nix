@@ -233,7 +233,29 @@ _: {
         # Prevent systemd-networkd from removing wg-quick routing rules.
         # wg-quick creates `ip rule` entries for policy routing. Without this,
         # systemd-networkd (used by the pp-wg mesh) may garbage-collect them.
-        systemd.network.config.networkConfig.ManageForeignRoutingPolicyRules = false;
+        systemd = {
+          network.config.networkConfig.ManageForeignRoutingPolicyRules = false;
+
+          services = {
+            # Persistent kill switch — survives VPN restarts
+            protonvpn-killswitch = lib.mkIf (cfg.killSwitch == "persistent") {
+              description = "ProtonVPN persistent kill switch (iptables chain)";
+              wantedBy = [ "multi-user.target" ];
+              before = [ "wg-quick-${ifName}.service" ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                ExecStart = pkgs.writeShellScript "protonvpn-killswitch-up" persistentChainUp;
+                ExecStop = pkgs.writeShellScript "protonvpn-killswitch-down" persistentChainDown;
+              };
+            };
+
+            # When autostart is disabled, remove wg-quick from default target
+            "wg-quick-${ifName}" = lib.mkIf (!cfg.autostart) {
+              wantedBy = lib.mkForce [ ];
+            };
+          };
+        };
 
         networking.wg-quick.interfaces.${ifName} = {
           inherit (cfg) autostart;
@@ -246,24 +268,6 @@ _: {
 
           postUp = lib.mkIf (cfg.killSwitch == "iptables") iptablesPostUp;
           preDown = lib.mkIf (cfg.killSwitch == "iptables") iptablesPreDown;
-        };
-
-        # Persistent kill switch — survives VPN restarts
-        systemd.services.protonvpn-killswitch = lib.mkIf (cfg.killSwitch == "persistent") {
-          description = "ProtonVPN persistent kill switch (iptables chain)";
-          wantedBy = [ "multi-user.target" ];
-          before = [ "wg-quick-${ifName}.service" ];
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            ExecStart = pkgs.writeShellScript "protonvpn-killswitch-up" persistentChainUp;
-            ExecStop = pkgs.writeShellScript "protonvpn-killswitch-down" persistentChainDown;
-          };
-        };
-
-        # When autostart is disabled, remove wg-quick from default target
-        systemd.services."wg-quick-${ifName}" = lib.mkIf (!cfg.autostart) {
-          wantedBy = lib.mkForce [ ];
         };
       };
 

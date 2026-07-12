@@ -300,35 +300,37 @@ _: {
             }
           ];
 
-        # Export computed values for other modules
-        my.router._internal.lanInterface = lanInterface;
+        my.router._internal = {
+          # Export computed values for other modules
+          inherit lanInterface;
 
-        # Export network info for other modules
-        my.router._internal.networks = lib.listToAttrs (
-          map (net: {
-            inherit (net) name;
-            value = {
-              inherit (net) vlan subnet isolation;
-              interface = netIfaceName net;
-              routerIp = netRouterIp net;
-              cidr = netCidr net;
-              bridge = netBridge net;
-            };
-          }) networkList
-        );
+          # Export network info for other modules
+          networks = lib.listToAttrs (
+            map (net: {
+              inherit (net) name;
+              value = {
+                inherit (net) vlan subnet isolation;
+                interface = netIfaceName net;
+                routerIp = netRouterIp net;
+                cidr = netCidr net;
+                bridge = netBridge net;
+              };
+            }) networkList
+          );
 
-        # Export firewall rules (always export, even if empty, for proper fallback handling)
-        my.router._internal.networkFirewall = {
-          inputRules = if networkList != [ ] then allInputRules else "";
-          forwardRules =
-            if networkList != [ ] then
-              ''
-                # Network-specific forwarding rules
-                ${allForwardRules}
-              ''
-            else
-              "";
-          natRules = if networkList != [ ] then allNatRules else "";
+          # Export firewall rules (always export, even if empty, for proper fallback handling)
+          networkFirewall = {
+            inputRules = if networkList != [ ] then allInputRules else "";
+            forwardRules =
+              if networkList != [ ] then
+                ''
+                  # Network-specific forwarding rules
+                  ${allForwardRules}
+                ''
+              else
+                "";
+            natRules = if networkList != [ ] then allNatRules else "";
+          };
         };
 
         # br-lan is a pure L2 trunk bridge with VLAN filtering — no IP address.
@@ -509,59 +511,61 @@ _: {
               );
         };
 
-        # DHCP: Kea listens on per-VLAN bridge interfaces (not br-lan)
-        services.kea.dhcp4.settings.interfaces-config.interfaces = lib.mkIf (networkList != [ ]) (
-          map netBridge networkList
-        );
+        services = {
+          kea.dhcp4.settings = {
+            # DHCP: Kea listens on per-VLAN bridge interfaces (not br-lan)
+            interfaces-config.interfaces = lib.mkIf (networkList != [ ]) (map netBridge networkList);
 
-        # DHCP pools for all networks
-        services.kea.dhcp4.settings.subnet4 = lib.mkIf (networkList != [ ]) (
-          map (net: {
-            id = 1000 + net.vlan;
-            subnet = netCidr net;
-            interface = netBridge net;
-            pools = [
-              {
-                pool = "${net.subnet}.${toString net.dhcpRange.start} - ${net.subnet}.${toString net.dhcpRange.end}";
-              }
-            ];
-            option-data = [
-              {
-                name = "routers";
-                data = netRouterIp net;
-              }
-              {
-                name = "domain-name-servers";
-                data = netRouterIp net;
-              }
-              {
-                # Plain domainName, not segment-prefixed: DDNS registers all
-                # hosts flat under domainName
-                name = "domain-name";
-                data = cfg.dhcp.domainName;
-              }
-              {
-                # Option 119: resolved-based clients only take per-link search
-                # domains from this
-                name = "domain-search";
-                data = lib.concatStringsSep ", " cfg.dhcp.searchDomains;
-              }
-            ];
-            reservations = map (r: {
-              hw-address = lib.toLower r.mac;
-              ip-address = "${net.subnet}.${toString r.ip}";
-              inherit (r) hostname;
-            }) net.reservations;
-          }) networkList
-        );
+            # DHCP pools for all networks
+            subnet4 = lib.mkIf (networkList != [ ]) (
+              map (net: {
+                id = 1000 + net.vlan;
+                subnet = netCidr net;
+                interface = netBridge net;
+                pools = [
+                  {
+                    pool = "${net.subnet}.${toString net.dhcpRange.start} - ${net.subnet}.${toString net.dhcpRange.end}";
+                  }
+                ];
+                option-data = [
+                  {
+                    name = "routers";
+                    data = netRouterIp net;
+                  }
+                  {
+                    name = "domain-name-servers";
+                    data = netRouterIp net;
+                  }
+                  {
+                    # Plain domainName, not segment-prefixed: DDNS registers all
+                    # hosts flat under domainName
+                    name = "domain-name";
+                    data = cfg.dhcp.domainName;
+                  }
+                  {
+                    # Option 119: resolved-based clients only take per-link search
+                    # domains from this
+                    name = "domain-search";
+                    data = lib.concatStringsSep ", " cfg.dhcp.searchDomains;
+                  }
+                ];
+                reservations = map (r: {
+                  hw-address = lib.toLower r.mac;
+                  ip-address = "${net.subnet}.${toString r.ip}";
+                  inherit (r) hostname;
+                }) net.reservations;
+              }) networkList
+            );
+          };
 
-        # DNS: VLAN listener config handled by dns.nix (Unbound) and blocky.nix (Blocky)
-        # via _internal.networks — see routerDns and routerBlocky modules
+          # DNS: VLAN listener config handled by dns.nix (Unbound) and blocky.nix (Blocky)
+          # via _internal.networks — see routerDns and routerBlocky modules
 
-        # Chrony: Allow NTP from all networks
-        services.chrony.extraConfig = lib.mkIf (networkList != [ ]) (
-          lib.concatMapStringsSep "\n" (net: "allow ${netCidr net}") networkList
-        );
+          # Chrony: Allow NTP from all networks
+          chrony.extraConfig = lib.mkIf (networkList != [ ]) (
+            lib.concatMapStringsSep "\n" (net: "allow ${netCidr net}") networkList
+          );
+        };
       };
     };
 }

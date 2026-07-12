@@ -34,22 +34,24 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        services.smartd = {
-          enable = true;
-          autodetect = true;
-        };
+        services = {
+          smartd = {
+            enable = true;
+            autodetect = true;
+          };
 
-        services.prometheus.exporters.smartctl = {
-          enable = true;
-          inherit (cfg) listenAddress port openFirewall;
-        };
+          prometheus.exporters.smartctl = {
+            enable = true;
+            inherit (cfg) listenAddress port openFirewall;
+          };
 
-        # NVMe admin char devices (/dev/nvme0, not the block devs) default to
-        # root:root 0600; the exporter's disk group + CAP_SYS_ADMIN cannot
-        # open them. Widen to group disk like the block devices.
-        services.udev.extraRules = ''
-          SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", GROUP="disk", MODE="0640"
-        '';
+          # NVMe admin char devices (/dev/nvme0, not the block devs) default to
+          # root:root 0600; the exporter's disk group + CAP_SYS_ADMIN cannot
+          # open them. Widen to group disk like the block devices.
+          udev.extraRules = ''
+            SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", GROUP="disk", MODE="0640"
+          '';
+        };
       };
     };
 }

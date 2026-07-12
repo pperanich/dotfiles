@@ -110,74 +110,68 @@
           inputs.nix-index-database.darwinModules.nix-index
           inputs.determinate.darwinModules.default
         ];
-        system.stateVersion = 6;
+        system = {
+          stateVersion = 6;
 
-        # We are using the Determinate daemon
-        nix.enable = false;
-        # Custom settings written to /etc/nix/nix.custom.conf
-        determinateNix.enable = true;
+          # Per-power-source sleep policy (nix-darwin's power.sleep.* is global
+          # via systemsetup, so use pmset directly): sleep on battery, stay
+          # awake with wake-on-LAN on AC. Reasserted on every activation;
+          # System Settings toggles can drift it between rebuilds.
+          activationScripts.extraActivation.text = ''
+            pmset -c sleep 0 womp 1
+          '';
 
-        programs.zsh.enableCompletion = false;
-        programs.zsh.enableBashCompletion = false;
-
-        # Per-power-source sleep policy (nix-darwin's power.sleep.* is global
-        # via systemsetup, so use pmset directly): sleep on battery, stay
-        # awake with wake-on-LAN on AC. Reasserted on every activation;
-        # System Settings toggles can drift it between rebuilds.
-        system.activationScripts.extraActivation.text = ''
-          pmset -c sleep 0 womp 1
-        '';
-
-        system.defaults = {
-          spaces.spans-displays = false;
-          # universalaccess.reduceMotion = true;
-          dock = {
-            autohide = true;
-            showhidden = true;
-            mru-spaces = false;
-            launchanim = false;
-            persistent-apps = [
-              # Workspace 1: Term
-              "/Applications/Ghostty.app"
-              # Workspace 2: Web
-              "/Applications/Brave Browser.app"
-              # Workspace 3: Notes
-              "/Applications/Obsidian.app"
-              "/System/Applications/Notes.app"
-              # Workspace 4: IDE
-              "/Applications/Visual Studio Code.app"
-              # Workspace 5: Comms
-              # "/Applications/Slack.app"
-              # "/Applications/Microsoft Outlook.app"
-              # "/Applications/zoom.us.app"
-              # Workspace 6: Creative
-              "/Applications/GIMP.app"
-              "/Applications/Blender.app"
-              # "/Applications/REAPER.app"
-              # Workspace 7: Social
-              "/System/Applications/Messages.app"
-              "/Applications/Discord.app"
-              "/Applications/Element.app"
-              # Utils
-              "/System/Applications/System Settings.app"
-            ];
-          };
-          finder = {
-            AppleShowAllExtensions = true;
-            QuitMenuItem = true;
-          };
-          NSGlobalDomain = {
-            AppleKeyboardUIMode = 3;
-            ApplePressAndHoldEnabled = false;
-            AppleFontSmoothing = 1;
-            InitialKeyRepeat = 10;
-            KeyRepeat = 1;
-            "com.apple.mouse.tapBehavior" = 1;
-            "com.apple.swipescrolldirection" = false;
-          };
-          trackpad = {
-            Clicking = true;
-            TrackpadThreeFingerDrag = false;
+          defaults = {
+            spaces.spans-displays = false;
+            # universalaccess.reduceMotion = true;
+            dock = {
+              autohide = true;
+              showhidden = true;
+              mru-spaces = false;
+              launchanim = false;
+              persistent-apps = [
+                # Workspace 1: Term
+                "/Applications/Ghostty.app"
+                # Workspace 2: Web
+                "/Applications/Brave Browser.app"
+                # Workspace 3: Notes
+                "/Applications/Obsidian.app"
+                "/System/Applications/Notes.app"
+                # Workspace 4: IDE
+                "/Applications/Visual Studio Code.app"
+                # Workspace 5: Comms
+                # "/Applications/Slack.app"
+                # "/Applications/Microsoft Outlook.app"
+                # "/Applications/zoom.us.app"
+                # Workspace 6: Creative
+                "/Applications/GIMP.app"
+                "/Applications/Blender.app"
+                # "/Applications/REAPER.app"
+                # Workspace 7: Social
+                "/System/Applications/Messages.app"
+                "/Applications/Discord.app"
+                "/Applications/Element.app"
+                # Utils
+                "/System/Applications/System Settings.app"
+              ];
+            };
+            finder = {
+              AppleShowAllExtensions = true;
+              QuitMenuItem = true;
+            };
+            NSGlobalDomain = {
+              AppleKeyboardUIMode = 3;
+              ApplePressAndHoldEnabled = false;
+              AppleFontSmoothing = 1;
+              InitialKeyRepeat = 10;
+              KeyRepeat = 1;
+              "com.apple.mouse.tapBehavior" = 1;
+              "com.apple.swipescrolldirection" = false;
+            };
+            trackpad = {
+              Clicking = true;
+              TrackpadThreeFingerDrag = false;
+            };
           };
         };
 

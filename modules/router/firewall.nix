@@ -452,15 +452,76 @@ _: {
                 }
               '';
             };
-          };
-        };
 
-        # Flowtable device validation workaround for build sandbox
-        # Replace device lists with loopback (always exists) during nft check
-        # See: https://github.com/NixOS/nixpkgs/issues/141802
-        networking.nftables.preCheckRuleset = ''
-          sed 's/.*devices.*/devices = { lo }/g' -i ruleset.conf
-        '';
+            # Flow offload via NixOS nftables module - declarative and cleaner
+            # Uses bridge interfaces - kernel 5.13+ discovers bridge ports automatically
+            flow_offload =
+              let
+                # Get all bridge names from network segments
+                bridges =
+                  if networksCfg.enable then
+                    [ "br-lan" ]
+                    ++ lib.mapAttrsToList (name: _: "br-${name}") (
+                      lib.filterAttrs (_name: seg: seg.vlan != null) networksCfg.segments
+                    )
+                  else
+                    [ "br-lan" ];
+                # Veth pairs connecting br-lan to per-VLAN bridges
+                veths =
+                  if networksCfg.enable then
+                    lib.concatMap (name: [
+                      "v-${name}"
+                      "v-${name}-br"
+                    ]) (lib.attrNames (lib.filterAttrs (_: seg: seg.vlan != null) networksCfg.segments))
+                  else
+                    [ ];
+                # WAN + all bridges + veth pairs (all devices in the forwarding path)
+                flowDevices = [ wan ] ++ bridges ++ veths;
+                deviceList = lib.concatStringsSep ", " flowDevices;
+              in
+              {
+                family = "inet";
+                content = ''
+                  # Flowtable for software flow offload - bypasses netfilter for established flows
+                  # Kernel 5.13+ discovers bridge ports automatically
+                  flowtable f {
+                    hook ingress priority 0
+                    devices = { ${deviceList} }
+                    counter
+                  }
+
+                  chain forward {
+                    type filter hook forward priority -100; policy accept;
+                    # Only offload established/related - first packets go through full firewall
+                    ct state established,related ip protocol { tcp, udp } flow offload @f counter
+                    ct state established,related ip6 nexthdr { tcp, udp } flow offload @f counter
+                  }
+                '';
+              };
+
+            # H1: Bridge-level RA Guard — blocks rogue Router Advertisements at L2
+            # The input chain RA Guard only protects the router itself. Rogue RAs are
+            # multicast at L2 on the bridge, reaching all LAN hosts directly.
+            # This bridge-family table drops RAs forwarded between bridge ports.
+            # Router's own RAs originate from the local stack (bridge output), not forward.
+            raGuard = {
+              family = "bridge";
+              content = ''
+                chain forward {
+                  type filter hook forward priority -200; policy accept;
+                  ether type ip6 icmpv6 type nd-router-advert drop comment "RA Guard: block rogue RAs on bridge"
+                }
+              '';
+            };
+          };
+
+          # Flowtable device validation workaround for build sandbox
+          # Replace device lists with loopback (always exists) during nft check
+          # See: https://github.com/NixOS/nixpkgs/issues/141802
+          preCheckRuleset = ''
+            sed 's/.*devices.*/devices = { lo }/g' -i ruleset.conf
+          '';
+        };
 
         # Fix nftables service ordering - must start AFTER interfaces exist
         # Default NixOS module sets before=["network-pre.target"], but we need
@@ -474,67 +535,6 @@ _: {
           # to live flowtable devices, causing the entire reload to fail silently
           # (old ruleset stays active, new rules never apply).
           reloadIfChanged = lib.mkForce false;
-        };
-
-        # Flow offload via NixOS nftables module - declarative and cleaner
-        # Uses bridge interfaces - kernel 5.13+ discovers bridge ports automatically
-        networking.nftables.tables.flow_offload =
-          let
-            # Get all bridge names from network segments
-            bridges =
-              if networksCfg.enable then
-                [ "br-lan" ]
-                ++ lib.mapAttrsToList (name: _: "br-${name}") (
-                  lib.filterAttrs (_name: seg: seg.vlan != null) networksCfg.segments
-                )
-              else
-                [ "br-lan" ];
-            # Veth pairs connecting br-lan to per-VLAN bridges
-            veths =
-              if networksCfg.enable then
-                lib.concatMap (name: [
-                  "v-${name}"
-                  "v-${name}-br"
-                ]) (lib.attrNames (lib.filterAttrs (_: seg: seg.vlan != null) networksCfg.segments))
-              else
-                [ ];
-            # WAN + all bridges + veth pairs (all devices in the forwarding path)
-            flowDevices = [ wan ] ++ bridges ++ veths;
-            deviceList = lib.concatStringsSep ", " flowDevices;
-          in
-          {
-            family = "inet";
-            content = ''
-              # Flowtable for software flow offload - bypasses netfilter for established flows
-              # Kernel 5.13+ discovers bridge ports automatically
-              flowtable f {
-                hook ingress priority 0
-                devices = { ${deviceList} }
-                counter
-              }
-
-              chain forward {
-                type filter hook forward priority -100; policy accept;
-                # Only offload established/related - first packets go through full firewall
-                ct state established,related ip protocol { tcp, udp } flow offload @f counter
-                ct state established,related ip6 nexthdr { tcp, udp } flow offload @f counter
-              }
-            '';
-          };
-
-        # H1: Bridge-level RA Guard — blocks rogue Router Advertisements at L2
-        # The input chain RA Guard only protects the router itself. Rogue RAs are
-        # multicast at L2 on the bridge, reaching all LAN hosts directly.
-        # This bridge-family table drops RAs forwarded between bridge ports.
-        # Router's own RAs originate from the local stack (bridge output), not forward.
-        networking.nftables.tables.raGuard = {
-          family = "bridge";
-          content = ''
-            chain forward {
-              type filter hook forward priority -200; policy accept;
-              ether type ip6 icmpv6 type nd-router-advert drop comment "RA Guard: block rogue RAs on bridge"
-            }
-          '';
         };
 
         # Ensure flow offload kernel modules are loaded

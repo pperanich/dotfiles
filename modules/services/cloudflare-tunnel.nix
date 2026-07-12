@@ -80,40 +80,44 @@ _: {
           };
         };
 
+        environment.systemPackages = [ config.services.cloudflared.package ];
+
         # Tunnel resolves Cloudflare edge via local DNS on boot. If cloudflared
         # starts before Blocky binds :53, the SRV lookup fails and systemd's
         # default burst limit (5 restarts / 10s) marks it permanently failed.
         # Wait for Blocky and disable the burst cap so it keeps retrying.
-        systemd.services."cloudflared-tunnel-${cfg.tunnelId}" = {
-          after = [ "blocky.service" ];
-          wants = [ "blocky.service" ];
-          unitConfig.StartLimitIntervalSec = 0;
-          serviceConfig.RestartSec = "10s";
-        };
+        systemd = {
+          services = {
+            "cloudflared-tunnel-${cfg.tunnelId}" = {
+              after = [ "blocky.service" ];
+              wants = [ "blocky.service" ];
+              unitConfig.StartLimitIntervalSec = 0;
+              serviceConfig.RestartSec = "10s";
+            };
 
-        environment.systemPackages = [ config.services.cloudflared.package ];
-
-        # Auto-sync tunnel CNAME records for ingress hostnames
-        systemd.services.cf-tunnel-dns-sync = lib.mkIf (hostnames != [ ]) {
-          description = "Sync Cloudflare Tunnel DNS records";
-          after = [ "network-online.target" ];
-          wants = [ "network-online.target" ];
-          serviceConfig = {
-            Type = "oneshot";
-            EnvironmentFile = cfg.environmentFile;
-            ExecStart = "${pkgs.cf}/bin/cf tunnel sync-dns --tunnel-id ${lib.escapeShellArg cfg.tunnelId} --zone ${lib.escapeShellArg cfg.zone} ${hostnameFlags} --apply";
-            DynamicUser = true;
+            # Auto-sync tunnel CNAME records for ingress hostnames
+            cf-tunnel-dns-sync = lib.mkIf (hostnames != [ ]) {
+              description = "Sync Cloudflare Tunnel DNS records";
+              after = [ "network-online.target" ];
+              wants = [ "network-online.target" ];
+              serviceConfig = {
+                Type = "oneshot";
+                EnvironmentFile = cfg.environmentFile;
+                ExecStart = "${pkgs.cf}/bin/cf tunnel sync-dns --tunnel-id ${lib.escapeShellArg cfg.tunnelId} --zone ${lib.escapeShellArg cfg.zone} ${hostnameFlags} --apply";
+                DynamicUser = true;
+              };
+            };
           };
-        };
 
-        systemd.timers.cf-tunnel-dns-sync = lib.mkIf (hostnames != [ ]) {
-          description = "Periodic Cloudflare Tunnel DNS sync";
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnBootSec = "5min";
-            OnUnitActiveSec = "12h";
-            RandomizedDelaySec = "5min";
-            Persistent = true;
+          timers.cf-tunnel-dns-sync = lib.mkIf (hostnames != [ ]) {
+            description = "Periodic Cloudflare Tunnel DNS sync";
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnBootSec = "5min";
+              OnUnitActiveSec = "12h";
+              RandomizedDelaySec = "5min";
+              Persistent = true;
+            };
           };
         };
       };

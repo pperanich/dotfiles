@@ -75,74 +75,83 @@ _: {
       };
 
       config = {
-        services.nextcloud = {
-          enable = true;
-          package = pkgs.nextcloud32;
-          inherit (cfg) hostName;
-          inherit (cfg) datadir;
-          https = true;
-          inherit (cfg) maxUploadSize;
+        services = {
+          nextcloud = {
+            enable = true;
+            package = pkgs.nextcloud32;
+            inherit (cfg) hostName;
+            inherit (cfg) datadir;
+            https = true;
+            inherit (cfg) maxUploadSize;
 
-          # Automatic PostgreSQL + Redis
-          database.createLocally = true;
-          configureRedis = true;
+            # Automatic PostgreSQL + Redis
+            database.createLocally = true;
+            configureRedis = true;
 
-          config = {
-            dbtype = "pgsql";
-            adminuser = "admin";
-            adminpassFile = cfg.adminPasswordFile;
+            config = {
+              dbtype = "pgsql";
+              adminuser = "admin";
+              adminpassFile = cfg.adminPasswordFile;
+            };
+
+            settings = {
+              overwriteprotocol = "https";
+              default_phone_region = cfg.defaultPhoneRegion;
+              trusted_domains = [ cfg.hostName ] ++ cfg.extraTrustedDomains;
+              trusted_proxies = cfg.trustedProxies;
+              log_type = "systemd";
+
+              # Enable HEIC preview (iPhone photos)
+              enabledPreviewProviders = [
+                "OC\\Preview\\BMP"
+                "OC\\Preview\\GIF"
+                "OC\\Preview\\JPEG"
+                "OC\\Preview\\Krita"
+                "OC\\Preview\\MarkDown"
+                "OC\\Preview\\MP3"
+                "OC\\Preview\\OpenDocument"
+                "OC\\Preview\\PNG"
+                "OC\\Preview\\TXT"
+                "OC\\Preview\\XBitmap"
+                "OC\\Preview\\HEIC"
+              ];
+            };
+
+            # Pre-installed apps from nixpkgs
+            extraApps = lib.listToAttrs (
+              map (name: {
+                inherit name;
+                value = config.services.nextcloud.package.packages.apps.${name};
+              }) cfg.extraApps
+            );
+            extraAppsEnable = true;
+            autoUpdateApps.enable = true;
+
+            # PHP tuning for a small home server
+            phpOptions = {
+              "opcache.interned_strings_buffer" = "16";
+              "opcache.max_accelerated_files" = "10000";
+              "opcache.memory_consumption" = "128";
+            };
           };
 
-          settings = {
-            overwriteprotocol = "https";
-            default_phone_region = cfg.defaultPhoneRegion;
-            trusted_domains = [ cfg.hostName ] ++ cfg.extraTrustedDomains;
-            trusted_proxies = cfg.trustedProxies;
-            log_type = "systemd";
-
-            # Enable HEIC preview (iPhone photos)
-            enabledPreviewProviders = [
-              "OC\\Preview\\BMP"
-              "OC\\Preview\\GIF"
-              "OC\\Preview\\JPEG"
-              "OC\\Preview\\Krita"
-              "OC\\Preview\\MarkDown"
-              "OC\\Preview\\MP3"
-              "OC\\Preview\\OpenDocument"
-              "OC\\Preview\\PNG"
-              "OC\\Preview\\TXT"
-              "OC\\Preview\\XBitmap"
-              "OC\\Preview\\HEIC"
+          # Nginx listens on port 80 locally — Caddy on the router handles HTTPS
+          nginx.virtualHosts.${cfg.hostName} = {
+            listen = [
+              {
+                addr = "0.0.0.0";
+                port = 80;
+              }
             ];
           };
 
-          # Pre-installed apps from nixpkgs
-          extraApps = lib.listToAttrs (
-            map (name: {
-              inherit name;
-              value = config.services.nextcloud.package.packages.apps.${name};
-            }) cfg.extraApps
-          );
-          extraAppsEnable = true;
-          autoUpdateApps.enable = true;
-
-          # PHP tuning for a small home server
-          phpOptions = {
-            "opcache.interned_strings_buffer" = "16";
-            "opcache.max_accelerated_files" = "10000";
-            "opcache.memory_consumption" = "128";
+          # Automatic database backups
+          postgresqlBackup = {
+            enable = true;
+            startAt = "*-*-* 02:00:00";
           };
         };
 
-        # Nginx listens on port 80 locally — Caddy on the router handles HTTPS
-        services.nginx.virtualHosts.${cfg.hostName} = {
-          listen = [
-            {
-              addr = "0.0.0.0";
-              port = 80;
-            }
-          ];
-        };
         networking.firewall.allowedTCPPorts = [ 80 ];
 
         # Ensure data directory exists with correct ownership
@@ -152,12 +161,6 @@ _: {
             group = "nextcloud";
             mode = "0750";
           };
-        };
-
-        # Automatic database backups
-        services.postgresqlBackup = {
-          enable = true;
-          startAt = "*-*-* 02:00:00";
         };
       };
     };

@@ -338,426 +338,611 @@ _: {
       };
 
       config = lib.mkIf enabled {
-        services.prometheus = {
-          enable = true;
-          listenAddress = "127.0.0.1";
-          port = 9090;
-          inherit (cfg.prometheus) retentionTime;
-          globalConfig = {
-            scrape_interval = "30s";
-            evaluation_interval = "30s";
-          };
-          scrapeConfigs = [
-            {
-              job_name = "prometheus";
-              relabel_configs = friendlyInstance;
-              static_configs = [ { targets = [ "127.0.0.1:9090" ]; } ];
-            }
-            {
-              job_name = "grafana";
-              relabel_configs = friendlyInstance;
-              static_configs = [ { targets = [ "127.0.0.1:3010" ]; } ];
-            }
-            {
-              job_name = "loki";
-              relabel_configs = friendlyInstance;
-              metrics_path = "/metrics";
-              static_configs = [ { targets = [ "127.0.0.1:3100" ]; } ];
-            }
-            {
-              job_name = "blocky";
-              relabel_configs = friendlyInstance;
-              metrics_path = "/metrics";
-              static_configs = [ { targets = [ "127.0.0.1:${toString config.my.router.blocky.httpPort}" ]; } ];
-            }
-            {
-              job_name = "node";
-              relabel_configs = friendlyInstance;
-              static_configs = [
-                {
-                  targets = [
-                    "127.0.0.1:${toString config.services.prometheus.exporters.node.port}"
-                  ]
-                  ++ cfg.nodeTargets;
-                }
-              ];
-            }
-            {
-              job_name = "unbound";
-              relabel_configs = friendlyInstance;
-              static_configs = [
-                { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.unbound.port}" ]; }
-              ];
-            }
-            {
-              job_name = "kea";
-              relabel_configs = friendlyInstance;
-              static_configs = [
-                { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.kea.port}" ]; }
-              ];
-            }
-            {
-              job_name = "wireguard";
-              relabel_configs = friendlyInstance;
-              static_configs = [
-                { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.wireguard.port}" ]; }
-              ];
-            }
-          ]
-          ++ lib.optionals (cfg.smartctlTargets != [ ]) [
-            {
-              job_name = "smartctl";
-              relabel_configs = friendlyInstance;
-              static_configs = [ { targets = cfg.smartctlTargets; } ];
-            }
-          ]
-          ++ lib.optionals cfg.unpoller.enable [
-            {
-              job_name = "unpoller";
-              relabel_configs = friendlyInstance;
-              static_configs = [ { targets = [ "127.0.0.1:9130" ]; } ];
-            }
-          ]
-          ++ [
-            {
-              # Caddy admin endpoint; per-request metrics need the `metrics`
-              # global option in the Caddyfile (set on pp-router1)
-              job_name = "caddy";
-              relabel_configs = friendlyInstance;
-              static_configs = [ { targets = [ "127.0.0.1:2019" ]; } ];
-            }
-          ]
-          ++ lib.optionals (cfg.alerts.email.to != null) [
-            {
-              job_name = "alertmanager";
-              relabel_configs = friendlyInstance;
-              static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ];
-            }
-          ]
-          ++ [
-            {
-              job_name = "blackbox-icmp";
-              metrics_path = "/probe";
-              params = {
-                module = [ "icmp_v4" ];
-              };
-              static_configs = [
-                {
-                  targets = [
-                    "1.1.1.1"
-                    "9.9.9.9"
-                  ];
-                }
-              ];
-              relabel_configs = blackboxRelabelConfigs;
-            }
-            {
-              job_name = "blackbox-tcp";
-              metrics_path = "/probe";
-              params = {
-                module = [ "tcp_connect" ];
-              };
-              static_configs = [
-                {
-                  targets = [
-                    "1.1.1.1:853"
-                    "9.9.9.9:853"
-                  ];
-                }
-              ];
-              relabel_configs = blackboxRelabelConfigs;
-            }
-            {
-              job_name = "blackbox-dns";
-              metrics_path = "/probe";
-              params = {
-                module = [ "dns_udp" ];
-                target = [ "google.com" ];
-              };
-              static_configs = [ { targets = [ "127.0.0.1:53" ]; } ];
-              relabel_configs = blackboxRelabelConfigs;
-            }
-            {
-              job_name = "blackbox-http";
-              metrics_path = "/probe";
-              params = {
-                module = [ "http_2xx" ];
-              };
-              static_configs = [ { targets = cfg.blackbox.httpTargets; } ];
-              relabel_configs = blackboxRelabelConfigs;
-            }
-          ]
-          ++ lib.optional (cfg.blackbox.proxyCanary.url != null) {
-            job_name = "blackbox-proxy-canary";
-            metrics_path = "/probe";
-            params = {
-              module = [ "http_via_proxy" ];
+        services = {
+          prometheus = {
+            enable = true;
+            listenAddress = "127.0.0.1";
+            port = 9090;
+            inherit (cfg.prometheus) retentionTime;
+            globalConfig = {
+              scrape_interval = "30s";
+              evaluation_interval = "30s";
             };
-            static_configs = [ { targets = [ cfg.blackbox.proxyCanary.url ]; } ];
-            relabel_configs = blackboxRelabelConfigs;
-          };
-          rules = [
-            (builtins.toJSON {
-              groups = [
-                {
-                  name = "observability";
-                  rules = [
-                    # blackbox-.* matters most here: if the blackbox exporter
-                    # dies, every probe_success series goes absent and all
-                    # probe/cert alerts stop evaluating without this rule.
-                    (mkPromRule
-                      "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard|unpoller|caddy|alertmanager|blackbox-.*\"} == 0"
-                      "ObservabilityTargetDown"
-                      "An observability target has been down for 5 minutes."
-                    )
-                    (mkPromRule "probe_success{job=\"blackbox-icmp\"} == 0" "RouterIcmpProbeFailing"
-                      "External ICMP probe has been failing for 5 minutes."
-                    )
-                    (mkPromRule "probe_success{job=\"blackbox-tcp\"} == 0" "RouterTcpProbeFailing"
-                      "External TCP probe has been failing for 5 minutes."
-                    )
-                    (mkPromRule "probe_success{job=\"blackbox-dns\"} == 0" "RouterDnsProbeFailing"
-                      "DNS probing through the local resolver has been failing for 5 minutes."
-                    )
-                    # ZFS ARC is reclaimable but not counted in MemAvailable;
-                    # without the correction the NAS false-alarms under ARC
-                    # pressure. The `or` fallback keeps ARC-less hosts working.
-                    (mkPromRule
-                      "(node_memory_MemAvailable_bytes + (node_zfs_arc_size or node_memory_MemAvailable_bytes * 0)) / node_memory_MemTotal_bytes < 0.1"
-                      "HostLowMemory"
-                      "Memory available (including reclaimable ZFS ARC) on {{ $labels.instance }} is below 10 percent."
-                    )
-                    (mkPromRule
-                      "(node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|ramfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|ramfs\"}) < 0.15"
-                      "HostLowDiskSpace"
-                      "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is below 15 percent available."
-                    )
-                    (mkPromRule "avg by (instance) (1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) > 0.9"
-                      "HostHighCpu"
-                      "CPU on {{ $labels.instance }} has been above 90 percent busy for 5 minutes."
-                    )
-                    (mkPromRule
-                      "increase(node_systemd_unit_state{name=~\"systemd-networkd.service|unbound.service|blocky.service|kea-dhcp4-server.service\",state=\"failed\"}[15m]) > 0"
-                      "RouterCoreServiceFailed"
-                      "A core router service entered failed state in the last 15 minutes."
-                    )
-                    (mkPromRule "node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8"
-                      "RouterConntrackHigh"
-                      "Connection tracking table is above 80 percent capacity."
-                    )
-                    (mkPromRule "rate(node_network_receive_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0.1"
-                      "RouterInterfaceRxDrops"
-                      "Interface {{ $labels.device }} is dropping incoming packets ({{ $value | humanize }}/s)."
-                    )
-                    (mkPromRule "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0.1"
-                      "RouterInterfaceTxDrops"
-                      "Interface {{ $labels.device }} is dropping outgoing packets ({{ $value | humanize }}/s)."
-                    )
-                    # Reason-attributed companion to the drop alerts above.
-                    # Whitelist of actionable reasons only — normal traffic
-                    # constantly logs benign ones (OTHERHOST, NETFILTER_DROP,
-                    # NO_SOCKET teardown races, NEIGH_FAILED sleeping phones,
-                    # NOT_SPECIFIED multicast), and excluding them one at a
-                    # time is whack-a-mole. Alert on resource exhaustion,
-                    # queue overload, NIC trouble, and checksum corruption;
-                    # everything else stays visible in the metric.
-                    (mkPromRule
-                      "sum by (device, reason) (rate(netdev_drop_reasons_total{reason=~\"CPU_BACKLOG|QDISC_.*|CAKE_FLOOD|FQ_.*|NOMEM|PROTO_MEM|PFMEMALLOC|FULL_RING|DEV_HDR|DEV_READY|.*_CSUM|IP_RPFILTER\"}[5m])) > 0.1"
-                      "RouterInterfaceDropReasons"
-                      "Interface {{ $labels.device }} dropping packets, kernel reason {{ $labels.reason }} ({{ $value | humanize }}/s)."
-                    )
-                    (mkPromRule "node_hwmon_temp_celsius{chip=~\".*coretemp.*\"} > 85" "HostCpuHot"
-                      "CPU sensor {{ $labels.sensor }} on {{ $labels.instance }} above 85C for 5 minutes."
-                    )
-                    {
-                      # DDR5 SPD sensors — join via chip_names since i2c bus ids can renumber
-                      alert = "HostMemoryDimmHot";
-                      expr = "(node_hwmon_temp_celsius and on (instance, chip) node_hwmon_chip_names{chip_name=\"spd5118\"}) > 55";
-                      for = "10m";
-                      labels.severity = "warning";
-                      annotations.description = "DIMM sensor {{ $labels.chip }} on {{ $labels.instance }} above 55C for 10 minutes.";
-                    }
-                    (mkPromRule "(probe_ssl_earliest_cert_expiry - time()) < 14 * 86400" "CertExpiringSoon"
-                      "TLS certificate for {{ $labels.instance }} expires in less than 14 days."
-                    )
-                    (mkPromRule "probe_success{job=\"blackbox-http\"} == 0" "HttpProbeFailing"
-                      "HTTP probe against {{ $labels.instance }} has been failing for 5 minutes."
-                    )
-                    (mkPromRule "probe_success{job=\"blackbox-proxy-canary\"} == 0" "NasProxyPathBroken"
-                      "The router-to-NAS Caddy proxy path (used by WireGuard clients) has been failing for 5 minutes."
-                    )
-                    {
-                      alert = "SystemdUnitFailed";
-                      expr = "node_systemd_unit_state{state=\"failed\"} == 1";
-                      for = "10m";
-                      labels.severity = "warning";
-                      annotations.description = "Unit {{ $labels.name }} on {{ $labels.instance }} has been failed for 10 minutes.";
-                    }
-                    {
-                      alert = "ZfsPoolUnhealthy";
-                      expr = "node_zfs_zpool_state{state!=\"online\"} == 1";
-                      for = "5m";
-                      labels.severity = "critical";
-                      annotations.description = "ZFS pool {{ $labels.zpool }} on {{ $labels.instance }} is {{ $labels.state }}.";
-                    }
-                    {
-                      # Informational: fires for ~10 minutes after any boot, planned or not
-                      alert = "HostRebooted";
-                      expr = "time() - node_boot_time_seconds < 600";
-                      for = "1m";
-                      labels.severity = "warning";
-                      annotations.description = "{{ $labels.instance }} rebooted less than 10 minutes ago.";
-                    }
-                    {
-                      # 250ms sustained is ~100x healthy NTP jitter yet under the ~0.5s step threshold
-                      alert = "HostClockDrift";
-                      expr = "abs(node_timex_offset_seconds) > 0.25";
-                      for = "15m";
-                      labels.severity = "warning";
-                      annotations.description = "Clock on {{ $labels.instance }} has drifted more than 250ms from NTP for 15 minutes.";
-                    }
-                    (mkPromRule "increase(node_vmstat_oom_kill[1h]) > 0" "HostOomKills"
-                      "The OOM killer fired on {{ $labels.instance }} within the last hour."
-                    )
-                    {
-                      alert = "BackupStale";
-                      expr = "time() - borg_last_success_timestamp_seconds > 172800";
-                      for = "30m";
-                      labels.severity = "critical";
-                      annotations.description = "Borg backup on {{ $labels.instance }} has not succeeded in over 48 hours.";
-                    }
-                    {
-                      # Expected to fire once after deploy until the first successful backup stamps the metric
-                      alert = "BackupMetricMissing";
-                      expr = "absent(borg_last_success_timestamp_seconds)";
-                      for = "6h";
-                      labels.severity = "warning";
-                      annotations.description = "No borg backup success metric has been scraped for 6 hours.";
-                    }
-                    # The kea exporter emits each subnet twice (with and
-                    # without a pool label); match only the pool-less series
-                    # so a full subnet raises one alert, not two.
-                    (mkPromRule
-                      "kea_dhcp4_addresses_assigned_total{pool=\"\"} / kea_dhcp4_addresses_total{pool=\"\"} > 0.9"
-                      "DhcpPoolNearlyFull"
-                      "DHCP subnet {{ $labels.subnet }} is above 90 percent lease utilization."
-                    )
-                    # Fleet peers (routed /96 allowed_ips, always-on hosts)
-                    # should handshake every ~2 minutes. Phones (/128) roam
-                    # and sleep — excluded. The < 1e9 guard skips peers that
-                    # have never handshaked since interface creation (the
-                    # exporter reports epoch-now for those).
-                    {
-                      alert = "WireguardFleetPeerSilent";
-                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 900 < 1e9";
-                      for = "5m";
-                      labels.severity = "warning";
-                      annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has not handshaked in over 15 minutes.";
-                    }
-                    # Companion for the epoch-sized values the guard above
-                    # excludes: a router reboot resets handshake state, so a
-                    # fleet peer that stays down would otherwise go silently
-                    # unmonitored forever.
-                    {
-                      alert = "WireguardFleetPeerNeverHandshaked";
-                      expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 1e9";
-                      for = "30m";
-                      labels.severity = "warning";
-                      annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has never handshaked since the interface came up.";
-                    }
-                  ]
-                  ++ lib.optionals (cfg.alerts.email.to != null) [
-                    # Alertmanager delivers everything above; if Prometheus
-                    # loses it, rules keep evaluating and nothing arrives.
-                    (mkPromRule "prometheus_notifications_alertmanagers_discovered < 1" "AlertmanagerUnreachable"
-                      "Prometheus has no reachable Alertmanager; alert delivery is broken."
-                    )
-                    (mkPromRule "rate(prometheus_notifications_errors_total[5m]) > 0" "AlertmanagerNotificationErrors"
-                      "Prometheus is failing to deliver alerts to Alertmanager."
-                    )
-                  ]
-                  ++ lib.optionals (cfg.smartctlTargets != [ ]) [
-                    {
-                      alert = "DiskSmartFailure";
-                      expr = "smartctl_device_smart_status == 0";
-                      for = "5m";
-                      labels.severity = "critical";
-                      annotations.description = "SMART reports failing status for {{ $labels.device }} on {{ $labels.instance }}.";
-                    }
-                    (mkPromRule "smartctl_device_media_errors > 0" "DiskMediaErrors"
-                      "A disk is reporting media errors."
-                    )
-                    (mkPromRule "smartctl_device_available_spare < 50" "DiskSpareLow"
-                      "NVMe available spare below 50 percent."
-                    )
-                    (mkPromRule "smartctl_device_temperature{temperature_type=\"current\"} > 70" "DiskTemperatureHigh"
-                      "Disk temperature above 70C for 5 minutes."
-                    )
-                    (mkPromRule "up{job=\"smartctl\"} == 0" "SmartctlExporterDown"
-                      "A smartctl exporter target has been down for 5 minutes."
-                    )
-                  ]
-                  ++ lib.concatMap (iface: [
-                    {
-                      alert = "InterfaceCarrierLost";
-                      expr = "node_network_carrier{device=\"${iface}\"} == 0";
-                      for = "1m";
-                      labels.severity = "critical";
-                      annotations.description = "Interface ${iface} has had no carrier for 1 minute.";
-                    }
-                    {
-                      alert = "InterfaceFlapping";
-                      expr = "increase(node_network_carrier_changes_total{device=\"${iface}\"}[15m]) > 4";
-                      labels.severity = "warning";
-                      annotations.description = "Interface ${iface} carrier changed more than 4 times in 15 minutes.";
-                    }
-                  ]) cfg.alerts.carrierInterfaces;
-                }
-              ];
-            })
-          ];
-        };
-
-        # Alerts leave via local Stalwart relay over WAN — independent of the
-        # LAN path, so delivery survives a dead trunk (local dashboards don't).
-        services.prometheus.alertmanager = lib.mkIf (cfg.alerts.email.to != null) {
-          enable = true;
-          listenAddress = "127.0.0.1";
-          port = 9093;
-          webExternalUrl = lib.mkIf (cfg.alerts.externalUrl != null) cfg.alerts.externalUrl;
-          configuration = {
-            global = {
-              smtp_smarthost = "127.0.0.1:25";
-              smtp_from = cfg.alerts.email.from;
-              smtp_require_tls = false;
-            };
-            route = {
-              receiver = "email";
-              group_by = [ "alertname" ];
-              group_wait = "30s";
-              group_interval = "5m";
-              repeat_interval = "4h";
-            };
-            receivers = [
+            scrapeConfigs = [
               {
-                name = "email";
-                email_configs = [
+                job_name = "prometheus";
+                relabel_configs = friendlyInstance;
+                static_configs = [ { targets = [ "127.0.0.1:9090" ]; } ];
+              }
+              {
+                job_name = "grafana";
+                relabel_configs = friendlyInstance;
+                static_configs = [ { targets = [ "127.0.0.1:3010" ]; } ];
+              }
+              {
+                job_name = "loki";
+                relabel_configs = friendlyInstance;
+                metrics_path = "/metrics";
+                static_configs = [ { targets = [ "127.0.0.1:3100" ]; } ];
+              }
+              {
+                job_name = "blocky";
+                relabel_configs = friendlyInstance;
+                metrics_path = "/metrics";
+                static_configs = [ { targets = [ "127.0.0.1:${toString config.my.router.blocky.httpPort}" ]; } ];
+              }
+              {
+                job_name = "node";
+                relabel_configs = friendlyInstance;
+                static_configs = [
                   {
-                    to = cfg.alerts.email.to;
-                    send_resolved = true;
-                    # Default subject plus alert start time rendered in the
-                    # host timezone (Alertmanager templates emit UTC otherwise)
-                    headers.Subject = ''{{ template "email.default.subject" . }} [{{ (index .Alerts 0).StartsAt | tz "${alertTimezone}" | date "Jan 2 3:04PM MST" }}]'';
+                    targets = [
+                      "127.0.0.1:${toString config.services.prometheus.exporters.node.port}"
+                    ]
+                    ++ cfg.nodeTargets;
                   }
                 ];
               }
+              {
+                job_name = "unbound";
+                relabel_configs = friendlyInstance;
+                static_configs = [
+                  { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.unbound.port}" ]; }
+                ];
+              }
+              {
+                job_name = "kea";
+                relabel_configs = friendlyInstance;
+                static_configs = [
+                  { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.kea.port}" ]; }
+                ];
+              }
+              {
+                job_name = "wireguard";
+                relabel_configs = friendlyInstance;
+                static_configs = [
+                  { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.wireguard.port}" ]; }
+                ];
+              }
+            ]
+            ++ lib.optionals (cfg.smartctlTargets != [ ]) [
+              {
+                job_name = "smartctl";
+                relabel_configs = friendlyInstance;
+                static_configs = [ { targets = cfg.smartctlTargets; } ];
+              }
+            ]
+            ++ lib.optionals cfg.unpoller.enable [
+              {
+                job_name = "unpoller";
+                relabel_configs = friendlyInstance;
+                static_configs = [ { targets = [ "127.0.0.1:9130" ]; } ];
+              }
+            ]
+            ++ [
+              {
+                # Caddy admin endpoint; per-request metrics need the `metrics`
+                # global option in the Caddyfile (set on pp-router1)
+                job_name = "caddy";
+                relabel_configs = friendlyInstance;
+                static_configs = [ { targets = [ "127.0.0.1:2019" ]; } ];
+              }
+            ]
+            ++ lib.optionals (cfg.alerts.email.to != null) [
+              {
+                job_name = "alertmanager";
+                relabel_configs = friendlyInstance;
+                static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ];
+              }
+            ]
+            ++ [
+              {
+                job_name = "blackbox-icmp";
+                metrics_path = "/probe";
+                params = {
+                  module = [ "icmp_v4" ];
+                };
+                static_configs = [
+                  {
+                    targets = [
+                      "1.1.1.1"
+                      "9.9.9.9"
+                    ];
+                  }
+                ];
+                relabel_configs = blackboxRelabelConfigs;
+              }
+              {
+                job_name = "blackbox-tcp";
+                metrics_path = "/probe";
+                params = {
+                  module = [ "tcp_connect" ];
+                };
+                static_configs = [
+                  {
+                    targets = [
+                      "1.1.1.1:853"
+                      "9.9.9.9:853"
+                    ];
+                  }
+                ];
+                relabel_configs = blackboxRelabelConfigs;
+              }
+              {
+                job_name = "blackbox-dns";
+                metrics_path = "/probe";
+                params = {
+                  module = [ "dns_udp" ];
+                  target = [ "google.com" ];
+                };
+                static_configs = [ { targets = [ "127.0.0.1:53" ]; } ];
+                relabel_configs = blackboxRelabelConfigs;
+              }
+              {
+                job_name = "blackbox-http";
+                metrics_path = "/probe";
+                params = {
+                  module = [ "http_2xx" ];
+                };
+                static_configs = [ { targets = cfg.blackbox.httpTargets; } ];
+                relabel_configs = blackboxRelabelConfigs;
+              }
+            ]
+            ++ lib.optional (cfg.blackbox.proxyCanary.url != null) {
+              job_name = "blackbox-proxy-canary";
+              metrics_path = "/probe";
+              params = {
+                module = [ "http_via_proxy" ];
+              };
+              static_configs = [ { targets = [ cfg.blackbox.proxyCanary.url ]; } ];
+              relabel_configs = blackboxRelabelConfigs;
+            };
+            rules = [
+              (builtins.toJSON {
+                groups = [
+                  {
+                    name = "observability";
+                    rules = [
+                      # blackbox-.* matters most here: if the blackbox exporter
+                      # dies, every probe_success series goes absent and all
+                      # probe/cert alerts stop evaluating without this rule.
+                      (mkPromRule
+                        "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard|unpoller|caddy|alertmanager|blackbox-.*\"} == 0"
+                        "ObservabilityTargetDown"
+                        "An observability target has been down for 5 minutes."
+                      )
+                      (mkPromRule "probe_success{job=\"blackbox-icmp\"} == 0" "RouterIcmpProbeFailing"
+                        "External ICMP probe has been failing for 5 minutes."
+                      )
+                      (mkPromRule "probe_success{job=\"blackbox-tcp\"} == 0" "RouterTcpProbeFailing"
+                        "External TCP probe has been failing for 5 minutes."
+                      )
+                      (mkPromRule "probe_success{job=\"blackbox-dns\"} == 0" "RouterDnsProbeFailing"
+                        "DNS probing through the local resolver has been failing for 5 minutes."
+                      )
+                      # ZFS ARC is reclaimable but not counted in MemAvailable;
+                      # without the correction the NAS false-alarms under ARC
+                      # pressure. The `or` fallback keeps ARC-less hosts working.
+                      (mkPromRule
+                        "(node_memory_MemAvailable_bytes + (node_zfs_arc_size or node_memory_MemAvailable_bytes * 0)) / node_memory_MemTotal_bytes < 0.1"
+                        "HostLowMemory"
+                        "Memory available (including reclaimable ZFS ARC) on {{ $labels.instance }} is below 10 percent."
+                      )
+                      (mkPromRule
+                        "(node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|ramfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|ramfs\"}) < 0.15"
+                        "HostLowDiskSpace"
+                        "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is below 15 percent available."
+                      )
+                      (mkPromRule "avg by (instance) (1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) > 0.9"
+                        "HostHighCpu"
+                        "CPU on {{ $labels.instance }} has been above 90 percent busy for 5 minutes."
+                      )
+                      (mkPromRule
+                        "increase(node_systemd_unit_state{name=~\"systemd-networkd.service|unbound.service|blocky.service|kea-dhcp4-server.service\",state=\"failed\"}[15m]) > 0"
+                        "RouterCoreServiceFailed"
+                        "A core router service entered failed state in the last 15 minutes."
+                      )
+                      (mkPromRule "node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8"
+                        "RouterConntrackHigh"
+                        "Connection tracking table is above 80 percent capacity."
+                      )
+                      (mkPromRule "rate(node_network_receive_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0.1"
+                        "RouterInterfaceRxDrops"
+                        "Interface {{ $labels.device }} is dropping incoming packets ({{ $value | humanize }}/s)."
+                      )
+                      (mkPromRule "rate(node_network_transmit_drop_total{device=~\"br-.*|enp.*\"}[5m]) > 0.1"
+                        "RouterInterfaceTxDrops"
+                        "Interface {{ $labels.device }} is dropping outgoing packets ({{ $value | humanize }}/s)."
+                      )
+                      # Reason-attributed companion to the drop alerts above.
+                      # Whitelist of actionable reasons only — normal traffic
+                      # constantly logs benign ones (OTHERHOST, NETFILTER_DROP,
+                      # NO_SOCKET teardown races, NEIGH_FAILED sleeping phones,
+                      # NOT_SPECIFIED multicast), and excluding them one at a
+                      # time is whack-a-mole. Alert on resource exhaustion,
+                      # queue overload, NIC trouble, and checksum corruption;
+                      # everything else stays visible in the metric.
+                      (mkPromRule
+                        "sum by (device, reason) (rate(netdev_drop_reasons_total{reason=~\"CPU_BACKLOG|QDISC_.*|CAKE_FLOOD|FQ_.*|NOMEM|PROTO_MEM|PFMEMALLOC|FULL_RING|DEV_HDR|DEV_READY|.*_CSUM|IP_RPFILTER\"}[5m])) > 0.1"
+                        "RouterInterfaceDropReasons"
+                        "Interface {{ $labels.device }} dropping packets, kernel reason {{ $labels.reason }} ({{ $value | humanize }}/s)."
+                      )
+                      (mkPromRule "node_hwmon_temp_celsius{chip=~\".*coretemp.*\"} > 85" "HostCpuHot"
+                        "CPU sensor {{ $labels.sensor }} on {{ $labels.instance }} above 85C for 5 minutes."
+                      )
+                      {
+                        # DDR5 SPD sensors — join via chip_names since i2c bus ids can renumber
+                        alert = "HostMemoryDimmHot";
+                        expr = "(node_hwmon_temp_celsius and on (instance, chip) node_hwmon_chip_names{chip_name=\"spd5118\"}) > 55";
+                        for = "10m";
+                        labels.severity = "warning";
+                        annotations.description = "DIMM sensor {{ $labels.chip }} on {{ $labels.instance }} above 55C for 10 minutes.";
+                      }
+                      (mkPromRule "(probe_ssl_earliest_cert_expiry - time()) < 14 * 86400" "CertExpiringSoon"
+                        "TLS certificate for {{ $labels.instance }} expires in less than 14 days."
+                      )
+                      (mkPromRule "probe_success{job=\"blackbox-http\"} == 0" "HttpProbeFailing"
+                        "HTTP probe against {{ $labels.instance }} has been failing for 5 minutes."
+                      )
+                      (mkPromRule "probe_success{job=\"blackbox-proxy-canary\"} == 0" "NasProxyPathBroken"
+                        "The router-to-NAS Caddy proxy path (used by WireGuard clients) has been failing for 5 minutes."
+                      )
+                      {
+                        alert = "SystemdUnitFailed";
+                        expr = "node_systemd_unit_state{state=\"failed\"} == 1";
+                        for = "10m";
+                        labels.severity = "warning";
+                        annotations.description = "Unit {{ $labels.name }} on {{ $labels.instance }} has been failed for 10 minutes.";
+                      }
+                      {
+                        alert = "ZfsPoolUnhealthy";
+                        expr = "node_zfs_zpool_state{state!=\"online\"} == 1";
+                        for = "5m";
+                        labels.severity = "critical";
+                        annotations.description = "ZFS pool {{ $labels.zpool }} on {{ $labels.instance }} is {{ $labels.state }}.";
+                      }
+                      {
+                        # Informational: fires for ~10 minutes after any boot, planned or not
+                        alert = "HostRebooted";
+                        expr = "time() - node_boot_time_seconds < 600";
+                        for = "1m";
+                        labels.severity = "warning";
+                        annotations.description = "{{ $labels.instance }} rebooted less than 10 minutes ago.";
+                      }
+                      {
+                        # 250ms sustained is ~100x healthy NTP jitter yet under the ~0.5s step threshold
+                        alert = "HostClockDrift";
+                        expr = "abs(node_timex_offset_seconds) > 0.25";
+                        for = "15m";
+                        labels.severity = "warning";
+                        annotations.description = "Clock on {{ $labels.instance }} has drifted more than 250ms from NTP for 15 minutes.";
+                      }
+                      (mkPromRule "increase(node_vmstat_oom_kill[1h]) > 0" "HostOomKills"
+                        "The OOM killer fired on {{ $labels.instance }} within the last hour."
+                      )
+                      {
+                        alert = "BackupStale";
+                        expr = "time() - borg_last_success_timestamp_seconds > 172800";
+                        for = "30m";
+                        labels.severity = "critical";
+                        annotations.description = "Borg backup on {{ $labels.instance }} has not succeeded in over 48 hours.";
+                      }
+                      {
+                        # Expected to fire once after deploy until the first successful backup stamps the metric
+                        alert = "BackupMetricMissing";
+                        expr = "absent(borg_last_success_timestamp_seconds)";
+                        for = "6h";
+                        labels.severity = "warning";
+                        annotations.description = "No borg backup success metric has been scraped for 6 hours.";
+                      }
+                      # The kea exporter emits each subnet twice (with and
+                      # without a pool label); match only the pool-less series
+                      # so a full subnet raises one alert, not two.
+                      (mkPromRule
+                        "kea_dhcp4_addresses_assigned_total{pool=\"\"} / kea_dhcp4_addresses_total{pool=\"\"} > 0.9"
+                        "DhcpPoolNearlyFull"
+                        "DHCP subnet {{ $labels.subnet }} is above 90 percent lease utilization."
+                      )
+                      # Fleet peers (routed /96 allowed_ips, always-on hosts)
+                      # should handshake every ~2 minutes. Phones (/128) roam
+                      # and sleep — excluded. The < 1e9 guard skips peers that
+                      # have never handshaked since interface creation (the
+                      # exporter reports epoch-now for those).
+                      {
+                        alert = "WireguardFleetPeerSilent";
+                        expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 900 < 1e9";
+                        for = "5m";
+                        labels.severity = "warning";
+                        annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has not handshaked in over 15 minutes.";
+                      }
+                      # Companion for the epoch-sized values the guard above
+                      # excludes: a router reboot resets handshake state, so a
+                      # fleet peer that stays down would otherwise go silently
+                      # unmonitored forever.
+                      {
+                        alert = "WireguardFleetPeerNeverHandshaked";
+                        expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 1e9";
+                        for = "30m";
+                        labels.severity = "warning";
+                        annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has never handshaked since the interface came up.";
+                      }
+                    ]
+                    ++ lib.optionals (cfg.alerts.email.to != null) [
+                      # Alertmanager delivers everything above; if Prometheus
+                      # loses it, rules keep evaluating and nothing arrives.
+                      (mkPromRule "prometheus_notifications_alertmanagers_discovered < 1" "AlertmanagerUnreachable"
+                        "Prometheus has no reachable Alertmanager; alert delivery is broken."
+                      )
+                      (mkPromRule "rate(prometheus_notifications_errors_total[5m]) > 0" "AlertmanagerNotificationErrors"
+                        "Prometheus is failing to deliver alerts to Alertmanager."
+                      )
+                    ]
+                    ++ lib.optionals (cfg.smartctlTargets != [ ]) [
+                      {
+                        alert = "DiskSmartFailure";
+                        expr = "smartctl_device_smart_status == 0";
+                        for = "5m";
+                        labels.severity = "critical";
+                        annotations.description = "SMART reports failing status for {{ $labels.device }} on {{ $labels.instance }}.";
+                      }
+                      (mkPromRule "smartctl_device_media_errors > 0" "DiskMediaErrors"
+                        "A disk is reporting media errors."
+                      )
+                      (mkPromRule "smartctl_device_available_spare < 50" "DiskSpareLow"
+                        "NVMe available spare below 50 percent."
+                      )
+                      (mkPromRule "smartctl_device_temperature{temperature_type=\"current\"} > 70" "DiskTemperatureHigh"
+                        "Disk temperature above 70C for 5 minutes."
+                      )
+                      (mkPromRule "up{job=\"smartctl\"} == 0" "SmartctlExporterDown"
+                        "A smartctl exporter target has been down for 5 minutes."
+                      )
+                    ]
+                    ++ lib.concatMap (iface: [
+                      {
+                        alert = "InterfaceCarrierLost";
+                        expr = "node_network_carrier{device=\"${iface}\"} == 0";
+                        for = "1m";
+                        labels.severity = "critical";
+                        annotations.description = "Interface ${iface} has had no carrier for 1 minute.";
+                      }
+                      {
+                        alert = "InterfaceFlapping";
+                        expr = "increase(node_network_carrier_changes_total{device=\"${iface}\"}[15m]) > 4";
+                        labels.severity = "warning";
+                        annotations.description = "Interface ${iface} carrier changed more than 4 times in 15 minutes.";
+                      }
+                    ]) cfg.alerts.carrierInterfaces;
+                  }
+                ];
+              })
             ];
+
+            # Alerts leave via local Stalwart relay over WAN — independent of the
+            # LAN path, so delivery survives a dead trunk (local dashboards don't).
+            alertmanager = lib.mkIf (cfg.alerts.email.to != null) {
+              enable = true;
+              listenAddress = "127.0.0.1";
+              port = 9093;
+              webExternalUrl = lib.mkIf (cfg.alerts.externalUrl != null) cfg.alerts.externalUrl;
+              configuration = {
+                global = {
+                  smtp_smarthost = "127.0.0.1:25";
+                  smtp_from = cfg.alerts.email.from;
+                  smtp_require_tls = false;
+                };
+                route = {
+                  receiver = "email";
+                  group_by = [ "alertname" ];
+                  group_wait = "30s";
+                  group_interval = "5m";
+                  repeat_interval = "4h";
+                };
+                receivers = [
+                  {
+                    name = "email";
+                    email_configs = [
+                      {
+                        to = cfg.alerts.email.to;
+                        send_resolved = true;
+                        # Default subject plus alert start time rendered in the
+                        # host timezone (Alertmanager templates emit UTC otherwise)
+                        headers.Subject = ''{{ template "email.default.subject" . }} [{{ (index .Alerts 0).StartsAt | tz "${alertTimezone}" | date "Jan 2 3:04PM MST" }}]'';
+                      }
+                    ];
+                  }
+                ];
+              };
+            };
+            alertmanagers = lib.mkIf (cfg.alerts.email.to != null) [
+              { static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ]; }
+            ];
+            exporters = {
+              node = {
+                enable = true;
+                listenAddress = "127.0.0.1";
+                enabledCollectors = [
+                  "systemd"
+                  "textfile"
+                ];
+                extraFlags = [
+                  "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text"
+                ];
+              };
+              blackbox = {
+                enable = true;
+                listenAddress = "127.0.0.1";
+                configFile = blackboxConfig;
+              };
+              unbound = {
+                enable = true;
+                listenAddress = "127.0.0.1";
+              };
+              kea = {
+                enable = true;
+                listenAddress = "127.0.0.1";
+                # Query dhcp4's unix control socket directly (ctrl-agent lacks a
+                # control-sockets forwarding map, so stats never flowed over HTTP)
+                targets = [ "/run/kea/kea-dhcp4.socket" ];
+              };
+              wireguard = {
+                enable = true;
+                listenAddress = "127.0.0.1";
+                interfaces = [ "pp-wg" ];
+                latestHandshakeDelay = true;
+              };
+            };
+          };
+          grafana = {
+            enable = true;
+            provision.enable = true;
+            settings = {
+              analytics = {
+                reporting_enabled = false;
+                check_for_updates = false;
+                check_for_plugin_updates = false;
+              };
+              metrics.enabled = true;
+              server = {
+                http_addr = "127.0.0.1";
+                http_port = 3010;
+                domain = cfg.grafana.hostname;
+                root_url = "https://${cfg.grafana.hostname}";
+                enforce_domain = true;
+              };
+              security = {
+                admin_user = "admin";
+                admin_password = "$__file{${config.sops.secrets.grafana-admin-password.path}}";
+                secret_key = "$__file{${config.sops.secrets.grafana-secret-key.path}}";
+              };
+              users = {
+                allow_sign_up = false;
+                allow_org_create = false;
+              };
+            };
+            provision = {
+              datasources.settings = {
+                apiVersion = 1;
+                prune = true;
+                datasources = [
+                  {
+                    name = "Prometheus";
+                    uid = "prometheus";
+                    type = "prometheus";
+                    access = "proxy";
+                    url = "http://127.0.0.1:9090";
+                    isDefault = true;
+                  }
+                  {
+                    name = "Loki";
+                    uid = "loki";
+                    type = "loki";
+                    access = "proxy";
+                    url = "http://127.0.0.1:3100";
+                  }
+                ];
+              };
+              dashboards.settings = {
+                apiVersion = 1;
+                providers = [
+                  {
+                    name = "Observability";
+                    orgId = 1;
+                    folder = "Observability";
+                    type = "file";
+                    disableDeletion = false;
+                    allowUiUpdates = false;
+                    updateIntervalSeconds = 30;
+                    options.path = dashboardDir;
+                  }
+                ];
+              };
+            };
+          };
+          loki = {
+            enable = true;
+            configuration = {
+              auth_enabled = false;
+              server = {
+                http_listen_address = cfg.loki.listenAddress;
+                http_listen_port = 3100;
+                grpc_listen_address = "127.0.0.1";
+                grpc_listen_port = 9096;
+              };
+              common = {
+                path_prefix = "/var/lib/loki";
+                replication_factor = 1;
+                ring.kvstore.store = "inmemory";
+                # Default advertises first non-loopback addr in the ring, but
+                # gRPC only listens on loopback
+                instance_addr = "127.0.0.1";
+              };
+              schema_config.configs = [
+                {
+                  from = "2024-01-01";
+                  store = "tsdb";
+                  object_store = "filesystem";
+                  schema = "v13";
+                  index = {
+                    prefix = "index_";
+                    period = "24h";
+                  };
+                }
+              ];
+              storage_config = {
+                filesystem.directory = "/var/lib/loki/chunks";
+              };
+              ingester = {
+                chunk_encoding = "snappy";
+                wal = {
+                  enabled = true;
+                  dir = "/var/lib/loki/wal";
+                };
+              };
+              compactor = {
+                working_directory = "/var/lib/loki/compactor";
+                retention_enabled = true;
+                delete_request_store = "filesystem";
+              };
+              limits_config = {
+                retention_period = cfg.loki.retentionPeriod;
+                reject_old_samples = true;
+                reject_old_samples_max_age = "168h";
+              };
+            };
+          };
+          # Log shipping via Grafana Alloy (promtail was removed in NixOS 26.05).
+          # Same pipeline as the old promtail config: journal (filtered to the
+          # services we care about) + blocky query-log files → local Loki.
+          alloy = {
+            enable = true;
+            # Alloy's own HTTP/UI port — keep it loopback-only
+            extraFlags = [ "--server.http.listen-addr=127.0.0.1:9080" ];
+          };
+          unpoller = lib.mkIf cfg.unpoller.enable {
+            enable = true;
+            # No local InfluxDB; Prometheus scrapes the exporter instead
+            influxdb.disable = true;
+            unifi = {
+              controllers = [
+                {
+                  url = cfg.unpoller.controllerUrl;
+                  inherit (cfg.unpoller) user;
+                  pass = cfg.unpoller.passwordFile;
+                  save_sites = true;
+                  # Controller lacks /stat/event endpoint (404 on every poll)
+                  save_events = false;
+                  save_alarms = true;
+                  save_dpi = false;
+                  verify_ssl = false;
+                }
+              ];
+            };
+            prometheus = {
+              http_listen = "127.0.0.1:9130";
+            };
           };
         };
-
-        services.prometheus.alertmanagers = lib.mkIf (cfg.alerts.email.to != null) [
-          { static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ]; }
-        ];
 
         assertions = [
           {
@@ -768,104 +953,49 @@ _: {
 
         # Dead-man's switch: external service alerts when pings stop arriving,
         # covering whole-host failure that local alerting can't report.
-        systemd.services.deadman-ping = lib.mkIf (cfg.alerts.deadman.pingUrlFile != null) {
-          description = "Dead-man's switch ping";
-          serviceConfig.Type = "oneshot";
-          script = ''
-            url=$(cat ${cfg.alerts.deadman.pingUrlFile})
-            case "$url" in
-              https://*) ${pkgs.curl}/bin/curl -fsS -m 10 --retry 3 -o /dev/null "$url" ;;
-              *) echo "ping URL not configured yet, skipping" ;;
-            esac
-          '';
-        };
-
-        systemd.timers.deadman-ping = lib.mkIf (cfg.alerts.deadman.pingUrlFile != null) {
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnBootSec = "2m";
-            OnUnitActiveSec = "5m";
-          };
-        };
-
-        services.prometheus.exporters = {
-          node = {
-            enable = true;
-            listenAddress = "127.0.0.1";
-            enabledCollectors = [
-              "systemd"
-              "textfile"
-            ];
-            extraFlags = [
-              "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text"
-            ];
-          };
-          blackbox = {
-            enable = true;
-            listenAddress = "127.0.0.1";
-            configFile = blackboxConfig;
-          };
-          unbound = {
-            enable = true;
-            listenAddress = "127.0.0.1";
-          };
-          kea = {
-            enable = true;
-            listenAddress = "127.0.0.1";
-            # Query dhcp4's unix control socket directly (ctrl-agent lacks a
-            # control-sockets forwarding map, so stats never flowed over HTTP)
-            targets = [ "/run/kea/kea-dhcp4.socket" ];
-          };
-          wireguard = {
-            enable = true;
-            listenAddress = "127.0.0.1";
-            interfaces = [ "pp-wg" ];
-            latestHandshakeDelay = true;
-          };
-        };
-
-        # Export nftables named counters (wan_input_drop, wan_new_accept_*)
-        # as Prometheus metrics via the node-exporter textfile collector.
-        # (Textfile dir tmpfiles rule lives in the shared list below.)
-        systemd.services.nftables-metrics = lib.mkIf config.networking.nftables.enable {
-          description = "Export nftables named counters for node-exporter";
-          path = [
-            pkgs.nftables
-            pkgs.jq
-            pkgs.coreutils
-          ];
-          serviceConfig.Type = "oneshot";
-          script = ''
-            out=/var/lib/prometheus-node-exporter-text/nftables.prom
-            tmp="$out.tmp"
-            {
-              echo "# HELP nftables_counter_packets Packets seen by nftables named counter"
-              echo "# TYPE nftables_counter_packets counter"
-              echo "# HELP nftables_counter_bytes Bytes seen by nftables named counter"
-              echo "# TYPE nftables_counter_bytes counter"
-              nft --json list counters | jq -r '
-                .nftables[] | select(.counter) | .counter |
-                "nftables_counter_packets{family=\"\(.family)\",table=\"\(.table)\",name=\"\(.name)\"} \(.packets)",
-                "nftables_counter_bytes{family=\"\(.family)\",table=\"\(.table)\",name=\"\(.name)\"} \(.bytes)"
-              '
-            } > "$tmp" && mv "$tmp" "$out"
-          '';
-        };
-
-        systemd.timers.nftables-metrics = lib.mkIf config.networking.nftables.enable {
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnBootSec = "30s";
-            OnUnitActiveSec = "15s";
-            AccuracySec = "1s";
-          };
-        };
-
-        # Attribute interface packet drops to kernel drop reasons so the
-        # RxDrops-style alerts can say *why* packets were dropped.
-        systemd.services.netdev-drop-metrics =
-          lib.mkIf (cfg.dropMonitor.enable && cfg.dropMonitor.interfaces != [ ])
-            {
+        systemd = {
+          services = {
+            deadman-ping = lib.mkIf (cfg.alerts.deadman.pingUrlFile != null) {
+              description = "Dead-man's switch ping";
+              serviceConfig.Type = "oneshot";
+              script = ''
+                url=$(cat ${cfg.alerts.deadman.pingUrlFile})
+                case "$url" in
+                  https://*) ${pkgs.curl}/bin/curl -fsS -m 10 --retry 3 -o /dev/null "$url" ;;
+                  *) echo "ping URL not configured yet, skipping" ;;
+                esac
+              '';
+            };
+            # Export nftables named counters (wan_input_drop, wan_new_accept_*)
+            # as Prometheus metrics via the node-exporter textfile collector.
+            # (Textfile dir tmpfiles rule lives in the shared list below.)
+            nftables-metrics = lib.mkIf config.networking.nftables.enable {
+              description = "Export nftables named counters for node-exporter";
+              path = [
+                pkgs.nftables
+                pkgs.jq
+                pkgs.coreutils
+              ];
+              serviceConfig.Type = "oneshot";
+              script = ''
+                out=/var/lib/prometheus-node-exporter-text/nftables.prom
+                tmp="$out.tmp"
+                {
+                  echo "# HELP nftables_counter_packets Packets seen by nftables named counter"
+                  echo "# TYPE nftables_counter_packets counter"
+                  echo "# HELP nftables_counter_bytes Bytes seen by nftables named counter"
+                  echo "# TYPE nftables_counter_bytes counter"
+                  nft --json list counters | jq -r '
+                    .nftables[] | select(.counter) | .counter |
+                    "nftables_counter_packets{family=\"\(.family)\",table=\"\(.table)\",name=\"\(.name)\"} \(.packets)",
+                    "nftables_counter_bytes{family=\"\(.family)\",table=\"\(.table)\",name=\"\(.name)\"} \(.bytes)"
+                  '
+                } > "$tmp" && mv "$tmp" "$out"
+              '';
+            };
+            # Attribute interface packet drops to kernel drop reasons so the
+            # RxDrops-style alerts can say *why* packets were dropped.
+            netdev-drop-metrics = lib.mkIf (cfg.dropMonitor.enable && cfg.dropMonitor.interfaces != [ ]) {
               description = "Per-reason packet drop metrics for node-exporter";
               wantedBy = [ "multi-user.target" ];
               after = [ "network.target" ];
@@ -878,150 +1008,47 @@ _: {
                   | ${pkgs.python3}/bin/python3 ${dropMetricsConverter}
               '';
             };
-
-        services.grafana = {
-          enable = true;
-          provision.enable = true;
-          settings = {
-            analytics = {
-              reporting_enabled = false;
-              check_for_updates = false;
-              check_for_plugin_updates = false;
-            };
-            metrics.enabled = true;
-            server = {
-              http_addr = "127.0.0.1";
-              http_port = 3010;
-              domain = cfg.grafana.hostname;
-              root_url = "https://${cfg.grafana.hostname}";
-              enforce_domain = true;
-            };
-            security = {
-              admin_user = "admin";
-              admin_password = "$__file{${config.sops.secrets.grafana-admin-password.path}}";
-              secret_key = "$__file{${config.sops.secrets.grafana-secret-key.path}}";
-            };
-            users = {
-              allow_sign_up = false;
-              allow_org_create = false;
-            };
-          };
-          provision = {
-            datasources.settings = {
-              apiVersion = 1;
-              prune = true;
-              datasources = [
-                {
-                  name = "Prometheus";
-                  uid = "prometheus";
-                  type = "prometheus";
-                  access = "proxy";
-                  url = "http://127.0.0.1:9090";
-                  isDefault = true;
-                }
-                {
-                  name = "Loki";
-                  uid = "loki";
-                  type = "loki";
-                  access = "proxy";
-                  url = "http://127.0.0.1:3100";
-                }
-              ];
-            };
-            dashboards.settings = {
-              apiVersion = 1;
-              providers = [
-                {
-                  name = "Observability";
-                  orgId = 1;
-                  folder = "Observability";
-                  type = "file";
-                  disableDeletion = false;
-                  allowUiUpdates = false;
-                  updateIntervalSeconds = 30;
-                  options.path = dashboardDir;
-                }
-              ];
-            };
-          };
-        };
-
-        services.loki = {
-          enable = true;
-          configuration = {
-            auth_enabled = false;
-            server = {
-              http_listen_address = cfg.loki.listenAddress;
-              http_listen_port = 3100;
-              grpc_listen_address = "127.0.0.1";
-              grpc_listen_port = 9096;
-            };
-            common = {
-              path_prefix = "/var/lib/loki";
-              replication_factor = 1;
-              ring.kvstore.store = "inmemory";
-              # Default advertises first non-loopback addr in the ring, but
-              # gRPC only listens on loopback
-              instance_addr = "127.0.0.1";
-            };
-            schema_config.configs = [
-              {
-                from = "2024-01-01";
-                store = "tsdb";
-                object_store = "filesystem";
-                schema = "v13";
-                index = {
-                  prefix = "index_";
-                  period = "24h";
-                };
-              }
-            ];
-            storage_config = {
-              filesystem.directory = "/var/lib/loki/chunks";
-            };
-            ingester = {
-              chunk_encoding = "snappy";
-              wal = {
-                enabled = true;
-                dir = "/var/lib/loki/wal";
+            alloy = {
+              serviceConfig = {
+                # Journal access for the DynamicUser'd alloy service
+                SupplementaryGroups = [ "systemd-journal" ];
+                # Blocky's LogsDirectory resolves to /var/log/private/blocky because
+                # of DynamicUser, and /var/log/private is 0700 root — alloy (also
+                # DynamicUser) cannot traverse it. Bind the real directory to a
+                # neutral path inside alloy's mount namespace; binding over the
+                # /var/log/blocky symlink would still resolve through the 0700 dir.
+                # The leading "-" tolerates a missing source (fresh install before
+                # blocky's first start) — without it namespace setup fails and five
+                # fast restarts would permanently stop alloy.
+                BindReadOnlyPaths = [
+                  "-/var/log/private/blocky:/run/blocky-logs"
+                ];
               };
             };
-            compactor = {
-              working_directory = "/var/lib/loki/compactor";
-              retention_enabled = true;
-              delete_request_store = "filesystem";
+          };
+          timers = {
+            deadman-ping = lib.mkIf (cfg.alerts.deadman.pingUrlFile != null) {
+              wantedBy = [ "timers.target" ];
+              timerConfig = {
+                OnBootSec = "2m";
+                OnUnitActiveSec = "5m";
+              };
             };
-            limits_config = {
-              retention_period = cfg.loki.retentionPeriod;
-              reject_old_samples = true;
-              reject_old_samples_max_age = "168h";
+            nftables-metrics = lib.mkIf config.networking.nftables.enable {
+              wantedBy = [ "timers.target" ];
+              timerConfig = {
+                OnBootSec = "30s";
+                OnUnitActiveSec = "15s";
+                AccuracySec = "1s";
+              };
             };
           };
+          tmpfiles.rules = [
+            "d ${dashboardDir} 0750 grafana grafana -"
+            "d /var/lib/prometheus-node-exporter-text 0755 root root -"
+          ]
+          ++ lib.mapAttrsToList mkDashboardLinkRule dashboardFiles;
         };
-
-        # Log shipping via Grafana Alloy (promtail was removed in NixOS 26.05).
-        # Same pipeline as the old promtail config: journal (filtered to the
-        # services we care about) + blocky query-log files → local Loki.
-        services.alloy = {
-          enable = true;
-          # Alloy's own HTTP/UI port — keep it loopback-only
-          extraFlags = [ "--server.http.listen-addr=127.0.0.1:9080" ];
-        };
-
-        # Journal access for the DynamicUser'd alloy service
-        systemd.services.alloy.serviceConfig.SupplementaryGroups = [ "systemd-journal" ];
-
-        # Blocky's LogsDirectory resolves to /var/log/private/blocky because
-        # of DynamicUser, and /var/log/private is 0700 root — alloy (also
-        # DynamicUser) cannot traverse it. Bind the real directory to a
-        # neutral path inside alloy's mount namespace; binding over the
-        # /var/log/blocky symlink would still resolve through the 0700 dir.
-        # The leading "-" tolerates a missing source (fresh install before
-        # blocky's first start) — without it namespace setup fails and five
-        # fast restarts would permanently stop alloy.
-        systemd.services.alloy.serviceConfig.BindReadOnlyPaths = [
-          "-/var/log/private/blocky:/run/blocky-logs"
-        ];
 
         environment.etc."alloy/config.alloy".text = ''
           loki.write "local" {
@@ -1101,36 +1128,6 @@ _: {
             }
           }
         '';
-
-        services.unpoller = lib.mkIf cfg.unpoller.enable {
-          enable = true;
-          # No local InfluxDB; Prometheus scrapes the exporter instead
-          influxdb.disable = true;
-          unifi = {
-            controllers = [
-              {
-                url = cfg.unpoller.controllerUrl;
-                inherit (cfg.unpoller) user;
-                pass = cfg.unpoller.passwordFile;
-                save_sites = true;
-                # Controller lacks /stat/event endpoint (404 on every poll)
-                save_events = false;
-                save_alarms = true;
-                save_dpi = false;
-                verify_ssl = false;
-              }
-            ];
-          };
-          prometheus = {
-            http_listen = "127.0.0.1:9130";
-          };
-        };
-
-        systemd.tmpfiles.rules = [
-          "d ${dashboardDir} 0750 grafana grafana -"
-          "d /var/lib/prometheus-node-exporter-text 0755 root root -"
-        ]
-        ++ lib.mapAttrsToList mkDashboardLinkRule dashboardFiles;
       };
     };
 }

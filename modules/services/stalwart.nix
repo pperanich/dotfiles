@@ -92,31 +92,33 @@ _: {
             ];
 
             # Outbound routing — all mail relayed through Resend
-            queue.outbound.hostname = cfg.hostname;
+            queue = {
+              outbound.hostname = cfg.hostname;
 
-            queue.route.resend = {
-              type = "relay";
-              protocol = "smtp";
-              address = "smtp.resend.com";
-              port = 587;
-              tls = {
-                implicit = false;
-                allow-invalid-certs = false;
+              route.resend = {
+                type = "relay";
+                protocol = "smtp";
+                address = "smtp.resend.com";
+                port = 587;
+                tls = {
+                  implicit = false;
+                  allow-invalid-certs = false;
+                };
+                auth = {
+                  username = "resend";
+                  secret = "%{file:/run/credentials/stalwart.service/relay-token}%";
+                };
               };
-              auth = {
-                username = "resend";
-                secret = "%{file:/run/credentials/stalwart.service/relay-token}%";
-              };
+
+              # Route all outbound mail through the Resend relay
+              strategy.route = [
+                {
+                  "if" = "is_local_domain('', rcpt_domain)";
+                  "then" = "'local'";
+                }
+                { "else" = "'resend'"; }
+              ];
             };
-
-            # Route all outbound mail through the Resend relay
-            queue.strategy.route = [
-              {
-                "if" = "is_local_domain('', rcpt_domain)";
-                "then" = "'local'";
-              }
-              { "else" = "'resend'"; }
-            ];
           };
         };
       };

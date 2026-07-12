@@ -10,6 +10,10 @@ let
   # WireGuard controller IPv6 address (derived from clan-managed prefix)
   wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
   wgAddress = "${wgPrefix}::1";
+  # A fleet host's clan-generated pp-wg public key (committed plaintext var).
+  # Peer vars belong to other machines, so read the file rather than config.
+  fleetPeerPubkey =
+    host: lib.trim (builtins.readFile ../../vars/per-machine/${host}/wireguard-keys-pp-wg/publickey/value);
   domain = config.my.router.dhcp.domainName;
   inherit (lib.my.homelab) publicDomain mkSub;
 in
@@ -91,10 +95,10 @@ in
     grafana.hostname = mkSub "grafana";
     # Drop non-always-on WireGuard peers from the fleet liveness alerts:
     # pp-rpi1 is offline, pp-wsl1/pp-ml1 are roaming dev hosts that sleep.
-    alerts.wireguardFleetPeerExcludes = [
-      "AGteAW+gpAUywy7ITC6A+uzZaIYC9AwMl/96d1CM3Xw=" # pp-rpi1 (offline)
-      "wmapcguSbOa+odUrfrTfXeUo7RM+Lksql0FAHNMv0CQ=" # pp-wsl1 (roaming)
-      "IpFjdU+c0CgkrqIMSDNCgLW9OKI6AmI6/X4niMDGzkU=" # pp-ml1 (roaming)
+    alerts.wireguardFleetPeerExcludes = map fleetPeerPubkey [
+      "pp-rpi1" # offline
+      "pp-wsl1" # roaming
+      "pp-ml1" # roaming
     ];
     # Accept journal pushes from fleet hosts (firewall restricts to the NAS)
     loki.listenAddress = "0.0.0.0";

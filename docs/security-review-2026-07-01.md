@@ -109,16 +109,16 @@ Focused re-review of everything reachable from the public IP.
 
 **Enumerated WAN surface (verified in `modules/router/firewall.nix`):**
 
-| Exposure | Verdict |
-|---|---|
-| UDP 51820 (WireGuard) | Only open port. Rate-limited (100/s new). WG is silent to scanners without a valid peer key. |
-| ICMP echo-request | Rate-limited 10/s. |
-| ICMPv6 ND/PMTUD types, RA from ISP, DHCPv6-client | Required for IPv6 operation; accepted. |
-| Everything else | `policy drop` + BCP38 bogon drops + XMAS/NULL/FIN-SYN scan drops + strict `rp_filter=1`. |
-| DNAT / port forwards | None defined (`machines = []`), so no forwarded services. |
-| UPnP (miniupnpd) | Not enabled. Module has 1024+ ACL if ever enabled. |
+| Exposure                                              | Verdict                                                                                                                                  |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| UDP 51820 (WireGuard)                                 | Only open port. Rate-limited (100/s new). WG is silent to scanners without a valid peer key.                                             |
+| ICMP echo-request                                     | Rate-limited 10/s.                                                                                                                       |
+| ICMPv6 ND/PMTUD types, RA from ISP, DHCPv6-client     | Required for IPv6 operation; accepted.                                                                                                   |
+| Everything else                                       | `policy drop` + BCP38 bogon drops + XMAS/NULL/FIN-SYN scan drops + strict `rp_filter=1`.                                                 |
+| DNAT / port forwards                                  | None defined (`machines = []`), so no forwarded services.                                                                                |
+| UPnP (miniupnpd)                                      | Not enabled. Module has 1024+ ACL if ever enabled.                                                                                       |
 | SSH, DNS, NTP, Caddy, Kea, Avahi, SSDP, ntopng, UniFi | All gated to LAN/VLAN/WireGuard interfaces only; none accept from WAN. Unbound/Blocky bind specific internal IPs — not an open resolver. |
-| Public web (site, vault) | Outbound-only Cloudflare Tunnel; no listening WAN socket. |
+| Public web (site, vault)                              | Outbound-only Cloudflare Tunnel; no listening WAN socket.                                                                                |
 
 **Findings:**
 

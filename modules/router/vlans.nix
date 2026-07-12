@@ -550,7 +550,7 @@ _: {
             reservations = map (r: {
               hw-address = lib.toLower r.mac;
               ip-address = "${net.subnet}.${toString r.ip}";
-              hostname = r.hostname;
+              inherit (r) hostname;
             }) net.reservations;
           }) networkList
         );

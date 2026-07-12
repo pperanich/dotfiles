@@ -24,11 +24,11 @@ with a Caddy instance on both the router and the NAS holding valid Let's
 Encrypt certificates for the same names (DNS-01 makes this possible; issuance
 never depends on where the name points).
 
-| Client | Resolver | Answer | Path |
-|---|---|---|---|
-| LAN device | router DNS (from DHCP) | `A 10.0.0.105` (Unbound local-data) | direct to NAS Caddy through the switch. No hairpin, TLS terminates at the NAS. |
-| WireGuard phone | public DNS | `AAAA <wg-prefix>::1` | tunnel to router Caddy, then TLS re-proxy to the NAS Caddy. Encrypted on every segment. |
-| LAN device with hardcoded public DNS | 8.8.8.8 etc. | `A 10.0.0.1` | hairpin through router Caddy, same as WG path. Works, just not optimal. |
+| Client                               | Resolver               | Answer                              | Path                                                                                    |
+| ------------------------------------ | ---------------------- | ----------------------------------- | --------------------------------------------------------------------------------------- |
+| LAN device                           | router DNS (from DHCP) | `A 10.0.0.105` (Unbound local-data) | direct to NAS Caddy through the switch. No hairpin, TLS terminates at the NAS.          |
+| WireGuard phone                      | public DNS             | `AAAA <wg-prefix>::1`               | tunnel to router Caddy, then TLS re-proxy to the NAS Caddy. Encrypted on every segment. |
+| LAN device with hardcoded public DNS | 8.8.8.8 etc.           | `A 10.0.0.1`                        | hairpin through router Caddy, same as WG path. Works, just not optimal.                 |
 
 The router's Unbound serves the split horizon via `dns.extraLocalData` A
 records. Unbound's transparent local-zone semantics return NODATA for AAAA
@@ -83,13 +83,13 @@ router's own DNS and risk a self-loop back into the same vhost.
 
 ## Where the config lives
 
-| Concern | Location |
-|---|---|
-| NAS Caddy + vhosts (`mkLocalProxy` helper, upload caps) | `machines/pp-nas1/configuration.nix` |
-| Router re-proxy vhosts (`mkNasProxy` helper) | `machines/pp-router1/configuration.nix` |
-| Split-horizon A records | `machines/pp-router1/configuration.nix` (`dns.extraLocalData`) |
-| Public zone records (A 10.0.0.1 + AAAA wg) | `machines/pp-router1/configuration.nix` (`my.cloudflareDns`, via `mkDnsRecords`) |
-| Cert monitoring | `my.observability.blackbox.httpTargets` + `CertExpiringSoon` rule |
+| Concern                                                 | Location                                                                         |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| NAS Caddy + vhosts (`mkLocalProxy` helper, upload caps) | `machines/pp-nas1/configuration.nix`                                             |
+| Router re-proxy vhosts (`mkNasProxy` helper)            | `machines/pp-router1/configuration.nix`                                          |
+| Split-horizon A records                                 | `machines/pp-router1/configuration.nix` (`dns.extraLocalData`)                   |
+| Public zone records (A 10.0.0.1 + AAAA wg)              | `machines/pp-router1/configuration.nix` (`my.cloudflareDns`, via `mkDnsRecords`) |
+| Cert monitoring                                         | `my.observability.blackbox.httpTargets` + `CertExpiringSoon` rule                |
 
 ## Adding a new NAS-hosted service
 

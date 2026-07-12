@@ -86,9 +86,9 @@ _: {
       config = lib.mkIf cfg.enable {
         services.gitea = {
           enable = true;
-          user = cfg.user;
+          inherit (cfg) user;
           group = cfg.user;
-          stateDir = cfg.stateDir;
+          inherit (cfg) stateDir;
           database.type = "sqlite3";
           lfs.enable = true;
 

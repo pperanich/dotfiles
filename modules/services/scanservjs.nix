@@ -85,16 +85,14 @@ _: {
           enable = true;
           settings = {
             host = cfg.address;
-            port = cfg.port;
+            inherit (cfg) port;
             outputDirectory = cfg.outputDir;
           };
         };
 
         hardware.sane = {
           enable = true;
-          extraBackends =
-            [ pkgs.sane-airscan ]
-            ++ lib.optional (airscanOverlay != null) airscanOverlay;
+          extraBackends = [ pkgs.sane-airscan ] ++ lib.optional (airscanOverlay != null) airscanOverlay;
         };
 
         systemd.tmpfiles.settings."10-scanservjs" = {

@@ -17,10 +17,11 @@ _: {
       mkDashboardLinkRule = name: src: "L+ ${dashboardDir}/${name} - - - - ${src}";
 
       # Rewrite scrape instance labels to short hostnames: 127.0.0.1 targets
-      # become this host, FQDN targets keep their first label. Blackbox jobs
-      # are excluded — their instance is the probed URL. Note: the port is
-      # dropped, so two same-job exporters on one host would collapse into
-      # one series — give such exporters distinct job names.
+      # become this host, host targets keep their first label whether they
+      # carry a domain (pp-nas1.home.arpa:9640) or just a port (pp-nas1:9640).
+      # Blackbox jobs are excluded — their instance is the probed URL. Note:
+      # the port is dropped, so two same-job exporters on one host would
+      # collapse into one series — give such exporters distinct job names.
       friendlyInstance = [
         {
           source_labels = [ "__address__" ];
@@ -30,7 +31,7 @@ _: {
         }
         {
           source_labels = [ "__address__" ];
-          regex = "([a-zA-Z][a-zA-Z0-9-]*)\\..*";
+          regex = "([a-zA-Z][a-zA-Z0-9-]*)([.:].*)?";
           target_label = "instance";
           replacement = "$1";
         }

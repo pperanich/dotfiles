@@ -167,9 +167,9 @@ in
       };
       smartctlTargets = [
         "127.0.0.1:9633"
-        "pp-nas1.home.arpa:9633"
+        "pp-nas1:9633"
       ];
-      nodeTargets = [ "pp-nas1.home.arpa:9640" ];
+      nodeTargets = [ "pp-nas1:9640" ];
     };
 
     smartMonitoring.enable = true;
@@ -417,9 +417,8 @@ in
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pp-router1.home.arpa";
-  # clan.core.networking.targetHost = lib.mkForce "root@pp-router1";
-  # clan.core.networking.buildHost = "root@pp-wsl1.home.arpa";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-router1";
+  clan.core.networking.buildHost = "root@pp-wsl1";
 
   # Networking configuration
   networking.hostName = "pp-router1";

@@ -70,7 +70,7 @@ in
         "127.0.0.1"
         "::1"
       ];
-      extraTrustedDomains = [ "pp-nas1.home.arpa" ];
+      extraTrustedDomains = [ "pp-nas1" ];
       extraApps = [
         "calendar"
         "contacts"
@@ -231,7 +231,7 @@ in
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.home.arpa";
+  clan.core.networking.targetHost = lib.mkForce "root@pp-nas1";
   # clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.pp-wg";
   # clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
 

@@ -892,11 +892,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1782963462,
-        "narHash": "sha256-zZvdPrrSqYkZjy8ft95xAvxEW+Te8G0MlSldv/eZwyo=",
+        "lastModified": 1783913743,
+        "narHash": "sha256-nuwojAJVNQ7BH1F9UZ7CffJ0hTjFkFqvYUqoSFnfiIQ=",
         "owner": "pperanich",
         "repo": "personal-site",
-        "rev": "fe395a7cb792c029e90e17e0c6eae951bcfaae98",
+        "rev": "c3e63ec547eca10f3417b3f8088e42c36c42e9f0",
         "type": "github"
       },
       "original": {

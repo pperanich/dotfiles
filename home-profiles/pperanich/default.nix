@@ -2,6 +2,7 @@
 {
   homeManager,
   config,
+  lib,
   desktop ? true,
   ...
 }:
@@ -24,16 +25,11 @@
       # Services
       opencode
     ]
-    ++ (
-      if desktop then
-        [
-          # Desktop
-          fonts
-          applications
-        ]
-      else
-        [ ]
-    );
+    ++ lib.optionals desktop [
+      # Desktop
+      fonts
+      applications
+    ];
 
   # User identity
   home.username = "pperanich";

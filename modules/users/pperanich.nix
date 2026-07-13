@@ -60,6 +60,7 @@ in
               _:
               import (lib.my.relativeToRoot "home-profiles/pperanich") {
                 inherit (modules) homeManager;
+                inherit lib;
                 config = config.home-manager.users.pperanich;
                 inherit (config.my.pperanich) desktop;
               }
@@ -114,6 +115,7 @@ in
             _:
             import (lib.my.relativeToRoot "home-profiles/pperanich") {
               inherit (modules) homeManager;
+              inherit lib;
               config = config.home-manager.users.pperanich;
             }
           )

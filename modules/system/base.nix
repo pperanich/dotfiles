@@ -40,7 +40,7 @@
         # routing domains; resolved's compiled-in fallback (Cloudflare/Google)
         # would then answer *.home.arpa with NXDOMAIN. No fallback → queries
         # fall through to the LAN link's DHCP-provided DNS instead.
-        services.resolved.fallbackDns = [ ];
+        services.resolved.settings.Resolve.FallbackDNS = [ ];
 
         # networkd ignores DHCP/RA-provided search domains (option 119 / DNSSL)
         # unless UseDomains is set; without a per-link domain, resolved won't

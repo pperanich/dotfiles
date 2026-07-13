@@ -25,7 +25,9 @@ in
         lib
         ;
       inherit (inputs) home-manager;
-      extraSpecialArgs = { };
+      extraSpecialArgs = {
+        desktop = true;
+      };
       additionalUsers = [
         "prest"
       ];

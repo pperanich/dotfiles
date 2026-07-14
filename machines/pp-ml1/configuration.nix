@@ -2,6 +2,7 @@
 {
   lib,
   modules,
+  pkgs,
   ...
 }:
 {
@@ -33,6 +34,13 @@
   # };
 
   clan.core.networking.targetHost = lib.mkForce "pperanich@pp-ml1.local";
+
+  # cf share: expose a local port via an ephemeral Cloudflare Tunnel + Access.
+  # cloudflared must be on PATH; cf drives the tunnel/DNS/Access lifecycle.
+  environment.systemPackages = with pkgs; [
+    cf
+    cloudflared
+  ];
 
   # Host-specific configuration
   networking.hostName = "pp-ml1";

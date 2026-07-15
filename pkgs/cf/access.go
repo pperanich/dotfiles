@@ -15,7 +15,10 @@ import (
 	"github.com/cloudflare/cloudflare-go/v6/zero_trust"
 )
 
-const accessTag = "managed-by:cf-access"
+// Managed apps are identified by this name prefix rather than a Cloudflare
+// Access tag: tags must be pre-created before assignment, so a name convention
+// avoids that extra step and its constraints.
+const accessNamePrefix = "cf-access:"
 
 // AccessConfig is the JSON schema nix generates for `cf access sync`.
 type AccessConfig struct {
@@ -98,12 +101,7 @@ type managedAccessApp struct {
 }
 
 func (m managedAccessApp) managed() bool {
-	for _, t := range m.tags {
-		if t == accessTag {
-			return true
-		}
-	}
-	return false
+	return strings.HasPrefix(m.name, accessNamePrefix)
 }
 
 // listSelfHostedApps returns self-hosted apps keyed by domain, pulling the first
@@ -243,6 +241,7 @@ func accessSyncCmd(args []string) {
 	updated := 0
 	unchanged := 0
 	deleted := 0
+	failures := 0
 	changesNeeded := false
 
 	fmt.Printf("Syncing Access applications for %s...\n", acctID)
@@ -269,8 +268,9 @@ func accessSyncCmd(args []string) {
 			created++
 			changesNeeded = true
 			if *apply {
-				if _, _, err := createAccessAppWithPolicy(ctx, client, acctID, d.Domain, name, sessionDuration, d.Emails, []string{accessTag}); err != nil {
+				if _, _, err := createAccessAppWithPolicy(ctx, client, acctID, d.Domain, name, sessionDuration, d.Emails, nil); err != nil {
 					log.Printf("Error creating app %s: %v", d.Domain, err)
+					failures++
 				}
 			}
 			continue
@@ -302,6 +302,7 @@ func accessSyncCmd(args []string) {
 		if *apply {
 			if err := updateManagedApp(ctx, client, acctID, app, name, sessionDuration, d.Emails); err != nil {
 				log.Printf("Error updating app %s: %v", d.Domain, err)
+				failures++
 			}
 		}
 	}
@@ -325,6 +326,7 @@ func accessSyncCmd(args []string) {
 					AccountID: cloudflare.F(acctID),
 				}); err != nil {
 					log.Printf("Error deleting app %s: %v", domain, err)
+					failures++
 					continue
 				}
 				if app.policyID != "" {
@@ -345,6 +347,11 @@ func accessSyncCmd(args []string) {
 		if changesNeeded {
 			os.Exit(2)
 		}
+		return
+	}
+	// Fail loudly so the gate never silently goes missing while the route is live.
+	if failures > 0 {
+		log.Fatalf("%d Access app(s) failed to sync", failures)
 	}
 }
 
@@ -382,7 +389,6 @@ func updateManagedApp(ctx context.Context, client *cloudflare.Client, acctID str
 			Type:            cloudflare.F(zero_trust.ApplicationTypeSelfHosted),
 			Name:            cloudflare.F(name),
 			SessionDuration: cloudflare.F(sessionDuration),
-			Tags:            cloudflare.F([]string{accessTag}),
 			Policies: cloudflare.F([]zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplicationPolicyUnion{
 				zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplicationPoliciesAccessAppPolicyLink{
 					ID: cloudflare.F(policyID),

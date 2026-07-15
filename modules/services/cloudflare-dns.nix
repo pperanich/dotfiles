@@ -53,7 +53,6 @@ _: {
                     "CNAME"
                     "MX"
                     "TXT"
-                    "SRV"
                   ];
                   description = "DNS record type.";
                 };

@@ -304,14 +304,6 @@ func makeRecordParam(r Record, comment string) dns.RecordNewParamsBodyUnion {
 			Proxied: cloudflare.F(r.Proxied),
 			Comment: cloudflare.F(comment),
 		}
-	case "SRV":
-		return dns.SRVRecordParam{
-			Name:    cloudflare.F(r.Name),
-			Type:    cloudflare.F(dns.SRVRecordTypeSRV),
-			TTL:     cloudflare.F(ttl),
-			Proxied: cloudflare.F(r.Proxied),
-			Comment: cloudflare.F(comment),
-		}
 	default:
 		return nil
 	}
@@ -363,14 +355,6 @@ func makeUpdateRecordParam(r Record, comment string) dns.RecordUpdateParamsBodyU
 			Name:    cloudflare.F(r.Name),
 			Type:    cloudflare.F(dns.TXTRecordTypeTXT),
 			Content: cloudflare.F(r.Content),
-			TTL:     cloudflare.F(ttl),
-			Proxied: cloudflare.F(r.Proxied),
-			Comment: cloudflare.F(comment),
-		}
-	case "SRV":
-		return dns.SRVRecordParam{
-			Name:    cloudflare.F(r.Name),
-			Type:    cloudflare.F(dns.SRVRecordTypeSRV),
 			TTL:     cloudflare.F(ttl),
 			Proxied: cloudflare.F(r.Proxied),
 			Comment: cloudflare.F(comment),

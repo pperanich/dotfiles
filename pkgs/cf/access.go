@@ -205,7 +205,7 @@ func accessSyncCmd(args []string) {
 	fs := flag.NewFlagSet("access sync", flag.ExitOnError)
 	configFile := fs.String("config", "", "Path to JSON config file (default: stdin)")
 	apply := fs.Bool("apply", false, "Apply changes to Cloudflare")
-	prune := fs.Bool("prune", false, "Delete managed apps (managed-by:cf-access) absent from config")
+	prune := fs.Bool("prune", false, "Delete managed apps (cf-access: name prefix) absent from config")
 	accountID := fs.String("account-id", "", "Cloudflare account ID (overrides CLOUDFLARE_ACCOUNT_ID)")
 	fs.Parse(args)
 

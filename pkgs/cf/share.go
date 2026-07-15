@@ -23,11 +23,17 @@ import (
 
 const shareComment = "managed-by:cf-share"
 
+// shareAppPrefix names the Access apps `cf share` creates, so teardown (and the
+// statefile-less fallback) can tell them apart from persistent `cf-access:` apps
+// and never delete one it didn't create.
+const shareAppPrefix = "cf-share: "
+
 // shareState is persisted so `cf share down` can clean up after a crash.
 type shareState struct {
 	FullHost      string `json:"fullHost"`
 	AppID         string `json:"appID"`
 	PolicyID      string `json:"policyID"`
+	CreatedApp    bool   `json:"createdApp"`
 	DNSRecordID   string `json:"dnsRecordID"`
 	ZoneID        string `json:"zoneID"`
 	AccountID     string `json:"accountID"`
@@ -181,12 +187,13 @@ func shareUpCmd(args []string) {
 	}
 
 	// 4. Access application (gate before exposing), reused if it already exists.
-	appID, policyID, err := ensureAccessApp(ctx, client, acctID, fullHost, *sessionDuration, emails)
+	appID, policyID, createdApp, err := ensureAccessApp(ctx, client, acctID, fullHost, *sessionDuration, emails)
 	if err != nil {
 		fail("failed to create Access application: %v", err)
 	}
 	st.AppID = appID
 	st.PolicyID = policyID
+	st.CreatedApp = createdApp
 	fmt.Printf("Access application ready: %s\n", appID)
 
 	// 5. Start cloudflared as a child bound to its own context.
@@ -287,6 +294,14 @@ func shareDownCmd(args []string) {
 	if id := findShareTunnel(ctx, client, acctID, "cf-share-"+sanitizeHost(fullHost)); id != "" {
 		st.TunnelID = id
 		st.CreatedTunnel = true
+	}
+	// Recover the Access app so a crash without a statefile doesn't orphan it.
+	// Restricted to `cf-share:` apps so a host collision can't delete a
+	// persistent gate.
+	if appID, policyID := findShareApp(ctx, client, acctID, fullHost); appID != "" {
+		st.AppID = appID
+		st.PolicyID = policyID
+		st.CreatedApp = true
 	}
 	shareTeardown(ctx, client, st, func() {}, nil, statePath)
 }
@@ -432,7 +447,9 @@ func findShareTunnel(ctx context.Context, client *cloudflare.Client, accountID, 
 // ensureAccessApp returns an existing self-hosted app for the domain, or creates
 // one with a reusable allowlist policy attached. The v6.7.0 inline policy union
 // carries no decision/include, so we create the policy via Policies.New and link it.
-func ensureAccessApp(ctx context.Context, client *cloudflare.Client, acctID, domain, sessionDuration string, emails []string) (appID, policyID string, err error) {
+// created reports whether this call created the app; teardown only deletes apps
+// it created, so a reused (pre-existing) app is left alone.
+func ensureAccessApp(ctx context.Context, client *cloudflare.Client, acctID, domain, sessionDuration string, emails []string) (appID, policyID string, created bool, err error) {
 	iter := client.ZeroTrust.Access.Applications.ListAutoPaging(ctx, zero_trust.AccessApplicationListParams{
 		AccountID: cloudflare.F(acctID),
 		Domain:    cloudflare.F(domain),
@@ -442,15 +459,39 @@ func ensureAccessApp(ctx context.Context, client *cloudflare.Client, acctID, dom
 		app := iter.Current()
 		if strings.EqualFold(app.Domain, domain) {
 			fmt.Printf("Reusing existing Access application %s\n", app.ID)
-			return app.ID, "", nil
+			return app.ID, "", false, nil
 		}
 	}
 	if err := iter.Err(); err != nil {
-		return "", "", fmt.Errorf("list applications: %w", err)
+		return "", "", false, fmt.Errorf("list applications: %w", err)
 	}
 
 	// share apps stay untagged; only `access sync` tags apps it manages.
-	return createAccessAppWithPolicy(ctx, client, acctID, domain, "cf-share: "+domain, sessionDuration, emails, nil)
+	id, pol, err := createAccessAppWithPolicy(ctx, client, acctID, domain, shareAppPrefix+domain, sessionDuration, emails, nil)
+	return id, pol, err == nil, err
+}
+
+// findShareApp returns the ID and first-policy ID of a `cf share`-created app for
+// the domain, or empty strings. The name-prefix guard ensures we never adopt a
+// persistent `cf-access:` app that happens to share the domain.
+func findShareApp(ctx context.Context, client *cloudflare.Client, acctID, domain string) (appID, policyID string) {
+	iter := client.ZeroTrust.Access.Applications.ListAutoPaging(ctx, zero_trust.AccessApplicationListParams{
+		AccountID: cloudflare.F(acctID),
+		Domain:    cloudflare.F(domain),
+		Exact:     cloudflare.F(true),
+	})
+	for iter.Next() {
+		sh, ok := iter.Current().AsUnion().(zero_trust.AccessApplicationListResponseSelfHostedApplication)
+		if !ok || !strings.EqualFold(sh.Domain, domain) || !strings.HasPrefix(sh.Name, shareAppPrefix) {
+			continue
+		}
+		appID = sh.ID
+		if len(sh.Policies) > 0 {
+			policyID = sh.Policies[0].ID
+		}
+		return appID, policyID
+	}
+	return "", ""
 }
 
 // createShareCNAME points fullHost at the tunnel, tagged managed-by:cf-share.
@@ -479,14 +520,16 @@ func createShareCNAME(ctx context.Context, client *cloudflare.Client, zoneID, fu
 func shareTeardown(ctx context.Context, client *cloudflare.Client, st *shareState, stopCf func(), appChild *exec.Cmd, statePath string) {
 	deleteShareCNAME(ctx, client, st)
 
-	if st.AppID != "" {
+	// Only tear down the Access app/policy this share created; a reused
+	// pre-existing app is left in place.
+	if st.CreatedApp && st.AppID != "" {
 		if _, err := client.ZeroTrust.Access.Applications.Delete(ctx, st.AppID, zero_trust.AccessApplicationDeleteParams{
 			AccountID: cloudflare.F(st.AccountID),
 		}); err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: failed to delete Access application %s: %v\n", st.AppID, err)
 		}
 	}
-	if st.PolicyID != "" {
+	if st.CreatedApp && st.PolicyID != "" {
 		if _, err := client.ZeroTrust.Access.Policies.Delete(ctx, st.PolicyID, zero_trust.AccessPolicyDeleteParams{
 			AccountID: cloudflare.F(st.AccountID),
 		}); err != nil {

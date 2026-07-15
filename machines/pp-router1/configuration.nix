@@ -23,6 +23,7 @@ in
   imports = [
     ./disko.nix
     ./caddy.nix
+    ./tunnel-apps.nix
     ./printing.nix
     ./homepage.nix
     inputs.nixos-facter-modules.nixosModules.facter
@@ -43,6 +44,9 @@ in
 
     # Cloudflare DNS sync
     cloudflareDns
+
+    # Cloudflare Access sync (allowlists for ./tunnel-apps.nix)
+    cloudflareAccess
 
     # Caddy + DNS-01 certificates (vhosts in ./caddy.nix)
     caddyDns01

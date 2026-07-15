@@ -4,7 +4,7 @@
 }:
 buildGoModule {
   pname = "cf";
-  version = "0.3.0";
+  version = "0.4.0";
 
   src = lib.fileset.toSource {
     root = ./.;
@@ -15,6 +15,7 @@ buildGoModule {
       ./dns.go
       ./tunnel.go
       ./share.go
+      ./access.go
     ];
   };
 

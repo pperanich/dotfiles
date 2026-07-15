@@ -449,48 +449,8 @@ func ensureAccessApp(ctx context.Context, client *cloudflare.Client, acctID, dom
 		return "", "", fmt.Errorf("list applications: %w", err)
 	}
 
-	include := make([]zero_trust.AccessRuleUnionParam, 0, len(emails))
-	for _, e := range emails {
-		include = append(include, zero_trust.EmailRuleParam{
-			Email: cloudflare.F(zero_trust.EmailRuleEmailParam{Email: cloudflare.F(e)}),
-		})
-	}
-
-	pol, err := client.ZeroTrust.Access.Policies.New(ctx, zero_trust.AccessPolicyNewParams{
-		AccountID: cloudflare.F(acctID),
-		Decision:  cloudflare.F(zero_trust.DecisionAllow),
-		Name:      cloudflare.F("cf-share allowlist: " + domain),
-		Include:   cloudflare.F(include),
-	})
-	if err != nil {
-		return "", "", fmt.Errorf("create policy: %w", err)
-	}
-
-	app, err := client.ZeroTrust.Access.Applications.New(ctx, zero_trust.AccessApplicationNewParams{
-		AccountID: cloudflare.F(acctID),
-		Body: zero_trust.AccessApplicationNewParamsBodySelfHostedApplication{
-			Domain:          cloudflare.F(domain),
-			Type:            cloudflare.F(zero_trust.ApplicationTypeSelfHosted),
-			Name:            cloudflare.F("cf-share: " + domain),
-			SessionDuration: cloudflare.F(sessionDuration),
-			Policies: cloudflare.F([]zero_trust.AccessApplicationNewParamsBodySelfHostedApplicationPolicyUnion{
-				zero_trust.AccessApplicationNewParamsBodySelfHostedApplicationPoliciesAccessAppPolicyLink{
-					ID: cloudflare.F(pol.ID),
-				},
-			}),
-		},
-	})
-	if err != nil {
-		// Roll back the orphaned policy on app-create failure.
-		_, delErr := client.ZeroTrust.Access.Policies.Delete(ctx, pol.ID, zero_trust.AccessPolicyDeleteParams{
-			AccountID: cloudflare.F(acctID),
-		})
-		if delErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to clean up policy %s: %v\n", pol.ID, delErr)
-		}
-		return "", "", fmt.Errorf("create application: %w", err)
-	}
-	return app.ID, pol.ID, nil
+	// share apps stay untagged; only `access sync` tags apps it manages.
+	return createAccessAppWithPolicy(ctx, client, acctID, domain, "cf-share: "+domain, sessionDuration, emails, nil)
 }
 
 // createShareCNAME points fullHost at the tunnel, tagged managed-by:cf-share.

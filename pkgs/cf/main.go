@@ -48,6 +48,20 @@ func main() {
 			fmt.Printf("Unknown tunnel command: %s\n", os.Args[2])
 			os.Exit(1)
 		}
+	case "access":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: cf access <sync|list>")
+			os.Exit(1)
+		}
+		switch os.Args[2] {
+		case "sync":
+			accessSyncCmd(os.Args[3:])
+		case "list":
+			accessListCmd(os.Args[3:])
+		default:
+			fmt.Printf("Unknown access command: %s\n", os.Args[2])
+			os.Exit(1)
+		}
 	case "share":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: cf share <up|down>")
@@ -78,6 +92,8 @@ func printUsage() {
 	fmt.Println("  tunnel sync      Provision/sync a Cloudflare Tunnel (dev machine, repo checkout)")
 	fmt.Println("  tunnel sync-dns  Ensure tunnel CNAME records exist (stateless, runs on host)")
 	fmt.Println("  tunnel list      List Cloudflare Tunnels")
+	fmt.Println("  access sync      Sync self-hosted Access apps + allowlists from config")
+	fmt.Println("  access list      List self-hosted Access applications")
 	fmt.Println("  share up         Expose a local port via tunnel + Access, block until Ctrl-C")
 	fmt.Println("  share down       Tear down an ephemeral share by host")
 	fmt.Println()

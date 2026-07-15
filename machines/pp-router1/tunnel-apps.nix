@@ -77,4 +77,15 @@ in
     configFile = config.sops.templates."cf-access-apps.json".path;
     environmentFile = config.sops.templates."cf-dns.env".path;
   };
+
+  # Publish the tunnel CNAMEs only after the Access gate has been reconciled, so
+  # a gated host isn't routable before its login gate exists. Best-effort
+  # ordering (`wants`, not `requires`): a gitea allowlist failure must not also
+  # block DNS for ungated services on the same tunnel. The gate persists at
+  # Cloudflare once created, so the exposed-before-gated window is first-deploy
+  # only, and cf-access-sync fails loudly if it can't establish it.
+  systemd.services.cf-tunnel-dns-sync = lib.mkIf (managed != [ ]) {
+    after = [ "cf-access-sync.service" ];
+    wants = [ "cf-access-sync.service" ];
+  };
 }

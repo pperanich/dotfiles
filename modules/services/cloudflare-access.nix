@@ -2,8 +2,9 @@
 #
 # Reconciles self-hosted Access applications (each gated by an email allowlist)
 # from a JSON config via a systemd timer, mirroring cloudflareDns. Only apps
-# tagged `managed-by:cf-access` are touched — apps configured by hand are left
-# alone.
+# whose name starts with `cf-access:` are touched — apps configured by hand are
+# left alone. (A name prefix rather than a tag: Access tags must be pre-created
+# before assignment, which the reconciler can't assume.)
 #
 # The config is passed as a path (see configFile), typically a sops-rendered
 # file so the allowlist emails never enter git or the world-readable nix store.

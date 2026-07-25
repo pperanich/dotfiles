@@ -11,3 +11,7 @@ secrets/**/*.yaml
 .claude/
 
 /home/Library/Developer/
+
+# Codex writes runtime state into ~/.codex; only AGENTS.md is managed here.
+/home/.codex/*
+!/home/.codex/AGENTS.md

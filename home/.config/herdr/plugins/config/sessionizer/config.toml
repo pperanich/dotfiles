@@ -1,0 +1,21 @@
+# Search roots mirror ~/.config/tms/config.toml. Roots are parents: their
+# children get listed, so "~/" (not "~/dotfiles") is what surfaces ~/dotfiles.
+# Bare "~" would not expand (plugin only expands the "~/" prefix).
+[projects]
+roots = ["~/", "~/Documents/repos/*"]
+git_only = true
+depth = 1
+
+# [layout] and at least one [tabs.*] section are mandatory; loadConfig throws
+# without them. Empty command = plain shell cd'd into the project.
+[layout]
+placement = "overlay"
+focus = "shell"
+
+[tabs.main]
+label = "main"
+
+[[tabs.main.panes]]
+id = "shell"
+title = ""
+command = ""

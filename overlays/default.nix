@@ -11,6 +11,33 @@
     personal-site = inputs.personal-site.packages.${final.stdenv.hostPlatform.system}.personal-site;
   };
 
+  # clan-cli bundles a pinned nix (2.31) at the front of its wrapper PATH,
+  # shadowing the system Determinate Nix. Swap in Determinate's nix, with lazy
+  # trees (Determinate's default) forced off: clan reads the `path` key from
+  # `nix flake metadata --json`, which lazy trees omits (KeyError: 'path').
+  # Needs Determinate nix >= 3.21.8: 3.21.1 (nix 2.34.7) breaks ssh-ng through
+  # clan's ControlMaster ("protocol mismatch, got 'started'"), fixed by the
+  # ssh.cc refactor in 3.21.8.
+  clan-cli =
+    final: _prev:
+    let
+      system = final.stdenv.hostPlatform.system;
+      determinate-nix = inputs.determinate.inputs.nix.packages.${system}.nix;
+      clan-nix = final.symlinkJoin {
+        name = "determinate-nix-clan";
+        paths = [ determinate-nix ];
+        nativeBuildInputs = [ final.makeWrapper ];
+        postBuild = ''
+          wrapProgram $out/bin/nix --add-flags "--option lazy-trees false"
+        '';
+      };
+    in
+    {
+      clan-cli = inputs.clan-core.packages.${system}.clan-cli.override {
+        nix = clan-nix;
+      };
+    };
+
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
   jetpack-nixos = inputs.jetpack-nixos.overlays.default;

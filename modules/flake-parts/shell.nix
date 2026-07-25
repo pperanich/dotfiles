@@ -19,7 +19,8 @@
           pkgs.age-plugin-yubikey
           pkgs.zensical
 
-          inputs'.clan-core.packages.clan-cli
+          # via overlay: clan-cli with Determinate Nix instead of the bundled pin
+          pkgs.clan-cli
           inputs'.home-manager.packages.home-manager
 
           # treefmt with config defined in fmt.nix

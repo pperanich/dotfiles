@@ -208,7 +208,7 @@
             "reaper"
             "google-chrome"
             "brave-browser"
-            "blender"
+            # "blender"
             "gimp"
             "xquartz"
             "obsidian"

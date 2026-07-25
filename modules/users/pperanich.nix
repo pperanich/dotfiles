@@ -99,6 +99,10 @@ in
 
       system.primaryUser = "pperanich";
 
+      # zim's completion module owns compinit; skip nix-darwin's global compinit
+      # in /etc/zshrc to avoid the "completion was already initialized" warning.
+      programs.zsh.enableGlobalCompInit = false;
+
       launchd.user.envVariables = config.home-manager.users.pperanich.home.sessionVariables;
 
       # Add to trusted users for nix

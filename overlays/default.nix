@@ -38,6 +38,17 @@
       };
     };
 
+  # comma bakes nixpkgs' upstream nix into its binary at build time; that nix
+  # warns on Determinate-only settings in /etc/nix/nix.conf (lazy-trees,
+  # eval-cores, the provenance feature). Build it against Determinate's nix.
+  comma =
+    final: prev:
+    {
+      comma = prev.comma.override {
+        nix = inputs.determinate.inputs.nix.packages.${final.stdenv.hostPlatform.system}.nix;
+      };
+    };
+
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
   jetpack-nixos = inputs.jetpack-nixos.overlays.default;

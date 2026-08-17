@@ -682,6 +682,12 @@ bootstrap_secrets() {
   sed_inplace "s|^  - &admin age1REPLACEME.*|  - \\&admin ${admin_age}|" "$dir/sops/.sops.yaml"
   if [ -n "$host_age" ]; then
     sed_inplace "s|^  - &${host} age1REPLACEME.*|  - \\&${host} ${host_age}|" "$dir/sops/.sops.yaml"
+  else
+    # A leftover placeholder is not valid bech32, and sops refuses the whole
+    # file over it. Drop the host recipient so admin-only encryption succeeds.
+    sed_inplace "/- &${host} age1REPLACEME/d" "$dir/sops/.sops.yaml"
+    sed_inplace "/- \\*${host}\$/d" "$dir/sops/.sops.yaml"
+    log_warn "encrypting to your key only; this machine cannot decrypt yet"
   fi
 
   secrets="$dir/sops/secrets.yaml"
@@ -697,8 +703,15 @@ bootstrap_secrets() {
     printf '  openai: REPLACE_ME\n'
   } >"$secrets"
 
+  # An inherited SOPS_CONFIG or SOPS_AGE_RECIPIENTS silently redirects the
+  # encryption at another repo's keys, so name the config and clear both.
   log_step "Encrypting sops/secrets.yaml"
-  if ! (cd "$dir" && "$SOPS_BIN" -e -i sops/secrets.yaml); then
+  if ! (
+    cd "$dir" &&
+      env -u SOPS_CONFIG -u SOPS_AGE_RECIPIENTS -u SOPS_AGE_KEY_CMD \
+        -u SOPS_PGP_FP -u SOPS_KMS_ARN \
+        "$SOPS_BIN" --config sops/.sops.yaml -e -i sops/secrets.yaml
+  ); then
     rm -f "$secrets"
     log_error "sops failed to encrypt; removed the plaintext secrets file"
     return 1
@@ -706,6 +719,16 @@ bootstrap_secrets() {
   if ! grep -q 'ENC\[' "$secrets"; then
     rm -f "$secrets"
     log_error "sops reported success but wrote no ciphertext; removed the file"
+    return 1
+  fi
+  if ! grep -q "recipient: ${admin_age}" "$secrets"; then
+    rm -f "$secrets"
+    log_error "encrypted to unexpected recipients; removed the file"
+    return 1
+  fi
+  if [ -n "$host_age" ] && ! grep -q "recipient: ${host_age}" "$secrets"; then
+    rm -f "$secrets"
+    log_error "the host recipient is missing from the result; removed the file"
     return 1
   fi
   chmod 644 "$secrets"

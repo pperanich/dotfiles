@@ -59,6 +59,19 @@ _: {
       };
 
       config = {
+        assertions = [
+          {
+            # Upstream silently skips superuser creation when this is null:
+            # paperless comes up with no account to log in with.
+            assertion = cfg.passwordFile != null;
+            message = ''
+              my.paperless.passwordFile is unset, so no superuser would be created
+              and the web UI would be unreachable. Point it at a sops secret, e.g.
+              `passwordFile = config.sops.secrets.paperless-admin-pass.path;`.
+            '';
+          }
+        ];
+
         services.paperless = {
           enable = true;
           inherit (cfg)

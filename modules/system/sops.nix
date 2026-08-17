@@ -6,7 +6,11 @@ let
   # Note: age.plugins is added per-platform below since it needs pkgs
   sops = {
     defaultSopsFile = "${sopsFolder}/secrets.yaml";
-    validateSopsFiles = false;
+    # Runs sops-install-secrets -check-mode=sopsfile in the manifest's build
+    # phase: every declared secret must name a key that exists in the file.
+    # Key names are plaintext in a sops file, so nothing is decrypted. Missing
+    # keys fail the build instead of failing partway through activation.
+    validateSopsFiles = true;
     age = {
       # Use clan-managed age key for decryption
       keyFile = "/var/lib/sops-nix/key.txt";

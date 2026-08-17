@@ -172,6 +172,42 @@ imports = with modules.darwin; [ base rust ];
 4. Use `lib.my.relativeToRoot` for path references
 5. Minimize cross-module dependencies
 
+### Secrets in Modules
+
+The module that knows an env var name owns the template. Machines name sops
+keys; they never spell `SOME_TOKEN=`.
+
+```nix
+options.my.svc.adminPasswordSecret = lib.mkOption { type = with lib.types; nullOr str; default = null; };
+
+config = {
+  assertions = [{
+    assertion = cfg.adminPasswordSecret != null;
+    message = "my.svc.adminPasswordSecret is unset; the service would start without a password.";
+  }];
+
+  sops.templates."svc.env" = {
+    content = "IDM_ADMIN_PASSWORD=${config.sops.placeholder.${cfg.adminPasswordSecret}}";
+    owner = "svc";
+    restartUnits = [ "svc.service" ];  # rotation takes effect on activation
+  };
+};
+```
+
+- Gate `mkIf` on the service's own `enable`, never on whether a secret happens
+  to be set — a missing secret should be a loud assertion, not a silent skip.
+- `restartUnits` on every template, or a rotated secret sits unused until reboot.
+- `sops.validateSopsFiles = true` (set in `modules/system/sops.nix`) makes a key
+  missing from `sops/secrets.yaml` a build failure rather than an activation one.
+  Key names are plaintext in a sops file, so the check decrypts nothing.
+- When a machine must reference a var name (e.g. inside a Caddy vhost), export
+  it from the module as a read-only option. Note `{$''${var}}` inside an
+  indented string is a literal-`$` escape, not an interpolation — build such
+  strings by concatenation (see `my.radicale.basicAuthHashPlaceholder`).
+- `EnvironmentFile` is read by PID 1 before the unit drops privileges, so the
+  rendered file needs no per-service `owner`. Prefer `LoadCredential` where the
+  service supports it.
+
 ## Special Files and Patterns
 
 ### Extended Library

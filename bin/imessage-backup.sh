@@ -106,6 +106,7 @@ main() {
 
   # Find most recent snapshot on NAS
   echo "Checking NAS for previous snapshots..."
+  # shellcheck disable=SC2029 # snapshot_dir must expand locally
   latest=$(ssh "$NAS_HOST" \
     "ls -1d ${snapshot_dir}/????-??-?? 2>/dev/null | sort | tail -1 | xargs -r basename" \
     2>/dev/null) || true
@@ -155,6 +156,7 @@ main() {
     exit 0
   fi
 
+  # shellcheck disable=SC2029 # snapshot_dir and today must expand locally
   ssh "$NAS_HOST" "mkdir -p ${snapshot_dir}/${today}"
 
   echo "Syncing to ${NAS_HOST}:${snapshot_dir}/${today}/..."

@@ -1,16 +1,16 @@
 #!/bin/sh
 
-if [[ "$1" == "ON" ]]; then
+if [ "$1" = "ON" ]; then
   MAIN_1=colour51 # Cyan1
   MAIN_2=colour50 # Cyan2
   MAIN_3=colour43 # Cyan3
-elif [[ "$1" == "OFF" ]]; then
+elif [ "$1" = "OFF" ]; then
   MAIN_1=colour214 # Orange1
   MAIN_2=colour208 # DarkOrange
   MAIN_3=colour172 # Orange3
 else
-  echo "Theme state not detected! Exiting..."
-  return
+  echo "Theme state not detected! Exiting..." >&2
+  exit 1
 fi
 
 ACTIVE_PANE=colour9 # Red
@@ -70,9 +70,6 @@ tmux set-option -g status-left "\
 #[fg=$GREY_4, bg=$GREY_2]#{?client_prefix,#[fg=$ALT_1],}#{?window_zoomed_flag, 🔍,}"
 
 tmux set-option -g status-right "\
-#[fg=$MAIN_1, bg=$GREY_2] \
-#[fg=$GREY_2, bg=$MAIN_1] #(~/dotfiles/tmux/scripts/music.sh) \
-#[fg=$MAIN_3, bg=$GREY_2] #(~/dotfiles/tmux/scripts/uptime.sh) \
 #[fg=$GREY_5, bg=$GREY_2]  %b %d '%y\
 #[fg=$CLOCK]  %H:%M \
 #[fg=$GREY_6, bg=$GREY_3]"

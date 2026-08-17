@@ -7,6 +7,11 @@ Use this when you already run the dendritic layout publicly and want to add
 machines whose names, addresses or services should not be visible. If you are
 starting from nothing, start with the `dendritic` template instead.
 
+This repo runs a clan. If you only need one or two private hosts and no
+inventory, the lighter option is the upstream's exported `lib.mkHost`, which
+builds `nixosConfigurations` from a downstream flake with no clan at all: see
+route B in the dendritic template's `docs/private-repo.md`.
+
 ## Layout
 
 ```

@@ -91,6 +91,34 @@ nixos-rebuild switch --flake ~/src/nix-private#secret-host
 
 Trade-off: two repos and two deploy targets. Public hosts stay `nixos-rebuild --flake .#host` from here; private ones come from over there.
 
+### If the private repo runs clan
+
+The route above builds `nixosConfigurations` directly and needs no clan. Once
+the private side wants an inventory, per-machine `clan vars` and
+`clan machines update`, it stops being a handful of lines and grows two traps
+worth having written down:
+
+- `mkFlake` must receive **your** `self`. Merging the upstream's inputs is both
+  fine and necessary, so that a flake-parts module copied from here still finds
+  `inputs.nixpkgs`; it is `self = upstream` that makes clan enumerate the
+  upstream's `machines/` and silently return its hosts instead of yours.
+- Clan resolves `module.input` in the inventory against the **lock file**, not
+  the attrset handed to `mkFlake`. A flake that reaches clan-core only through
+  the upstream fails on every service instance with
+  `Flake doesn't provide input with name 'clan-core'`. Declare
+  `clan-core.follows = "upstream/clan-core"`, which satisfies the lookup
+  without a second copy.
+
+Both are already wired up in a template:
+
+```bash
+nix flake init -t github:pperanich/dotfiles#private
+```
+
+It takes one input, the public config, and reaches nixpkgs, clan-core and
+sops-nix through it. Its `docs/upstream-contract.md` covers what that buys and
+what it costs.
+
 ## Route C — git submodule
 
 Keeps one repo and one deploy command, at the cost of a submodule. Point a guarded reader at a path that only exists when the submodule is checked out:

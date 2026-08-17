@@ -28,10 +28,22 @@ clan replaces that with an inventory: machines get tags, services get applied to
 ## After switching
 
 ```bash
-nix develop                       # clan-cli comes from clan-core's overlay
+nix develop                       # clan-cli, now that the input is declared
 clan machines list
 clan vars generate example-nixos  # machine keys, passwords
 clan machines update example-nixos
+```
+
+`modules/flake-parts/shell.nix` adds `clan-cli` to the dev shell only when the
+`clan-core` input exists, so the shell is unchanged until you finish step 1.
+
+On Determinate Nix, `clan machines update` can fail with `KeyError: 'path'`.
+clan reads the `path` key from `nix flake metadata --json`, which lazy trees
+omits, and clan-cli puts its own pinned nix ahead of yours on PATH. Either run
+clan with `--option lazy-trees false`, or override the nix it wraps:
+
+```nix
+clan-cli = inputs.clan-core.packages.${system}.clan-cli.override { nix = <your nix>; };
 ```
 
 ## sops interaction

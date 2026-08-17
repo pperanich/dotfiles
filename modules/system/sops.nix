@@ -36,7 +36,11 @@ in
         ...
       }:
       {
-        # imports = [ inputs.sops-nix.nixosModules.sops ];
+        # clan-core imports this too; the module system dedupes by path and
+        # clan-core.inputs.sops-nix follows ours, so both resolve to the same
+        # module. Importing it here keeps this module usable from a flake that
+        # doesn't go through clan.
+        imports = [ inputs.sops-nix.nixosModules.sops ];
         sops = lib.mkMerge [
           sops
           {
@@ -71,7 +75,7 @@ in
     darwin.sops =
       { pkgs, lib, ... }:
       {
-        # imports = [ inputs.sops-nix.darwinModules.sops ];
+        imports = [ inputs.sops-nix.darwinModules.sops ];
         sops = lib.mkMerge [
           sops
           {

@@ -1,0 +1,5 @@
+[status]
+blocked = { glyph = "⚑ ", color = "red" }
+working = { glyph = "● ", color = "yellow" }
+idle    = { glyph = "○ ", color = "green" }
+done    = { glyph = "✓ ", color = "magenta" }

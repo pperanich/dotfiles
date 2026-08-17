@@ -934,6 +934,7 @@
         "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",
         "systems": "systems_4",
+        "tmux-agents": "tmux-agents",
         "treefmt-nix": "treefmt-nix_4"
       }
     },
@@ -1034,6 +1035,26 @@
       "original": {
         "owner": "nix-systems",
         "repo": "triplet",
+        "type": "github"
+      }
+    },
+    "tmux-agents": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786969782,
+        "narHash": "sha256-Q4Sh2OI4cwTKzwVAog9CvE4edZtFrLoFBe1TiQXLkzA=",
+        "owner": "pperanich",
+        "repo": "tmux-agents",
+        "rev": "1d20fa4439b442dbdc24cf919aa17f968c2d922a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pperanich",
+        "repo": "tmux-agents",
         "type": "github"
       }
     },

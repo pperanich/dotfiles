@@ -28,6 +28,7 @@ _: {
           # Terminal Multiplexers
           tmux # Terminal multiplexer
           tmux-sessionizer # The fastest way to manage projects as tmux sessions
+          tma # Agent state monitor, picker, jump, and stamping for tmux
           # zellij # A terminal workspace with batteries included
 
           # Version Control

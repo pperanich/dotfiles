@@ -49,6 +49,8 @@
       };
     };
 
+  tmux-agents = inputs.tmux-agents.overlays.default;
+
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;
   jetpack-nixos = inputs.jetpack-nixos.overlays.default;

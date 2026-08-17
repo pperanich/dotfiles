@@ -142,6 +142,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    tmux-agents = {
+      url = "github:pperanich/tmux-agents";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     bun2nix = {
       url = "github:nix-community/bun2nix";
       inputs.nixpkgs.follows = "nixpkgs";

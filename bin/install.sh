@@ -41,6 +41,7 @@ BOOTSTRAPPED=false
 opt_host=""
 opt_mode=""
 opt_dir=""
+opt_repo=""
 opt_assume_yes=false
 opt_dry_run=false
 
@@ -68,7 +69,17 @@ on_error() {
   log_error "failed at line $1 (exit $2)"
 }
 trap 'on_error "$LINENO" "$?"' ERR
-trap 'if [ -n "$TMP_DIR" ]; then rm -rf "$TMP_DIR"; fi' EXIT
+# PLAINTEXT_SECRETS holds a secrets file between being written and being
+# encrypted; without this an interrupt in that window leaves a private key and
+# a password hash on disk.
+PLAINTEXT_SECRETS=""
+cleanup() {
+  if [ -n "$PLAINTEXT_SECRETS" ]; then rm -f "$PLAINTEXT_SECRETS"; fi
+  if [ -n "$TMP_DIR" ]; then rm -rf "$TMP_DIR"; fi
+}
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 
 # nix-daemon.sh dereferences unset variables and returns non-zero, so strict
 # mode and the ERR trap have to stand down while it is sourced.
@@ -146,9 +157,26 @@ confirm() {
 # stray | ends the s|| command and a & splices the match back in.
 valid_name() {
   case "$1" in
-  '' | *[!A-Za-z0-9._-]*) return 1 ;;
+  # . and .. would make a later mv relocate the directory being renamed
+  '' | . | .. | *[!A-Za-z0-9._-]*) return 1 ;;
   esac
   return 0
+}
+
+# Escape a value destined for the right-hand side of sed's s|| so that & does
+# not splice in the match and | does not end the command.
+sed_escape() {
+  printf '%s' "$1" | sed 's/[\\&|]/\\&/g'
+}
+
+# Prompted paths are used verbatim; bash does not expand ~ after a read.
+# shellcheck disable=SC2088 # matching a literal tilde is the whole point
+expand_tilde() {
+  case "$1" in
+  '~') printf '%s\n' "$HOME" ;;
+  '~/'*) printf '%s/%s\n' "$HOME" "${1#\~/}" ;;
+  *) printf '%s\n' "$1" ;;
+  esac
 }
 
 require_valid_names() {
@@ -269,11 +297,10 @@ check_requirements() {
   fi
 }
 
-sync_repo() {
+# Creating a directory that did not exist is the one repo action safe to take
+# before the user has answered anything, and every branch below needs it.
+sync_repo_clone() {
   case "$SOURCE_MODE" in
-  local)
-    return 0
-    ;;
   clone)
     if [ -e "$CLONE_DIR" ]; then
       log_error "$CLONE_DIR exists but is not a git checkout"
@@ -282,8 +309,23 @@ sync_repo() {
     log_step "Cloning $REPO_URL into $CLONE_DIR"
     git clone --branch "$REPO_REF" "$REPO_URL" "$CLONE_DIR"
     ;;
+  esac
+}
+
+# Runs only after the user has chosen, because checkout and merge move an
+# existing tree: a clean feature branch would otherwise be silently left on
+# $REPO_REF by a run that was declined.
+sync_repo_update() {
+  case "$SOURCE_MODE" in
   update)
     log_step "Updating existing checkout at $CLONE_DIR"
+    if [ -n "$opt_repo" ]; then
+      local origin
+      origin="$(git -C "$CLONE_DIR" remote get-url origin 2>/dev/null || true)"
+      if [ -n "$origin" ] && [ "$origin" != "$REPO_URL" ]; then
+        log_warn "--repo is ignored for an existing checkout; it tracks $origin"
+      fi
+    fi
     # Probe first: inside [ -n "$(...)" ] a git failure reads as an empty, and
     # therefore clean, tree, which would skip the guard below.
     if ! git -C "$CLONE_DIR" status --porcelain >/dev/null 2>&1; then
@@ -622,7 +664,7 @@ KEYS
     if [ -e "$default_new" ]; then
       default_new="$HOME/.ssh/id_ed25519_nixcfg"
     fi
-    priv="$(prompt_value "New key path" "$default_new")"
+    priv="$(expand_tilde "$(prompt_value "New key path" "$default_new")")"
     if [ -e "$priv" ]; then
       log_error "$priv already exists"
       return 0
@@ -770,6 +812,7 @@ bootstrap_secrets() {
   secrets="$dir/sops/secrets.yaml"
   : >"$secrets"
   chmod 600 "$secrets"
+  PLAINTEXT_SECRETS="$secrets"
   {
     printf 'passwords:\n'
     printf '  %s: "%s"\n' "$user" "$hash"
@@ -812,6 +855,7 @@ bootstrap_secrets() {
     log_error "the host recipient is missing from the result; removed the file"
     return 1
   fi
+  PLAINTEXT_SECRETS=""
   chmod 644 "$secrets"
 
   # So `sops sops/secrets.yaml` works outside `nix develop` too. Append rather
@@ -830,7 +874,10 @@ bootstrap_secrets() {
     fi
     chmod 600 "$age_file"
     if ! grep -qF "$identity" "$age_file"; then
-      printf '%s\n' "$identity" >>"$age_file"
+      if ! printf '%s\n' "$identity" >>"$age_file"; then
+        log_error "could not write $age_file"
+        return 1
+      fi
     fi
     log_info "age identity available in $age_file"
   fi
@@ -877,8 +924,9 @@ EOF
   printf '\n'
 
   if [ "$SECRET_PASSWORD_GENERATED" = true ] && [ -n "$SECRET_PASSWORD" ]; then
-    printf '  %sGenerated login password: %s%s\n' "$C_BOLD" "$SECRET_PASSWORD" "$C_RESET"
-    printf '  Record it now. Only the hash is stored, so it cannot be recovered.\n\n'
+    # stderr, like every other message: stdout may be redirected to a file.
+    printf '  %sGenerated login password: %s%s\n' "$C_BOLD" "$SECRET_PASSWORD" "$C_RESET" >&2
+    printf '  Record it now. Only the hash is stored, so it cannot be recovered.\n\n' >&2
   fi
 }
 
@@ -961,7 +1009,7 @@ scaffold_template() {
 private_rename() {
   local dir="$1" upstream="$2" host="$3" platform="$4" user="$5"
 
-  sed_inplace "s|github:you/your-config|${upstream}|" "$dir/flake.nix"
+  sed_inplace "s|github:you/your-config|$(sed_escape "$upstream")|" "$dir/flake.nix"
 
   mv "$dir/machines/secret-host" "$dir/machines/${host}"
   local cfg="$dir/machines/${host}/configuration.nix"
@@ -1013,7 +1061,7 @@ private_next_steps() {
 scaffold_private() {
   local dir upstream host platform user
 
-  dir="$(prompt_value "New configuration directory" "$HOME/nix-private")"
+  dir="$(expand_tilde "$(prompt_value "New configuration directory" "$HOME/nix-private")")"
   upstream="$(prompt_value "Upstream config flake" "github:${USER}/dotfiles")"
   host="$(prompt_value "Name for the private machine" "secret-host")"
   # The private host is usually a server elsewhere, not the machine running
@@ -1099,7 +1147,7 @@ scaffold_dendritic() {
     exit 1
   fi
 
-  dir="$(prompt_value "New configuration directory" "$HOME/nix-config")"
+  dir="$(expand_tilde "$(prompt_value "New configuration directory" "$HOME/nix-config")")"
   user="$(prompt_value "Primary username" "$USER")"
   host="$(prompt_value "Name for this machine" "${HOSTNAME_DETECTED:-my-${class}}")"
   # Before anything is written: these reach sed replacements and paths.
@@ -1262,12 +1310,6 @@ clan_bin() {
 # file is written, so this is the local equivalent of uploading over ssh.
 install_clan_key() {
   local dir="$1" host="$2" clan stage
-  sudo_preflight
-  if sudo test -e "$CLAN_KEY_FILE"; then
-    log_info "clan key already in place at $CLAN_KEY_FILE"
-    return 0
-  fi
-
   clan="$(clan_bin "$dir")"
   if [ -z "$clan" ]; then
     log_error "no clan CLI in the dev shell at $dir"
@@ -1289,8 +1331,43 @@ install_clan_key() {
     return 1
   fi
 
-  sudo install -d -m 700 -o root "$(dirname "$CLAN_KEY_FILE")"
-  sudo install -m 600 -o root "$stage/key.txt" "$CLAN_KEY_FILE"
+  sudo_preflight
+
+  # The path is a single file, so a machine already in another clan already has
+  # a key here. Existence alone says nothing about whose it is; compare.
+  if sudo test -e "$CLAN_KEY_FILE"; then
+    if sudo cmp -s "$stage/key.txt" "$CLAN_KEY_FILE"; then
+      log_info "clan key already correct at $CLAN_KEY_FILE"
+      rm -f "$stage/key.txt"
+      return 0
+    fi
+    log_warn "a different key is already installed at $CLAN_KEY_FILE"
+    log_warn "this machine looks like it belongs to another clan, and the two"
+    log_warn "cannot share this path"
+    if ! ask_yes_no "Replace it, keeping a backup?"; then
+      rm -f "$stage/key.txt"
+      return 1
+    fi
+    if ! sudo cp -p "$CLAN_KEY_FILE" "$CLAN_KEY_FILE.replaced"; then
+      log_error "could not back up $CLAN_KEY_FILE"
+      rm -f "$stage/key.txt"
+      return 1
+    fi
+    log_info "previous key kept at $CLAN_KEY_FILE.replaced"
+  fi
+
+  if ! sudo install -d -m 700 -o root "$(dirname "$CLAN_KEY_FILE")"; then
+    log_error "could not create $(dirname "$CLAN_KEY_FILE")"
+    return 1
+  fi
+  if ! sudo install -m 600 -o root "$stage/key.txt" "$CLAN_KEY_FILE"; then
+    log_error "could not write $CLAN_KEY_FILE; staged copy kept at $stage"
+    return 1
+  fi
+  if ! sudo cmp -s "$stage/key.txt" "$CLAN_KEY_FILE"; then
+    log_error "$CLAN_KEY_FILE does not match what clan produced"
+    return 1
+  fi
   rm -f "$stage/key.txt"
   log_info "installed $CLAN_KEY_FILE"
 }
@@ -1413,6 +1490,7 @@ parse_args() {
       ;;
     --repo)
       REPO_URL="${2:-}"
+      opt_repo="${2:-}"
       [ -n "$REPO_URL" ] || {
         log_error "--repo requires a value"
         exit 1
@@ -1489,7 +1567,7 @@ main() {
   # configuration here. Cloning or fast-forwarding is announced in the plan and
   # is what every branch below needs; installing Nix is the change that waits
   # for an answer.
-  sync_repo
+  sync_repo_clone
 
   # Not inside main_choice: it runs in a command substitution, where exit would
   # only leave the subshell and the caller would read an empty choice.
@@ -1499,12 +1577,14 @@ main() {
   fi
 
   case "$(main_choice)" in
-  switch) ;;
+  switch) sync_repo_update ;;
   dendritic)
+    sync_repo_update
     install_nix
     scaffold_dendritic
     ;;
   private)
+    sync_repo_update
     install_nix
     scaffold_private
     ;;

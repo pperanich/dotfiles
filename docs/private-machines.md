@@ -6,30 +6,47 @@ The arrangement that avoids that is a private flake which consumes this one and 
 
 ## The private flake
 
+`nix flake init -t github:pperanich/dotfiles#private` scaffolds this. The shape:
+
 ```nix
 # nix-private/flake.nix
 {
   description = "Private machines";
 
-  inputs.dotfiles.url = "github:pperanich/dotfiles";
+  inputs = {
+    upstream.url = "github:pperanich/dotfiles";
+    # Declared, but resolved to upstream's lock rather than fetched twice.
+    # Required: clan resolves `module.input` in the inventory against the lock
+    # file, so without it every service instance dies with
+    #   error: Flake doesn't provide input with name 'clan-core'
+    clan-core.follows = "upstream/clan-core";
+  };
 
   outputs =
-    inputs@{ dotfiles, ... }:
-    dotfiles.inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "x86_64-linux" ];
-      imports = [ dotfiles.inputs.clan-core.flakeModules.default ];
+    inputs@{ self, upstream, ... }:
+    upstream.inputs.flake-parts.lib.mkFlake {
+      # Upstream's inputs under their bare names, so a flake-parts module
+      # copied from the template still finds `inputs.nixpkgs`. Handing over
+      # only `{ self, upstream }` means rewriting every such reference.
+      inputs = upstream.inputs // { inherit self upstream; };
+    } (upstream.inputs.import-tree ./modules);
+}
+```
 
-      flake.clan = {
-        meta.name = "pperanich-private";
-        specialArgs = {
-          inherit (dotfiles) inputs lib modules;
-        };
-        inventory.machines.secret-host = {
-          machineClass = "nixos";
-          tags = [ "all" ];
-        };
-      };
+with `modules/flake-parts/clan.nix` holding the inventory:
+
+```nix
+{ inputs, config, ... }:
+{
+  imports = [ inputs.clan-core.flakeModules.default ];
+  flake.clan = {
+    meta.name = "pperanich-private";
+    specialArgs = { inherit (inputs.upstream) inputs lib modules; };
+    inventory.machines.secret-host = {
+      machineClass = "nixos";
+      tags = [ "all" ];
     };
+  };
 }
 ```
 
@@ -50,7 +67,9 @@ One input, no vendoring. `clan machines update secret-host` runs from the privat
 
 ## Pass your own `self`
 
-`mkFlake` needs `inputs`, and it is tempting to write `inputs = dotfiles.inputs // { self = dotfiles; }` to satisfy it. Don't. Clan derives its machine directory from `self`, so that makes the private flake discover **this** repo's `machines/` — `nixosConfigurations` comes back holding all seven public machines plus yours, silently. Pass `inputs@{ self, ... }` from the private flake's own `outputs`.
+`mkFlake` needs `inputs`, and it is tempting to write `inputs = upstream.inputs // { self = upstream; }` to satisfy it. Don't. Clan derives its machine directory from `self`, so that makes the private flake discover **this** repo's `machines/` — `nixosConfigurations` comes back holding all seven public machines plus yours, silently.
+
+The merge itself is fine, and useful; it is `self` that has to stay yours. `upstream.inputs // { inherit self upstream; }` keeps upstream's inputs reachable by their bare names while `nixosConfigurations` lists only your machines.
 
 ## Secrets
 

@@ -176,6 +176,23 @@ $ nix eval --raw .#…config.sops.secrets."passwords/example".sopsFile
 
 With more than one private host, put that line in a private module and import it everywhere rather than repeating it.
 
+**Repointing the file doesn't repoint the requirements.** Every module you import brings its declared key names with it — `modules/users/example.nix` alone demands `passwords/example` and `private_keys/example` — so the private `secrets.yaml` must contain each one. Set `sops.validateSopsFiles = true` and a missing key is a build error:
+
+```
+sops-install-secrets: manifest is not valid: secret private_keys/example in
+/nix/store/…-secrets.yaml is not valid: the key 'private_keys' cannot be found
+```
+
+Leave it false and that config builds clean, then fails partway through `nixos-rebuild switch`. Either audit the imported modules for the keys they declare, or let the build tell you.
+
+For a key that genuinely belongs elsewhere, override just that one rather than the default:
+
+```nix
+sops.secrets."api_keys/shared".sopsFile = "${inputs.dotfiles}/sops/secrets.yaml";
+```
+
+That works only if the private host's age key is a recipient of the public file — which is the coupling to avoid unless you actually want it.
+
 The rest follows normally: `sops/.sops.yaml` in the private repo lists your admin key plus each private host's age key, and `sops updatekeys` runs in whichever repo owns the file. The two `.sops.yaml` files are independent — a public host never needs to decrypt a private secret, and vice versa.
 
 Home-manager secrets work the same way; override `sops.defaultSopsFile` inside the home profile the private host uses.

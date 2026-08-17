@@ -64,7 +64,7 @@ nix flake check
 Then, in order:
 
 1. **Rename the example user.** `modules/users/example.nix` (filename + the `username` binding), `home-profiles/example/`, and the `example` entry in each machine's imports.
-2. **Set up secrets.** Follow `docs/sops.md`. Nothing switches successfully until `sops/secrets.yaml` is real — the shipped file is an unencrypted placeholder.
+2. **Set up secrets.** Follow `docs/sops.md`. Nothing switches successfully until `sops/secrets.yaml` is real — the shipped file is an unencrypted placeholder. Flip `validateSopsFiles` to `true` at the same time; it turns a missing key from an activation failure into a build failure.
 3. **Replace the example machines.** Drop real hardware config into `machines/nixos/<host>/hardware-configuration.nix`, fix `networking.hostName` and `nixpkgs.hostPlatform`, delete the class dir you don't need.
 
 ## Deploying

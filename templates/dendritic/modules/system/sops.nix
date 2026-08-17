@@ -27,7 +27,13 @@ let
 
   common = lib: {
     defaultSopsFile = lib.mkDefault "${sopsFolder}/secrets.yaml";
-    # Set to true once secrets.yaml is actually encrypted
+
+    # false only because the shipped secrets.yaml is an unencrypted
+    # placeholder. Turn it on as soon as yours is real: it runs
+    # `sops-install-secrets -check-mode=sopsfile` in a build phase, which
+    # verifies every declared key exists in the file (key *names* are
+    # plaintext in a sops file, so nothing is decrypted). Missing keys then
+    # fail the build instead of failing halfway through activation.
     validateSopsFiles = lib.mkDefault false;
   };
 in

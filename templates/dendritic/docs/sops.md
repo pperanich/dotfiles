@@ -62,6 +62,34 @@ sops.templates."service.env" = {
 };
 ```
 
+## Which keys a config demands
+
+Secrets are declared in _modules_, not only in machine files, so importing a module imports its key requirements. In this template:
+
+| module                                   | keys it needs in `secrets.yaml`             |
+| ---------------------------------------- | ------------------------------------------- |
+| `modules/users/example.nix`              | `passwords/example`, `private_keys/example` |
+| `modules/system/sops.nix` (home-manager) | whatever you uncomment under `secrets`      |
+
+Treat those key names as part of the module's interface: any `secrets.yaml` a host points at must contain every key its imported modules declare.
+
+## Validation
+
+`sops.validateSopsFiles` decides when a missing key surfaces. With it on, the manifest's build phase runs `sops-install-secrets -check-mode=sopsfile` and the build fails:
+
+```
+sops-install-secrets: manifest is not valid: secret private_keys/example in
+/nix/store/…-sops/secrets.yaml is not valid: the key 'private_keys' cannot be found
+```
+
+With it off, that same config builds fine and fails during activation instead — after the switch has started. Key names are plaintext in a sops file, so the check decrypts nothing and needs no key material. Turn it on once your `secrets.yaml` is real.
+
+A single host can also mix files, per secret:
+
+```nix
+sops.secrets."api_keys/openai".sopsFile = ./other-secrets.yaml;
+```
+
 ## Adding a host
 
 ```bash

@@ -151,6 +151,16 @@ darwin-rebuild switch --flake .#<hostname>        # Darwin
 home-manager switch --flake .#<username>          # Home-manager
 ```
 
+## Starting your own
+
+The same architecture, stripped of everything personal, ships as a flake template:
+
+```bash
+nix flake init -t github:pperanich/dotfiles#dendritic
+```
+
+It includes the flake-parts/import-tree plumbing, NixOS + Darwin + home-manager base modules, sops-nix wiring, example machines, and an opt-in clan setup. Source: [templates/dendritic/](templates/dendritic/).
+
 ## Documentation
 
 Detailed guides are available in the [docs/](docs/) directory:

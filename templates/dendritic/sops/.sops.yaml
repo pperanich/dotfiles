@@ -1,0 +1,15 @@
+# Who can decrypt what. Regenerate recipients after adding a machine:
+#   sops updatekeys sops/secrets.yaml
+keys:
+  # Your admin key: ssh-to-age < ~/.ssh/id_ed25519.pub
+  - &admin age1REPLACEME000000000000000000000000000000000000000000000
+  # One per host: ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
+  - &example-nixos age1REPLACEME000000000000000000000000000000000000000001
+  - &example-darwin age1REPLACEME000000000000000000000000000000000000000002
+creation_rules:
+  - path_regex: secrets\.yaml$
+    key_groups:
+      - age:
+          - *admin
+          - *example-nixos
+          - *example-darwin

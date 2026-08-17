@@ -799,7 +799,129 @@ EOF
   fi
 }
 
+# Echo the chosen template name; prompts go to the tty.
+choose_template() {
+  local pick
+  cat >/dev/tty <<'EOF'
+
+  1) dendritic  A configuration of your own: NixOS, nix-darwin and
+                home-manager in one flake, sops-nix wiring, and a machine
+                to start from. Pick this to set up this computer.
+
+  2) private    A second flake that consumes a public config you already
+                run, and deploys hosts you would rather not name in public.
+                Needs that config's flake URL, and runs a clan.
+
+EOF
+  pick="$(prompt_value "Template" "1")"
+  case "$pick" in
+  1 | dendritic) printf 'dendritic\n' ;;
+  2 | private) printf 'private\n' ;;
+  *) log_error "not a template: $pick" ;;
+  esac
+}
+
 scaffold_template() {
+  case "$(choose_template)" in
+  dendritic) scaffold_dendritic ;;
+  private) scaffold_private ;;
+  *) exit 1 ;;
+  esac
+}
+
+# The private template ships one nixos machine and a placeholder upstream.
+private_rename() {
+  local dir="$1" upstream="$2" host="$3" platform="$4" user="$5"
+
+  sed_inplace "s|github:you/your-config|${upstream}|" "$dir/flake.nix"
+
+  mv "$dir/machines/secret-host" "$dir/machines/${host}"
+  local cfg="$dir/machines/${host}/configuration.nix"
+  sed_inplace "s|networking.hostName = \"secret-host\";|networking.hostName = \"${host}\";|" "$cfg"
+  sed_inplace "s|root@secret-host|root@${host}|" "$cfg"
+  sed_inplace "s|nixpkgs.hostPlatform = \".*\";|nixpkgs.hostPlatform = \"${platform}\";|" "$cfg"
+
+  local clan="$dir/modules/flake-parts/clan.nix"
+  sed_inplace "s|^        secret-host = {|        ${host} = {|" "$clan"
+  sed_inplace "s|meta.name = \"my-private-clan\";|meta.name = \"${user}-private\";|" "$clan"
+
+  # Anchor, its reference, and the comment naming the machine
+  sed_inplace "s|secret-host|${host}|g" "$dir/sops/.sops.yaml"
+
+  sed_inplace "/Rename .youruser. to the account/d" "$dir/sops/secrets.yaml"
+  sed_inplace "s|^  youruser:|  ${user}:|" "$dir/sops/secrets.yaml"
+  sed_inplace "s|for that user|for ${user}|" "$dir/sops/secrets.yaml"
+}
+
+private_next_steps() {
+  local dir="$1" host="$2" upstream="$3"
+  cat <<EOF
+
+Scaffolded into $dir, deploying '$host' from $upstream.
+
+Secrets here belong to clan, not to this script: \`clan vars generate\` creates
+the machine's keys and password, and only then can sops/.sops.yaml name a real
+recipient. Nothing has been encrypted.
+
+Remaining steps:
+  1. cd $dir && nix develop
+  2. clan vars generate $host
+  3. put your admin age key and the machine's clan age key into
+     sops/.sops.yaml, then: sops sops/secrets.yaml
+  4. clan machines update $host
+
+docs/upstream-contract.md covers which secret keys the upstream's modules
+demand, and what the single input buys and costs.
+
+EOF
+}
+
+scaffold_private() {
+  local dir upstream host platform user
+
+  dir="$(prompt_value "New configuration directory" "$HOME/nix-private")"
+  upstream="$(prompt_value "Upstream config flake" "github:${USER}/dotfiles")"
+  host="$(prompt_value "Name for the private machine" "secret-host")"
+  # The private host is usually a server elsewhere, not the machine running
+  # this, so do not infer the platform from uname.
+  platform="$(prompt_value "Its platform" "x86_64-linux")"
+  user="$(prompt_value "Username the upstream's user module defines" "$USER")"
+
+  if [ -e "$dir/flake.nix" ]; then
+    log_error "$dir already contains a flake.nix"
+    exit 1
+  fi
+
+  printf '\n'
+  printf '  %-10s %s\n' "Directory" "$dir"
+  printf '  %-10s %s\n' "Upstream" "$upstream"
+  printf '  %-10s %s (%s)\n' "Machine" "$host" "$platform"
+  printf '  %-10s %s\n' "User" "$user"
+  printf '  %-10s %s\n' "Template" "${FLAKE_DIR}#private"
+  printf '\n'
+  confirm "Scaffold this configuration?"
+
+  log_step "Writing the template into $dir"
+  local out
+  out="$(tmp_dir)/flake-new.log"
+  if ! nix flake new -t "${FLAKE_DIR}#private" "$dir" >"$out" 2>&1; then
+    cat "$out" >&2
+    log_error "nix flake new failed"
+    exit 1
+  fi
+
+  log_step "Pointing it at $upstream and renaming the machine"
+  private_rename "$dir" "$upstream" "$host" "$platform" "$user"
+
+  log_step "Initialising git, since flakes only see tracked files"
+  git -C "$dir" init --quiet
+  git -C "$dir" add -A
+
+  private_next_steps "$dir" "$host" "$upstream"
+  exit 0
+}
+
+scaffold_dendritic() {
   local dir user host class platform
   class=darwin
   if [ "$OS" = linux ]; then
@@ -1010,9 +1132,15 @@ Steps:
        --home-only  standalone home-manager
 
 If the flake has no configuration for this machine, an interactive run offers
-to scaffold your own from the dendritic template instead, and can bootstrap
-secrets: an age recipient from an ed25519 SSH key (existing or freshly
-generated), a sha-512 password hash, and an encrypted sops/secrets.yaml.
+to scaffold one of its templates instead:
+
+  dendritic  a configuration of your own, for this computer
+  private    a second flake consuming a public config you already run
+
+The dendritic path can also bootstrap secrets: an age recipient from an ed25519
+SSH key (existing or freshly generated), a sha-512 password hash, and an
+encrypted sops/secrets.yaml. The private path leaves secrets to `clan vars`.
+
 With --yes, or with no terminal, it lists the valid names and exits.
 EOF
 }

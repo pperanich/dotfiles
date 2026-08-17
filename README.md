@@ -161,6 +161,16 @@ nix flake init -t github:pperanich/dotfiles#dendritic
 
 It includes the flake-parts/import-tree plumbing, NixOS + Darwin + home-manager base modules, sops-nix wiring, example machines, and an opt-in clan setup. Source: [templates/dendritic/](templates/dendritic/).
 
+A second template covers the other half: machines you would rather not name in a public repo. It is a flake whose only input is a public config you already run, so there is one version to bump and no way for its nixpkgs to drift from the modules it imports.
+
+```bash
+nix flake init -t github:pperanich/dotfiles#private
+```
+
+It ships the clan inventory, the two sops overrides a downstream machine needs, and a dev shell with `clan`. Source: [templates/private/](templates/private/), background in [docs/private-machines.md](docs/private-machines.md).
+
+`bin/install.sh` offers both interactively when it finds no configuration for the machine it is running on.
+
 ## Documentation
 
 Detailed guides are available in the [docs/](docs/) directory:

@@ -1,5 +1,4 @@
-_:
-{
+_: {
   perSystem =
     {
       config,
@@ -11,7 +10,8 @@ _:
         name = "private-shell";
 
         packages = [
-          # Defined in nixpkgs.nix, preferring the upstream's override
+          # From the upstream's overlays, so whatever it does to clan-cli
+          # applies here too. See docs/upstream-contract.md.
           pkgs.clan-cli
 
           pkgs.sops

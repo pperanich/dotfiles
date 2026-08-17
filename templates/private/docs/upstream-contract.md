@@ -19,6 +19,21 @@ Two consequences:
 - **`nix flake update` moves everything at once**, because there is one lock
   entry. Bumping nixpkgs is the upstream repo's decision, not this one's.
 
+## What the upstream has to provide
+
+`modules/flake-parts/nixpkgs.nix` imports the upstream's `overlays/` wholesale,
+so a package resolves here exactly as it does there. Two things follow from
+that, and the dev shell relies on both:
+
+- **`pkgs.clan-cli`.** clan-cli is not in nixpkgs, so it exists only because
+  the upstream overlays it in. If yours does not, the dev shell fails with
+  `attribute 'clan-cli' missing`; add the overlay upstream rather than working
+  around it here, so both repos run the same build.
+- **Whatever that overlay does to it.** An upstream that wraps clan-cli around
+  a different nix, to dodge the lazy-trees `KeyError: 'path'` in
+  `clan machines update`, say, gets that fix applied here for free. Reading the
+  package straight out of `inputs.clan-core` would silently skip it.
+
 ## `self` must be ours
 
 `flake.nix` merges upstream's inputs but keeps this repo's own `self`:

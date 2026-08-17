@@ -141,6 +141,41 @@ nixos-rebuild build --flake ~/src/nix-private#secret-host                # route
 
 Route A publishes the private repo's URL, revision and commit timestamps in `flake.lock`; route C publishes URL and pinned commit in `.gitmodules`. Contents stay private either way. Route B leaks nothing from the public side — the private flake's lock is in the private repo.
 
-## Secrets
+## Secrets, and the trap in route B
 
-A private repo is not an encryption strategy; secrets still belong in sops. A private flake can carry its own `sops/secrets.yaml` and reference it by relative path from its own modules — paths resolve against that repo's store copy, so `modules/system/sops.nix` needs no changes. `sops updatekeys` runs in whichever repo owns the file.
+A private repo is not an encryption strategy; secrets still belong in sops.
+
+The trap: `sops.defaultSopsFile` is a path resolved where the _module_ is written, not where the host is defined. A host built in your private flake that imports the public `sops` module inherits the **public** repo's `sops/secrets.yaml`:
+
+```
+$ nix eval --raw .#nixosConfigurations.secret-host.config.sops.defaultSopsFile
+/nix/store/…-sops/secrets.yaml          # ← the public repo's copy
+```
+
+Activation would then run `sops-install-secrets` against that file. Against the shipped placeholder it fails outright; against a real public file it fails unless the private host's age key is one of its recipients — which is exactly the coupling you were trying to avoid.
+
+Point it at your own file from the private side. The public module marks its defaults with `mkDefault`, so this is a plain assignment, no `mkForce`:
+
+```nix
+# nix-private/machines/secret-host/configuration.nix
+{ modules, ... }:
+{
+  imports = with modules.nixos; [ base sops example vpnTopology ];
+
+  sops.defaultSopsFile = ../../sops/secrets.yaml;   # this repo's own
+  # sops.validateSopsFiles = true;
+}
+```
+
+Individual secrets have no hardcoded `sopsFile` either, so they follow along:
+
+```
+$ nix eval --raw .#…config.sops.secrets."passwords/example".sopsFile
+/nix/store/…-secrets.yaml               # ← the private repo's copy
+```
+
+With more than one private host, put that line in a private module and import it everywhere rather than repeating it.
+
+The rest follows normally: `sops/.sops.yaml` in the private repo lists your admin key plus each private host's age key, and `sops updatekeys` runs in whichever repo owns the file. The two `.sops.yaml` files are independent — a public host never needs to decrypt a private secret, and vice versa.
+
+Home-manager secrets work the same way; override `sops.defaultSopsFile` inside the home profile the private host uses.

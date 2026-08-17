@@ -6,7 +6,6 @@
 _:
 let
   username = "example";
-  sopsFolder = ../../sops;
 in
 {
   flake.modules.nixos.${username} =
@@ -18,16 +17,14 @@ in
       ...
     }:
     {
-      # Login password, decrypted before users are created
-      sops.secrets."passwords/${username}" = {
-        sopsFile = "${sopsFolder}/secrets.yaml";
-        neededForUsers = true;
-      };
+      # Login password, decrypted before users are created. No sopsFile here —
+      # these follow sops.defaultSopsFile, so a host defined in another flake
+      # can repoint them at its own secrets file (see docs/private-repo.md).
+      sops.secrets."passwords/${username}".neededForUsers = true;
 
       # The user's SSH private key, deployed by the *system* so home-manager's
       # sops has a key to decrypt with on the next activation step
       sops.secrets."private_keys/${username}" = {
-        sopsFile = "${sopsFolder}/secrets.yaml";
         owner = username;
         group = "users";
         mode = "0400";
@@ -64,7 +61,6 @@ in
     }:
     {
       sops.secrets."private_keys/${username}" = {
-        sopsFile = "${sopsFolder}/secrets.yaml";
         owner = username;
         group = "staff";
         mode = "0400";

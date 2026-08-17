@@ -32,7 +32,7 @@ let
       modules = [ hostFile ];
     };
 
-  hostsIn =
+  localHosts =
     class:
     let
       dir = ../../machines + "/${class}";
@@ -44,7 +44,13 @@ let
         lib.filterAttrs (
           host: type: type == "directory" && builtins.pathExists (dir + "/${host}/configuration.nix")
         ) (builtins.readDir dir)
-      )) (host: mkHost class (dir + "/${host}/configuration.nix"));
+      )) (host: dir + "/${host}/configuration.nix");
+
+  # Hosts contributed by an optional private input (see private.nix):
+  #   outputs = _: { machines.nixos.secret-host = ./machines/secret-host/configuration.nix; };
+  privateHosts = class: ((inputs.private or { }).machines or { }).${class} or { };
+
+  hostsIn = class: lib.mapAttrs (_: mkHost class) (localHosts class // privateHosts class);
 in
 {
   flake = {

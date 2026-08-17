@@ -32,7 +32,8 @@ modules/
     nixpkgs.nix              systems, overlays, lib.my.*
     systems.nix              machines/ -> nixos/darwinConfigurations
     home.nix                 home-profiles/ -> homeConfigurations
-    fmt.nix                  treefmt + pre-commit
+    private.nix              optional private repo of machines/modules
+    fmt.nix                  treefmt
     shell.nix                nix develop
     packages.nix             pkgs/ -> nix build .#name
   system/base.nix            baseline config, all three platforms
@@ -47,6 +48,7 @@ pkgs/                        custom packages
 sops/                        .sops.yaml + encrypted secrets.yaml
 optional/clan/               opt-in multi-machine deployment
 docs/sops.md                 secrets walkthrough
+docs/private-repo.md         keeping real machines out of a public repo
 ```
 
 ## Getting started
@@ -88,6 +90,10 @@ nix build .#hello-dendritic                  # custom package smoke test
 **A machine**: `mkdir machines/nixos/<host>`, add `configuration.nix` (copy the example), generate `hardware-configuration.nix`, add the host's age recipient to `sops/.sops.yaml`, run `sops updatekeys sops/secrets.yaml`.
 
 **A user**: copy `modules/users/example.nix` and `home-profiles/example/`, add password and SSH key entries to `sops/secrets.yaml`.
+
+## Private machines
+
+Uncomment the `private` input in `flake.nix` to pull hosts and modules from a separate private flake, and they join `nixosConfigurations` / `darwinConfigurations` alongside the local ones. The private repo needs no inputs of its own — it exports paths. While the input stays commented out, `modules/flake-parts/private.nix` contributes nothing, so a fresh clone still evaluates. Details in [docs/private-repo.md](docs/private-repo.md).
 
 ## Multi-machine deployment
 

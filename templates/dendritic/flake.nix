@@ -35,6 +35,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Optional: private machines and modules. See docs/private-repo.md.
+    # Nothing else needs to change — modules/flake-parts/private.nix is inert
+    # while this input is absent.
+    # private.url = "git+ssh://git@github.com/you/nix-private";
+
     # Optional: multi-machine deployment. See optional/clan/README.md.
     # clan-core = {
     #   url = "github:clan-lol/clan-core";

@@ -56,13 +56,29 @@ An inputless flake locks instantly and adds nothing to your dependency graph. Al
 
 This is not a flake cycle: the private repo exports paths and declares no dependency on the public one.
 
-**Public → private: only at the cost of a standalone-evaluable public repo.** Reference a private module from a public machine and, without the input, evaluation dies:
+**Public → private: also yes, whenever the input resolves.** `flake.modules.nixos` is one merged namespace, so a public machine imports a private module exactly like a local one:
+
+```nix
+imports = with modules.nixos; [ base sops example vpnTopology ];
+```
+
+The catch is only about who else evaluates this repo. Without the input, that name doesn't exist:
 
 ```
 error: undefined variable 'vpnTopology'
 ```
 
-So the rule is one-directional: public modules stay self-contained, private files may consume them. If a public machine genuinely needs private data, put the _machine_ in the private repo, or guard the import with `lib.optionalAttrs`/`or` in the same style `private.nix` uses.
+If you're the only one who builds these configs, that's a non-issue — you always have access. If the public repo should stay evaluable by someone who doesn't, guard the import:
+
+```nix
+{ modules, lib, ... }:
+{
+  imports = (with modules.nixos; [ base sops example ])
+    ++ lib.optional (modules.nixos ? vpnTopology) modules.nixos.vpnTopology;
+}
+```
+
+That form is safe in `imports` because `modules` and `lib` are both specialArgs here, not `_module.args` (unlike in the flake-parts modules, where `lib` would recurse).
 
 Mutual flake inputs (each declaring the other) do lock — each side pins a revision, so there's no true cycle — but it makes bootstrapping and updates miserable for no gain. The path-export design avoids needing it.
 

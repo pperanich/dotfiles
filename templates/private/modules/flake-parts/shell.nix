@@ -12,9 +12,11 @@
         name = "private-shell";
 
         packages = [
-          # clan-core is not optional here the way it is in the dendritic
-          # template: this repo exists to deploy a clan.
-          inputs.clan-core.packages.${system}.clan-cli
+          # pkgs, not inputs.clan-core.packages: pkgs carries the upstream's
+          # overlays, so any override it applies to clan-cli (a different nix
+          # in the wrapper, say) is inherited rather than re-solved here. Falls
+          # back to the plain package when the upstream does not override it.
+          (pkgs.clan-cli or inputs.clan-core.packages.${system}.clan-cli)
 
           pkgs.sops
           pkgs.age

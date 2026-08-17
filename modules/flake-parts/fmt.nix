@@ -17,6 +17,7 @@
         nixfmt.enable = true;
         prettier.enable = true;
         stylua.enable = true;
+        shellcheck.enable = true;
         shfmt.enable = true;
         statix.enable = true;
         yamlfmt.enable = true;

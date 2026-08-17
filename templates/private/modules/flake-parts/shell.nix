@@ -1,10 +1,9 @@
-{ inputs, ... }:
+_:
 {
   perSystem =
     {
       config,
       pkgs,
-      system,
       ...
     }:
     {
@@ -12,11 +11,8 @@
         name = "private-shell";
 
         packages = [
-          # pkgs, not inputs.clan-core.packages: pkgs carries the upstream's
-          # overlays, so any override it applies to clan-cli (a different nix
-          # in the wrapper, say) is inherited rather than re-solved here. Falls
-          # back to the plain package when the upstream does not override it.
-          (pkgs.clan-cli or inputs.clan-core.packages.${system}.clan-cli)
+          # Defined in nixpkgs.nix, preferring the upstream's override
+          pkgs.clan-cli
 
           pkgs.sops
           pkgs.age

@@ -1,4 +1,3 @@
-{ inputs, ... }:
 {
   perSystem =
     {
@@ -19,11 +18,7 @@
 
           inputs'.home-manager.packages.home-manager
           config.treefmt.build.wrapper
-        ]
-        # Appears once clan-core is declared in flake.nix, and costs nothing
-        # while it is absent (same rule as private.nix). lib.optional does not
-        # force its second argument, so inputs' need not have the attribute.
-        ++ inputs.nixpkgs.lib.optional (inputs ? clan-core) inputs'.clan-core.packages.clan-cli;
+        ];
 
         shellHook = ''
           # sops decrypts with an age key derived from your SSH key — same key

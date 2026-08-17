@@ -28,14 +28,27 @@ clan replaces that with an inventory: machines get tags, services get applied to
 ## After switching
 
 ```bash
-nix develop                       # clan-cli, now that the input is declared
 clan machines list
 clan vars generate example-nixos  # machine keys, passwords
 clan machines update example-nixos
 ```
 
-`modules/flake-parts/shell.nix` adds `clan-cli` to the dev shell only when the
-`clan-core` input exists, so the shell is unchanged until you finish step 1.
+6. **Put the CLI in the dev shell.** It is not there by default, and clan-cli
+   is not in nixpkgs, so it has to come from the input you just declared. In
+   `modules/flake-parts/shell.nix`:
+
+   `inputs'` is already a `perSystem` argument there, so this is the whole
+   change:
+
+   ```nix
+   packages = [
+     inputs'.clan-core.packages.clan-cli
+     # ...
+   ];
+   ```
+
+   `clan-core.flakeModules.default` supplies the clan _outputs_, not the clan
+   _command_.
 
 On Determinate Nix, `clan machines update` can fail with `KeyError: 'path'`.
 clan reads the `path` key from `nix flake metadata --json`, which lazy trees

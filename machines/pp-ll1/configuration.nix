@@ -219,7 +219,9 @@ in
   # };
 
   systemd.user.services.pipewire.environment = {
-    LADSPA_PATH = "${pkgs.ladspaPlugins}/lib/ladspa";
+    # nixpkgs' pipewire module now sets this to its own ladspa plugin set;
+    # override rather than merge so swh-plugins stays the one on the path
+    LADSPA_PATH = lib.mkForce "${pkgs.ladspaPlugins}/lib/ladspa";
     LV2_PATH = lib.mkForce "${config.system.path}/lib/lv2";
   };
 

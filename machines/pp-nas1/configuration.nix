@@ -88,7 +88,7 @@ in
       stateDir = "/tank/appdata/opencloud";
       address = "0.0.0.0";
       openFirewall = true;
-      environmentFile = config.sops.templates."opencloud.env".path;
+      adminPasswordSecret = "opencloud-admin-pass";
     };
 
     # Radicale — CalDAV/CardDAV (calendar + contacts)
@@ -96,6 +96,8 @@ in
     # authenticates and passes the identity via X-Remote-User
     radicale = {
       dataDir = "/tank/appdata/radicale";
+      # Caddy authenticates the dav vhost below; module owns the env var name
+      basicAuthHashSecret = "radicale-password-hash";
     };
 
     # scanservjs — web UI for pulling scans from the Canon TR4500 on PP-IoT.
@@ -273,9 +275,9 @@ in
   # --- Secrets wiring (sops-nix) ---
   sops = {
     secrets = {
-      # Caddy basic-auth bcrypt hash for the dav vhost, injected as an env var.
-      # The matching plaintext lives in sops as radicale-password for client setup.
-      radicale-password-hash = { };
+      # radicale-password-hash and opencloud-admin-pass are declared by their
+      # own modules, from my.radicale.basicAuthHashSecret /
+      # my.opencloud.adminPasswordSecret above.
 
       # Paperless: initial admin password
       paperless-admin-pass = {
@@ -293,33 +295,8 @@ in
         mode = "0400";
       };
 
-      # OpenCloud: admin password via environment file template
-      opencloud-admin-pass = {
-        owner = "opencloud";
-        mode = "0400";
-      };
-    };
-
-    templates = {
-      "caddy-radicale.env" = {
-        content = ''
-          RADICALE_PASSWORD_HASH=${config.sops.placeholder."radicale-password-hash"}
-        '';
-        owner = "caddy";
-      };
-
-      "opencloud.env" = {
-        content = ''
-          IDM_ADMIN_PASSWORD=${config.sops.placeholder."opencloud-admin-pass"}
-        '';
-        owner = "opencloud";
-      };
     };
   };
-
-  systemd.services.caddy.serviceConfig.EnvironmentFile = [
-    config.sops.templates."caddy-radicale.env".path
-  ];
 
   # ProtonVPN — namespace mode (split tunneling)
   # Only services listed in confinedServices use the VPN; host traffic is unaffected.
@@ -385,7 +362,7 @@ in
             redir /.well-known/caldav / 301
             redir /.well-known/carddav / 301
             basic_auth {
-              pperanich {$RADICALE_PASSWORD_HASH}
+              pperanich ${config.my.radicale.basicAuthHashPlaceholder}
             }
             reverse_proxy localhost:${toString config.my.radicale.port} {
               header_up X-Remote-User {http.auth.user.id}

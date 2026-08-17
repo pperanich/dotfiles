@@ -1,0 +1,27 @@
+# False positives, reviewed 2026-08-17.
+#
+# Windows Terminal keybinding entries in
+# home/.config/windows-terminal/settings.json. The generic-api-key rule fires
+# because the surrounding JSON field is named for keys and the shortcut values
+# clear its entropy threshold; they are modifier chords, not credentials.
+#
+# Do not quote a matching value in this comment: the ignore file is committed,
+# so gitleaks scans it too and an example would flag this file in turn.
+#
+# Two sets, because the fingerprint format differs by scan mode. Editing
+# settings.json can move the lines and produce new fingerprints; a regex
+# allowlist in .gitleaks.toml would be durable if that becomes a nuisance.
+
+# `gitleaks dir` (working tree): file:rule:line
+home/.config/windows-terminal/settings.json:generic-api-key:39
+home/.config/windows-terminal/settings.json:generic-api-key:43
+home/.config/windows-terminal/settings.json:generic-api-key:47
+
+# `gitleaks git` (history): commit:file:rule:line, for the two commits that
+# introduced the bindings
+a7088b1cd4c08f28bd764927bd6fc0c1e19c86b4:home/.config/windows-terminal/settings.json:generic-api-key:21
+a7088b1cd4c08f28bd764927bd6fc0c1e19c86b4:home/.config/windows-terminal/settings.json:generic-api-key:22
+a7088b1cd4c08f28bd764927bd6fc0c1e19c86b4:home/.config/windows-terminal/settings.json:generic-api-key:23
+d671acf4a3f245bc8ee53c2878a8e5a6e0742b92:home/.config/windows-terminal/settings.json:generic-api-key:39
+d671acf4a3f245bc8ee53c2878a8e5a6e0742b92:home/.config/windows-terminal/settings.json:generic-api-key:43
+d671acf4a3f245bc8ee53c2878a8e5a6e0742b92:home/.config/windows-terminal/settings.json:generic-api-key:47

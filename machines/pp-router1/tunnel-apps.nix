@@ -75,7 +75,6 @@ in
   my.cloudflareAccess = lib.mkIf (managed != [ ]) {
     enable = true;
     configFile = config.sops.templates."cf-access-apps.json".path;
-    environmentFile = config.sops.templates."cf-dns.env".path;
   };
 
   # Publish the tunnel CNAMEs only after the Access gate has been reconciled, so

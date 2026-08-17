@@ -47,12 +47,41 @@ _: {
         };
 
         environmentFile = lib.mkOption {
-          type = lib.types.path;
-          description = "Env file with CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.";
+          type = lib.types.nullOr lib.types.path;
+          default = config.my.cloudflare.envFile;
+          defaultText = lib.literalExpression "config.my.cloudflare.envFile";
+          description = ''
+            Env file with CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. Defaults
+            to the shared file built by my.cloudflare; set it only to bypass that.
+          '';
         };
       };
 
       config = lib.mkIf cfg.enable {
+        assertions = [
+          {
+            assertion = cfg.environmentFile != null;
+            message = ''
+              my.cloudflareAccess needs Cloudflare API credentials. Set
+              `my.cloudflare.enable = true;` on this machine (it builds the env file
+              from sops), or point my.cloudflareAccess.environmentFile at your own file.
+            '';
+          }
+          {
+            # cf access needs the account ID as well as the token; the shared
+            # file only carries it when a key is named for it.
+            assertion =
+              cfg.environmentFile != config.my.cloudflare.envFile || config.my.cloudflare.accountIdSecret != null;
+            message = ''
+              my.cloudflareAccess needs CLOUDFLARE_ACCOUNT_ID, which the shared
+              Cloudflare env file omits until you set
+              `my.cloudflare.accountIdSecret = "<sops key>";`.
+            '';
+          }
+        ];
+
+        my.cloudflare.restartUnits = [ "cf-access-sync.service" ];
+
         systemd.services.cf-access-sync = {
           description = "Sync Cloudflare Access applications";
           wantedBy = [ "multi-user.target" ];

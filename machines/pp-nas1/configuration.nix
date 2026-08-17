@@ -49,6 +49,7 @@ in
     logShipping
 
     # Caddy + DNS-01 certificates (split-horizon TLS termination)
+    cloudflareCredentials
     caddyDns01
 
     # VPN (namespace mode — split tunneling for specific services)
@@ -218,6 +219,9 @@ in
     # re-proxies here over TLS. Certs via Cloudflare DNS-01, same pattern as
     # pp-router1. See docs/split-horizon-tls.md.
     caddyDns01.enable = true;
+
+    # API token for the DNS-01 solver; the module owns the env var name
+    cloudflare.enable = true;
 
     # Immich photo management
     # Accessed via Caddy reverse proxy on pp-router1 (immich.prestonperanich.com)

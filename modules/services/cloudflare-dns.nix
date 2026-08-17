@@ -91,12 +91,30 @@ _: {
         };
 
         environmentFile = lib.mkOption {
-          type = lib.types.path;
-          description = "Path to environment file containing CLOUDFLARE_API_TOKEN";
+          type = lib.types.nullOr lib.types.path;
+          default = config.my.cloudflare.envFile;
+          defaultText = lib.literalExpression "config.my.cloudflare.envFile";
+          description = ''
+            Env file defining CLOUDFLARE_API_TOKEN. Defaults to the shared file
+            built by my.cloudflare; set it only to bypass that.
+          '';
         };
       };
 
       config = lib.mkIf cfg.enable {
+        assertions = [
+          {
+            assertion = cfg.environmentFile != null;
+            message = ''
+              my.cloudflareDns needs a Cloudflare API token. Set
+              `my.cloudflare.enable = true;` on this machine (it builds the env file
+              from sops), or point my.cloudflareDns.environmentFile at your own file.
+            '';
+          }
+        ];
+
+        my.cloudflare.restartUnits = [ "cf-dns-sync.service" ];
+
         systemd.services.cf-dns-sync = {
           description = "Sync Cloudflare DNS records";
           # Run on activation + boot so a `nixos-rebuild switch` that changes

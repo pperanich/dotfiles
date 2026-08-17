@@ -18,15 +18,18 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Zone:DNS:Edit + Zone:Zone:Read token (also used by cf-dns/cf-tunnel)
-        sops.secrets.cloudflare-api-token = { };
+        assertions = [
+          {
+            assertion = config.my.cloudflare.envFile != null;
+            message = ''
+              my.caddyDns01 needs Cloudflare API credentials for the DNS-01 solver.
+              Set `my.cloudflare.enable = true;` on this machine — it builds the env
+              file from the sops key named by my.cloudflare.apiTokenSecret.
+            '';
+          }
+        ];
 
-        sops.templates."caddy.env" = {
-          content = ''
-            CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
-          '';
-          owner = "caddy";
-        };
+        my.cloudflare.restartUnits = [ "caddy.service" ];
 
         services.caddy = {
           enable = true;
@@ -36,7 +39,7 @@ _: {
             hash = "sha256-7g8zDx5RhbptXFyEPtexxkHX8hw/gF001bZ7wX4Mjhs="; # Build once to get correct hash — nix prints it on failure (caddy 2.11.4 / nixos-26.05)
           };
 
-          environmentFile = config.sops.templates."caddy.env".path;
+          environmentFile = config.my.cloudflare.envFile;
 
           globalConfig = lib.mkBefore ''
             acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}

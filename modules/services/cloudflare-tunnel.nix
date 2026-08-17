@@ -39,8 +39,13 @@ _: {
         };
 
         environmentFile = lib.mkOption {
-          type = lib.types.path;
-          description = "Path to environment file containing CLOUDFLARE_API_TOKEN";
+          type = lib.types.nullOr lib.types.path;
+          default = config.my.cloudflare.envFile;
+          defaultText = lib.literalExpression "config.my.cloudflare.envFile";
+          description = ''
+            Env file defining CLOUDFLARE_API_TOKEN, used by the CNAME sync job.
+            Defaults to the shared file built by my.cloudflare.
+          '';
         };
 
         ingress = lib.mkOption {
@@ -70,7 +75,18 @@ _: {
             assertion = cfg.tunnelId != "00000000-0000-0000-0000-000000000000";
             message = "my.cloudflareTunnel.tunnelId is still the nil-UUID placeholder. Run: cf tunnel sync --name <name> --apply";
           }
+          {
+            # Only the CNAME sync job reads it; the tunnel itself uses credentialsFile
+            assertion = hostnames != [ ] -> cfg.environmentFile != null;
+            message = ''
+              my.cloudflareTunnel syncs CNAMEs for its ingress hostnames and needs a
+              Cloudflare API token for that. Set `my.cloudflare.enable = true;` on this
+              machine, or point my.cloudflareTunnel.environmentFile at your own file.
+            '';
+          }
         ];
+
+        my.cloudflare.restartUnits = lib.optional (hostnames != [ ]) "cf-tunnel-dns-sync.service";
 
         services.cloudflared = {
           enable = true;

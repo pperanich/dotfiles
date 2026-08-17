@@ -42,6 +42,9 @@ in
     # Disk health (local NVMe)
     smartMonitoring
 
+    # Shared Cloudflare API credentials (token env file for the four below)
+    cloudflareCredentials
+
     # Cloudflare DNS sync
     cloudflareDns
 
@@ -189,7 +192,6 @@ in
         inherit (tunnelMeta) tunnelId tunnelName;
         zone = publicDomain;
         credentialsFile = config.sops.secrets.cloudflared-tunnel-credentials.path;
-        environmentFile = config.sops.templates."cf-dns.env".path;
         ingress = {
           "${publicDomain}" = "http://localhost:8224"; # Personal site
           "${mkSub "www"}" = "http://localhost:8224"; # Redirect to apex
@@ -417,7 +419,12 @@ in
       # AP connects via trunk port and is managed by the Unifi controller above
     };
 
-    cloudflareDns.environmentFile = config.sops.templates."cf-dns.env".path;
+    # Shared Cloudflare API credentials: cf-dns, cf-tunnel, cf-access and Caddy
+    # all read the env file this builds. Env var names live in the module.
+    cloudflare = {
+      enable = true;
+      accountIdSecret = "cloudflare-account-id"; # cf access needs it
+    };
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
@@ -560,11 +567,8 @@ in
         mode = "0400";
       };
 
-      # Cloudflare API token (used by cf-dns, cf-tunnel, and caddy templates)
-      cloudflare-api-token = { };
-
-      # Cloudflare account ID (used by cf-tunnel sync)
-      cloudflare-account-id = { };
+      # Cloudflare API token and account ID are declared by
+      # modules/services/cloudflare-credentials.nix (my.cloudflare below)
 
       grafana-admin-password = {
         owner = "grafana";
@@ -588,14 +592,6 @@ in
         format = "binary";
         mode = "0400";
       };
-    };
-
-    # Cloudflare DNS sync: API token env file
-    templates."cf-dns.env" = {
-      content = ''
-        CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-api-token"}
-        CLOUDFLARE_ACCOUNT_ID=${config.sops.placeholder."cloudflare-account-id"}
-      '';
     };
   };
 

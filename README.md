@@ -170,31 +170,55 @@ Detailed guides are available in the [docs/](docs/) directory:
 
 ## Installation
 
-### Prerequisites
+### Bootstrap Script
+
+One command on a fresh machine. It clones this repo, installs Determinate Nix
+if missing, and switches the configuration matching the machine's hostname:
 
 ```bash
-# Install Nix (Determinate Systems installer)
+curl -fsSL https://raw.githubusercontent.com/pperanich/dotfiles/main/bin/install.sh | bash
+```
+
+It prints a plan and asks for confirmation before touching anything. From an
+existing checkout, run `./bin/install.sh` instead and it uses that working tree
+rather than cloning.
+
+Safe to re-run: the checkout is fast-forwarded (never reset, and skipped
+entirely when dirty), Nix is only installed when absent, and each `switch` is
+idempotent.
+
+Useful flags:
+
+| Flag            | Purpose                                                   |
+| --------------- | --------------------------------------------------------- |
+| `--dry-run`     | Print the plan and exit                                   |
+| `--host <name>` | Pick a configuration other than the detected hostname     |
+| `--home-only`   | Standalone home-manager instead of the system config      |
+| `--dir <path>`  | Clone target (default `~/dotfiles`, or `$DOTFILES_DIR`)   |
+| `--ref <ref>`   | Branch or tag to use (default `main`, or `$DOTFILES_REF`) |
+| `-y`, `--yes`   | Skip the confirmation prompt                              |
+
+`./bin/install.sh --help` lists the rest.
+
+### Manual Setup
+
+If you would rather drive it yourself, install Nix:
+
+```bash
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-### First-Time Setup
-
-**NixOS:**
+then switch directly:
 
 ```bash
+# NixOS
 sudo nixos-rebuild switch --flake .#<hostname>
-```
 
-**Darwin:**
-
-```bash
+# Darwin (first run; afterwards use darwin-rebuild)
 nix run nix-darwin -- switch --flake .#<hostname>
-```
 
-**Home-manager (standalone):**
-
-```bash
-nix run home-manager/release-25.05 -- switch --flake .#<username>
+# Home-manager (standalone)
+nix run home-manager -- switch --flake .#<username>
 ```
 
 ## References

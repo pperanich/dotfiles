@@ -1,5 +1,7 @@
-# Auto-discover hosts: machines/nixos/<host>/configuration.nix  -> nixosConfigurations.<host>
-#                      machines/darwin/<host>/configuration.nix -> darwinConfigurations.<host>
+# Which hosts exist: machines/nixos/<host>/configuration.nix  -> nixosConfigurations.<host>
+#                    machines/darwin/<host>/configuration.nix -> darwinConfigurations.<host>
+#
+# What a host *is* lives in lib.nix (flake.lib.mkHost).
 #
 # If you switch to clan (optional/clan/), delete this file — clan builds these
 # outputs from its inventory instead.
@@ -9,28 +11,7 @@
   ...
 }:
 let
-  # Imported, not taken from the module args: threading the flake-parts `lib`
-  # arg into specialArgs makes the system eval recurse through _module.args.
-  lib = import ../../lib/extended.nix { inherit (inputs) nixpkgs; };
-
-  # What machine files and platform modules see. `modules` is the whole
-  # flake.modules tree, so machines write `with modules.nixos; [ ... ]`.
-  specialArgs = {
-    inherit inputs lib;
-    inherit (config.flake) modules;
-    outputs = config.flake;
-  };
-
-  mkHost =
-    class: hostFile:
-    let
-      builder =
-        if class == "darwin" then inputs.darwin.lib.darwinSystem else inputs.nixpkgs.lib.nixosSystem;
-    in
-    builder {
-      inherit specialArgs;
-      modules = [ hostFile ];
-    };
+  inherit (config.flake) lib;
 
   localHosts =
     class:
@@ -46,11 +27,15 @@ let
         ) (builtins.readDir dir)
       )) (host: dir + "/${host}/configuration.nix");
 
-  # Hosts contributed by an optional private input (see private.nix):
-  #   outputs = _: { machines.nixos.secret-host = ./machines/secret-host/configuration.nix; };
+  # Hosts contributed by an optional private input (see private.nix). Simple,
+  # but it makes every output of this flake unevaluable without access to that
+  # repo — including `templates`. When this flake must stay publicly
+  # evaluable, have the private flake call flake.lib.mkHost instead.
   privateHosts = class: ((inputs.private or { }).machines or { }).${class} or { };
 
-  hostsIn = class: lib.mapAttrs (_: mkHost class) (localHosts class // privateHosts class);
+  hostsIn =
+    class:
+    lib.mapAttrs (_: path: lib.mkHost { inherit class path; }) (localHosts class // privateHosts class);
 in
 {
   flake = {

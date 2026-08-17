@@ -29,7 +29,8 @@ flake.nix                    inputs only; outputs come from ./modules
 modules/
   flake-parts/               the flake's own plumbing
     flake-parts.nix          enables flake.modules.<class>.<name>
-    nixpkgs.nix              systems, overlays, lib.my.*
+    nixpkgs.nix              systems, overlays, pkgs
+    lib.nix                  flake.lib: lib.my.* and mkHost
     systems.nix              machines/ -> nixos/darwinConfigurations
     home.nix                 home-profiles/ -> homeConfigurations
     private.nix              optional private repo of machines/modules
@@ -93,7 +94,12 @@ nix build .#hello-dendritic                  # custom package smoke test
 
 ## Private machines
 
-Uncomment the `private` input in `flake.nix` to pull hosts and modules from a separate private flake, and they join `nixosConfigurations` / `darwinConfigurations` alongside the local ones. The private repo needs no inputs of its own — it exports paths. While the input stays commented out, `modules/flake-parts/private.nix` contributes nothing, so a fresh clone still evaluates. Details in [docs/private-repo.md](docs/private-repo.md).
+Two routes, and the choice hinges on whether this flake must stay evaluable by people without access to the private repo.
+
+- **Just deploying your own machines**: uncomment the `private` input in `flake.nix`. Private hosts and modules join `nixosConfigurations` / `darwinConfigurations` alongside the local ones, and the private repo needs no inputs of its own.
+- **This flake is public or serves a template**: don't declare the input. Have the private flake take _this_ one as an input and call the exported `lib.mkHost`. Declaring a private input makes every output — `templates` included — unevaluable without access.
+
+Both are written up, with the measured failure modes, in [docs/private-repo.md](docs/private-repo.md).
 
 ## Multi-machine deployment
 

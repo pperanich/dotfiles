@@ -1,47 +1,68 @@
-# Keeping machines in a private repo
+# Keeping machines out of a public repo
 
-The public repo holds the architecture; a private flake input holds the hosts you'd rather not publish (real hostnames, IPs, VPN topology, service layout).
+Two ways to split public architecture from private hosts. Which one is right depends on a single question:
 
-## Does a private input break `nix flake init -t`?
+**Does this flake need to stay evaluable by people who lack access to the private repo?**
 
-No. `nix flake init` copies the template's files and stops — it never reads the new flake's inputs, so no lock and no fetch happens. The private input only matters at `nix flake lock` / `nix flake check` / build time, and only for someone who lacks access.
+If it serves a `templates` output, is a portfolio piece, or gets cloned by anyone but you: yes, and you want route B. Otherwise route A is less machinery.
 
-Two consequences worth being deliberate about:
+## Route A — private flake input (simple)
 
-- **The input must be commented out in the committed template**, which it is. Otherwise the first `nix flake check` someone runs fails on a repo they can't clone.
-- **Never add a private input to the flake that _serves_ the template.** Evaluating `templates.<name>` evaluates that flake's outputs, which does pull its inputs.
+Declare the input, and private machines and modules join this flake's outputs:
 
-## Shape of the private repo
+```nix
+# flake.nix
+private.url = "git+ssh://git@github.com/you/nix-private";
+```
 
-It needs no flake-parts, no import-tree, no inputs at all — just paths:
+```nix
+# nix-private/flake.nix — no inputs of its own
+outputs = _: {
+  machines.nixos.secret-host = ./machines/secret-host/configuration.nix;
+  modules.nixos.vpnTopology  = ./modules/vpn-topology.nix;
+  flakeModules.default       = ./flake-modules/private.nix;
+};
+```
+
+`modules/flake-parts/private.nix` merges the modules and flake-parts module; `systems.nix` merges the machines. All three exports are optional. Deploy as usual: `nixos-rebuild switch --flake .#secret-host`.
+
+**The cost, measured:** once the input is declared, _every_ output of this flake needs it, including ones that never reference it. Evaluating the module tree touches `inputs.private`, so someone without access gets:
+
+```
+$ nix eval .#templates.mini.description
+error: Failed to fetch git repository 'ssh://git@github.invalid/nope/private'
+
+$ nix flake init -t path:…#mini
+error: Failed to fetch git repository 'ssh://git@github.invalid/nope/private'
+```
+
+`nix flake init` wrote nothing. A committed `flake.lock` doesn't help — the lock entry points at a repo they still can't fetch.
+
+## Route B — deploy from the private flake (keeps this repo public)
+
+Reverse the dependency. This flake exports `lib.mkHost`; the private flake consumes it and owns its own `nixosConfigurations`. Nothing here refers to anything private.
 
 ```nix
 # nix-private/flake.nix
 {
-  description = "Private machines and modules";
+  description = "Private machines";
 
-  outputs = _: {
-    # Picked up by modules/flake-parts/systems.nix
-    machines = {
-      nixos.secret-host = ./machines/secret-host/configuration.nix;
-      darwin.work-laptop = ./machines/work-laptop/configuration.nix;
+  inputs.dotfiles.url = "github:you/dotfiles";
+
+  outputs =
+    { dotfiles, ... }:
+    {
+      nixosConfigurations.secret-host = dotfiles.lib.mkHost {
+        class = "nixos";
+        path = ./machines/secret-host/configuration.nix;
+        # importable by name inside that machine
+        namedModules.nixos.vpnTopology = ./modules/vpn-topology.nix;
+      };
     };
-
-    # Merged into flake.modules by modules/flake-parts/private.nix
-    modules.nixos.vpnTopology = ./modules/vpn-topology.nix;
-
-    # Imported as a flake-parts module — perSystem packages, overlays,
-    # extra flake outputs, anything modules/flake-parts/ can do
-    flakeModules.default = ./flake-modules/private.nix;
-  };
 }
 ```
 
-An inputless flake locks instantly and adds nothing to your dependency graph. All three exports are optional; the readers use `or` fallbacks.
-
-## Which side may reference which
-
-**Private → public: yes.** The public flake is what evaluates the private files, so they get the same `specialArgs` local ones do. A private machine imports public modules by name:
+The machine file is an ordinary one and sees the same `specialArgs` local hosts do:
 
 ```nix
 { modules, ... }:
@@ -52,69 +73,74 @@ An inputless flake locks instantly and adds nothing to your dependency graph. Al
 }
 ```
 
-`vpnTopology` there is the private repo's own module, sitting in the same `modules.nixos` namespace as the public ones. Private flake-parts modules likewise see `config.flake`, `inputs`, and everything the public modules see.
+`base`, `sops` and `example` come from the public flake; `vpnTopology` is private. Deploy from the private repo:
 
-This is not a flake cycle: the private repo exports paths and declares no dependency on the public one.
+```bash
+nixos-rebuild switch --flake ~/src/nix-private#secret-host
+```
 
-**Public → private: also yes, whenever the input resolves.** `flake.modules.nixos` is one merged namespace, so a public machine imports a private module exactly like a local one:
+`mkHost` arguments:
+
+| arg            | meaning                                         |
+| -------------- | ----------------------------------------------- |
+| `class`        | `"nixos"` or `"darwin"` — picks the builder     |
+| `path`         | the machine's `configuration.nix`               |
+| `extraModules` | extra modules appended to the import list       |
+| `namedModules` | merged into the `modules` specialArg, per class |
+| `specialArgs`  | overrides merged over the defaults              |
+
+Trade-off: two repos and two deploy targets. Public hosts stay `nixos-rebuild --flake .#host` from here; private ones come from over there.
+
+## Route C — git submodule
+
+Keeps one repo and one deploy command, at the cost of a submodule. Point a guarded reader at a path that only exists when the submodule is checked out:
 
 ```nix
-imports = with modules.nixos; [ base sops example vpnTopology ];
+imports = lib.optional (builtins.pathExists ../../private/flake-module.nix) ../../private/flake-module.nix;
 ```
 
-The catch is only about who else evaluates this repo. Without the input, that name doesn't exist:
+Without `?submodules=1` the files aren't in the store copy, the guard is false, and the flake evaluates clean for anyone. With it, private hosts appear:
 
-```
-error: undefined variable 'vpnTopology'
-```
-
-If you're the only one who builds these configs, that's a non-issue — you always have access. If the public repo should stay evaluable by someone who doesn't, guard the import:
-
-```nix
-{ modules, lib, ... }:
-{
-  imports = (with modules.nixos; [ base sops example ])
-    ++ lib.optional (modules.nixos ? vpnTopology) modules.nixos.vpnTopology;
-}
+```bash
+nix flake init -t <repo>#tmpl                             # stranger: exit 0
+nix eval .#nixosConfigurations                            # ["example-nixos"]
+nix eval '.?submodules=1#nixosConfigurations'             # ["example-nixos","secret-host"]
+nixos-rebuild switch --flake '.?submodules=1#secret-host'
 ```
 
-That form is safe in `imports` because `modules` and `lib` are both specialArgs here, not `_module.args` (unlike in the flake-parts modules, where `lib` would recurse).
+No lock entry and no fetch, so there's nothing to be denied. Forgetting `?submodules=1` silently gives you the public-only view, which is the sharp edge.
 
-Mutual flake inputs (each declaring the other) do lock — each side pins a revision, so there's no true cycle — but it makes bootstrapping and updates miserable for no gain. The path-export design avoids needing it.
+## Does any of this break `nix flake init -t`?
+
+Only route A does, and only for people without access. Init itself copies files and never locks — verified against a template that declared an unreachable input: `nix flake init -t` returned **exit 0** and wrote every file, while `nix flake lock` in the result failed. What breaks route A is the _serving_ flake needing the input at eval time, not the initialized copy.
+
+So the rule for a repo that serves a template: never declare a private input in it. Route B and C both respect that.
 
 ## Layout trap
 
 Keep machine files **outside** any directory swept by import-tree. A `configuration.nix` under `modules/` gets loaded as a flake-parts module and fails with an infinite-recursion error, because machine configs reference `modules` in their `imports`.
 
-## Activating it
+## Access and auth
 
-```bash
-# flake.nix: uncomment and point at your repo
-#   private.url = "git+ssh://git@github.com/you/nix-private";
-nix flake lock
-nixos-rebuild switch --flake .#secret-host
-```
-
-`git+ssh://` authenticates with your SSH agent, which is the least friction. The `github:you/nix-private` form needs a token in `nix.conf` instead:
+`git+ssh://` authenticates with your SSH agent, which is the least friction. The `github:you/nix-private` form needs a token instead:
 
 ```
 access-tokens = github.com=ghp_...
 ```
 
-Deploy hosts need their own access. A NixOS builder pulling the flake itself needs the key; if you build locally and push closures (`nixos-rebuild --target-host`), only your workstation needs it.
+Deploy hosts need their own access only if they evaluate the flake themselves. Build locally and push closures (`nixos-rebuild --target-host`) and only your workstation needs the key.
 
-Local iteration without committing to the private repo:
+Local iteration against an uncommitted private checkout:
 
 ```bash
-nix flake lock --override-input private path:/home/you/src/nix-private
-# or per-command
-nixos-rebuild build --flake .#secret-host --override-input private path:../nix-private
+nix flake lock --override-input private path:/home/you/src/nix-private   # route A
+nixos-rebuild build --flake ~/src/nix-private#secret-host                # route B, just edit in place
 ```
 
 ## What still leaks
 
-`flake.lock` records the private repo's URL, revision, and commit timestamp. If the public repo is public, that metadata is public: the repo's existence, its name, and your commit cadence. The contents stay private. If even that is too much, use a git submodule (`nix build '.?submodules=1#...'`) or keep the whole configuration private and publish only the template.
+Route A publishes the private repo's URL, revision and commit timestamps in `flake.lock`; route C publishes URL and pinned commit in `.gitmodules`. Contents stay private either way. Route B leaks nothing from the public side — the private flake's lock is in the private repo.
 
 ## Secrets
 
-Secrets belong in sops either way — a private repo is not an encryption strategy. The private flake can carry its own `sops/secrets.yaml` and reference it by relative path from its own modules; paths resolve against the input's store copy, so nothing needs to change in `modules/system/sops.nix`. `sops updatekeys` runs in whichever repo owns the file.
+A private repo is not an encryption strategy; secrets still belong in sops. A private flake can carry its own `sops/secrets.yaml` and reference it by relative path from its own modules — paths resolve against that repo's store copy, so `modules/system/sops.nix` needs no changes. `sops updatekeys` runs in whichever repo owns the file.

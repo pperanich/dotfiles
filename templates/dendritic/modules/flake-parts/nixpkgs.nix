@@ -29,7 +29,7 @@ in
     };
 
   flake = {
-    lib = extendedLib;
+    # flake.lib is owned by lib.nix
 
     # Consumers get this repo's packages under pkgs.local.*
     overlays.default =

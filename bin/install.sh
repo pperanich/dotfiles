@@ -799,6 +799,51 @@ EOF
   fi
 }
 
+# Is there a configuration here for this machine? Checked on disk rather than
+# through nix, because this runs before Nix is installed. machines/<host>/ is
+# this layout; machines/<class>/<host>/ is the dendritic template's.
+local_target_exists() {
+  local dir
+  if [ "$opt_mode" = home ]; then
+    [ -d "$FLAKE_DIR/home-profiles/${opt_host:-$USER}" ] && return 0
+    return 1
+  fi
+  [ -n "$opt_host" ] || return 1
+  for dir in "$FLAKE_DIR/machines/$opt_host" "$FLAKE_DIR"/machines/*/"$opt_host"; do
+    [ -d "$dir" ] && return 0
+  done
+  return 1
+}
+
+# Echo switch, dendritic, private or quit. Defaults to switching when this
+# machine has a configuration here, and to scaffolding one when it does not.
+main_choice() {
+  local default=2 pick
+  if [ "$opt_assume_yes" = true ]; then
+    printf 'switch\n'
+    return 0
+  fi
+  if local_target_exists; then
+    default=1
+  fi
+
+  cat >/dev/tty <<EOF
+
+  1) Switch this machine, using ${opt_host:-$USER}
+  2) Scaffold a configuration of my own, from the dendritic template
+  3) Scaffold a private flake that consumes this one
+  4) Quit
+
+EOF
+  pick="$(prompt_value "Choice" "$default")"
+  case "$pick" in
+  1 | switch) printf 'switch\n' ;;
+  2 | dendritic) printf 'dendritic\n' ;;
+  3 | private) printf 'private\n' ;;
+  *) printf 'quit\n' ;;
+  esac
+}
+
 # Echo the chosen template name; prompts go to the tty.
 choose_template() {
   local pick
@@ -1131,17 +1176,21 @@ Steps:
        NixOS   nixos-rebuild    (includes home-manager)
        --home-only  standalone home-manager
 
-If the flake has no configuration for this machine, an interactive run offers
-to scaffold one of its templates instead:
+An interactive run asks what to do once the checkout is in place:
 
-  dendritic  a configuration of your own, for this computer
-  private    a second flake consuming a public config you already run
+  1  switch this machine
+  2  scaffold a configuration of your own, from the dendritic template
+  3  scaffold a private flake that consumes this one
+  4  quit
+
+It defaults to switching when this flake has a configuration matching the
+machine, and to the dendritic template when it does not.
 
 The dendritic path can also bootstrap secrets: an age recipient from an ed25519
 SSH key (existing or freshly generated), a sha-512 password hash, and an
 encrypted sops/secrets.yaml. The private path leaves secrets to `clan vars`.
 
-With --yes, or with no terminal, it lists the valid names and exits.
+--yes switches without asking. With no terminal and no --yes, it exits.
 EOF
 }
 
@@ -1244,9 +1293,36 @@ main() {
     log_info "dry run, nothing to do"
     exit 0
   fi
-  confirm "Proceed?"
 
+  # Before the prompt, so the menu can tell whether this machine has a
+  # configuration here. Cloning or fast-forwarding is announced in the plan and
+  # is what every branch below needs; installing Nix is the change that waits
+  # for an answer.
   sync_repo
+
+  # Not inside main_choice: it runs in a command substitution, where exit would
+  # only leave the subshell and the caller would read an empty choice.
+  if [ "$opt_assume_yes" != true ] && ! have_tty; then
+    log_error "no terminal available to choose; re-run with --yes to switch"
+    exit 1
+  fi
+
+  case "$(main_choice)" in
+  switch) ;;
+  dendritic)
+    install_nix
+    scaffold_dendritic
+    ;;
+  private)
+    install_nix
+    scaffold_private
+    ;;
+  *)
+    log_info "aborted"
+    exit 0
+    ;;
+  esac
+
   install_nix
   resolve_flake_target
   if [ "$opt_mode" = nixos ]; then

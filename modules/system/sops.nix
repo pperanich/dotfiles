@@ -4,27 +4,38 @@ let
   sopsFolder = ../../sops;
   # Base sops config shared between NixOS and Darwin
   # Note: age.plugins is added per-platform below since it needs pkgs
-  sops = {
-    defaultSopsFile = "${sopsFolder}/secrets.yaml";
-    # Runs sops-install-secrets -check-mode=sopsfile in the manifest's build
-    # phase: every declared secret must name a key that exists in the file.
-    # Key names are plaintext in a sops file, so nothing is decrypted. Missing
-    # keys fail the build instead of failing partway through activation.
-    validateSopsFiles = true;
-    age = {
-      # Use clan-managed age key for decryption
-      keyFile = "/var/lib/sops-nix/key.txt";
-      # Also import host SSH keys as age keys
-      sshKeyPaths = [
-        # "/etc/ssh/ssh_host_ed25519_key"
-        # "/run/secrets/vars/openssh/ssh.id_ed25519"
-      ];
+  #
+  # Priority 900 throughout, not mkDefault: clan-core defines
+  # sops.defaultSopsFile at mkDefault (1000), so an equal-priority default here
+  # is a conflict. 900 beats clan's default while still losing to a plain
+  # assignment, which is what lets a machine defined in another flake repoint
+  # these at its own secrets. See docs/private-machines.md.
+  sopsCommon =
+    lib:
+    let
+      overridable = lib.mkOverride 900;
+    in
+    {
+      defaultSopsFile = overridable "${sopsFolder}/secrets.yaml";
+      # Runs sops-install-secrets -check-mode=sopsfile in the manifest's build
+      # phase: every declared secret must name a key that exists in the file.
+      # Key names are plaintext in a sops file, so nothing is decrypted. Missing
+      # keys fail the build instead of failing partway through activation.
+      validateSopsFiles = overridable true;
+      age = {
+        # Use clan-managed age key for decryption
+        keyFile = overridable "/var/lib/sops-nix/key.txt";
+        # Also import host SSH keys as age keys
+        sshKeyPaths = [
+          # "/etc/ssh/ssh_host_ed25519_key"
+          # "/run/secrets/vars/openssh/ssh.id_ed25519"
+        ];
+      };
+      # secrets will be output to /run/secrets
+      # e.g. /run/secrets/msmtp-password
+      # secrets required for user creation are handled in respective ./users/<username>.nix files
+      # because they will be output to /run/secrets-for-users and only when the user is assigned to a host.
     };
-    # secrets will be output to /run/secrets
-    # e.g. /run/secrets/msmtp-password
-    # secrets required for user creation are handled in respective ./users/<username>.nix files
-    # because they will be output to /run/secrets-for-users and only when the user is assigned to a host.
-  };
 in
 {
   flake.modules = {
@@ -42,7 +53,7 @@ in
         # doesn't go through clan.
         imports = [ inputs.sops-nix.nixosModules.sops ];
         sops = lib.mkMerge [
-          sops
+          (sopsCommon lib)
           {
             package = pkgs.sops-install-secrets;
             # YubiKey support for system-level secrets
@@ -77,7 +88,7 @@ in
       {
         imports = [ inputs.sops-nix.darwinModules.sops ];
         sops = lib.mkMerge [
-          sops
+          (sopsCommon lib)
           {
             package = pkgs.sops-install-secrets;
             # YubiKey support for system-level secrets

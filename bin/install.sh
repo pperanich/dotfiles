@@ -9,6 +9,12 @@
 
 set -Eeuo pipefail
 
+# A curl-piped installer lands in shells that export neither (docker sh -c,
+# cron, some su), and set -u makes a bare reference fatal mid-run.
+USER="${USER:-$(id -un)}"
+HOME="${HOME:-$(cd ~ && pwd)}"
+export USER HOME
+
 REPO_URL="${DOTFILES_REPO:-https://github.com/pperanich/dotfiles.git}"
 REPO_REF="${DOTFILES_REF:-main}"
 CLONE_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
@@ -51,8 +57,10 @@ else
   C_RED='' C_GREEN='' C_YELLOW='' C_BLUE='' C_BOLD='' C_RESET=''
 fi
 
-log_info() { printf '%s[info]%s %s\n' "$C_GREEN" "$C_RESET" "$*"; }
-log_step() { printf '%s[step]%s %s\n' "$C_BLUE" "$C_RESET" "$*"; }
+# All four go to stderr: several functions reserve stdout for a value, and a
+# log line landing in $(...) becomes data. host_age_recipient hit exactly that.
+log_info() { printf '%s[info]%s %s\n' "$C_GREEN" "$C_RESET" "$*" >&2; }
+log_step() { printf '%s[step]%s %s\n' "$C_BLUE" "$C_RESET" "$*" >&2; }
 log_warn() { printf '%s[warn]%s %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 log_error() { printf '%s[error]%s %s\n' "$C_RED" "$C_RESET" "$*" >&2; }
 
@@ -134,6 +142,26 @@ confirm() {
   exit 0
 }
 
+# Names typed at a prompt end up in sed replacements and in paths, where a
+# stray | ends the s|| command and a & splices the match back in.
+valid_name() {
+  case "$1" in
+  '' | *[!A-Za-z0-9._-]*) return 1 ;;
+  esac
+  return 0
+}
+
+require_valid_names() {
+  local n
+  for n in "$@"; do
+    if ! valid_name "$n"; then
+      log_error "invalid name: '$n'"
+      log_error "use letters, digits, dot, underscore or hyphen"
+      exit 1
+    fi
+  done
+}
+
 # Ask on the tty, echo the reply on stdout, fall back to $2 when it is empty.
 prompt_value() {
   local question="$1" default="$2" reply
@@ -146,28 +174,37 @@ prompt_value() {
   fi
 }
 
-tmp_dir() {
+# Sets the global; do not call this in $(...) or the assignment is lost to the
+# subshell and the EXIT-trap cleanup never has anything to remove.
+ensure_tmp_dir() {
   if [ -z "$TMP_DIR" ]; then
     TMP_DIR="$(mktemp -d)"
   fi
-  printf '%s\n' "$TMP_DIR"
 }
 
 # `sed -i` requires an argument on BSD and refuses one on GNU; sidestep it.
 sed_inplace() {
   local script="$1" file="$2" tmp
-  tmp="$(tmp_dir)/sed.out"
-  sed "$script" "$file" >"$tmp"
+  ensure_tmp_dir
+  tmp="$TMP_DIR/sed.out"
+  # Without this the failed sed still leaves an empty $tmp, which the cat then
+  # copies over the original. errexit does not save us: callers run inside an
+  # `if`, which suppresses it for the whole call tree.
+  if ! sed "$script" "$file" >"$tmp"; then
+    log_error "sed failed on $file; left unchanged"
+    exit 1
+  fi
   cat "$tmp" >"$file"
 }
 
 # --- detection ------------------------------------------------------------
 
+# Prints nothing on an unsupported kernel rather than returning non-zero: a
+# failure inside $(...) trips the ERR trap even in an `if` condition.
 detect_os() {
   case "$(uname -s)" in
   Darwin*) printf 'darwin\n' ;;
   Linux*) printf 'linux\n' ;;
-  *) return 1 ;;
   esac
 }
 
@@ -247,6 +284,13 @@ sync_repo() {
     ;;
   update)
     log_step "Updating existing checkout at $CLONE_DIR"
+    # Probe first: inside [ -n "$(...)" ] a git failure reads as an empty, and
+    # therefore clean, tree, which would skip the guard below.
+    if ! git -C "$CLONE_DIR" status --porcelain >/dev/null 2>&1; then
+      log_error "cannot read git status in $CLONE_DIR"
+      log_error "if it is owned by another user, see git's safe.directory"
+      exit 1
+    fi
     if [ -n "$(git -C "$CLONE_DIR" status --porcelain)" ]; then
       log_warn "uncommitted changes in $CLONE_DIR, leaving it untouched"
       return 0
@@ -289,6 +333,13 @@ load_nix_env() {
 install_nix() {
   if load_nix_env; then
     log_info "Nix already installed ($(nix --version))"
+    # A distro or single-user Nix without these enabled gets much further and
+    # then fails inside nix build, several steps from the real cause.
+    if ! nix eval --impure --expr 1 >/dev/null 2>&1; then
+      log_error "this nix cannot evaluate: nix-command and flakes look disabled"
+      log_error "enable them in nix.conf, or install Determinate Nix"
+      exit 1
+    fi
     return 0
   fi
 
@@ -556,8 +607,8 @@ KEYS
 
   pick="$(prompt_value "Key" "$total")"
   case "$pick" in
-  '' | *[!0-9]*)
-    log_error "not a number: $pick"
+  '' | *[!0-9]* | ????*)
+    log_error "not a number in range: $pick"
     return 0
     ;;
   esac
@@ -576,8 +627,14 @@ KEYS
       log_error "$priv already exists"
       return 0
     fi
-    mkdir -p "$(dirname "$priv")"
-    chmod 700 "$(dirname "$priv")"
+    local keydir
+    keydir="$(dirname "$priv")"
+    # Only lock down a directory we create; the path is user-supplied and may
+    # be somewhere with deliberate permissions.
+    if [ ! -d "$keydir" ]; then
+      mkdir -p "$keydir"
+      chmod 700 "$keydir"
+    fi
     # ssh-keygen chatters on stdout, which this function reserves for the path.
     ssh-keygen -t ed25519 -N '' -C "${USER}@$(uname -n)" -f "$priv" -q 1>&2
     printf '%s\n' "$priv"
@@ -630,16 +687,31 @@ choose_password() {
   SECRET_PASSWORD_GENERATED=false
 }
 
+# Kept apart from host_age_recipient because that one is read through $(...),
+# where a prompt is invisible and sudo_preflight's exit would end only the
+# subshell.
+ensure_host_key() {
+  local pub=/etc/ssh/ssh_host_ed25519_key.pub
+  [ -e "$pub" ] && return 0
+
+  log_warn "no $pub, so this machine has no SSH host key yet"
+  log_warn "without it sops-nix cannot decrypt system secrets at activation"
+  if ! ask_yes_no "Generate a host key now (needs sudo)?"; then
+    return 1
+  fi
+  if ! command_exists sudo; then
+    log_error "sudo is required to write /etc/ssh"
+    return 1
+  fi
+  if ! sudo -v; then
+    return 1
+  fi
+  sudo ssh-keygen -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key -q 1>&2
+}
+
+# Pure reader: safe inside $(...).
 host_age_recipient() {
   local pub=/etc/ssh/ssh_host_ed25519_key.pub
-  if [ ! -e "$pub" ]; then
-    log_warn "no $pub, so this machine has no SSH host key yet"
-    log_warn "without it sops-nix cannot decrypt system secrets at activation"
-    if ask_yes_no "Generate a host key now (needs sudo)?"; then
-      sudo_preflight
-      sudo ssh-keygen -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key -q 1>&2
-    fi
-  fi
   if [ -e "$pub" ]; then
     "$SSH_TO_AGE_BIN" -i "$pub" 2>/dev/null || true
   fi
@@ -651,6 +723,10 @@ bootstrap_secrets() {
   local dir="$1" user="$2" host="$3"
   local key admin_age host_age hash secrets identity age_dir age_file
 
+  if ! command_exists ssh-keygen; then
+    log_error "ssh-keygen not found; cannot inspect or create an SSH key"
+    return 1
+  fi
   fetch_secret_tools || return 1
 
   key="$(choose_ssh_key)"
@@ -668,6 +744,7 @@ bootstrap_secrets() {
     ;;
   esac
 
+  ensure_host_key || true
   host_age="$(host_age_recipient)"
 
   choose_password || return 1
@@ -713,21 +790,25 @@ bootstrap_secrets() {
         "$SOPS_BIN" --config sops/.sops.yaml -e -i sops/secrets.yaml
   ); then
     rm -f "$secrets"
+    SECRET_PASSWORD_GENERATED=false
     log_error "sops failed to encrypt; removed the plaintext secrets file"
     return 1
   fi
   if ! grep -q 'ENC\[' "$secrets"; then
     rm -f "$secrets"
+    SECRET_PASSWORD_GENERATED=false
     log_error "sops reported success but wrote no ciphertext; removed the file"
     return 1
   fi
   if ! grep -q "recipient: ${admin_age}" "$secrets"; then
     rm -f "$secrets"
+    SECRET_PASSWORD_GENERATED=false
     log_error "encrypted to unexpected recipients; removed the file"
     return 1
   fi
   if [ -n "$host_age" ] && ! grep -q "recipient: ${host_age}" "$secrets"; then
     rm -f "$secrets"
+    SECRET_PASSWORD_GENERATED=false
     log_error "the host recipient is missing from the result; removed the file"
     return 1
   fi
@@ -741,13 +822,15 @@ bootstrap_secrets() {
     age_file="$age_dir/keys.txt"
     mkdir -p "$age_dir"
     chmod 700 "$age_dir"
-    if [ -e "$age_file" ]; then
-      if ! grep -qF "$identity" "$age_file"; then
-        printf '%s\n' "$identity" >>"$age_file"
-      fi
-    else
-      printf '%s\n' "$identity" >"$age_file"
-      chmod 600 "$age_file"
+    # Create empty and lock it down before the key is written: a plain
+    # redirect lands at 0644 under the default umask, and an existing file
+    # may already be readable by others.
+    if [ ! -e "$age_file" ]; then
+      : >"$age_file"
+    fi
+    chmod 600 "$age_file"
+    if ! grep -qF "$identity" "$age_file"; then
+      printf '%s\n' "$identity" >>"$age_file"
     fi
     log_info "age identity available in $age_file"
   fi
@@ -768,8 +851,8 @@ template_next_steps() {
 
   if [ "$secrets_ready" != true ]; then
     cat <<EOF
-sops/secrets.yaml is still the shipped placeholder, so nothing can be
-switched yet: activation fails until real secrets exist.
+sops/secrets.yaml is not usable yet, so nothing can be switched: activation
+fails until real, encrypted secrets exist.
 
 EOF
   fi
@@ -931,6 +1014,8 @@ scaffold_private() {
   # this, so do not infer the platform from uname.
   platform="$(prompt_value "Its platform" "x86_64-linux")"
   user="$(prompt_value "Username the upstream's user module defines" "$USER")"
+  # Before anything is written: these reach sed replacements and paths.
+  require_valid_names "$host" "$platform" "$user"
 
   if [ -e "$dir/flake.nix" ]; then
     log_error "$dir already contains a flake.nix"
@@ -948,7 +1033,8 @@ scaffold_private() {
 
   log_step "Writing the template into $dir"
   local out
-  out="$(tmp_dir)/flake-new.log"
+  ensure_tmp_dir
+  out="$TMP_DIR/flake-new.log"
   if ! nix flake new -t "${FLAKE_DIR}#private" "$dir" >"$out" 2>&1; then
     cat "$out" >&2
     log_error "nix flake new failed"
@@ -981,6 +1067,8 @@ scaffold_dendritic() {
   dir="$(prompt_value "New configuration directory" "$HOME/nix-config")"
   user="$(prompt_value "Primary username" "$USER")"
   host="$(prompt_value "Name for this machine" "${HOSTNAME_DETECTED:-my-${class}}")"
+  # Before anything is written: these reach sed replacements and paths.
+  require_valid_names "$user" "$host"
 
   if [ -e "$dir/flake.nix" ]; then
     log_error "$dir already contains a flake.nix"
@@ -999,7 +1087,8 @@ scaffold_dendritic() {
   # performs. Keep the output for the failure case.
   log_step "Writing the template into $dir"
   local out
-  out="$(tmp_dir)/flake-new.log"
+  ensure_tmp_dir
+  out="$TMP_DIR/flake-new.log"
   if ! nix flake new -t "${FLAKE_DIR}#dendritic" "$dir" >"$out" 2>&1; then
     cat "$out" >&2
     log_error "nix flake new failed"
@@ -1048,7 +1137,8 @@ switch_darwin() {
   BOOTSTRAPPED=true
   log_step "Bootstrapping nix-darwin for $host (first run)"
   local out
-  out="$(tmp_dir)/darwin-system"
+  ensure_tmp_dir
+  out="$TMP_DIR/darwin-system"
   nix build --out-link "$out" "${FLAKE_DIR}#darwinConfigurations.${host}.system"
   "$out/sw/bin/darwin-rebuild" switch --flake "${FLAKE_DIR}#${host}"
 }
@@ -1100,7 +1190,8 @@ switch_home_manager() {
   BOOTSTRAPPED=true
   log_step "Bootstrapping home-manager for $user (first run)"
   local out
-  out="$(tmp_dir)/home-manager"
+  ensure_tmp_dir
+  out="$TMP_DIR/home-manager"
   nix build --out-link "$out" "${FLAKE_DIR}#homeConfigurations.${user}.activationPackage"
   "$out/activate"
 }
@@ -1258,7 +1349,8 @@ parse_args() {
 main() {
   parse_args "$@"
 
-  if ! OS="$(detect_os)"; then
+  OS="$(detect_os)"
+  if [ -z "$OS" ]; then
     log_error "unsupported operating system: $(uname -s)"
     exit 1
   fi

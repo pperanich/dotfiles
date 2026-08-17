@@ -166,6 +166,7 @@ It includes the flake-parts/import-tree plumbing, NixOS + Darwin + home-manager 
 Detailed guides are available in the [docs/](docs/) directory:
 
 - **[Adding New Machines](docs/adding-new-machines.md)** - Complete onboarding guide
+- **[Private Machines](docs/private-machines.md)** - Running hosts from a private flake that consumes this one
 - **[Troubleshooting](docs/clan-machines-update-troubleshooting.md)** - Debug deployment issues
 
 ## Installation

@@ -11,7 +11,15 @@ let
   private = inputs.private or { };
 in
 {
-  # Modules the private repo exports, merged with the ones defined locally:
-  #   outputs = _: { modules.nixos.vpnSecrets = ./modules/vpn-secrets.nix; };
+  # A flake-parts module from the private repo — perSystem packages, overlays,
+  # anything this flake's own modules/flake-parts/ files can do:
+  #   outputs = _: { flakeModules.default = ./flake-modules/private.nix; };
+  #
+  # `inputs`, not the `lib` module arg: `lib` comes from _module.args, and an
+  # `imports` that depends on it recurses.
+  imports = inputs.nixpkgs.lib.optional (private ? flakeModules) private.flakeModules.default;
+
+  # NixOS/Darwin/home-manager modules, merged with the ones defined locally:
+  #   outputs = _: { modules.nixos.vpnTopology = ./modules/vpn-topology.nix; };
   flake.modules = private.modules or { };
 }

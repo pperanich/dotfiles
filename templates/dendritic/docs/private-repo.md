@@ -29,13 +29,19 @@ It needs no flake-parts, no import-tree, no inputs at all — just paths:
 
     # Merged into flake.modules by modules/flake-parts/private.nix
     modules.nixos.vpnTopology = ./modules/vpn-topology.nix;
+
+    # Imported as a flake-parts module — perSystem packages, overlays,
+    # extra flake outputs, anything modules/flake-parts/ can do
+    flakeModules.default = ./flake-modules/private.nix;
   };
 }
 ```
 
-An inputless flake locks instantly and adds nothing to your dependency graph.
+An inputless flake locks instantly and adds nothing to your dependency graph. All three exports are optional; the readers use `or` fallbacks.
 
-Those machine files are ordinary machine configs and see the same `specialArgs` as local ones, so they can import public modules directly:
+## Which side may reference which
+
+**Private → public: yes.** The public flake is what evaluates the private files, so they get the same `specialArgs` local ones do. A private machine imports public modules by name:
 
 ```nix
 { modules, ... }:
@@ -46,7 +52,23 @@ Those machine files are ordinary machine configs and see the same `specialArgs` 
 }
 ```
 
-Keep those files **outside** any directory swept by import-tree. A `configuration.nix` under `modules/` gets loaded as a flake-parts module and fails with an infinite-recursion error, because machine configs reference `modules` in their `imports`.
+`vpnTopology` there is the private repo's own module, sitting in the same `modules.nixos` namespace as the public ones. Private flake-parts modules likewise see `config.flake`, `inputs`, and everything the public modules see.
+
+This is not a flake cycle: the private repo exports paths and declares no dependency on the public one.
+
+**Public → private: only at the cost of a standalone-evaluable public repo.** Reference a private module from a public machine and, without the input, evaluation dies:
+
+```
+error: undefined variable 'vpnTopology'
+```
+
+So the rule is one-directional: public modules stay self-contained, private files may consume them. If a public machine genuinely needs private data, put the _machine_ in the private repo, or guard the import with `lib.optionalAttrs`/`or` in the same style `private.nix` uses.
+
+Mutual flake inputs (each declaring the other) do lock — each side pins a revision, so there's no true cycle — but it makes bootstrapping and updates miserable for no gain. The path-export design avoids needing it.
+
+## Layout trap
+
+Keep machine files **outside** any directory swept by import-tree. A `configuration.nix` under `modules/` gets loaded as a flake-parts module and fails with an infinite-recursion error, because machine configs reference `modules` in their `imports`.
 
 ## Activating it
 

@@ -982,26 +982,32 @@ private_rename() {
 }
 
 private_next_steps() {
-  local dir="$1" host="$2" upstream="$3"
-  cat <<EOF
+  local dir="$1" host="$2" upstream="$3" provisioned="$4" n=1
+  printf '\n'
+  printf "Scaffolded into %s, deploying '%s' from %s.\n\n" "$dir" "$host" "$upstream"
 
-Scaffolded into $dir, deploying '$host' from $upstream.
+  if [ "$provisioned" = true ]; then
+    printf 'clan vars are generated and %s is in place, so this machine can\n' "$CLAN_KEY_FILE"
+    printf 'decrypt what clan owns. sops/secrets.yaml is for secrets you author\n'
+    printf 'yourself and is still the shipped placeholder.\n\n'
+  else
+    printf 'No clan vars yet, so nothing can be decrypted at activation.\n\n'
+  fi
 
-Secrets here belong to clan, not to this script: \`clan vars generate\` creates
-the machine's keys and password, and only then can sops/.sops.yaml name a real
-recipient. Nothing has been encrypted.
-
-Remaining steps:
-  1. cd $dir && nix develop
-  2. clan vars generate $host
-  3. put your admin age key and the machine's clan age key into
-     sops/.sops.yaml, then: sops sops/secrets.yaml
-  4. clan machines update $host
-
-docs/upstream-contract.md covers which secret keys the upstream's modules
-demand, and what the single input buys and costs.
-
-EOF
+  printf 'Remaining steps:\n'
+  if [ "$provisioned" != true ]; then
+    printf '  %d. cd %s && nix develop && clan vars generate %s\n' "$n" "$dir" "$host"
+    n=$((n + 1))
+    printf '  %d. sudo install -m 600 -o root <key> %s\n' "$n" "$CLAN_KEY_FILE"
+    printf '       clan vars upload %s --directory <dir> writes it as key.txt\n' "$host"
+    n=$((n + 1))
+  fi
+  printf '  %d. sudo nixos-rebuild switch --flake %s#%s\n' "$n" "$dir" "$host"
+  n=$((n + 1))
+  printf '  %d. optional: sops sops/secrets.yaml, for secrets you author\n' "$n"
+  printf '\n'
+  printf 'docs/upstream-contract.md covers which secret keys the upstream modules\n'
+  printf 'demand, and what the single input buys and costs.\n\n'
 }
 
 scaffold_private() {
@@ -1048,8 +1054,37 @@ scaffold_private() {
   git -C "$dir" init --quiet
   git -C "$dir" add -A
 
-  private_next_steps "$dir" "$host" "$upstream"
+  local provisioned=false
+  printf '\n'
+  printf "clan can generate this machine's keys and password now, and place its\n"
+  printf 'decryption key so the first activation can read its secrets.\n'
+  if ask_yes_no "Generate and install clan vars?"; then
+    if private_provision "$dir" "$host"; then
+      provisioned=true
+    else
+      log_warn "clan vars did not complete; the machine cannot decrypt yet"
+    fi
+  fi
+
+  git -C "$dir" add -A
+  private_next_steps "$dir" "$host" "$upstream" "$provisioned"
   exit 0
+}
+
+private_provision() {
+  local dir="$1" host="$2" clan
+  clan="$(clan_bin "$dir")"
+  if [ -z "$clan" ]; then
+    log_error "no clan CLI in the dev shell at $dir"
+    return 1
+  fi
+
+  # Generators can prompt, so this runs attached to the terminal.
+  log_step "Generating clan vars for $host"
+  if ! "$clan" vars generate "$host" --flake "$dir"; then
+    return 1
+  fi
+  install_clan_key "$dir" "$host"
 }
 
 scaffold_dendritic() {
@@ -1194,6 +1229,70 @@ switch_home_manager() {
   out="$TMP_DIR/home-manager"
   nix build --out-link "$out" "${FLAKE_DIR}#homeConfigurations.${user}.activationPackage"
   "$out/activate"
+}
+
+# --- clan vars ------------------------------------------------------------
+
+CLAN_KEY_FILE="/var/lib/sops-nix/key.txt"
+
+# Machine names in this flake's clan inventory; empty when it has no clan.
+clan_inventory_machines() {
+  nix eval --raw "${FLAKE_DIR}#clan.inventory.machines" \
+    --apply 'set: builtins.concatStringsSep "\n" (builtins.attrNames set)' 2>/dev/null || true
+}
+
+host_in_clan() {
+  local names
+  names="$(clan_inventory_machines)"
+  [ -n "$names" ] || return 1
+  printf '%s\n' "$names" | grep -Fxq "$1"
+}
+
+# The clan CLI from a flake's own dev shell, so it matches what that repo pins
+# and inherits any override it applies. clan-cli is not in nixpkgs.
+clan_bin() {
+  nix develop "$1" --command bash -c 'command -v clan' 2>/dev/null || true
+}
+
+# Put the machine's clan-generated age key where sops-nix looks for it. Without
+# it a machine whose secrets clan owns cannot decrypt anything at activation.
+#
+# clan runs as the invoking user, because it needs that user's admin key to
+# decrypt; only the final move needs root. `--directory` names where the key
+# file is written, so this is the local equivalent of uploading over ssh.
+install_clan_key() {
+  local dir="$1" host="$2" clan stage
+  sudo_preflight
+  if sudo test -e "$CLAN_KEY_FILE"; then
+    log_info "clan key already in place at $CLAN_KEY_FILE"
+    return 0
+  fi
+
+  clan="$(clan_bin "$dir")"
+  if [ -z "$clan" ]; then
+    log_error "no clan CLI in the dev shell at $dir"
+    return 1
+  fi
+
+  ensure_tmp_dir
+  stage="$TMP_DIR/clanvars"
+  mkdir -p "$stage"
+  chmod 700 "$stage"
+
+  log_step "Fetching this machine's clan key"
+  if ! "$clan" vars upload "$host" --flake "$dir" --directory "$stage"; then
+    log_error "clan vars upload failed"
+    return 1
+  fi
+  if [ ! -s "$stage/key.txt" ]; then
+    log_error "clan wrote no key; has 'clan vars generate $host' been run?"
+    return 1
+  fi
+
+  sudo install -d -m 700 -o root "$(dirname "$CLAN_KEY_FILE")"
+  sudo install -m 600 -o root "$stage/key.txt" "$CLAN_KEY_FILE"
+  rm -f "$stage/key.txt"
+  log_info "installed $CLAN_KEY_FILE"
 }
 
 # --- plan -----------------------------------------------------------------
@@ -1417,6 +1516,23 @@ main() {
 
   install_nix
   resolve_flake_target
+
+  # A machine in the clan inventory decrypts with a key clan owns, not with
+  # anything nixos-rebuild or darwin-rebuild provides. Activation fails without
+  # it, so offer to place it first.
+  # The key itself is unreadable without root, but its directory is not, and a
+  # missing directory means the machine was never provisioned. Gate on that so
+  # an already-provisioned host never has to escalate just to be checked.
+  if [ "$opt_mode" != home ] && [ ! -d "$(dirname "$CLAN_KEY_FILE")" ] &&
+    host_in_clan "$opt_host"; then
+    log_warn "$opt_host is in this clan but has no $CLAN_KEY_FILE"
+    log_warn "sops secrets cannot be decrypted at activation without it"
+    if ask_yes_no "Install the clan key now?"; then
+      install_clan_key "$FLAKE_DIR" "$opt_host" ||
+        log_warn "continuing without it; activation may fail on secrets"
+    fi
+  fi
+
   if [ "$opt_mode" = nixos ]; then
     sudo_preflight
   fi

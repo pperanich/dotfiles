@@ -507,7 +507,7 @@ template_platform() {
 # substitution would also rewrite the illustrative comments in lib/ and
 # overlays/, so each site is handled by name.
 template_rename_user() {
-  local dir="$1" user="$2" cfg
+  local dir="$1" user="$2" kind="${3:-dendritic}" cfg
   if [ "$user" = example ]; then
     return 0
   fi
@@ -528,20 +528,32 @@ template_rename_user() {
   sed_inplace "s|modules/users/example.nix|modules/users/${user}.nix|" "$profile"
 
   sed_inplace "s|^  example: |  ${user}: |" "$dir/sops/secrets.yaml"
-  sed_inplace "s|for the example user|for the ${user} user|" "$dir/sops/secrets.yaml"
-  sed_inplace "s|\.#example|.#${user}|" "$dir/modules/flake-parts/home.nix"
-  sed_inplace "s|modules/users/example.nix|modules/users/${user}.nix|" \
-    "$dir/modules/system/sops.nix"
+
+  # Files only the dendritic template has: it owns a sops module and standalone
+  # homeConfigurations, where the private template inherits both.
+  if [ "$kind" = private ]; then
+    # The rename it asks for is the one just carried out
+    sed_inplace "/Rename .example. to match/d" "$dir/sops/secrets.yaml"
+  fi
+
+  if [ "$kind" = dendritic ]; then
+    sed_inplace "s|for the example user|for the ${user} user|" "$dir/sops/secrets.yaml"
+    sed_inplace "s|\.#example|.#${user}|" "$dir/modules/flake-parts/home.nix"
+    sed_inplace "s|modules/users/example.nix|modules/users/${user}.nix|" \
+      "$dir/modules/system/sops.nix"
+  fi
 
   for cfg in "$dir"/machines/*/*/configuration.nix; do
     if [ -e "$cfg" ]; then
       sed_inplace "s|^    example$|    ${user}|" "$cfg"
+      # The private template's darwin host decrypts with this user's own key
+      sed_inplace "s|/Users/example/|/Users/${user}/|" "$cfg"
     fi
   done
 }
 
 template_rename_machine() {
-  local dir="$1" class="$2" host="$3" platform="$4" other=darwin
+  local dir="$1" class="$2" host="$3" platform="$4" kind="${5:-dendritic}" other=darwin
   if [ "$class" = darwin ]; then
     other=nixos
   fi
@@ -560,8 +572,11 @@ template_rename_machine() {
 
   # homeConfigurations are not per-system, so the template pins one. Point it
   # at this machine, or standalone home-manager builds for the wrong platform.
-  sed_inplace "s|withSystem \"x86_64-linux\"|withSystem \"${platform}\"|" \
-    "$dir/modules/flake-parts/home.nix"
+  # The private template has no standalone homeConfigurations.
+  if [ "$kind" = dendritic ]; then
+    sed_inplace "s|withSystem \"x86_64-linux\"|withSystem \"${platform}\"|" \
+      "$dir/modules/flake-parts/home.nix"
+  fi
 }
 
 # --- secrets bootstrap ----------------------------------------------------
@@ -761,8 +776,11 @@ host_age_recipient() {
 
 # Fills in real age recipients, a password hash and the user's private key,
 # then encrypts. Returns non-zero without leaving plaintext behind.
+#
+# `kind` is dendritic or private: the two templates want different api_keys
+# names, and only the dendritic one owns a sops module to flip.
 bootstrap_secrets() {
-  local dir="$1" user="$2" host="$3"
+  local dir="$1" user="$2" host="$3" kind="${4:-dendritic}"
   local key admin_age host_age hash secrets identity age_dir age_file
 
   if ! command_exists ssh-keygen; then
@@ -819,8 +837,12 @@ bootstrap_secrets() {
     printf 'private_keys:\n'
     printf '  %s: |\n' "$user"
     sed 's/^/    /' "$key"
-    printf 'api_keys:\n'
-    printf '  openai: REPLACE_ME\n'
+    # The private template's profile declares no api keys, and a key nothing
+    # asks for is one more thing to keep encrypted for no reason.
+    if [ "$kind" != private ]; then
+      printf 'api_keys:\n'
+      printf '  openai: REPLACE_ME\n'
+    fi
   } >"$secrets"
 
   # An inherited SOPS_CONFIG or SOPS_AGE_RECIPIENTS silently redirects the
@@ -880,6 +902,16 @@ bootstrap_secrets() {
       fi
     fi
     log_info "age identity available in $age_file"
+  fi
+
+  # The private template has no sops module of its own: it inherits the
+  # upstream's, where validateSopsFiles is already on.
+  if [ "$kind" = private ]; then
+    if [ -z "$host_age" ]; then
+      log_warn "this host has no age recipient yet, so it cannot decrypt:"
+      log_warn "add one to sops/.sops.yaml and run 'sops updatekeys sops/secrets.yaml'"
+    fi
+    return 0
   fi
 
   if [ -n "$host_age" ]; then
@@ -985,8 +1017,9 @@ choose_template() {
                 to start from. Pick this to set up this computer.
 
   2) private    A second flake that consumes a public config you already
-                run, and deploys hosts you would rather not name in public.
-                Needs that config's flake URL, and runs a clan.
+                run, for hosts you would rather not name in public. Needs
+                that config's flake URL. Switched with nixos-rebuild,
+                darwin-rebuild or nh, same as any other machine.
 
 EOF
   pick="$(prompt_value "Template" "1")"
@@ -1005,71 +1038,75 @@ scaffold_template() {
   esac
 }
 
-# The private template ships one nixos machine and a placeholder upstream.
+# The private template uses the dendritic layout, so the machine and user
+# renames are the shared ones. Only the upstream URL is specific to it.
 private_rename() {
-  local dir="$1" upstream="$2" host="$3" platform="$4" user="$5"
-
+  local dir="$1" upstream="$2"
   sed_inplace "s|github:you/your-config|$(sed_escape "$upstream")|" "$dir/flake.nix"
-
-  mv "$dir/machines/secret-host" "$dir/machines/${host}"
-  local cfg="$dir/machines/${host}/configuration.nix"
-  sed_inplace "s|networking.hostName = \"secret-host\";|networking.hostName = \"${host}\";|" "$cfg"
-  sed_inplace "s|root@secret-host|root@${host}|" "$cfg"
-  sed_inplace "s|nixpkgs.hostPlatform = \".*\";|nixpkgs.hostPlatform = \"${platform}\";|" "$cfg"
-
-  local clan="$dir/modules/flake-parts/clan.nix"
-  sed_inplace "s|^        secret-host = {|        ${host} = {|" "$clan"
-  sed_inplace "s|meta.name = \"my-private-clan\";|meta.name = \"${user}-private\";|" "$clan"
-
-  # Anchor, its reference, and the comment naming the machine
-  sed_inplace "s|secret-host|${host}|g" "$dir/sops/.sops.yaml"
-
-  sed_inplace "/Rename .youruser. to the account/d" "$dir/sops/secrets.yaml"
-  sed_inplace "s|^  youruser:|  ${user}:|" "$dir/sops/secrets.yaml"
-  sed_inplace "s|for that user|for ${user}|" "$dir/sops/secrets.yaml"
 }
 
 private_next_steps() {
-  local dir="$1" host="$2" upstream="$3" provisioned="$4" n=1
+  local dir="$1" class="$2" host="$3" upstream="$4" secrets_ready="$5" n=1
   printf '\n'
-  printf "Scaffolded into %s, deploying '%s' from %s.\n\n" "$dir" "$host" "$upstream"
+  printf "Scaffolded into %s: machine '%s', built from %s.\n\n" "$dir" "$host" "$upstream"
 
-  if [ "$provisioned" = true ]; then
-    printf 'clan vars are generated and %s is in place, so this machine can\n' "$CLAN_KEY_FILE"
-    printf 'decrypt what clan owns. sops/secrets.yaml is for secrets you author\n'
-    printf 'yourself and is still the shipped placeholder.\n\n'
-  else
-    printf 'No clan vars yet, so nothing can be decrypted at activation.\n\n'
+  if [ "$secrets_ready" != true ]; then
+    printf 'sops/secrets.yaml is not usable yet, so nothing can be switched:\n'
+    printf 'activation fails until real, encrypted secrets exist.\n\n'
   fi
 
   printf 'Remaining steps:\n'
-  if [ "$provisioned" != true ]; then
-    printf '  %d. cd %s && nix develop && clan vars generate %s\n' "$n" "$dir" "$host"
-    n=$((n + 1))
-    printf '  %d. sudo install -m 600 -o root <key> %s\n' "$n" "$CLAN_KEY_FILE"
-    printf '       clan vars upload %s --directory <dir> writes it as key.txt\n' "$host"
+  printf '  %d. cd %s && nix develop\n' "$n" "$dir"
+  n=$((n + 1))
+  if [ "$class" = nixos ]; then
+    printf '  %d. nixos-generate-config --show-hardware-config \\\n' "$n"
+    printf '       > machines/nixos/%s/hardware-configuration.nix\n' "$host"
     n=$((n + 1))
   fi
-  printf '  %d. sudo nixos-rebuild switch --flake %s#%s\n' "$n" "$dir" "$host"
-  n=$((n + 1))
-  printf '  %d. optional: sops sops/secrets.yaml, for secrets you author\n' "$n"
+  if [ "$secrets_ready" != true ]; then
+    printf '  %d. put age recipients in sops/.sops.yaml, then sops sops/secrets.yaml\n' "$n"
+    n=$((n + 1))
+  fi
+  if [ "$class" = nixos ]; then
+    printf '  %d. nh os switch .\n' "$n"
+    printf '       or: sudo nixos-rebuild switch --flake .#%s\n' "$host"
+  else
+    printf '  %d. nh darwin switch .\n' "$n"
+    printf '       or: darwin-rebuild switch --flake .#%s\n' "$host"
+  fi
   printf '\n'
+  # %s, not a bare format string: printf reads a leading -n as its own flag.
+  printf '%s\n' 'nh picks the configuration matching the local hostname; -H names' \
+    'another, -n is a dry run, and --target-host deploys to a different machine.' ''
   printf 'docs/upstream-contract.md covers which secret keys the upstream modules\n'
   printf 'demand, and what the single input buys and costs.\n\n'
+
+  if [ "$SECRET_PASSWORD_GENERATED" = true ] && [ -n "$SECRET_PASSWORD" ]; then
+    # stderr, like every other message: stdout may be redirected to a file.
+    printf '  %sGenerated login password: %s%s\n' "$C_BOLD" "$SECRET_PASSWORD" "$C_RESET" >&2
+    printf '  Record it now. Only the hash is stored, so it cannot be recovered.\n\n' >&2
+  fi
 }
 
 scaffold_private() {
-  local dir upstream host platform user
+  local dir upstream user host class platform
+
+  class=darwin
+  if [ "$OS" = linux ]; then
+    class=nixos
+  fi
+  platform="$(template_platform)"
+  if [ -z "$platform" ]; then
+    log_error "no template platform for $(uname -s) $(uname -m)"
+    exit 1
+  fi
 
   dir="$(expand_tilde "$(prompt_value "New configuration directory" "$HOME/nix-private")")"
   upstream="$(prompt_value "Upstream config flake" "github:${USER}/dotfiles")"
-  host="$(prompt_value "Name for the private machine" "secret-host")"
-  # The private host is usually a server elsewhere, not the machine running
-  # this, so do not infer the platform from uname.
-  platform="$(prompt_value "Its platform" "x86_64-linux")"
-  user="$(prompt_value "Username the upstream's user module defines" "$USER")"
+  user="$(prompt_value "Primary username" "$USER")"
+  host="$(prompt_value "Name for this machine" "${HOSTNAME_DETECTED:-my-${class}}")"
   # Before anything is written: these reach sed replacements and paths.
-  require_valid_names "$host" "$platform" "$user"
+  require_valid_names "$user" "$host"
 
   if [ -e "$dir/flake.nix" ]; then
     log_error "$dir already contains a flake.nix"
@@ -1079,8 +1116,8 @@ scaffold_private() {
   printf '\n'
   printf '  %-10s %s\n' "Directory" "$dir"
   printf '  %-10s %s\n' "Upstream" "$upstream"
-  printf '  %-10s %s (%s)\n' "Machine" "$host" "$platform"
   printf '  %-10s %s\n' "User" "$user"
+  printf '  %-10s %s (%s)\n' "Machine" "$host" "$platform"
   printf '  %-10s %s\n' "Template" "${FLAKE_DIR}#private"
   printf '\n'
   confirm "Scaffold this configuration?"
@@ -1095,44 +1132,47 @@ scaffold_private() {
     exit 1
   fi
 
-  log_step "Pointing it at $upstream and renaming the machine"
-  private_rename "$dir" "$upstream" "$host" "$platform" "$user"
+  log_step "Pointing it at $upstream and renaming the example user and machine"
+  private_rename "$dir" "$upstream"
+  template_rename_user "$dir" "$user" private
+  template_rename_machine "$dir" "$class" "$host" "$platform" private
 
-  log_step "Initialising git, since flakes only see tracked files"
-  git -C "$dir" init --quiet
-  git -C "$dir" add -A
-
-  local provisioned=false
+  local secrets_ready=false
   printf '\n'
-  printf "clan can generate this machine's keys and password now, and place its\n"
-  printf 'decryption key so the first activation can read its secrets.\n'
-  if ask_yes_no "Generate and install clan vars?"; then
-    if private_provision "$dir" "$host"; then
-      provisioned=true
+  printf 'Secrets can be bootstrapped now: an age recipient from an ed25519 SSH\n'
+  printf 'key, a password hash, and an encrypted sops/secrets.yaml.\n'
+  if ask_yes_no "Bootstrap secrets?"; then
+    if bootstrap_secrets "$dir" "$user" "$host" private; then
+      secrets_ready=true
     else
-      log_warn "clan vars did not complete; the machine cannot decrypt yet"
+      log_warn "secrets bootstrap did not complete; nothing encrypted was written"
     fi
   fi
 
+  # After the secrets step, so a plaintext secrets.yaml can never be staged.
+  log_step "Initialising git, since flakes only see tracked files"
+  git -C "$dir" init --quiet
   git -C "$dir" add -A
-  private_next_steps "$dir" "$host" "$upstream" "$provisioned"
+  git_commit "$dir" "Scaffold ${host} from the private template"
+
+  private_next_steps "$dir" "$class" "$host" "$upstream" "$secrets_ready"
+  unset SECRET_PASSWORD
   exit 0
 }
 
-private_provision() {
-  local dir="$1" host="$2" clan
-  clan="$(clan_bin "$dir")"
-  if [ -z "$clan" ]; then
-    log_error "no clan CLI in the dev shell at $dir"
-    return 1
+# A machine that has never used git has no user.name, and the scaffold is not
+# the place to make the user go and set one.
+git_commit() {
+  local dir="$1" msg="$2"
+  if git -C "$dir" diff --cached --quiet; then
+    return 0
   fi
-
-  # Generators can prompt, so this runs attached to the terminal.
-  log_step "Generating clan vars for $host"
-  if ! "$clan" vars generate "$host" --flake "$dir"; then
-    return 1
+  if git -C "$dir" commit --quiet -m "$msg" 2>/dev/null; then
+    return 0
   fi
-  install_clan_key "$dir" "$host"
+  git -C "$dir" \
+    -c user.name="$USER" -c "user.email=${USER}@$(uname -n)" \
+    commit --quiet -m "$msg"
 }
 
 scaffold_dendritic() {
@@ -1453,9 +1493,10 @@ An interactive run asks what to do once the checkout is in place:
 It defaults to switching when this flake has a configuration matching the
 machine, and to the dendritic template when it does not.
 
-The dendritic path can also bootstrap secrets: an age recipient from an ed25519
-SSH key (existing or freshly generated), a sha-512 password hash, and an
-encrypted sops/secrets.yaml. The private path leaves secrets to `clan vars`.
+Both template paths can bootstrap secrets: an age recipient from an ed25519 SSH
+key (existing or freshly generated), a sha-512 password hash, and an encrypted
+sops/secrets.yaml. Neither scaffolds a deployment tool: a scaffolded machine is
+switched with nixos-rebuild, darwin-rebuild or nh.
 
 --yes switches without asking. With no terminal and no --yes, it exits.
 EOF

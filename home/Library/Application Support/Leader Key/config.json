@@ -183,6 +183,13 @@
           "value": "/opt/homebrew/bin/aerospace layout accordion"
         },
         {
+          "iconPath": "arrow.left.arrow.right.square",
+          "key": "s",
+          "label": "Workspace Layout Style",
+          "type": "command",
+          "value": "$HOME/.config/aerospace/scripts/toggle-workspace-layout.sh"
+        },
+        {
           "iconPath": "arrow.triangle.2.circlepath",
           "key": "h",
           "label": "Toggle Orientation",

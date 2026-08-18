@@ -172,6 +172,16 @@
               Clicking = true;
               TrackpadThreeFingerDrag = false;
             };
+            CustomUserPreferences = {
+              # Leader Key keeps its actions in config.json (stowed from
+              # home/Library/Application Support/), but the activation hotkey
+              # and popup theme live in UserDefaults only.
+              "com.brnbw.Leader-Key" = {
+                # ctrl-space: carbon controlKey (0x1000) + kVK_Space (49).
+                KeyboardShortcuts_navigate = ''{"carbonModifiers":4096,"carbonKeyCode":49}'';
+                theme = "cheater";
+              };
+            };
           };
         };
 

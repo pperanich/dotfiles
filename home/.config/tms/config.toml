@@ -3,5 +3,13 @@ path = '~/dotfiles'
 depth = 1
 
 [[search_dirs]]
+path = '~/nix-private'
+depth = 1
+
+[[search_dirs]]
 path = '~/Documents/repos'
+depth = 2
+
+[[search_dirs]]
+path = '~/repos'
 depth = 2

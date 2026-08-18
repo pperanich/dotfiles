@@ -162,16 +162,16 @@ if [[ -f "$HOME/.nix-profile/zsh/ghostty-integration" ]]; then
 fi
 
 # Load API keys from sops-nix if not already set.
+#
+# (N.) is null-glob plus regular-files-only, so a missing directory (any
+# profile that does not import an apiKeys module) is silent rather than an error.
 _secrets_dir="${XDG_CONFIG_HOME:-$HOME/.config}/sops-nix/secrets/api_keys"
-# Removed OPENAI for now...
-# for key in OPAL ASSEMBLYAI HUGGING_FACE_HUB OPENAI ANTHROPIC MISTRAL OPENROUTER GEMINI ARTIFICIAL_ANALYSIS OPENCODE; do
-for key in OPAL HUGGING_FACE_HUB ARTIFICIAL_ANALYSIS OPENCODE; do
-  var="${key}_API_KEY"
-  file="${_secrets_dir}/${(L)key}_api_key"
-  [[ -z "${(@P)var}" && -f "$file" ]] && export "$var"="$(<"$file")"
-  unset var file
+for _f in "$_secrets_dir"/*(N.); do
+  _name="${_f:t}"
+  _var="${(U)_name}"
+  [[ -z "${(@P)_var}" ]] && export "$_var"="$(<"$_f")"
 done
-unset _secrets_dir
+unset _secrets_dir _f _name _var
 
 # ------------------------------------------------------------------------------
 # 6. Keybindings (ZLE)

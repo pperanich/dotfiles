@@ -102,7 +102,12 @@ in
         environment.systemPackages = [ pkgs.sops ];
       };
     homeManager.sops =
-      { pkgs, config, ... }:
+      {
+        pkgs,
+        config,
+        lib,
+        ...
+      }:
       {
         imports = [ inputs.sops-nix.homeManagerModules.sops ];
         home.packages = [ pkgs.sops ];
@@ -138,20 +143,20 @@ in
             # so system boots fine without YubiKey (SSH key decrypts)
             plugins = [ pkgs.age-plugin-yubikey ];
           };
-          defaultSopsFile = "${sopsFolder}/secrets.yaml";
-          validateSopsFiles = true;
+          # mkDefault so a profile in another flake can point these at its own
+          # secrets file with a plain assignment. Nothing else defines them, so
+          # unlike the system side this needs no priority juggling.
+          defaultSopsFile = lib.mkDefault "${sopsFolder}/secrets.yaml";
+          validateSopsFiles = lib.mkDefault true;
           # SSH private key is deployed via system-level sops in user modules
           # (modules/users/*.nix) BEFORE home-manager runs, breaking the
           # chicken-and-egg problem where home-manager sops needs the SSH key
           # to decrypt, but the SSH key is itself a secret.
-          secrets = {
-            "api_keys/openai_api_key" = { };
-            "api_keys/hugging_face_hub_token" = { };
-            "api_keys/anthropic_api_key" = { };
-            "api_keys/openrouter_api_key" = { };
-            "api_keys/gemini_api_key" = { };
-            "api_keys/artificial_analysis_api_key" = { };
-          };
+          #
+          # No secrets are declared here on purpose: every declared key must
+          # exist in the sops file, so this module stays importable by a
+          # profile that keeps a different set. The provider tokens live in
+          # modules/shell/api-keys.nix (homeManager.apiKeys).
         };
       };
   };

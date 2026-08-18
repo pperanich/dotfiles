@@ -13,6 +13,7 @@
       # Core
       base
       sops
+      apiKeys
 
       # Editors
       nvim

@@ -4,16 +4,41 @@ Nix-based system configuration using [flake-parts](https://flake.parts/), [clan-
 
 ## Quick Start
 
+One command on a fresh machine. It clones this repo, installs Determinate Nix
+if missing, and switches the configuration matching the machine's hostname:
+
 ```bash
-# Clone
-git clone https://github.com/pperanich/dotfiles.git ~/dotfiles
+curl -fsSL https://raw.githubusercontent.com/pperanich/dotfiles/main/bin/install.sh | bash
+```
+
+It prints a plan and asks for confirmation before touching anything. From an
+existing checkout, run `./bin/install.sh` instead and it uses that working tree
+rather than cloning.
+
+Safe to re-run: the checkout is fast-forwarded (never reset, and skipped
+entirely when dirty), Nix is only installed when absent, and each `switch` is
+idempotent.
+
+Useful flags:
+
+| Flag            | Purpose                                                   |
+| --------------- | --------------------------------------------------------- |
+| `--dry-run`     | Print the plan and exit                                   |
+| `--host <name>` | Pick a configuration other than the detected hostname     |
+| `--home-only`   | Standalone home-manager instead of the system config      |
+| `--dir <path>`  | Clone target (default `~/dotfiles`, or `$DOTFILES_DIR`)   |
+| `--ref <ref>`   | Branch or tag to use (default `main`, or `$DOTFILES_REF`) |
+| `-y`, `--yes`   | Skip the confirmation prompt                              |
+
+`./bin/install.sh --help` lists the rest. Manual setup without the script is
+[below](#manual-setup).
+
+Once installed, day-to-day work happens in the dev shell:
+
+```bash
 cd ~/dotfiles
-
-# Enter dev shell
-nix develop
-
-# Deploy to a machine
-clan machines update <hostname>
+nix develop                     # formatters, linters, clan-cli
+clan machines update <hostname> # deploy
 ```
 
 ## How It Works
@@ -167,7 +192,7 @@ A second template covers the other half: machines you would rather not name in a
 nix flake init -t github:pperanich/dotfiles#private
 ```
 
-It ships the clan inventory, the two sops overrides a downstream machine needs, and a dev shell with `clan`. Source: [templates/private/](templates/private/), background in [docs/private-machines.md](docs/private-machines.md).
+It runs no clan and no deployment tool: `machines/<class>/<host>/` becomes a `nixosConfigurations` or `darwinConfigurations` entry, and you switch it with `nixos-rebuild`, `darwin-rebuild` or `nh`. It ships its own user module and home profile composing this repo's home modules, plus the three sops overrides a downstream machine needs. Source: [templates/private/](templates/private/), background in [docs/private-machines.md](docs/private-machines.md).
 
 `bin/install.sh` offers both interactively when it finds no configuration for the machine it is running on.
 
@@ -179,41 +204,9 @@ Detailed guides are available in the [docs/](docs/) directory:
 - **[Private Machines](docs/private-machines.md)** - Running hosts from a private flake that consumes this one
 - **[Troubleshooting](docs/clan-machines-update-troubleshooting.md)** - Debug deployment issues
 
-## Installation
+## Manual Setup
 
-### Bootstrap Script
-
-One command on a fresh machine. It clones this repo, installs Determinate Nix
-if missing, and switches the configuration matching the machine's hostname:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/pperanich/dotfiles/main/bin/install.sh | bash
-```
-
-It prints a plan and asks for confirmation before touching anything. From an
-existing checkout, run `./bin/install.sh` instead and it uses that working tree
-rather than cloning.
-
-Safe to re-run: the checkout is fast-forwarded (never reset, and skipped
-entirely when dirty), Nix is only installed when absent, and each `switch` is
-idempotent.
-
-Useful flags:
-
-| Flag            | Purpose                                                   |
-| --------------- | --------------------------------------------------------- |
-| `--dry-run`     | Print the plan and exit                                   |
-| `--host <name>` | Pick a configuration other than the detected hostname     |
-| `--home-only`   | Standalone home-manager instead of the system config      |
-| `--dir <path>`  | Clone target (default `~/dotfiles`, or `$DOTFILES_DIR`)   |
-| `--ref <ref>`   | Branch or tag to use (default `main`, or `$DOTFILES_REF`) |
-| `-y`, `--yes`   | Skip the confirmation prompt                              |
-
-`./bin/install.sh --help` lists the rest.
-
-### Manual Setup
-
-If you would rather drive it yourself, install Nix:
+Skipping the bootstrap script, install Nix:
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install

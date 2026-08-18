@@ -147,6 +147,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # nixpkgs still ships 0.5.0; this fork is 0.6.1 plus the fix for control-mode
+    # clients hiding sessions. Point back at nixpkgs once that lands upstream.
+    tmux-sessionizer = {
+      url = "github:pperanich/tmux-sessionizer/fix/control-mode-clients-hide-sessions";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
+    };
+
     bun2nix = {
       url = "github:nix-community/bun2nix";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -88,6 +88,21 @@
         "type": "github"
       }
     },
+    "crane": {
+      "locked": {
+        "lastModified": 1779130139,
+        "narHash": "sha256-BLrtr42azquO7MdGFU5a7KiMl3YpFlTeIXqy1fT5GlQ=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "edb38893982a3338972bb4a2ec7ce7c29ba10fd9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
     "cuda-legacy": {
       "inputs": {
         "flake-parts": [
@@ -363,6 +378,24 @@
         "owner": "hercules-ci",
         "repo": "flake-parts",
         "rev": "57928607ea566b5db3ad13af0e57e921e6b12381",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_5": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib_3"
+      },
+      "locked": {
+        "lastModified": 1778716662,
+        "narHash": "sha256-m1Yf0wZ8j1OHjTc2UwHwyQRSnNeSgLJOd7q5Y45hzi4=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "f7c1a2d347e4c52d5fb8d10cb4d94b5884e546fb",
         "type": "github"
       },
       "original": {
@@ -823,6 +856,21 @@
         "type": "github"
       }
     },
+    "nixpkgs-lib_3": {
+      "locked": {
+        "lastModified": 1777168982,
+        "narHash": "sha256-GOkGPcboWE9BmGCRMLX3worL4EMnsnG8MyKmXNeYuhQ=",
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "rev": "f5901329dade4a6ea039af1433fb087bd9c1fe14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "type": "github"
+      }
+    },
     "nixpkgs-regression": {
       "locked": {
         "lastModified": 1643052045,
@@ -935,6 +983,7 @@
         "sops-nix": "sops-nix",
         "systems": "systems_4",
         "tmux-agents": "tmux-agents",
+        "tmux-sessionizer": "tmux-sessionizer",
         "treefmt-nix": "treefmt-nix_4"
       }
     },
@@ -1055,6 +1104,32 @@
       "original": {
         "owner": "pperanich",
         "repo": "tmux-agents",
+        "type": "github"
+      }
+    },
+    "tmux-sessionizer": {
+      "inputs": {
+        "crane": "crane",
+        "flake-parts": "flake-parts_5",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": [
+          "rust-overlay"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786976057,
+        "narHash": "sha256-tA25Ly8IVObhcH8gRD2E1khzYwLlPXBCB+XLwxnXoHY=",
+        "owner": "pperanich",
+        "repo": "tmux-sessionizer",
+        "rev": "d0b2e090c85f96b0cc8188e6f2035991556d030a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pperanich",
+        "ref": "fix/control-mode-clients-hide-sessions",
+        "repo": "tmux-sessionizer",
         "type": "github"
       }
     },

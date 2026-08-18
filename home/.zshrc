@@ -35,6 +35,12 @@ if [[ ! "$ZIM_HOME/init.zsh" -nt "${ZIM_CONFIG_FILE:-${ZDOTDIR:-$HOME}/.zimrc}" 
   source "$ZIM_HOME/zimfw.zsh" init
 fi
 
+# Per-user completions, where tools that follow the XDG layout install them (tma, and anything
+# else using `installShellCompletion --cmd`). Must precede init.zsh, which runs compinit.
+zdatadir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions"
+[[ -d "$zdatadir" ]] && fpath=("$zdatadir" $fpath)
+unset zdatadir
+
 # Initialize modules.
 source "$ZIM_HOME/init.zsh"
 

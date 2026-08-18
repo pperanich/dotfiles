@@ -185,7 +185,10 @@
           enable = true;
           greedyCasks = true;
           taps = [
-            "nikitabobko/tap"
+            {
+              name = "nikitabobko/tap";
+              trusted = true;
+            }
           ];
           brews = [
             "xcode-build-server"

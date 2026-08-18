@@ -48,6 +48,7 @@
   };
 
   tmux-agents = inputs.tmux-agents.overlays.default;
+  tmux-sessionizer = inputs.tmux-sessionizer.overlays.default;
 
   nixgl = inputs.nixgl.overlay;
   rust-overlay = inputs.rust-overlay.overlays.default;

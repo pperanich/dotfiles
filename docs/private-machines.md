@@ -2,129 +2,94 @@
 
 This repo is public and serves a flake template, so it can never declare a private input: evaluating `templates.dendritic` evaluates the whole module tree, and a repo nobody else can fetch would break `nix flake init -t` for everyone. See `templates/dendritic/docs/private-repo.md` for the measurements.
 
-The arrangement that avoids that is a private flake which consumes this one and runs its own clan.
+The arrangement that avoids that is a private flake which consumes this one and builds its own hosts. It runs no clan and no deployment tool: a private machine is switched with `nixos-rebuild`, `darwin-rebuild`, or `nh`, like any other.
+
+```bash
+nix flake init -t github:pperanich/dotfiles#private
+```
 
 ## The private flake
-
-`nix flake init -t github:pperanich/dotfiles#private` scaffolds this. The shape:
 
 ```nix
 # nix-private/flake.nix
 {
   description = "Private machines";
 
-  inputs = {
-    upstream.url = "github:pperanich/dotfiles";
-    # Declared, but resolved to upstream's lock rather than fetched twice.
-    # Required: clan resolves `module.input` in the inventory against the lock
-    # file, so without it every service instance dies with
-    #   error: Flake doesn't provide input with name 'clan-core'
-    clan-core.follows = "upstream/clan-core";
-  };
+  inputs.upstream.url = "github:pperanich/dotfiles";
 
   outputs =
-    inputs@{ self, upstream, ... }:
+    inputs@{ upstream, ... }:
     upstream.inputs.flake-parts.lib.mkFlake {
-      # Upstream's inputs under their bare names, so a flake-parts module
-      # copied from the template still finds `inputs.nixpkgs`. Handing over
-      # only `{ self, upstream }` means rewriting every such reference.
-      inputs = upstream.inputs // { inherit self upstream; };
+      inputs = upstream.inputs // inputs;
     } (upstream.inputs.import-tree ./modules);
 }
 ```
 
-with `modules/flake-parts/clan.nix` holding the inventory:
-
-```nix
-{ inputs, config, ... }:
-{
-  imports = [ inputs.clan-core.flakeModules.default ];
-  flake.clan = {
-    meta.name = "pperanich-private";
-    specialArgs = { inherit (inputs.upstream) inputs lib modules; };
-    inventory.machines.secret-host = {
-      machineClass = "nixos";
-      tags = [ "all" ];
-    };
-  };
-}
-```
-
-`machines/secret-host/configuration.nix` in the private repo is an ordinary machine file:
+`modules/flake-parts/hosts.nix` turns `machines/<class>/<host>/` into `nixosConfigurations`/`darwinConfigurations` by calling `nixosSystem` or `darwinSystem` directly, with this repo's `modules` and `lib` as specialArgs. A machine file there reads exactly like one here:
 
 ```nix
 { modules, ... }:
 {
-  imports = with modules.nixos; [ base sops caddyDns01 ];
+  imports = [ ./hardware-configuration.nix ] ++ (with modules.nixos; [ base sops secretuser ]);
 
-  sops.defaultSopsFile = ../../sops/secrets.yaml; # this repo's own, see below
+  sops = {
+    defaultSopsFile = ../../../sops/secrets.yaml;
+    age = {
+      keyFile = null;
+      sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    };
+  };
+
   networking.hostName = "secret-host";
   nixpkgs.hostPlatform = "x86_64-linux";
 }
 ```
 
-One input, no vendoring. `clan machines update secret-host` runs from the private repo, and `clan vars` writes into the private repo's `vars/` and `sops/`.
+One input, no vendoring, no submodule.
 
 ## Pass your own `self`
 
-`mkFlake` needs `inputs`, and it is tempting to write `inputs = upstream.inputs // { self = upstream; }` to satisfy it. Don't. Clan derives its machine directory from `self`, so that makes the private flake discover **this** repo's `machines/` — `nixosConfigurations` comes back holding all seven public machines plus yours, silently.
-
-The merge itself is fine, and useful; it is `self` that has to stay yours. `upstream.inputs // { inherit self upstream; }` keeps upstream's inputs reachable by their bare names while `nixosConfigurations` lists only your machines.
+`mkFlake` needs `inputs`, and it is tempting to write `inputs = upstream.inputs // { self = upstream; }` to satisfy it. Don't: `self` is what `machines/` resolves against, so that makes the private flake enumerate **this** repo's machines. Write `upstream.inputs // inputs` and let your own `self` land on top.
 
 ## Secrets
 
-`sops.defaultSopsFile` is resolved where `modules/system/sops.nix` is written, so a private machine importing our `sops` module inherits **this** repo's `sops/secrets.yaml` — a store path its age key is probably not a recipient of. Override it in the private machine (the module's defaults use `mkDefault`, so a plain assignment wins).
+The private repo owns its own `sops/secrets.yaml`, encrypted to your admin key and to each host's age key (derived from its SSH host key with `ssh-to-age`). Three settings in the machine file make that work, and all three override upstream defaults:
 
-Every module you import brings its declared keys with it, and `validateSopsFiles = true` means a key missing from the private `secrets.yaml` fails the build rather than activation:
+| setting                   | why                                                                   |
+| ------------------------- | --------------------------------------------------------------------- |
+| `sops.defaultSopsFile`    | otherwise the host reads this repo's secrets, which it cannot decrypt |
+| `sops.age.keyFile = null` | our default is `/var/lib/sops-nix/key.txt`, which clan provisions     |
+| `sops.age.sshKeyPaths`    | what replaces it, with no clan in the picture                         |
+
+`modules/system/sops.nix` sets the first two with `lib.mkOverride 900` specifically so a plain assignment downstream wins: `mkDefault` would tie with clan-core's own definition and error out. If a future edit makes either a plain assignment, every private machine breaks with `has conflicting definition values`.
+
+Every module a private machine imports brings its declared keys with it, and `validateSopsFiles = true` means a key missing from the private `secrets.yaml` fails the build rather than the activation:
 
 ```
 sops-install-secrets: manifest is not valid: secret private_keys/pperanich in
 /nix/store/…-secrets.yaml is not valid: the key 'private_keys' cannot be found
 ```
 
-`sops.age.keyFile` points at `/var/lib/sops-nix/key.txt`, which `clan vars upload` provisions — one reason a private machine wants clan rather than a bare `nixosSystem` call.
+The homeManager `sops` module declares no secrets itself, so importing it is free. Secrets that a private repo would rather not carry live in their own modules: the six provider tokens are `modules/shell/api-keys.nix` (`homeManager.apiKeys`), which the private template's profile deliberately omits. Keep that split when adding secrets — a key declared beside the wiring is a key every downstream profile is forced to store.
 
-## What does not span the two clans
+## The user module is copied, not imported
 
-Clan service instances are per-inventory. A machine in `pperanich-private` cannot be:
+`modules/users/pperanich.nix` here hardcodes this repo's sops file and leaves account creation (`isNormalUser`, `hashedPasswordFile`) to clan's `users` service. A private machine has neither, so the template ships its own `modules/users/<user>.nix` that creates the account properly, and composes the **same** upstream homeManager modules in `home-profiles/<user>/`. Keep that list matching `home-profiles/pperanich/` and a private host feels identical to log into.
 
-- a peer in the public clan's `pp-wg` wireguard instance
-- a `borgbackup` client of `pp-router1`
-- a `syncthing` peer
-- a holder of the public clan's sshd CA certificates
+One non-obvious line in that module: `extraSpecialArgs = { inherit pkgs; … }`. home-manager otherwise builds its own nixpkgs without our overlays, and the first upstream home module that wants an overlaid package fails with `attribute 'sops-install-secrets' missing`.
 
-Each clan has its own inventory, its own vars store, and its own `clan machines list`. Fine for an isolated host; wrong for anything that needs the mesh.
+## What this costs
 
-## Can the public inventory be extended from downstream?
+These hosts are not in this repo's clan inventory, so they cannot be a peer in the `pp-wg` wireguard instance, a borgbackup client of `pp-router1`, a syncthing peer, or a holder of the clan's sshd CA certificates. Anything of that kind has to be configured by hand in the private repo. `protonvpn` references `clan.core` directly and will not evaluate outside a clan at all.
 
-Not by mutating it. `flake.clan` is evaluated inside this flake; once it is an input, its outputs are values.
+If a private machine genuinely needs the mesh, the only arrangement that keeps one fleet is to invert the repos: move the inventory and `vars/`+`sops/` into the private repo, and let this one keep modules, the templates, and no machines. One clan has exactly one `directory`, and that directory is where clan reads `sops/secrets`, `sops/groups` and in-repo vars, so there is no split where public vars stay public and private vars stay private inside one clan.
 
-You can re-evaluate a superset: export the inventory as a flake-parts module here, import it in the private flake, add machines, and let the private flake instantiate the whole fleet. Clan supports the pieces — `clan.self`, `clan.directory`, `clan.machines` for inline machine definitions.
+## Switching
 
-The blocker is that one clan has exactly one `directory`, and that directory is where clan reads `sops/secrets`, `sops/groups` and in-repo vars (`nixosModules/clanCore/sops.nix`). A merged fleet therefore has a single secrets store: either the public repo holds the private machines' vars, or every machine's vars move into the private repo. There is no split where public vars stay public and private vars stay private inside one clan.
-
-So the options are:
-
-1. **Two clans** (this document). Private hosts are isolated; no shared service instances.
-2. **Invert it.** Move the inventory and `vars/`+`sops/` into the private repo, which consumes this one for modules; this repo keeps modules, the template, and no machines. One fleet, everything sensitive private, at the cost that the public repo stops demonstrating real machine configs.
-
-Option 2 is the only one that keeps a single mesh. Pick it if a private host needs wireguard or borg; otherwise option 1 is much less disruptive.
-
-## Non-clan alternative
-
-For hosts that are not fleet members at all — a throwaway test VM, an installer image — a downstream flake can call `nixosSystem` directly with this repo's modules:
-
-```nix
-dotfiles.inputs.nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit (dotfiles) inputs lib modules; };
-  modules = [ ./configuration.nix ];
-}
+```bash
+cd ~/nix-private && nix develop
+nh os switch .              # or: sudo nixos-rebuild switch --flake .#<host>
+nh darwin switch .          # or: darwin-rebuild switch --flake .#<host>
 ```
 
-That skips clan entirely, so the machine gets no vars, no generated host keys, and no `/var/lib/sops-nix/key.txt`. It also needs its own account creation, since `modules/users/pperanich.nix` adds shell, groups and keys but relies on clan's `users` service to create the account:
-
-```nix
-users.users.pperanich = { isNormalUser = true; home = "/home/pperanich"; };
-```
-
-Modules that reference `clan.core` directly — currently `protonvpn` — fail to evaluate this way.
+`nh` selects the configuration matching the local hostname, elevates itself, and prints a package diff first. `-H <host>` names another, `-n` is a dry run, and `--target-host <user>@<host>` deploys to a different machine over ssh.

@@ -13,12 +13,13 @@
     };
     private = {
       path = ../../templates/private;
-      description = "Private clan machines built from a public dendritic config, one input";
+      description = "Private machines built from a public dendritic config, one input, no deployment tool";
       welcomeText = ''
         Next steps:
           1. point inputs.upstream in flake.nix at your public config
           2. git init && git add -A   (flakes only see tracked files)
-          3. rename the example machine, then read docs/upstream-contract.md
+          3. rename the example user and machine, then read docs/upstream-contract.md
+          4. nh os switch .   (or nixos-rebuild / darwin-rebuild)
       '';
     };
 

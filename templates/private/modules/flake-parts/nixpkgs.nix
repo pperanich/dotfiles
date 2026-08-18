@@ -1,11 +1,11 @@
 # pkgs for this repo's own perSystem outputs (the dev shell, treefmt). Machines
-# get their pkgs from clan, configured by the upstream modules they import.
+# get their own pkgs from the upstream `base` module they import.
 { inputs, ... }:
 {
   systems = import inputs.systems;
 
   perSystem =
-    { system, pkgs, ... }:
+    { system, ... }:
     {
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;
@@ -17,7 +17,5 @@
           allowBroken = true;
         };
       };
-
-      clan.pkgs = pkgs;
     };
 }

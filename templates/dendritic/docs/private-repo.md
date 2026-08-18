@@ -109,15 +109,17 @@ worth having written down:
   `clan-core.follows = "upstream/clan-core"`, which satisfies the lookup
   without a second copy.
 
-Both are already wired up in a template:
+Neither trap applies to the `private` template, because it does not run clan:
 
 ```bash
 nix flake init -t github:pperanich/dotfiles#private
 ```
 
-It takes one input, the public config, and reaches nixpkgs, clan-core and
-sops-nix through it. Its `docs/upstream-contract.md` covers what that buys and
-what it costs.
+That is route B packaged: one input, `machines/<class>/<host>/` turned into
+`nixosConfigurations` and `darwinConfigurations`, and `nixos-rebuild`,
+`darwin-rebuild` or `nh` to switch. Its `docs/upstream-contract.md` covers what
+one input buys and what it costs. Add clan to it yourself if you later want an
+inventory — and mind the two traps above when you do.
 
 ## Route C — git submodule
 

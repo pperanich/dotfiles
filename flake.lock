@@ -617,11 +617,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1782965041,
-        "narHash": "sha256-BLXdQwF00HVY/3Ot93UVSzLke/LHDh6E8F05C6rWKwg=",
+        "lastModified": 1786005627,
+        "narHash": "sha256-PpVLMQfO2WJy3AV8BPfEZkbvCfsk8W2KGW8jtlx8hdg=",
         "owner": "pperanich",
         "repo": "nix-apple-fonts",
-        "rev": "f0d0e8a1bc06852fca0795024c4f16363729857c",
+        "rev": "925beedd2ecd3f6ad21d25dfc0b22f8e1198613e",
         "type": "github"
       },
       "original": {
@@ -1087,11 +1087,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780220602,
-        "narHash": "sha256-eynAfOmbmxJnkp7YewvCEbShNnnYJ9gLLqkzsYtBPeM=",
+        "lastModified": 1785945821,
+        "narHash": "sha256-NLSyTCW4K4ofhNBllt3omPasm6QpralXH1DBZOc91Dw=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "db947814a175b7ca6ded66e21383d938df01c227",
+        "rev": "ae7910970dddc408fe6ab1c8e4b277bb21d72dc0",
         "type": "github"
       },
       "original": {

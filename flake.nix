@@ -147,6 +147,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    llm-agents.url = "github:numtide/llm-agents.nix";
+
     # nixpkgs still ships 0.5.0; this fork is 0.6.1 plus the fix for control-mode
     # clients hiding sessions. Point back at nixpkgs once that lands upstream.
     tmux-sessionizer = {

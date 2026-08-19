@@ -92,6 +92,7 @@ _: {
 
           # DevOps & Infrastructure
           kubectl # Kubernetes CLI
+          lazydocker # A simple terminal UI for both docker and docker-compose
 
           # Security & Credentials
           rbw # Unofficial Bitwarden CLI
@@ -125,7 +126,6 @@ _: {
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           # ghostty # Fast, native, feature-rich terminal emulator pushing modern features
-          lazydocker # A simple terminal UI for both docker and docker-compose
           isd # TUI to interactively work with systemd units
         ];
       home = {

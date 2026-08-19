@@ -22,9 +22,10 @@
       # rust
 
       tools
+      aiTools
 
       # Services
-      opencode
+      # opencode
     ]
     ++ lib.optionals desktop [
       # Desktop

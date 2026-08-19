@@ -25,6 +25,7 @@
 
     # Remote development via Discord
     # kimaki
+    aiTools
   ];
 
   # Kimaki Discord bot for remote development

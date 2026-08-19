@@ -19,6 +19,13 @@ _: {
         active_color = "0xFFfab387"; # Catppuccin peach (matches active workspace)
         inactive_color = "0xFF45475a"; # Catppuccin surface1
         style = "round";
+        # With order=above, borders draw over macOS auth sheets, which stops them
+        # taking key focus. The App Store password sheet then dismisses itself with
+        # AMSErrorDomain code=6 and purchases fail with no visible error.
+        blacklist = [
+          "App Store"
+          "AMSUIPaymentViewService_macOS"
+        ];
       };
 
       environment.systemPackages = [

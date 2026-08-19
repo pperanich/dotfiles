@@ -219,7 +219,6 @@
             "claude"
             "claude-code"
             "reaper"
-            "google-chrome"
             "brave-browser"
             # "blender"
             "gimp"

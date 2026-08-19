@@ -10,7 +10,7 @@ get_workspace() {
   org.alacritty | com.mitchellh.ghostty)
     echo 1
     ;; # term
-  com.apple.Safari | com.brave.Browser)
+  com.apple.Safari | com.brave.Browser | com.google.Chrome)
     echo 2
     ;; # web
   md.obsidian | com.apple.Notes)

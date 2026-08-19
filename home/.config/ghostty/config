@@ -24,6 +24,5 @@ cursor-style = block
 cursor-style-blink = false
 shell-integration-features = no-cursor
 window-decoration = auto
-keybind = shift+enter=text:\n
 macos-titlebar-style = hidden
 window-padding-y = 0

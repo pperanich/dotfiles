@@ -204,7 +204,6 @@
             "xcode-build-server"
             "xcbeautify"
             "xcp"
-            "opencode"
             "uv"
             "docker"
             "docker-compose"
@@ -216,11 +215,8 @@
             "discord"
             "element"
             "visual-studio-code"
-            "claude"
-            "claude-code"
             "reaper"
             "brave-browser"
-            # "blender"
             "gimp"
             "xquartz"
             "obsidian"
@@ -235,7 +231,6 @@
 
         environment.systemPackages = with pkgs; [
           openssh
-          # python313Packages.pymobiledevice3
         ];
 
         nixpkgs = {

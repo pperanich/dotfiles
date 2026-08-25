@@ -33,3 +33,5 @@ email = pperanich@gmail.com
 
 ; [merge]
 ;     conflictstyle = zdiff3
+[alias]
+	gate = !git -c lfs.allowincompletepush=true push -o no-mistakes.skip=push,pr,ci no-mistakes

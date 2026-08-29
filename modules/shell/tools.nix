@@ -41,6 +41,7 @@ _: {
           gh # Github CLI
           glab # Gitlab CLI
           act # Run github workflows locally
+          tea # Gitea official CLI client
 
           # Network & HTTP Tools
           curlie # Frontend to curl that adds the ease of use of httpie, without compromising on features and performance

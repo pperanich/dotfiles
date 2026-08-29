@@ -1,5 +1,21 @@
 # Agent Guidelines
 
+## Response Shape
+
+- Put the most important information last. That is the part I read first.
+- State each fact once. Repeat only when a later turn depends on it.
+- Match detail to the task. A one-line question gets a one-line answer.
+- When presenting three or more findings, decisions, options, risks, questions, or actions, give each a short code: `F1`, `D1`, `O1`, `R1`, `Q1`, `A1`. Keep the same codes for the rest of the conversation so I can reply "drop R2, expand O3". Invent new prefixes for categories not listed. Skip codes entirely for short answers.
+
+## Aliases
+
+Expand these and act as if the expansion were written out in full. Treat a token as an alias only when it stands alone as the whole message or on its own line. Ignore it inside a sentence.
+
+- `scr`: Simplify, compress, and repeat your last response.
+- `eli`: Explain that like I'm 18. Simpler language, shorter response.
+- `foc`: What is the true signal here? Boil it down to the single most important thing.
+- `ref`: Rewrite your last response using reference codes.
+
 ## Git Commits
 
 **Never include AI attribution signatures in commit messages.** This includes but is not limited to:

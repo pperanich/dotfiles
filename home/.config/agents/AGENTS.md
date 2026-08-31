@@ -114,3 +114,25 @@ The core risk: syntactically correct but logically flawed code creates a false s
 - Check the code against real system constraints (data scale, traffic, config, existing structure).
 
 The deeper point: these patterns are symptoms of output optimized to look correct rather than to be right. Editing out the surface tells without fixing that gap just makes generic work harder to spot. Aim for the concrete detail, the real edge case, and the specific claim.
+
+## Shell: `>` does not overwrite
+
+Agent shells run with zsh's `noclobber` set, so `cmd > existing_file` fails with
+`file exists` and writes nothing. This is not a zsh or dotfile default — the harness
+sets it after profile load, so it cannot be turned off from `~/.zshenv` or `~/.zshrc`.
+
+It fails quietly in the way that matters: the command reports an error you may not
+read, the stale file survives, and the next step consumes it as if it were fresh. That
+is a wrong answer, not a failed run. Symptoms seen in practice: a loop that re-fetches
+state each iteration but keeps reporting the first iteration's data; a per-item report
+where every row shows the first item's values; a payload built for one PR posted to
+another.
+
+- Overwriting on purpose: `cmd >| file`, or `rm -f file` first.
+- `>>` is **not** a safe substitute: zsh leaves `APPEND_CREATE` unset, so `>> new_file`
+  fails the same way. Append only to a path you created first (`touch`), or use `>>|`.
+  Heredocs into a new path are unaffected.
+- Writing the same scratch path more than once in a script is the usual trigger — give
+  each write a distinct path, or `rm -f` at the top.
+- `setopt clobber` at the start of a single command works, but only for that command;
+  shell state does not carry between tool calls.

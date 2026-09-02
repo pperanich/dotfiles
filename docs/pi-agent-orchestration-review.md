@@ -344,10 +344,21 @@ correction cycle.
   and repeat the smoke test.
 - R6: The profile split shares `auth.json`. It separates behavior and runtime
   state, not credentials.
-- R7: FirstMate may internally spawn a command named `pi` rather than
-  `pi-firstmate`. Its documented primary launch works with `pi`, but a real
-  FirstMate trial should verify its selected worker harnesses and any
-  `FM_PI_HARNESS` setting.
+- R7: Confirmed on 2026-09-01 by reading FirstMate's `bin/fm-spawn.sh` and
+  `bin/backends/tmux.sh`: crew workers are launched by resolving `pi` from
+  `PATH` and sending the command with `tmux send-keys` into a new window of
+  a `firstmate` tmux session. That shell inherits the tmux server
+  environment, not the primary's, and FirstMate prefixes only
+  `FM_PI_HARNESS=pi` onto the launch. So `pi-firstmate` isolates the primary
+  only; every Pi crew worker runs with the normal `~/.pi/agent` profile,
+  including the subagent package, `tma.js`, and the feature-loop skill.
+  Workers also get no `--no-extensions`, so the two dispatch systems would
+  coexist in one worker. Fixes, best first: an upstream change that carries
+  `PI_CODING_AGENT_DIR` onto the launch line the way `FM_PI_HARNESS` already
+  is; or a local `pi` shim ahead of the real binary that exports the
+  firstmate profile when `FM_PI_HARNESS` is set and `PI_CODING_AGENT_DIR` is
+  not. Setting the variable in the tmux server environment is not an option
+  because it would redirect every Pi launch.
 - R8: The three-attempt reviewer limit is policy in a skill, not an enforced
   state machine. A misbehaving top-level model could ignore it.
 - R9: The selected extension is tmux-only. Oh My Pi and FirstMate offer broader

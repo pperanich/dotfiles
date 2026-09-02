@@ -1203,11 +1203,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788354156,
-        "narHash": "sha256-ttWWWmn0UsI2M7RXVBpxvO+AUW1uwH7hlVFTDkHwS3A=",
+        "lastModified": 1788373337,
+        "narHash": "sha256-9dZhu1N7fEE4enQv6P3XNfghR7Q6E3gUycg7NeCvzFw=",
         "owner": "pperanich",
         "repo": "tmux-agents",
-        "rev": "52719cbcf8e88b467a34b17e9321ffefc58d2c76",
+        "rev": "a99359de84bb76fc39a41c167598214f64917fd5",
         "type": "github"
       },
       "original": {

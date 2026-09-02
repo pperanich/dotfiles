@@ -15,6 +15,13 @@ still allowing a checked-out FirstMate repository to load its own project-local
 profile. It does not load the normal profile's subagent package, agents, skill,
 or prompt template.
 
+`pi-firstmate` also prepends `~/.local/libexec/pi-firstmate` to `PATH`. That
+directory holds a `pi` shim. FirstMate resolves `pi` from the primary's `PATH`
+and bakes the absolute path into crew launches, which start in fresh tmux
+shells without the primary's environment. The shim exports the firstmate
+profile when `FM_PI_HARNESS` is set and `PI_CODING_AGENT_DIR` is not, then
+execs the real `pi`. Outside `pi-firstmate` the shim is not on `PATH`.
+
 Upstream references:
 
 - <https://github.com/amosblomqvist/pi-config>

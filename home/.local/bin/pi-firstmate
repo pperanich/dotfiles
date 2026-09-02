@@ -4,6 +4,7 @@ set -euo pipefail
 profile_dir="${HOME}/.pi/firstmate"
 normal_auth="${HOME}/.pi/agent/auth.json"
 profile_auth="${profile_dir}/auth.json"
+shim_dir="${HOME}/.local/libexec/pi-firstmate"
 
 mkdir -p "$profile_dir"
 
@@ -11,5 +12,9 @@ if [[ ! -e "$profile_auth" && -e "$normal_auth" ]]; then
   ln -s ../agent/auth.json "$profile_auth"
 fi
 
+# FirstMate resolves `pi` from this process's PATH and bakes the absolute path
+# into crew launches, so the shim ahead of the real binary is what keeps crew
+# workers on this profile too.
+export PATH="${shim_dir}:${PATH}"
 export PI_CODING_AGENT_DIR="$profile_dir"
 exec pi "$@"

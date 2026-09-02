@@ -258,8 +258,12 @@ Profile separation and launcher:
 
 - `home/.pi/firstmate/settings.json`: same model preferences, no packages.
 - `home/.pi/firstmate/.gitignore`: excludes runtime and credential state.
-- `home/.local/bin/pi-firstmate`: selects `PI_CODING_AGENT_DIR=~/.pi/firstmate`
-  and creates a relative link to the normal profile's auth file if needed.
+- `home/.local/bin/pi-firstmate`: selects `PI_CODING_AGENT_DIR=~/.pi/firstmate`,
+  creates a relative link to the normal profile's auth file if needed, and
+  prepends the shim directory below to `PATH`.
+- `home/.local/libexec/pi-firstmate/pi`: shim that exports the firstmate
+  profile when `FM_PI_HARNESS` is set and `PI_CODING_AGENT_DIR` is not, then
+  execs the next `pi` on `PATH`. See R7.
 - `home/.pi/README.md`: operator notes and upstream references.
 
 The prior live settings file is recoverable at
@@ -359,6 +363,17 @@ correction cycle.
   firstmate profile when `FM_PI_HARNESS` is set and `PI_CODING_AGENT_DIR` is
   not. Setting the variable in the tmux server environment is not an option
   because it would redirect every Pi launch.
+
+  The shim was implemented on 2026-09-01 at
+  `home/.local/libexec/pi-firstmate/pi`. A global `~/.local/bin/pi` would
+  not work because the per-user Nix profile precedes `~/.local/bin` on
+  `PATH`, so `pi-firstmate` prepends the shim directory instead; FirstMate
+  then resolves the shim's absolute path in the primary and every crew
+  launch goes through it. Verified with two detached starts of the shim
+  itself: with `FM_PI_HARNESS=pi` and no `PI_CODING_AGENT_DIR` Pi loaded no
+  extensions (firstmate profile); without `FM_PI_HARNESS` it loaded `tma.js`
+  and the subagent package (normal profile). `pi-firstmate --version` still
+  passes through. The upstream change remains the cleaner fix.
 - R8: The three-attempt reviewer limit is policy in a skill, not an enforced
   state machine. A misbehaving top-level model could ignore it.
 - R9: The selected extension is tmux-only. Oh My Pi and FirstMate offer broader

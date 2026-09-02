@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# pi shim for FirstMate crew workers. Only on PATH inside pi-firstmate.
+#
+# FirstMate resolves `pi` with `type -P` in the primary's environment and bakes
+# that absolute path into each crew launch, then starts the worker through
+# `tmux send-keys` in a fresh shell that inherits the tmux server environment,
+# not the primary's. The worker therefore reaches this shim with
+# FM_PI_HARNESS set (FirstMate prefixes it) but without PI_CODING_AGENT_DIR.
+# Set the firstmate profile in that case and hand off to the real pi.
+set -euo pipefail
+
+if [[ -n "${FM_PI_HARNESS:-}" && -z "${PI_CODING_AGENT_DIR:-}" ]]; then
+  export PI_CODING_AGENT_DIR="${HOME}/.pi/firstmate"
+fi
+
+self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+IFS=: read -ra path_dirs <<< "$PATH"
+for dir in "${path_dirs[@]}"; do
+  [[ -n "$dir" && -x "$dir/pi" ]] || continue
+  [[ "$(cd "$dir" 2>/dev/null && pwd -P)" == "$self_dir" ]] && continue
+  exec "$dir/pi" "$@"
+done
+
+echo "pi-firstmate shim: no real pi found on PATH" >&2
+exit 127

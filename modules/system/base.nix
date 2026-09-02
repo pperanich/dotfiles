@@ -180,6 +180,20 @@
                 # ctrl-space: carbon controlKey (0x1000) + kVK_Space (49).
                 KeyboardShortcuts_navigate = ''{"carbonModifiers":4096,"carbonKeyCode":49}'';
                 theme = "cheater";
+                autoOpenCheatsheet = "always";
+              };
+              # Maccy has no config file; everything is UserDefaults. Same
+              # KeyboardShortcuts library as Leader Key, same carbon encoding.
+              # History lives in its own SQLite store, nothing to stow.
+              "org.p0deje.Maccy" = {
+                # cmd-shift-v: cmdKey (0x100) + shiftKey (0x200) + kVK_ANSI_V (9).
+                KeyboardShortcuts_popup = ''{"carbonModifiers":768,"carbonKeyCode":9}'';
+                pasteByDefault = true;
+                searchMode = "fuzzy";
+                historySize = 200;
+                popupPosition = "cursor";
+                showInStatusBar = false;
+                ignoredApps = [ "com.1password.1password" ];
               };
             };
           };
@@ -222,6 +236,7 @@
             "obsidian"
             "aerospace"
             "leader-key"
+            "maccy"
           ];
           onActivation = {
             autoUpdate = true;

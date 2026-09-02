@@ -262,6 +262,13 @@
       ]
     },
     {
+      "iconPath": "doc.on.clipboard",
+      "key": "v",
+      "label": "Clipboard History",
+      "type": "application",
+      "value": "/Applications/Maccy.app"
+    },
+    {
       "iconPath": "moon.fill",
       "key": "l",
       "label": "Sleep Display",

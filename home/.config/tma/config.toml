@@ -3,3 +3,9 @@ blocked = { glyph = "⚑ ", color = "red" }
 working = { glyph = "● ", color = "yellow" }
 idle    = { glyph = "○ ", color = "green" }
 done    = { glyph = "✓ ", color = "magenta" }
+
+[daemon]
+restart_on_upgrade = true
+
+[install]
+wrapper_ref = "bare"

@@ -1,0 +1,6 @@
+# Handy writes models, recordings, and transcription history next to its
+# settings. Only settings_store.json is managed here; on a fresh machine Stow
+# folds this whole directory into the repo, so keep that state untracked.
+*
+!.gitignore
+!settings_store.json

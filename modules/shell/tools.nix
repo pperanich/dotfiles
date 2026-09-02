@@ -102,6 +102,7 @@ _: {
           # Media
           ffmpeg # A complete, cross-platform solution to record, convert and stream audio and video
           spotify-player # Terminal spotify player that has feature parity with the official client
+          yt-dlp # Feature-rich command-line audio/video downloader
 
           # Clipboard
           xsel # Command-line program for getting and setting the contents of the X selection

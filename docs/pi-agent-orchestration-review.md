@@ -383,6 +383,23 @@ correction cycle.
   this fix. No issue tracks it. Contributions must go through the
   `no-mistakes` gate per `CONTRIBUTING.md`. The shim should be removed once a
   three-line mirror of #1195 for `pi|pi-signed` lands.
+
+  That mirror was submitted on 2026-09-01 as
+  [FirstMate PR #3494](https://github.com/kunchenguid/firstmate/pull/3494)
+  from the `pperanich/firstmate` fork, branch
+  `fix/spawn-forward-pi-coding-agent-dir`, through the `no-mistakes` gate.
+  Local review, test, document, lint, and push steps passed with no
+  findings and no pipeline fix commits. Its CI needs maintainer approval
+  because the fork has no prior association. Two setup notes from getting
+  the gate to run: the gate daemon probes the login shell for its
+  environment, and this machine's `.zshrc` exports `ANTHROPIC_API_KEY` from
+  the sops secret declared in `modules/shell/api-keys.nix`; Claude Code in
+  print mode prefers that key over the claude.ai login, and the key's
+  account reports a low credit balance, so the gate's Claude reviewer failed
+  three times. The gate now runs with `agent: codex` in
+  `~/.no-mistakes/config.yaml` (backup beside it). The clone lives at
+  `~/Documents/repos/oss/firstmate` with the gate initialized against the
+  fork.
 - R8: The three-attempt reviewer limit is policy in a skill, not an enforced
   state machine. A misbehaving top-level model could ignore it.
 - R9: The selected extension is tmux-only. Oh My Pi and FirstMate offer broader

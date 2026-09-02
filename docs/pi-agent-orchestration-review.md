@@ -373,7 +373,16 @@ correction cycle.
   itself: with `FM_PI_HARNESS=pi` and no `PI_CODING_AGENT_DIR` Pi loaded no
   extensions (firstmate profile); without `FM_PI_HARNESS` it loaded `tma.js`
   and the subagent package (normal profile). `pi-firstmate --version` still
-  passes through. The upstream change remains the cleaner fix.
+  passes through. The upstream change remains the cleaner fix, and it has a
+  merged precedent: FirstMate PR #1195 (2026-07-29) forwards
+  `CLAUDE_CONFIG_DIR` onto Claude crew launches "only when set", with a
+  comment in `fm-spawn.sh` describing this exact daemon-environment problem.
+  The Pi harness never received the same block. Open PR #1695 repeats the
+  pattern for `ANTHROPIC_BASE_URL`. The closed PRs #877 and #966 were a
+  larger fork feature (a pinned "delegated Pi profile") that went stale, not
+  this fix. No issue tracks it. Contributions must go through the
+  `no-mistakes` gate per `CONTRIBUTING.md`. The shim should be removed once a
+  three-line mirror of #1195 for `pi|pi-signed` lands.
 - R8: The three-attempt reviewer limit is policy in a skill, not an enforced
   state machine. A misbehaving top-level model could ignore it.
 - R9: The selected extension is tmux-only. Oh My Pi and FirstMate offer broader

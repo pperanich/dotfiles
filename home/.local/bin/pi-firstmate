@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+profile_dir="${HOME}/.pi/firstmate"
+normal_auth="${HOME}/.pi/agent/auth.json"
+profile_auth="${profile_dir}/auth.json"
+
+mkdir -p "$profile_dir"
+
+if [[ ! -e "$profile_auth" && -e "$normal_auth" ]]; then
+  ln -s ../agent/auth.json "$profile_auth"
+fi
+
+export PI_CODING_AGENT_DIR="$profile_dir"
+exec pi "$@"

@@ -8,6 +8,7 @@ Nix-based system configuration using the dendritic pattern with flake-parts and 
 
 - [Adding New Machines](adding-new-machines.md) - Complete guide for onboarding new NixOS/Darwin machines
 - [Troubleshooting Clan Commands](clan-machines-update-troubleshooting.md) - Debug common deployment issues
+- [Atuin Daemon Troubleshooting](atuin-daemon-troubleshooting.md) - Fix the daemon when it stops logging (stale socket)
 
 ### Secrets
 

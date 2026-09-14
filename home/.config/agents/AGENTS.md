@@ -37,6 +37,10 @@ such as differences in contributor guidelines in repos.
 
 When using python, always remember to run via the `uv` tool.
 
+## Sub-agents
+
+- Never run sub-agents on Fable unless I explicitly ask for it. Default to `opus` (or `sonnet` for simple, bounded tasks) via the Agent tool's `model` parameter. A `fork` always inherits the parent model, so prefer a non-fork agent type when the parent is Fable.
+
 ## Tests
 
 - Do not write tests for files in examples/ or scripts/, only for files in packages.

@@ -1,10 +1,11 @@
 # Who can decrypt this repo's secrets. Regenerate recipients after adding a
-# machine:  sops updatekeys sops/secrets.yaml
+# machine: sops --config sops/.sops.yaml updatekeys sops/secrets.yaml
 keys:
   # You, for editing: ssh-to-age < ~/.ssh/id_ed25519.pub
   - &admin age1REPLACEME000000000000000000000000000000000000000000000
   # One per host, derived from its SSH host key:
-  #   ssh-keyscan <host> | ssh-to-age
+  #   ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub  (run on that host)
+  # On macOS, enable Remote Login and run sudo ssh-keygen -A first.
   - &example-nixos age1REPLACEME000000000000000000000000000000000000000001
   - &example-darwin age1REPLACEME000000000000000000000000000000000000000002
 creation_rules:

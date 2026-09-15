@@ -1,4 +1,5 @@
-_: {
+{ inputs, lib, ... }:
+{
   perSystem =
     {
       config,
@@ -20,7 +21,8 @@ _: {
           pkgs.ssh-to-age
 
           config.treefmt.build.wrapper
-        ];
+        ]
+        ++ lib.optional (inputs ? deploy-rs) pkgs.deploy-rs;
 
         shellHook = ''
           # Same key .sops.yaml lists as the admin recipient
@@ -31,6 +33,9 @@ _: {
 
           # So `nh os switch` with no argument means this repo
           export NH_FLAKE="$PWD"
+
+          # mkShell exports the literal hook text; it need not stay in env.
+          unset shellHook
         '';
       };
     };

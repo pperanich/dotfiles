@@ -115,11 +115,13 @@ Neither trap applies to the `private` template, because it does not run clan:
 nix flake init -t github:pperanich/dotfiles#private
 ```
 
-That is route B packaged: one input, `machines/<class>/<host>/` turned into
-`nixosConfigurations` and `darwinConfigurations`, and `nixos-rebuild`,
-`darwin-rebuild` or `nh` to switch. Its `docs/upstream-contract.md` covers what
-one input buys and what it costs. Add clan to it yourself if you later want an
-inventory — and mind the two traps above when you do.
+That is route B packaged: one direct input by default, `machines/<host>/`
+turned into `nixosConfigurations` and `darwinConfigurations` using each
+machine's declared platform, and `nixos-rebuild`, `darwin-rebuild` or `nh`
+to switch. It includes private Stow activation, a shared desktop/server home
+profile, and an optional deploy-rs module for remote rollback. Its
+`docs/upstream-contract.md` covers the input and secrets interfaces. Adding
+Clan later still requires addressing the two traps above.
 
 ## Route C — git submodule
 

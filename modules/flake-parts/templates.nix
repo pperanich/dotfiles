@@ -13,13 +13,14 @@
     };
     private = {
       path = ../../templates/private;
-      description = "Private machines built from a public dendritic config, one input, no deployment tool";
+      description = "Private machines from a public dendritic config, private dotfiles, host-key secrets, optional deploy-rs";
       welcomeText = ''
         Next steps:
           1. point inputs.upstream in flake.nix at your public config
           2. git init && git add -A   (flakes only see tracked files)
-          3. rename the example user and machine, then read docs/upstream-contract.md
-          4. nh os switch .   (or nixos-rebuild / darwin-rebuild)
+          3. rename the example user and machines; set the checkout path in lib/repo.nix
+          4. follow README.md to prepare host keys and encrypt secrets before switching
+          5. optional remote deployment: optional/deploy-rs/README.md
       '';
     };
 

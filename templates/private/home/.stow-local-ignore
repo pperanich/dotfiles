@@ -1,0 +1,3 @@
+# Keep this Stow control file out of $HOME. Add app-specific state paths here
+# if an application writes beside one of your tracked config files.
+^/\.stow-local-ignore$

@@ -2,7 +2,7 @@
 
 This repo is public and serves a flake template, so it can never declare a private input: evaluating `templates.dendritic` evaluates the whole module tree, and a repo nobody else can fetch would break `nix flake init -t` for everyone. See `templates/dendritic/docs/private-repo.md` for the measurements.
 
-The arrangement that avoids that is a private flake which consumes this one and builds its own hosts. It runs no clan and no deployment tool: a private machine is switched with `nixos-rebuild`, `darwin-rebuild`, or `nh`, like any other.
+The private flake consumes this one and builds its own hosts. Local switches use `nixos-rebuild`, `darwin-rebuild`, or `nh`; the template also includes an optional deploy-rs module for remote deployment with rollback.
 
 ```bash
 nix flake init -t github:pperanich/dotfiles#private
@@ -25,7 +25,7 @@ nix flake init -t github:pperanich/dotfiles#private
 }
 ```
 
-`modules/flake-parts/hosts.nix` turns `machines/<class>/<host>/` into `nixosConfigurations`/`darwinConfigurations` by calling `nixosSystem` or `darwinSystem` directly, with this repo's `modules` and `lib` as specialArgs. A machine file there reads exactly like one here:
+`modules/flake-parts/hosts.nix` turns `machines/<host>/` into `nixosConfigurations`/`darwinConfigurations`, choosing the builder from the `nixpkgs.hostPlatform` declared directly in each `configuration.nix`. It passes the merged module tree and upstream library as specialArgs:
 
 ```nix
 { modules, ... }:
@@ -33,7 +33,7 @@ nix flake init -t github:pperanich/dotfiles#private
   imports = [ ./hardware-configuration.nix ] ++ (with modules.nixos; [ base sops secretuser ]);
 
   sops = {
-    defaultSopsFile = ../../../sops/secrets.yaml;
+    defaultSopsFile = ../../sops/secrets.yaml;
     age = {
       keyFile = null;
       sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
@@ -45,7 +45,7 @@ nix flake init -t github:pperanich/dotfiles#private
 }
 ```
 
-One input, no vendoring, no submodule.
+The default has one direct input. Optional deploy-rs adds a second input while keeping its activation package on upstream's nixpkgs. See the [template setup guide](../templates/private/README.md) and [deployment guide](../templates/private/optional/deploy-rs/README.md).
 
 ## Pass your own `self`
 
@@ -70,7 +70,9 @@ sops-install-secrets: manifest is not valid: secret private_keys/pperanich in
 /nix/store/…-secrets.yaml is not valid: the key 'private_keys' cannot be found
 ```
 
-The homeManager `sops` module declares no secrets itself, so importing it is free. Secrets that a private repo would rather not carry live in their own modules: the six provider tokens are `modules/shell/api-keys.nix` (`homeManager.apiKeys`), which the private template's profile deliberately omits. Keep that split when adding secrets — a key declared beside the wiring is a key every downstream profile is forced to store.
+The homeManager `sops` module declares no secrets itself. The private template offers an optional local `apiKeys` replacement that discovers names under its own `api_keys` mapping instead of requiring upstream's fixed provider list. Keep secret declarations separate from shared SOPS wiring.
+
+System decryption must use the persistent host key, including on macOS. The user key is itself installed by SOPS and cannot bootstrap system decryption after reboot clears runtime secrets. Enable Remote Login and create the host keys before the first Darwin activation; encrypt to both the host and user/admin recipients.
 
 ## The user module is copied, not imported
 
@@ -93,3 +95,5 @@ nh darwin switch .          # or: darwin-rebuild switch --flake .#<host>
 ```
 
 `nh` selects the configuration matching the local hostname, elevates itself, and prints a package diff first. `-H <host>` names another, `-n` is a dry run, and `--target-host <user>@<host>` deploys to a different machine over ssh.
+
+After the first activation and a new shell, `NH_OS_FLAKE` or `NH_DARWIN_FLAKE` selects this repo and its machine directory automatically. `lib/repo.nix` supplies the home-relative checkout path for both these defaults and the private `home/` Stow activation. A shared home profile uses `my.<user>.desktop` to select desktop imports through explicit Home Manager `extraSpecialArgs`.

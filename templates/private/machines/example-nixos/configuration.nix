@@ -19,11 +19,11 @@
   # its key is not a recipient of. The upstream sets it at priority 900, so a
   # plain assignment wins.
   sops = {
-    defaultSopsFile = ../../../sops/secrets.yaml;
+    defaultSopsFile = ../../sops/secrets.yaml;
 
     # Decrypt with an age key derived from this host's SSH host key, and put
     # that key's public half in sops/.sops.yaml:
-    #   ssh-keyscan <host> | ssh-to-age
+    #   ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
     # The upstream defaults to a clan-provisioned /var/lib/sops-nix/key.txt,
     # which nothing here creates.
     age = {
@@ -32,8 +32,16 @@
     };
   };
 
-  # Needed to decrypt at boot: without it the host key does not exist yet.
+  # Keep SSH and its host keys available on subsequent boots.
   services.openssh.enable = true;
+
+  # Apply the SOPS password hash on every activation, including existing users.
+  # This also removes undeclared accounts and groups. Before adopting an
+  # existing machine, follow README.md's account migration steps.
+  users.mutableUsers = false;
+
+  # The same home profile serves servers and desktops.
+  my.example.desktop = false;
 
   networking.hostName = "example-nixos";
   nixpkgs.hostPlatform = "x86_64-linux";

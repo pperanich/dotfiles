@@ -1,6 +1,7 @@
 .cursor/
 memory-bank/
 **/.claude/settings.local.json
+**/.pi/debate.json
 
 .mcp.json
 

@@ -400,6 +400,7 @@ correction cycle.
   `~/.no-mistakes/config.yaml` (backup beside it). The clone lives at
   `~/Documents/repos/oss/firstmate` with the gate initialized against the
   fork.
+
 - R8: The three-attempt reviewer limit is policy in a skill, not an enforced
   state machine. A misbehaving top-level model could ignore it.
 - R9: The selected extension is tmux-only. Oh My Pi and FirstMate offer broader

@@ -1,11 +1,21 @@
 [status]
 blocked = { glyph = "⚑ ", color = "red" }
 working = { glyph = "● ", color = "yellow" }
-idle    = { glyph = "○ ", color = "green" }
-done    = { glyph = "✓ ", color = "magenta" }
+idle = { glyph = "○ ", color = "green" }
+done = { glyph = "✓ ", color = "magenta" }
 
 [daemon]
 restart_on_upgrade = true
+window_names = { format = "{repo}:{state}" }
 
 [install]
 wrapper_ref = "bare"
+
+[hooks]
+claude_reply_lane = { hold_ms = 25000 }
+
+[notify]
+osc = true
+osc_777 = true
+osc_progress = true
+stall = { threshold_s = 900 }

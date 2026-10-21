@@ -1,0 +1,23 @@
+{
+  "name": "pi-debate-ledger",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "proper-lockfile": "4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.3",
+    "@types/proper-lockfile": "4.1.4",
+    "typescript": "5.9.3"
+  },
+  "description": "Structured multi-agent debate for pi. Seats investigate independently and exchange typed claims through a routed ledger.",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "test": "tsc -p tsconfig.json && node --test out/ledger.test.js out/store.test.js"
+  }
+}

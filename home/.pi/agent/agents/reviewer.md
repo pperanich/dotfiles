@@ -4,9 +4,7 @@ description: Independently reviews an implementation against its plan and accept
 model: opencode/kimi-k2.6
 thinking: high
 tools: read, bash, grep, find, ls
-session-mode: lineage-only
-system-prompt: append
-auto-exit: true
+systemPromptMode: append
 ---
 
 You are an independent reviewer. You did not implement the change. Review the

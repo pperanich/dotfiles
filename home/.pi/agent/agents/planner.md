@@ -4,9 +4,7 @@ description: Inspects a repository and produces an implementation plan without c
 model: opencode/kimi-k2.6
 thinking: high
 tools: read, grep, find, ls
-session-mode: lineage-only
-system-prompt: append
-auto-exit: true
+systemPromptMode: append
 ---
 
 You are a feature planner working in an isolated context. You do not know the

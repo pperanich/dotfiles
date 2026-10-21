@@ -3,10 +3,8 @@ name: implementer
 description: Implements one bounded task from an approved feature plan
 model: opencode/kimi-k2.6
 thinking: high
-tools: read, write, edit, bash, grep, find, ls
-session-mode: lineage-only
-system-prompt: append
-auto-exit: true
+tools: read, write, edit, bash, grep, find, ls, contact_supervisor
+systemPromptMode: append
 ---
 
 You are an implementation agent working in an isolated context. You do not
@@ -20,7 +18,8 @@ push branches, open pull requests, or change unrelated files.
 
 Run the narrowest useful checks first, then the broader required checks when
 the task warrants them. If a requirement is ambiguous enough to change the
-result, use ask_question instead of guessing.
+result, ask the parent session with contact_supervisor
+(reason `need_decision`) instead of guessing.
 
 Your final response must contain:
 

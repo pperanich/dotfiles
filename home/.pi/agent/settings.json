@@ -1,10 +1,36 @@
 {
-  "lastChangelogVersion": "0.85.0",
-  "theme": "dark",
+  "lastChangelogVersion": "1.0.0",
+  "theme": "catppuccin-mocha",
   "defaultProvider": "opencode",
   "defaultModel": "kimi-k2.6",
   "defaultThinkingLevel": "medium",
+  "hideThinkingBlock": false,
+  "defaultTools": [
+    "read",
+    "bash",
+    "edit",
+    "write",
+    "grep",
+    "find",
+    "ls"
+  ],
   "packages": [
-    "git:github.com/amosblomqvist/pi-interactive-subagents@c3e8b53c0754ae5ccc19fdab5a7481ec039bc2f7"
+    "npm:pi-lens@4.3.0",
+    "npm:pi-subagents@0.74.0",
+    "npm:pi-web-access@0.35.0",
+    "npm:@juicesharp/rpiv-advisor@2.12.0",
+    "npm:@juicesharp/rpiv-ask-user-question@2.12.0",
+    "npm:@juicesharp/rpiv-todo@2.12.0",
+    "npm:pi-memory@0.4.2",
+    "npm:catppuccin-pi-theme@0.1.6",
+    {
+      "source": "npm:pi-extensible-workflows@5.19.0",
+      "extensions": [
+        "-dist/starter/index.js"
+      ],
+      "prompts": []
+    },
+    "npm:@piewf/cli@5.19.0",
+    "npm:@piewf/herdr@5.19.0"
   ]
 }

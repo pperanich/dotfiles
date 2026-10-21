@@ -5,6 +5,18 @@
 /npm/
 /sessions/
 
+# State the profile's packages write at runtime.
+/debate/
+/mcp-auth.json
+/memory/
+/missions/
+/pi-extensible-workflows/
+/pi-subagents/
+/run-history.jsonl
+/subagents/
+/trust.json
+/web-search-cache/
+
 # Local extensions and generated state that are not managed by dotfiles.
 /extensions/tma.js
 *.loadout.json

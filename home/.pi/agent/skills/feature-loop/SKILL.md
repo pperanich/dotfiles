@@ -24,12 +24,12 @@ user explicitly asks for planning only, stop after the approved plan.
 
 ## 2. Ground the plan
 
-Call `subagents_list` and confirm that `planner`, `implementer`, and `reviewer`
-are available. If the subagent extension is unavailable or reports that tmux
-is missing, explain that Pi must be started inside a tmux session. Do not
-silently run the multi-agent workflow as one agent.
+Call `subagent({ action: "list" })` and confirm that `planner`, `implementer`,
+and `reviewer` are available. If the `subagent` tool is missing, call
+`subagents_enable` and check the tool list again. If it is still unavailable,
+say so. Do not silently run the multi-agent workflow as one agent.
 
-Spawn `planner` with the complete brief. The planner is read-only and must cite
+Run `planner` through the `subagent` tool with the complete brief. The planner is read-only and must cite
 the repository files it inspected. Resolve its material questions with the
 user, then present the proposed task plan for approval. Approval may be
 inferred only when the user already said to implement without another pause.
@@ -77,7 +77,7 @@ in it.
 
 ## 3. Implement bounded tasks
 
-For each ready task, spawn `implementer` with:
+For each ready task, run `implementer` through the `subagent` tool with:
 
 - the exact task and acceptance criteria;
 - the plan path;
@@ -85,6 +85,10 @@ For each ready task, spawn `implementer` with:
 - explicit scope boundaries;
 - required verification commands;
 - prior reviewer findings, when this is a correction attempt.
+
+An implementer that needs a decision asks through `contact_supervisor`. Answer
+with `subagent_supervisor({ action: "reply", replyTo, message })`, or ask the
+user first when the decision is theirs.
 
 Default to one writer in a working tree at a time. Run implementers in parallel
 only when their file sets and generated artifacts cannot overlap. The
@@ -96,7 +100,8 @@ not proof. Confirm the working tree contains the claimed changes.
 
 ## 4. Review independently
 
-After an implementation task or coherent task group, spawn a fresh `reviewer`.
+After an implementation task or coherent task group, run a fresh `reviewer`
+with `context: "fresh"`.
 Give it the complete acceptance criteria, plan path, diff scope, and verification
 expectations. Do not tell it to validate the implementer's conclusion.
 

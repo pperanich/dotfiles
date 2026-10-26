@@ -20,6 +20,12 @@ email = pperanich@gmail.com
 [includeIf "gitdir:~/repos/work/"]
   path = "./work.gitconfig"
 
+; Private identity rules (remote-keyed, so they also reach no-mistakes
+; gates, its run worktrees and treehouse worktrees). Supplied by nix-private;
+; absent on a machine without it.
+[include]
+  path = ~/.config/git/private.gitconfig
+
 [includeIf "gitdir:~/.cache/uv/**"]
   path = "./lfs-fix.gitconfig"
 

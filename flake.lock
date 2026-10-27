@@ -1217,11 +1217,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793106633,
-        "narHash": "sha256-QidrvFkV5b4zjnXuD07ZueD3zM7BrYK2sWJaQVsBDOY=",
+        "lastModified": 1793131828,
+        "narHash": "sha256-kmrGCRMXbf+rCTnWMZodLie1rrdAUN+05E0XvsmlAgw=",
         "owner": "pperanich",
         "repo": "tmux-agents",
-        "rev": "22d8af82a7a16f659ca699a5bf5195107979a3cc",
+        "rev": "93437c1da40b7af116d4a9d679a439b07f48ac98",
         "type": "github"
       },
       "original": {

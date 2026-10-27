@@ -29,6 +29,22 @@ Commit messages should be clean, professional, and focus solely on describing th
 They should follow the patterns specified by Conventional Commits unless otherwise specified,
 such as differences in contributor guidelines in repos.
 
+## GitHub Comments and PR Text
+
+**Never announce that a comment, review, or pull request description was machine written.** This extends the rule above to everything posted on a forge, including when an agent posts on its own initiative with nobody watching.
+
+Banned, in every form:
+
+- A preamble or footer such as `_Machine-written by an operator session on behalf of <name>, at their instruction of <date> ..._`
+- `Generated with Claude Code`, `Posted by an agent`, `AI-assisted`, `AI-generated`, or any similar note
+- Robot emojis, tool signatures, model names, or a session or run identifier
+
+Write the comment as the person whose account it lands under: the request, the finding, the result. If provenance genuinely matters because a reader might act on it as a human judgement, say what was done and by what process without naming a vendor or declaring a machine wrote it.
+
+A repository whose own contributing guide requires disclosure overrides this, and so does an explicit instruction in the moment to mark a specific comment.
+
+This applies to issue comments, pull request reviews, review replies, and pull request bodies.
+
 ## Writing
 
 - Do not use em dashes (—) when writing. Use commas, parentheses, colons, or separate sentences instead.

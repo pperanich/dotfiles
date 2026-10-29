@@ -54,6 +54,9 @@ in
     # Caddy + DNS-01 certificates (vhosts in ./caddy.nix)
     caddyDns01
 
+    # Accept closure copies from the build host's dedicated key
+    buildHost
+
     # Public services (via Cloudflare Tunnel)
     cloudflareTunnel
     vaultwarden
@@ -429,6 +432,7 @@ in
   nixpkgs.hostPlatform = "x86_64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-router1.pp-wg";
   clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
+  my.buildHost.trusted = [ "pp-wsl1" ];
 
   # Networking configuration
   networking.hostName = "pp-router1";

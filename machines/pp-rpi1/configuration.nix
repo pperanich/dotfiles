@@ -45,6 +45,9 @@ in
 
     # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
     wireguardReresolve
+
+    # Accept closure copies from the build host's dedicated key
+    buildHost
   ]);
 
   my.pperanich.desktop = false;
@@ -52,6 +55,7 @@ in
   nixpkgs.hostPlatform = "aarch64-linux";
   clan.core.networking.targetHost = lib.mkForce "root@pp-rpi1.pp-wg";
   clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
+  my.buildHost.trusted = [ "pp-wsl1" ];
 
   hardware = {
     enableRedistributableFirmware = true;

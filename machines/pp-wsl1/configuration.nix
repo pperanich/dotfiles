@@ -23,6 +23,9 @@
 
     # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
     wireguardReresolve
+
+    # Dedicated key for copying closures to the machines it builds for
+    buildHost
   ]);
 
   clan.core = {
@@ -35,6 +38,7 @@
   };
 
   my.pperanich.desktop = false;
+  my.buildHost.enable = true;
 
   nixpkgs.hostPlatform = "x86_64-linux";
 

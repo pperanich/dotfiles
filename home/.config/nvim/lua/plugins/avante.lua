@@ -3,14 +3,17 @@ return {
   event = "VeryLazy",
   lazy = false,
   version = false, -- set this if you want to always pull the latest change
+  dependencies = {
+    -- required by :Avante since 62a7f9e
+    { "ColinKennedy/mega.cmdparse", dependencies = { "ColinKennedy/mega.logging" } },
+  },
   opts = {
-    -- add any opts here
-    {
-      acp_providers = {
-        ["opencode"] = {
-          command = "opencode",
-          args = { "acp" },
-        },
+    -- LazyVim's extra defaults to copilot, which isn't installed
+    provider = "opencode",
+    acp_providers = {
+      ["opencode"] = {
+        command = "opencode",
+        args = { "acp" },
       },
     },
   },

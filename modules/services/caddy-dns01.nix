@@ -36,7 +36,7 @@ _: {
 
           package = pkgs.caddy.withPlugins {
             plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-            hash = "sha256-7g8zDx5RhbptXFyEPtexxkHX8hw/gF001bZ7wX4Mjhs="; # Build once to get correct hash — nix prints it on failure (caddy 2.11.4 / nixos-26.05)
+            hash = "sha256-UPd4CWjm8Cq5EZ9OkBCglE23hD8+przFBSw8Ey6zMz8="; # Build once to get correct hash — nix prints it on failure (caddy 2.11.7 / nixos-26.05)
           };
 
           environmentFile = config.my.cloudflare.envFile;

@@ -69,6 +69,10 @@
             permittedInsecurePackages = [
               # TODO: drop once nixos-26.05 bumps bitwarden-desktop off EOL electron 39
               "electron-39.8.10"
+              # TODO: drop at the 26.11 bump (Immich 3). 26.05 only ships 2.7.5, which
+              # is end-of-life and flagged for CVE-2026-59258 / CVE-2026-82272.
+              # Accepted short-term: Immich (pp-nas1) is LAN/WireGuard-only.
+              "immich-2.7.5"
             ];
           };
         };

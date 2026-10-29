@@ -135,13 +135,17 @@ func tunnelSyncCmd(args []string) {
 	client := newClient()
 	ctx := context.Background()
 
-	// Resolve paths
-	repoRoot := findRepoRoot()
-	if *credsFile == "" {
-		*credsFile = filepath.Join(repoRoot, "sops", "cloudflared-tunnel.json")
-	}
-	if *metaFile == "" {
-		*metaFile = filepath.Join(repoRoot, "machines", "pp-router1", "cf-tunnel.json")
+	// Resolve paths. The defaults are this flake's router tunnel; passing
+	// both flags works from any repo, flake or not.
+	routerDefaults := *credsFile == "" || *metaFile == ""
+	if routerDefaults {
+		repoRoot := findRepoRoot()
+		if *credsFile == "" {
+			*credsFile = filepath.Join(repoRoot, "sops", "cloudflared-tunnel.json")
+		}
+		if *metaFile == "" {
+			*metaFile = filepath.Join(repoRoot, "machines", "pp-router1", "cf-tunnel.json")
+		}
 	}
 
 	// --- Gather state ---
@@ -212,7 +216,7 @@ func tunnelSyncCmd(args []string) {
 			createTunnelCNAMEs(ctx, client, zone, tunnelID, hostnames)
 		}
 
-		printNextSteps(tunnelID, *name, *credsFile, *metaFile)
+		printNextSteps(tunnelID, *name, *credsFile, *metaFile, routerDefaults)
 
 	case hasTunnel && hasMeta && hasCreds:
 		// Everything exists — verify and update CNAMEs if needed
@@ -268,7 +272,7 @@ func tunnelSyncCmd(args []string) {
 			zone := resolveZoneName(*zoneName)
 			createTunnelCNAMEs(ctx, client, zone, tunnelID, hostnames)
 		}
-		printNextSteps(tunnelID, *name, *credsFile, *metaFile)
+		printNextSteps(tunnelID, *name, *credsFile, *metaFile, routerDefaults)
 
 	default:
 		// Other partial states
@@ -284,7 +288,7 @@ func tunnelSyncCmd(args []string) {
 			}
 			tunnelID, _ := createTunnel(ctx, client, acctID, *name, *credsFile)
 			writeMetadata(*metaFile, tunnelID, *name)
-			printNextSteps(tunnelID, *name, *credsFile, *metaFile)
+			printNextSteps(tunnelID, *name, *credsFile, *metaFile, routerDefaults)
 		}
 	}
 }
@@ -336,7 +340,7 @@ func createTunnel(ctx context.Context, client *cloudflare.Client, accountID, nam
 		os.Remove(credsPath)
 		cleanupTunnel(ctx, client, accountID, tunnel.ID)
 		log.Fatalf("Failed to encrypt credentials with sops: %v\n"+
-			"Ensure sops/.sops.yaml has a creation_rule for cloudflared-tunnel.json", err)
+			"Ensure the .sops.yaml sops finds from the current directory has a creation_rule for %s", err, credsPath)
 	}
 
 	fmt.Printf("Encrypted credentials saved to %s\n", credsPath)
@@ -436,7 +440,7 @@ func createTunnelCNAMEs(ctx context.Context, client *cloudflare.Client, zoneName
 	}
 }
 
-func printNextSteps(tunnelID, name, credsFile, metaFile string) {
+func printNextSteps(tunnelID, name, credsFile, metaFile string, routerDefaults bool) {
 	fmt.Println()
 	fmt.Println("=== Tunnel Provisioned ===")
 	fmt.Println()
@@ -448,7 +452,9 @@ func printNextSteps(tunnelID, name, credsFile, metaFile string) {
 	fmt.Println("=== Next Steps ===")
 	fmt.Println()
 	fmt.Printf("1. Commit %s and %s\n", metaFile, credsFile)
-	fmt.Println("2. Deploy: clan machines update pp-router1")
+	if routerDefaults {
+		fmt.Println("2. Deploy: clan machines update pp-router1")
+	}
 }
 
 // --- Helpers ---

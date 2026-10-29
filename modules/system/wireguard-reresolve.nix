@@ -6,6 +6,9 @@ _: {
   # stale and the tunnel silently dies until manual reconfigure. This module
   # adds a small timer that detects stale handshakes and re-applies the wg
   # interface configuration so the hostname is re-resolved.
+  #
+  # Scripted (non-networkd) hosts use upstream dynamicEndpointRefreshSeconds
+  # instead, which also restarts peer units that fail DNS at boot.
   flake.modules.nixos.wireguardReresolve =
     {
       config,
@@ -76,23 +79,32 @@ _: {
         };
       };
 
-      config = {
-        systemd.services.wireguard-reresolve = {
-          description = "Re-resolve stale WireGuard peer endpoints";
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = lib.getExe reresolveScript;
+      config = lib.mkMerge [
+        (lib.mkIf config.networking.wireguard.useNetworkd {
+          systemd.services.wireguard-reresolve = {
+            description = "Re-resolve stale WireGuard peer endpoints";
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = lib.getExe reresolveScript;
+            };
           };
-        };
-        systemd.timers.wireguard-reresolve = {
-          description = "Periodic WireGuard endpoint re-resolution check";
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnBootSec = cfg.interval;
-            OnUnitActiveSec = cfg.interval;
-            AccuracySec = "10s";
+          systemd.timers.wireguard-reresolve = {
+            description = "Periodic WireGuard endpoint re-resolution check";
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnBootSec = cfg.interval;
+              OnUnitActiveSec = cfg.interval;
+              AccuracySec = "10s";
+            };
           };
-        };
-      };
+        })
+        (lib.mkIf (!config.networking.wireguard.useNetworkd) {
+          # wg exits on EAI_NONAME despite infinite retries; refresh mode
+          # runs the peer unit with Restart=always.
+          networking.wireguard.interfaces = lib.genAttrs cfg.interfaces (_: {
+            dynamicEndpointRefreshSeconds = lib.mkDefault 60;
+          });
+        })
+      ];
     };
 }

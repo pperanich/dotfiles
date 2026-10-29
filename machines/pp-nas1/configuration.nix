@@ -266,6 +266,48 @@ in
       '';
       allowedTCPPorts = [ 443 ];
     };
+    # Containers get internet egress only: no new connections to private
+    # ranges (LAN, IoT, other hosts) or to this host's own services, so a
+    # compromised container can't reach the rest of the NAS. Traffic between
+    # containers on the same bridge is left alone. Separate rules rather
+    # than an interface set, since wildcards in sets need a newer nft.
+    nftables.tables.container-isolation = {
+      family = "inet";
+      content = ''
+        set private4 {
+          type ipv4_addr
+          flags interval
+          elements = { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 }
+        }
+        chain forward {
+          type filter hook forward priority filter - 10; policy accept;
+          iifname "docker0" oifname != "docker0" ip daddr @private4 drop
+          iifname "br-*" oifname != "br-*" ip daddr @private4 drop
+        }
+        chain input {
+          type filter hook input priority filter - 10; policy accept;
+          iifname "docker0" ct state new drop
+          iifname "br-*" ct state new drop
+        }
+      '';
+    };
+  };
+
+  # Docker for self-managed compose stacks (definitions live with each app).
+  virtualisation.docker = {
+    enable = true;
+    autoPrune.enable = true;
+    daemon.settings = {
+      # Public resolvers for containers: the isolation table above blocks
+      # the LAN resolver. The daemon's own lookups (image pulls) still use
+      # the host resolver.
+      dns = [
+        "1.1.1.1"
+        "1.0.0.1"
+      ];
+      # json-file never rotates; `local` caps each container's logs.
+      log-driver = "local";
+    };
   };
 
   security = {

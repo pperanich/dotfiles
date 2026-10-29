@@ -87,7 +87,6 @@ in
     zone = publicDomain;
     records =
       mkDnsRecords [
-        "feedme" # temporary address for feedme backend
         "ntopng" # network monitoring
         "unifi" # Ubiquiti controller
         "immich" # photo/video management (pp-nas1)
@@ -139,15 +138,6 @@ in
     '';
     "${mkSub "www"}" = mkVhost ''
       redir https://${publicDomain}{uri} permanent
-    '';
-
-    "${mkSub "feedme"}" = mkVhost ''
-      reverse_proxy http://pp-ml1.${config.my.router.dhcp.domainName}:3000 {
-        header_up X-Forwarded-Proto {scheme}
-      }
-      request_body {
-        max_size 16G
-      }
     '';
 
     # --- Simple reverse proxies (router-local services) ---

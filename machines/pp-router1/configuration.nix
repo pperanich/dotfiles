@@ -284,7 +284,6 @@ in
           "gitea"
           "ntopng"
           "unifi"
-          "feedme"
         ];
       };
 

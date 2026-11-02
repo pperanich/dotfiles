@@ -1,19 +1,11 @@
 {
-  "lastChangelogVersion": "1.0.0",
+  "lastChangelogVersion": "1.4.0",
   "theme": "catppuccin-mocha",
-  "defaultProvider": "opencode",
-  "defaultModel": "kimi-k2.6",
-  "defaultThinkingLevel": "medium",
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-6.1-sol",
+  "defaultThinkingLevel": "high",
   "hideThinkingBlock": false,
-  "defaultTools": [
-    "read",
-    "bash",
-    "edit",
-    "write",
-    "grep",
-    "find",
-    "ls"
-  ],
+  "defaultTools": ["read", "bash", "edit", "write", "grep", "find", "ls"],
   "packages": [
     "npm:pi-lens@4.3.0",
     "npm:pi-subagents@0.74.0",
@@ -25,12 +17,11 @@
     "npm:catppuccin-pi-theme@0.1.6",
     {
       "source": "npm:pi-extensible-workflows@5.19.0",
-      "extensions": [
-        "-dist/starter/index.js"
-      ],
+      "extensions": ["-dist/starter/index.js"],
       "prompts": []
     },
     "npm:@piewf/cli@5.19.0",
     "npm:@piewf/herdr@5.19.0"
-  ]
+  ],
+  "deviceId": "19d16dea-e171-40d4-bead-75cb55a2356c"
 }

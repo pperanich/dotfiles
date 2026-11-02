@@ -31,6 +31,7 @@ in
           agents.codex
           agents.herdr
           agents.pi
+          agents.qmd
           agents.handy
         ];
       };

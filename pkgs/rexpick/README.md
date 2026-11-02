@@ -5,7 +5,7 @@ A Rex-native terminal picker for sessions, local projects and OSC 7501 agent rec
 ## Declarative integration
 
 - `flake.nix` pins the upstream Rex snapshot flake through `flake.lock`, with its nixpkgs input following this repository's. Update only Rex with `nix flake update rex`.
-- `modules/shell/rex.nix` imports the upstream Home Manager module, installs the Rex CLI/terminfo and `rexpick`, and leaves `programs.rex.config = null`. It does not enable a server service. On macOS, the existing Rex app continues to own the server; the Nix package does not install or replace the GUI app.
+- `modules/shell/rex.nix` imports the upstream Home Manager module, installs the Rex CLI/terminfo and `rexpick`, and leaves `programs.rex.config = null`. Its Darwin/NixOS companion modules, imported by `modules/users/pperanich.nix`, add `/share/rexpick` to `environment.pathsToLink`: the outer user profile otherwise hides the launcher even when both binaries are installed. It does not enable a server service. On macOS, the existing Rex app continues to own the server; the Nix package does not install or replace the GUI app.
 - `home/.config/rex/init.lua` remains an ordinary, editable, Stow-managed Lua file. It resolves the installed packages through `/etc/profiles/per-user/$USER` or `~/.nix-profile`, without relying on a GUI server's PATH or hardcoded store hashes. It uses the invoking app's client/session context, not a saved client ID. The tested low-level launcher is installed at `share/rexpick/float.lua` by the package.
 - Only **Cmd+Shift+K** is added. Native Cmd+K, Cmd+Shift+P, splits, pane navigation, and other Rex defaults are preserved.
 - `home/.ssh/config` includes the Stow-managed `home/.config/rex/ssh_config` before host settings. It falls back from `xterm-rex` to `xterm-256color` for remote hosts unless their exact hostname is listed in `~/.config/rex/terminfo-hosts`. Home Manager does not take over the SSH configuration.
@@ -73,6 +73,14 @@ lua pkgs/rexpick/examples/config_test.lua
 ```
 
 Run these from the repository root. The second check tests the stowed config against the shared launcher, including profile lookup, preserving defaults, runtime client/server selection, missing context, and failures.
+
+The Nix profile regression additionally builds both profile layers using the actual host link policy, verifies the missing-helper failure in a bin-only negative control, and checks the Lua config through the resulting profile:
+
+```sh
+nix build .#checks.aarch64-darwin.rexpick-profile
+```
+
+A corresponding `checks.x86_64-linux.rexpick-profile` checks the NixOS desktop policy when built on Linux. This prevents a successful package build or unfiltered temporary-profile test from hiding an activation-time missing-helper bug.
 
 ## Prototype limitations
 

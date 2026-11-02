@@ -93,3 +93,41 @@ without restarting the server. The integration was validated before staging its 
 `path:` flake where needed. Once tracked, ordinary Git-backed flake evaluation
 includes those files as well. No entire-system build or whole-flake
 check is claimed.
+
+## Post-activation profile filtering correction
+
+The owner's subsequent activation exposed a gap in the original temporary-profile
+check: Home Manager's inner environment linked all paths, but the outer
+Darwin user profile applied `environment.pathsToLink` and hid
+`share/rexpick/float.lua`. Both executables, Stow links, terminfo, and the SSH guard
+passed live checks, but `rex config check` failed and the running server retained
+its previous empty keymap. The packaged helper itself was present.
+
+Correction: `modules/shell/rex.nix` now exports Darwin and NixOS companion modules
+that add `/share/rexpick` to the link policy. Both platform user modules import
+that support. This does not enable a server or change who owns the Lua config.
+NixOS had the same missing path, so the correction covers both platforms.
+
+`pkgs/rexpick/tests/profile.nix` models both actual buildEnv layers with the real
+host's link policy. It first verifies that a bin-only negative control contains
+both binaries but rejects the config because its helper is hidden, then requires
+the host-policy profile to expose the helper and pass actual Rex config validation
+(one binding, two actions). It does not connect to or restart a server.
+
+- RED before the fix: the check failed with
+  `Host profile link policy hides share/rexpick/float.lua`.
+- GREEN after the fix: `checks.aarch64-darwin.rexpick-profile` builds successfully.
+  Output: `/nix/store/j2mm2c81jvljnzm0js323gga2xhbygdg-rexpick-profile-check`.
+- Both Darwin and NixOS host evaluations include `/share/rexpick`.
+- The Linux check derivation and Darwin system derivation evaluate successfully;
+  no Linux runtime test or entire-system build is claimed.
+- Nixfmt, deadnix, targeted statix, both Lua tests, and whitespace checks pass.
+- RED/GREEN logs: `/tmp/rex-go-prototype.bqGKQi/profile-regression-{red,green}.log`.
+
+The owner subsequently activated the corrected generation. Post-activation checks
+confirmed the installed helper, correct Stow links, and successful Lua validation
+(one binding, two actions). A configuration-only reload advanced the running
+server to generation 4 with `shift+cmd+k` mapped to `rexpick` and no diagnostics.
+Server instance/start time and session count (zero) remained unchanged. Todo #20
+is complete. No live profile was manually patched and Rex was not restarted.
+Evidence: `/tmp/rex-go-prototype.bqGKQi/post-activation-verified.json`.

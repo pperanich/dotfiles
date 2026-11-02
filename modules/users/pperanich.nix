@@ -13,6 +13,8 @@ in
       ...
     }:
     {
+      imports = [ modules.nixos.rex ];
+
       options.my.pperanich.desktop = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -80,6 +82,8 @@ in
       ...
     }:
     {
+      imports = [ modules.darwin.rex ];
+
       # Deploy SSH private key via system-level sops BEFORE home-manager runs
       sops.secrets."private_keys/pperanich" = {
         sopsFile = "${sopsFolder}/secrets.yaml";

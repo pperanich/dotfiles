@@ -7,7 +7,7 @@ aerospace=/opt/homebrew/bin/aerospace
 # Map app-bundle-id to workspace
 get_workspace() {
   case "$1" in
-  org.alacritty | com.mitchellh.ghostty)
+  org.alacritty | com.mitchellh.ghostty | com.superlogical.rex)
     echo 1
     ;; # term
   com.apple.Safari | com.brave.Browser | com.google.Chrome)

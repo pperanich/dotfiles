@@ -8,6 +8,12 @@ done = { glyph = "✓ ", color = "magenta" }
 restart_on_upgrade = true
 window_names = { format = "{repo}:{state}" }
 
+# Use native OSC 7501 reports (pi reports via PI_PROGRAM_STATUS=1 in
+# nix-private modules/shell/pi-netskope.nix) while tma keeps verifying
+# process, stream and write ownership. Default is "prefer"; explicit here.
+[program_status]
+mode = "prefer"
+
 [install]
 wrapper_ref = "bare"
 

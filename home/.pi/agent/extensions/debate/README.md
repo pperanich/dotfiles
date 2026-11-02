@@ -75,7 +75,7 @@ without changing their bytes. Run ids include a UUID to avoid naming collisions.
 Two things resume gets right that are easy to get wrong:
 
 - **Seats lose their reasoning, not their positions.** Resuming builds fresh
-  sessions, so a seat no longer remembers *why* it argued what it argued. Its
+  sessions, so a seat no longer remembers _why_ it argued what it argued. Its
   own claims are replayed with its first turn, and it is told to
   re-verify anything it is asked to defend.
 - **Delivery is recomputed, not trusted.** A seat that had already read a claim
@@ -168,7 +168,7 @@ Replies include any unseen target claims so a seat can read what they address.
 ## Personas
 
 Defined by what a seat looks for, not by what conclusion it argues toward.
-*Should we be going MAD?* found that a deliberately contrarian agent **reduced**
+_Should we be going MAD?_ found that a deliberately contrarian agent **reduced**
 accuracy by contradicting correct first answers, so the skeptic persona is told
 explicitly to stop when a proposal holds up rather than manufacture objections.
 

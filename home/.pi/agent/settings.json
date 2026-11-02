@@ -8,7 +8,13 @@
   "hideThinkingBlock": false,
   "defaultTools": ["read", "bash", "edit", "write", "grep", "find", "ls"],
   "packages": [
-    "npm:pi-lens@4.3.0",
+    {
+      "source": "npm:pi-lens@4.3.0",
+      "extensions": [],
+      "skills": [],
+      "prompts": [],
+      "themes": []
+    },
     "npm:pi-subagents@0.74.0",
     "npm:pi-web-access@0.35.0",
     "npm:@juicesharp/rpiv-advisor@2.12.0",
@@ -18,12 +24,12 @@
     "npm:pi-goal-x@0.34.1",
     "npm:catppuccin-pi-theme@0.1.6",
     {
-      "source": "npm:pi-extensible-workflows@5.19.0",
+      "source": "npm:pi-extensible-workflows@6.3.0",
       "extensions": ["-dist/starter/index.js"],
       "prompts": []
     },
-    "npm:@piewf/cli@5.19.0",
-    "npm:@piewf/herdr@5.19.0"
+    "npm:@piewf/cli@6.3.0",
+    "npm:@piewf/herdr@6.3.0"
   ],
   "deviceId": "19d16dea-e171-40d4-bead-75cb55a2356c"
 }

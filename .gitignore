@@ -10,6 +10,10 @@ secrets/**/*.yaml
 .DS_Store
 .claude/
 
+# Pi local goal/runtime state
+/.pi/goals/
+/.pi/.goals-pool-snapshot.json
+
 /home/Library/Developer/
 
 # Codex writes runtime state into ~/.codex; only AGENTS.md is managed here.

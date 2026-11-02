@@ -25,6 +25,8 @@ in
         agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
       in
       {
+        home.sessionVariables.PI_PROGRAM_STATUS = "1";
+
         home.packages = [
           agents.claude-code
           agents.opencode

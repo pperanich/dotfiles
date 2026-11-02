@@ -10,6 +10,7 @@
           update-display
           wg-add-peer
           cf
+          rexpick
           personal-site
           ;
       }

@@ -31,6 +31,7 @@
       # Desktop
       fonts
       applications
+      rex
     ];
 
   # User identity

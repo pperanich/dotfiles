@@ -142,6 +142,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Upstream CLI/terminfo; Lua configuration remains Stow-managed under home/.
+    rex = {
+      url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     tmux-agents = {
       url = "github:pperanich/tmux-agents";
       inputs.nixpkgs.follows = "nixpkgs";

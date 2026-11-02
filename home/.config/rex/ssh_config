@@ -1,0 +1,8 @@
+# Stow-managed equivalent of the upstream Rex SSH guard. Remote programs usually
+# know xterm-256color, but not xterm-rex. List exact hostnames that have xterm-rex
+# in ~/.config/rex/terminfo-hosts to opt them out of this fallback.
+Match exec "/bin/sh -c '[ x$TERM = xxterm-rex ] && ! grep -qxF -- %h ~/.config/rex/terminfo-hosts 2>/dev/null'"
+  SetEnv TERM=xterm-256color
+
+# An Include shares parsing context with its parent; do not leak this Match.
+Match all

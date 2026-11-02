@@ -10,4 +10,5 @@
   udp-broadcast-relay-redux = pkgs.callPackage ./udp-broadcast-relay-redux { };
   wg-add-peer = pkgs.callPackage ./wg-add-peer { };
   cf = pkgs.callPackage ./cf { };
+  rexpick = pkgs.callPackage ./rexpick { };
 }

@@ -1,10 +1,12 @@
 return {
   "ibhagwan/fzf-lua",
   init = function()
-    -- fzf-lua's own socket ($run/fzf-lua.<epoch>) overflows macOS's 104-byte
-    -- sun_path under a nix-shell TMPDIR; reuse nvim's shorter startup socket.
-    local run = vim.fn.stdpath("run") .. "/fzf-lua." .. os.time()
-    if #run > 104 and vim.v.servername ~= "" then
+    -- fzf-lua starts its own RPC socket at $run/fzf-lua.<epoch>, which
+    -- overflows macOS's 104-byte sun_path under a nix-shell TMPDIR and makes
+    -- serverstart() fail with EINVAL, leaving every picker silently dead.
+    -- nvim already runs a server, so hand its socket to fzf-lua whenever one
+    -- exists instead of betting on the path staying short enough.
+    if vim.v.servername ~= "" then
       vim.g.fzf_lua_server = vim.v.servername
     end
   end,

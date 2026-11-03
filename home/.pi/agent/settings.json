@@ -9,13 +9,6 @@
   "defaultTools": ["read", "bash", "edit", "write", "grep", "find", "ls"],
   "extensions": ["-extensions/debate/index.ts"],
   "packages": [
-    {
-      "source": "npm:pi-lens@4.4.8",
-      "extensions": [],
-      "skills": [],
-      "prompts": [],
-      "themes": []
-    },
     "npm:pi-subagents@0.84.0",
     "npm:pi-web-access@0.46.0",
     "npm:@juicesharp/rpiv-advisor@2.15.0",

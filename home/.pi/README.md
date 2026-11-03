@@ -10,8 +10,8 @@ Pi installs into the ignored `agent/npm/` directory:
 - `pi-extensible-workflows`, `@piewf/cli` and `@piewf/herdr` for scripted
   workflows, with the package's starter extension filtered out.
 - `pi-web-access` (web search and fetch, which the builtin `researcher` needs),
-  `pi-lens`, `pi-memory`, the rpiv `advisor`, `ask_user_question` and `todo`
-  tools, and the Catppuccin theme.
+  `pi-memory`, the rpiv `advisor`, `ask_user_question` and `todo` tools, and
+  the Catppuccin theme.
 
 `extensions/debate/` is a local extension, disabled in `agent/settings.json`
 with `-extensions/debate/index.ts`. Its source is retained; remove that exclusion

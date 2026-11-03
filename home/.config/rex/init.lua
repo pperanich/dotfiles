@@ -1,60 +1,17 @@
--- Stow owns this file; Nix installs Rex, rexpick, and the shared launcher.
--- Keep Rex's native shortcuts, including Cmd+K and Cmd+Shift+P.
-local home = assert(os.getenv("HOME"), "HOME is required for the Rex configuration")
-local user = assert(os.getenv("USER"), "USER is required for the Rex configuration")
+-- Stow owns the configuration and the adjacent project-picker source link.
+local home = assert(os.getenv("HOME"))
+local config_home = os.getenv("XDG_CONFIG_HOME") or (home .. "/.config")
+local picker = dofile(config_home .. "/rex/rex-project-picker/picker.lua")
 
-local function readable(path)
-	local file = io.open(path, "rb")
-	if not file then
-		return false
-	end
-	file:close()
-	return true
-end
-
--- GUI-launched servers need not inherit a login shell's PATH. Use the stable
--- profile paths, not a particular Nix store hash or the app's version directory.
-local profile
-for _, candidate in ipairs({ "/etc/profiles/per-user/" .. user, home .. "/.nix-profile" }) do
-	if
-		readable(candidate .. "/bin/rex")
-		and readable(candidate .. "/bin/rexpick")
-		and readable(candidate .. "/share/rexpick/float.lua")
-	then
-		profile = candidate
-		break
-	end
-end
-if not profile then
-	error(
-		"Rex configuration requires rex and rexpick in the same Nix profile; activate the Nix configuration first.",
-		0
-	)
-end
-
-dofile(profile .. "/share/rexpick/float.lua")
-
-rex.action({
-	name = "rexpick",
-	title = "Sessions, Projects, and Agents…",
-	description = "Open the floating rexpick navigator",
-	run = function(ctx)
-		-- Always target the invoking app, never a stored client ID or a guessed app.
-		if type(ctx) ~= "table" or type(ctx.client_id) ~= "string" or ctx.client_id == "" then
-			error("Invoke rexpick from a Rex app, or pass an explicit app client with -C.", 0)
-		end
-		local result, err = rex.invoke("rexpick_float", {
-			binary = profile .. "/bin/rexpick",
-			rex_cli = profile .. "/bin/rex",
-			client = ctx.client_id,
-			cwd = home,
-			server = ctx.server or "",
-		})
-		if not result then
-			error(tostring(err or "rexpick launch failed"), 0)
-		end
-		return result
-	end,
+-- This table can also live in a separate file loaded with dofile.
+picker.setup({
+	roots = {
+		{ path = home .. "/dotfiles", depth = 1 },
+		{ path = home .. "/nix-private", depth = 1 },
+		{ path = home .. "/Documents/repos", depth = 2 },
+		{ path = home .. "/repos", depth = 2 },
+	},
+	bounds = { 0.1, 0.2, 0.8, 0.6 }, -- x, y, width, height as window fractions
 })
 
-rex.bind("cmd+shift+k", "rexpick")
+rex.bind("cmd+shift+k", "rex_project_picker")

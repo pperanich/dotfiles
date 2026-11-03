@@ -1,4 +1,20 @@
-# Rex appearance
+# Rex configuration and appearance
+
+## Project picker
+
+**Cmd+Shift+K** opens `rex-project-picker`. Roots, discovery depths, and popup
+bounds are configured in `init.lua` via `picker.setup`; that table can also be
+loaded from a separate Lua file with `dofile`.
+
+The adjacent Stow-managed `rex-project-picker` source link loads the Lua module
+and shell helper from `pkgs/rex-project-picker`. Lua runs inside Rex; discovery
+and filtering use the installed `fd` and `fzf`. No extra Lua runtime is needed.
+After editing settings, run `rex config check` followed by `rex config reload`.
+See [the picker README](../../../pkgs/rex-project-picker/README.md) for behavior,
+configuration examples, and prototype limits. The legacy Go picker is still
+installed, with its source unchanged.
+
+## Appearance
 
 `themes/Catppuccin Mocha` is a copy of the theme bundled with Ghostty, matching
 `theme = Catppuccin Mocha` in `home/.config/ghostty/config`. It includes the 16 ANSI

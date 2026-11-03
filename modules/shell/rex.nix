@@ -1,5 +1,5 @@
 # Install Rex support without taking ownership of the Stow-managed config files.
-{ config, inputs, ... }:
+{ inputs, ... }:
 let
   profileSupport = {
     # useUserPackages adds an outer OS profile around Home Manager's environment.
@@ -38,13 +38,8 @@ in
     }:
     {
       checks = lib.optionalAttrs (builtins.hasAttr system inputs.rex.packages) {
-        rexpick-profile = pkgs.callPackage ../../pkgs/rexpick/tests/profile.nix {
+        rex-project-picker-config = pkgs.callPackage ../../pkgs/rex-project-picker/tests/config.nix {
           inherit (inputs.rex.packages.${system}) rex;
-          profilePaths =
-            if pkgs.stdenv.hostPlatform.isDarwin then
-              config.flake.darwinConfigurations.pp-ml1.config.environment.pathsToLink
-            else
-              config.flake.nixosConfigurations.pp-ld1.config.environment.pathsToLink;
         };
       };
     };

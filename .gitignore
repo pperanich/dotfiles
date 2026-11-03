@@ -21,3 +21,4 @@ secrets/**/*.yaml
 !/home/.codex/AGENTS.md
 
 home/.config/opencode/
+.lavish/

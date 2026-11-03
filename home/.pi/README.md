@@ -13,9 +13,12 @@ Pi installs into the ignored `agent/npm/` directory:
   `pi-lens`, `pi-memory`, the rpiv `advisor`, `ask_user_question` and `todo`
   tools, and the Catppuccin theme.
 
-`extensions/debate/` is a local extension: run `npm ci --ignore-scripts` in it
-once, since Pi does not install a local extension's dependencies. It is a copy
-of the one in the private work profile and is maintained separately.
+`extensions/debate/` is a local extension, disabled in `agent/settings.json`
+with `-extensions/debate/index.ts`. Its source is retained; remove that exclusion
+and run `/reload` to re-enable it. If its dependencies are missing, run
+`npm ci --ignore-scripts` in it first, since Pi does not install a local
+extension's dependencies. It is a copy of the one in the private work profile
+and is maintained separately.
 
 In Pi, `/feature-loop` expands the starter prompt. You can also ask Pi to plan
 and implement a feature with subagents and it can load the skill from the

@@ -29,7 +29,7 @@ in
 
         home.packages = [
           agents.claude-code
-          agents.opencode
+          agents.opencode2
           agents.codex
           agents.herdr
           agents.pi

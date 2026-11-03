@@ -10,17 +10,17 @@
   "extensions": ["-extensions/debate/index.ts"],
   "packages": [
     {
-      "source": "npm:pi-lens@4.3.0",
+      "source": "npm:pi-lens@4.4.8",
       "extensions": [],
       "skills": [],
       "prompts": [],
       "themes": []
     },
-    "npm:pi-subagents@0.74.0",
-    "npm:pi-web-access@0.35.0",
-    "npm:@juicesharp/rpiv-advisor@2.12.0",
-    "npm:@juicesharp/rpiv-ask-user-question@2.12.0",
-    "npm:@juicesharp/rpiv-todo@2.12.0",
+    "npm:pi-subagents@0.84.0",
+    "npm:pi-web-access@0.46.0",
+    "npm:@juicesharp/rpiv-advisor@2.15.0",
+    "npm:@juicesharp/rpiv-ask-user-question@2.15.0",
+    "npm:@juicesharp/rpiv-todo@2.15.0",
     "npm:pi-memory@0.4.2",
     "npm:pi-goal-x@0.34.1",
     "npm:catppuccin-pi-theme@0.1.6",

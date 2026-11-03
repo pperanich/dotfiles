@@ -9,6 +9,11 @@
           "key": "g",
           "type": "application",
           "value": "/Applications/Ghostty.app"
+        },
+        {
+          "key": "r",
+          "type": "application",
+          "value": "/Applications/Rex Beta.app"
         }
       ]
     },

@@ -8,7 +8,6 @@ picker.setup({
 	roots = {
 		{ path = home .. "/dotfiles", depth = 1 },
 		{ path = home .. "/nix-private", depth = 1 },
-		{ path = home .. "/Documents/repos", depth = 2 },
 		{ path = home .. "/repos", depth = 2 },
 	},
 	bounds = { 0.1, 0.2, 0.8, 0.6 }, -- x, y, width, height as window fractions

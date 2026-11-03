@@ -32,26 +32,47 @@ list_projects() {
 }
 
 pick() {
-  local rex_cli=$1 fzf_cli=$2 fd_cli=$3 client=$4 server=$5 selected status
+  local rex_cli=$1 fzf_cli=$2 fd_cli=$3 client=$4 server=$5 selected status producer producer_status=0
   shift 5
   export PROJECT_PICKER_FD=$fd_cli
   # A GUI-launched server may have a minimal PATH. These are stable profile paths.
   export PATH="${rex_cli%/*}:${fzf_cli%/*}:${fd_cli%/*}:$PATH"
-  list_projects "$@" >|"$scratch/list" || return
-  [[ -s $scratch/list ]] || {
-    echo 'No projects found under the configured roots.' >&2
-    return 1
-  }
+  # Stream discovery into fzf so the popup paints before the walk finishes. The
+  # tee'd copy tells a cancelled pick apart from a root with no projects.
+  mkfifo "$scratch/stream"
+  list_projects "$@" | tee "$scratch/list" >|"$scratch/stream" &
+  producer=$!
   if FZF_DEFAULT_OPTS='' FZF_DEFAULT_OPTS_FILE='' "$fzf_cli" \
     --read0 --print0 --sync --no-multi --scheme=path --layout=reverse --border=none \
     --prompt='Project > ' --header='Enter: open project   Esc: cancel' \
     --color='fg:#cdd6f4,bg:#1e1e2e,hl:#cba6f7,fg+:#cdd6f4,bg+:#313244,hl+:#a6e3a1,prompt:#cba6f7,pointer:#a6e3a1' \
-    --bind='ctrl-n:down,ctrl-p:up' <"$scratch/list" >|"$scratch/selected"; then
-    IFS= read -r -d '' selected <"$scratch/selected" || return
+    --bind='ctrl-n:down,ctrl-p:up' <"$scratch/stream" >|"$scratch/selected"; then
+    status=0
   else
     status=$?
-    case $status in 1 | 130) return 0 ;; *) return "$status" ;; esac
   fi
+  # A cancelled pick closes the stream early, so the producer dies of SIGPIPE.
+  wait "$producer" || producer_status=$?
+  case $status in
+  0)
+    IFS= read -r -d '' selected <"$scratch/selected" || return
+    ;;
+  1 | 130)
+    # A reader that goes away early kills the producer with SIGPIPE: that is a cancel.
+    if ((producer_status == 141)); then
+      return 0
+    fi
+    if ((producer_status != 0)); then
+      return "$producer_status"
+    fi
+    if [[ -s $scratch/list ]]; then
+      return 0
+    fi
+    echo 'No projects found under the configured roots.' >&2
+    return 1
+    ;;
+  *) return "$status" ;;
+  esac
   local rex_args=(--autostart=false --color=never -C "$client")
   [[ -z $server ]] || rex_args+=(-S "$server")
   "$rex_cli" "${rex_args[@]}" 'do' rex_project_picker_open \

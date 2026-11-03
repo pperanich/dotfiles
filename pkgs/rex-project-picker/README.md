@@ -62,8 +62,9 @@ The floating layer closes on normal exit. Errors stay visible until Enter.
 
 Discovery recognizes `.git` directories and worktree `.git` files, stays within
 the configured depths, skips discovered symlinks, and sorts/deduplicates paths.
-Paths remain NUL-separated through `fd`, `sort`, and `fzf`. No selected path is
-interpolated into shell code.
+The list streams into `fzf` through a FIFO, so the popup paints before discovery
+finishes; paths stay NUL-separated through `fd`, `sort`, and `fzf`. No selected
+path is interpolated into shell code.
 
 Selection inspects tiled terminal blocks on demand. A unique exact canonical cwd
 match reuses the session and matching tab; otherwise it creates a shell session
@@ -88,7 +89,7 @@ the configured shortcut and associated configuration check now use this picker.
 bash -n pkgs/rex-project-picker/rex-project-picker
 shellcheck pkgs/rex-project-picker/rex-project-picker
 rex --autostart=false config check
-pkgs/rex-project-picker/rex-project-picker list "$HOME/Documents/repos" 2 | tr '\0' '\n'
+pkgs/rex-project-picker/rex-project-picker list "$HOME/repos" 2 | tr '\0' '\n'
 ```
 
 The `rex-project-picker-config` flake check checks that a missing Stow source link

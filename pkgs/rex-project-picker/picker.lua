@@ -88,6 +88,7 @@ local function setup(config)
 						options = {
 							command = command,
 							shell = "none",
+							login = false,
 							cwd = os.getenv("HOME"),
 						},
 					},

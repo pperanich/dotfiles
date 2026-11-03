@@ -145,12 +145,10 @@ alt-shift-r = 'reload-config'
 alt-shift-b = 'exec-and-forget ~/.config/sketchybar/bin/toggle-profile.sh'
 
 # ----------------------------------------
-# Window Focus (Arrow Keys + HJKL)
+# Window Focus (HJKL)
 # ----------------------------------------
-alt-left = 'focus left'
-alt-down = 'focus down'
-alt-up = 'focus up'
-alt-right = 'focus right'
+# Arrows are left to apps: opt+arrow is word jump and opt+up/down moves lines in
+# editors. The HJKL set below covers the same four directions.
 
 # Vim-style navigation (from default config)
 alt-h = 'focus left'
@@ -159,32 +157,24 @@ alt-k = 'focus up'
 alt-l = 'focus right'
 
 # ----------------------------------------
-# Window Movement (Alt + Shift + Arrows and HJKL)
+# Window Movement (Alt + Shift + HJKL)
 # ----------------------------------------
+# No arrow variants: opt+shift+arrow extends the selection by word in every text
+# field, and copies a line in VS Code. The HJKL set covers the same directions.
 # Move windows within workspace
 alt-shift-h = 'move left'
 alt-shift-j = 'move down'
 alt-shift-k = 'move up'
 alt-shift-l = 'move right'
 
-# Arrow key variants
-alt-shift-left = 'move left'
-alt-shift-down = 'move down'
-alt-shift-up = 'move up'
-alt-shift-right = 'move right'
-
 # ----------------------------------------
 # Workspace Navigation
 # ----------------------------------------
-# Navigate to previous/next workspace (wraps across monitors)
-# cmd-left = 'workspace --wrap-around prev'
-# cmd-right = 'workspace --wrap-around next'
-cmd-left = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin prev'
-cmd-right = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin next'
-# cmd-h = 'workspace --wrap-around prev'
-# cmd-l = 'workspace --wrap-around next'
-cmd-h = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin prev'
-cmd-l = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin next'
+# Previous/next workspace (wraps across monitors). Kept off cmd+h and cmd+l so
+# those stay Hide (cmd+h) and the browser address bar (cmd+l) in every app, and
+# off cmd+opt+h, which is Hide Others in every app's menu.
+ctrl-cmd-h = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin prev'
+ctrl-cmd-l = 'exec-and-forget aerospace list-workspaces --all | aerospace workspace --stdin next'
 
 # Back and forth between recent workspaces (like i3)
 alt-b = 'workspace-back-and-forth'
@@ -193,17 +183,17 @@ alt-tab = 'workspace-back-and-forth' # Alternative (from default config)
 # Move workspace to next monitor
 alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
-# Direct workspace access (cmd + number)
-cmd-1 = 'workspace 1' # term
-cmd-2 = 'workspace 2' # web
-cmd-3 = 'workspace 3' # notes
-cmd-4 = 'workspace 4' # ide
-cmd-5 = 'workspace 5' # comms
-cmd-6 = 'workspace 6' # creative
-cmd-7 = 'workspace 7' # social
-cmd-8 = 'workspace 8' # office
-# cmd-9 = 'workspace 9'
-# cmd-0 = 'workspace 10'
+# Direct workspace access (ctrl + number), leaving cmd+1..9 to app tabs.
+ctrl-1 = 'workspace 1' # term
+ctrl-2 = 'workspace 2' # web
+ctrl-3 = 'workspace 3' # notes
+ctrl-4 = 'workspace 4' # ide
+ctrl-5 = 'workspace 5' # comms
+ctrl-6 = 'workspace 6' # creative
+ctrl-7 = 'workspace 7' # social
+ctrl-8 = 'workspace 8' # office
+# ctrl-9 = 'workspace 9'
+# ctrl-0 = 'workspace 10'
 
 # ----------------------------------------
 # Move Window to Workspace
@@ -257,7 +247,7 @@ alt-slash = 'layout tiles horizontal vertical'     # Quick layout toggle (from d
 alt-comma = 'layout accordion horizontal vertical' # Accordion layout toggle (from default)
 
 # Explicit layout commands
-alt-e = 'layout tiles'    # BSP-like layout
+alt-shift-e = 'layout tiles'    # BSP-like layout, kept off opt+e so the acute dead key still types é
 alt-r = 'layout floating' # Floating mode
 
 # Balance window sizes in workspace

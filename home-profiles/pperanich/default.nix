@@ -23,9 +23,6 @@
 
       tools
       aiTools
-
-      # Services
-      # opencode
     ]
     ++ lib.optionals desktop [
       # Desktop

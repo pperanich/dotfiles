@@ -334,6 +334,36 @@
               pushd "$DOTFILES_DIR" >/dev/null
               ${pkgs.stow}/bin/stow home
               popd >/dev/null
+              DOTFILES_REAL=$(${pkgs.coreutils}/bin/realpath -m -- "$DOTFILES_DIR")
+
+              # Stow keeps a link after its source file leaves the repo, and a
+              # dangling link breaks anything that enumerates the directory:
+              # lazy.nvim failed to load five removed plugin files under
+              # lua/plugins. Check only the directories the repo manages, one
+              # level deep, and remove links that point into this repo at a path
+              # that no longer exists. Every other link is left alone.
+              managed=("$HOME")
+              home_prefix="$DOTFILES_DIR/home"
+              while IFS= read -r -d "" dir; do
+                managed+=("$HOME''${dir#"$home_prefix"}")
+              done < <(${pkgs.findutils}/bin/find "$DOTFILES_DIR/home" -type d -print0)
+              while IFS= read -r -d "" link; do
+                if [ -e "$link" ]; then
+                  continue
+                fi
+                points_to=$(readlink -- "$link")
+                case $points_to in
+                  /*) resolved=$points_to ;;
+                  *) resolved=$(dirname -- "$link")/$points_to ;;
+                esac
+                target=$(${pkgs.coreutils}/bin/realpath -m -- "$resolved")
+                case $target in
+                  "$DOTFILES_REAL"/*)
+                    echo "stow: removing dangling link $link"
+                    ${pkgs.coreutils}/bin/rm -f -- "$link"
+                    ;;
+                esac
+              done < <(${pkgs.findutils}/bin/find "''${managed[@]}" -maxdepth 1 -type l -print0 2>/dev/null)
             '';
           };
 

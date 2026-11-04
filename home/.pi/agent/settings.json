@@ -1,11 +1,12 @@
 {
-  "lastChangelogVersion": "1.4.0",
+  "lastChangelogVersion": "1.5.0",
   "theme": "catppuccin-mocha",
+  "editorPaddingX": 1,
   "defaultProvider": "openai",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "high",
-  "enabledModels": ["openai/*"],
-  "hideThinkingBlock": false,
+  "enabledModels": ["openai/*", "antigravity-acp/*"],
+  "hideThinkingBlock": true,
   "defaultTools": ["read", "bash", "edit", "write", "grep", "find", "ls"],
   "extensions": ["-extensions/debate/index.ts"],
   "packages": [
@@ -23,7 +24,14 @@
       "prompts": []
     },
     "npm:@piewf/cli@6.3.0",
-    "npm:@piewf/herdr@6.3.0"
+    "npm:@piewf/herdr@6.3.0",
+    "npm:pi-antigravity-acp-provider"
   ],
-  "deviceId": "19d16dea-e171-40d4-bead-75cb55a2356c"
+  "deviceId": "19d16dea-e171-40d4-bead-75cb55a2356c",
+  "extensionChangelogVersions": {
+    "{\"source\":\"npm:pi-subagents@0.84.0\",\"scope\":\"user\"}": "0.84.0",
+    "{\"source\":\"npm:pi-web-access@0.46.0\",\"scope\":\"user\"}": "0.46.0",
+    "{\"source\":\"npm:pi-memory@0.4.2\",\"scope\":\"user\"}": "0.4.2",
+    "{\"source\":\"npm:pi-extensible-workflows@6.3.0\",\"scope\":\"user\"}": "6.3.0"
+  }
 }

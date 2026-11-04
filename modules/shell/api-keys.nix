@@ -10,11 +10,11 @@
 _: {
   flake.modules.homeManager.apiKeys = {
     sops.secrets = {
-      "api_keys/openai_api_key" = { };
       "api_keys/hugging_face_hub_token" = { };
-      "api_keys/anthropic_api_key" = { };
-      "api_keys/openrouter_api_key" = { };
-      "api_keys/gemini_api_key" = { };
+      # "api_keys/openai_api_key" = { };
+      # "api_keys/anthropic_api_key" = { };
+      # "api_keys/openrouter_api_key" = { };
+      # "api_keys/gemini_api_key" = { };
       "api_keys/artificial_analysis_api_key" = { };
     };
   };

@@ -289,7 +289,13 @@
           pandoc.enable = true;
           gpg.enable = true;
           dircolors.enable = true;
-          direnv.enable = true;
+          # nix-direnv restores TMPDIR after loading the dev shell; the stdlib
+          # use_flake leaks nix-shell.XXXXXX, overflowing macOS's 104-byte
+          # unix socket limit (direnv/direnv#1057).
+          direnv = {
+            enable = true;
+            nix-direnv.enable = true;
+          };
           atuin = {
             enable = true;
             daemon.enable = true;

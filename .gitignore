@@ -22,3 +22,5 @@ secrets/**/*.yaml
 
 home/.config/opencode/
 .lavish/
+
+hm-nix-direnv.sh

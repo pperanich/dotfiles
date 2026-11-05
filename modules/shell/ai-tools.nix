@@ -33,6 +33,8 @@ in
           agents.codex
           agents.herdr
           agents.pi
+          agents.antigravity-cli
+          agents.antigravity-hub
           agents.qmd
           agents.handy
         ];

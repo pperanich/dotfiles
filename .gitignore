@@ -20,7 +20,9 @@ secrets/**/*.yaml
 /home/.codex/*
 !/home/.codex/AGENTS.md
 
-home/.config/opencode/
+# OpenCode writes runtime state into ~/.config/opencode; AGENTS.md is managed here.
+home/.config/opencode/*
+!home/.config/opencode/AGENTS.md
 .lavish/
 
 hm-nix-direnv.sh

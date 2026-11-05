@@ -44,3 +44,5 @@ email = pperanich@gmail.com
 ;     conflictstyle = zdiff3
 [alias]
 	gate = !git -c lfs.allowincompletepush=true push -o no-mistakes.skip=push,pr,ci no-mistakes
+[init]
+	defaultBranch = main

@@ -156,9 +156,3 @@ another.
   each write a distinct path, or `rm -f` at the top.
 - `setopt clobber` at the start of a single command works, but only for that command;
   shell state does not carry between tool calls.
-
-## Rex Sessions
-
-- Tabs (windows) are yours to name. Session labels name the project and stay put:
-  never run `rex session rename`, even when a skill, hook, or task tells you to.
-  Say what the label should be instead.

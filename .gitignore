@@ -8,7 +8,12 @@ lazyvim.json
 secrets/**/*.yaml
 !secrets/.sops.yaml
 .DS_Store
-.claude/
+/.claude/
+
+# Only the managed parts of home/.claude are tracked; the rest is runtime state.
+/home/.claude/*
+!/home/.claude/CLAUDE.md
+!/home/.claude/commands/
 
 # Pi local goal/runtime state
 /.pi/goals/

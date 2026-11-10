@@ -17,8 +17,12 @@ picker.setup({
   roots = {
     { path = home .. "/dotfiles", depth = 1 },
     { path = home .. "/Documents/repos", depth = 2 },
+    { path = home .. "/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault", project = true },
   },
   bounds = { 0.1, 0.2, 0.8, 0.6 },
+  names = {
+    [home .. "/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault"] = "iCloud vault",
+  },
 })
 rex.bind("cmd+shift+k", "rex_project_picker")
 ```
@@ -27,11 +31,30 @@ Roots must be absolute paths. Depth 0 checks only the root; depth 2 also checks
 two levels of subdirectories. Missing roots are skipped. `bounds` contains the
 popup's x, y, width, and height as fractions of its window.
 
+`project = true` lists that directory itself as a project, with no `.git` marker
+and no walk, for a directory that is not a repository. It takes no depth, since
+the declaration is about that one folder.
+
+`names` maps an absolute project path to the text the popup shows for it and the
+label its new session gets. An existing session found for that path is renamed to
+match, so the configured name wins over a label the session already had. An
+unnamed project shows its full path and keeps whatever label its session has. A
+name does not add a project: the path still has to be listed by a root, through a
+`.git` marker or through `project = true`. Keys are canonical paths, so a name
+still matches under a symlinked root. Once a name is set, `fzf` filters on the
+name rather than the path, because it searches what it displays.
+
 To keep settings separately, put the setup table in a Lua file that returns it:
 
 ```lua
 picker.setup(dofile(config .. "/rex/project-picker-settings.lua"))
 ```
+
+`home/.config/rex/init.lua` keeps the roots every machine shares inline and
+appends whatever roots `~/.config/rex/init.local.lua` returns when that file
+exists, so a machine-only path never reaches the repository. `setup` replaces its
+options rather than merging them, so a second `setup` call would drop the tracked
+roots.
 
 The module resolves `rex`, `bash`, `fd`, `fzf`, and `pwd` through stable Nix profile
 paths, then system paths. Override an executable with an absolute path in
@@ -61,10 +84,11 @@ The floating layer closes on normal exit. Errors stay visible until Enter.
 ## Behavior and scope
 
 Discovery recognizes `.git` directories and worktree `.git` files, stays within
-the configured depths, skips discovered symlinks, and sorts/deduplicates paths.
-The list streams into `fzf` through a FIFO, so the popup paints before discovery
-finishes; paths stay NUL-separated through `fd`, `sort`, and `fzf`. No selected
-path is interpolated into shell code.
+the configured depths, skips discovered symlinks, and sorts/deduplicates paths by
+their displayed name. The list streams into `fzf` through a FIFO, so the popup
+paints before discovery finishes; records stay NUL-separated through `fd`, `sort`,
+and `fzf`, and each record is `NAME<TAB>PATH` so `fzf` can display the name and
+accept the path. No selected path is interpolated into shell code.
 
 Selection inspects tiled terminal blocks on demand. A unique exact canonical cwd
 match reuses the session and matching tab; otherwise it creates a shell session
@@ -91,6 +115,10 @@ shellcheck pkgs/rex-project-picker/rex-project-picker
 rex --autostart=false config check
 pkgs/rex-project-picker/rex-project-picker list "$HOME/repos" 2 | tr '\0' '\n'
 ```
+
+`list` prints one `NAME<TAB>PATH` record per project, with the name defaulting to
+the path, and accepts the same `--project PATH` and `--name PATH NAME` arguments
+the picker passes.
 
 The `rex-project-picker-config` flake check checks that a missing Stow source link
 fails clearly and the deployed source loads without a running Rex server.

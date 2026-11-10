@@ -5,13 +5,61 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/rex-project-picker.XXXXXX")
 trap 'rm -rf -- "$scratch"' EXIT
 
 list_projects() {
-  local root depth marker
-  (($# > 0 && $# % 2 == 0)) || {
-    echo 'Expected ROOT DEPTH pairs' >&2
+  # Emits NAME<TAB>PATH, NUL-terminated and sorted by NAME, where NAME defaults
+  # to PATH. Needs bash 4 for the associative array; the picker always invokes
+  # this script through the Nix bash it resolves from the profile.
+  local root depth marker path name_key project
+  declare -A names=()
+  (($# > 0)) || {
+    echo 'Expected ROOT DEPTH pairs, --project PATH, or --name PATH NAME' >&2
     return 2
   }
   : >|"$scratch/projects"
   while (($#)); do
+    if [[ $1 == --project ]]; then
+      (($# >= 2)) || {
+        echo 'Expected --project PATH' >&2
+        return 2
+      }
+      [[ $2 == /* ]] || {
+        echo "Project path must be absolute: $2" >&2
+        return 2
+      }
+      # A declared project is listed as itself, without a marker or a walk.
+      if [[ -d $2 ]]; then
+        project=$(cd -- "$2" && pwd -P) || project=$2
+        printf '%s\0' "$project" >>"$scratch/projects"
+      fi
+      shift 2
+      continue
+    fi
+    if [[ $1 == --name ]]; then
+      (($# >= 3)) || {
+        echo 'Expected --name PATH NAME' >&2
+        return 2
+      }
+      [[ $2 == /* ]] || {
+        echo "Name path must be absolute: $2" >&2
+        return 2
+      }
+      [[ -n $3 ]] || {
+        echo "Name must not be empty: $2" >&2
+        return 2
+      }
+      # Key by the canonical path so a name survives a symlinked root, and fall
+      # back to the literal path when the directory cannot be resolved.
+  name_key=$2
+      if [[ -d $2 ]]; then
+        name_key=$(cd -- "$2" && pwd -P) || name_key=$2
+      fi
+      names[$name_key]=$3
+      shift 3
+      continue
+    fi
+    (($# >= 2)) || {
+      echo 'Expected ROOT DEPTH pairs' >&2
+      return 2
+    }
     root=$1 depth=$2
     shift 2
     if [[ ! $depth =~ ^[0-9]+$ || ${#depth} -gt 2 ]] || ((10#$depth > 32)); then
@@ -28,11 +76,13 @@ list_projects() {
       printf '%s\0' "${marker%/.git}" >>"$scratch/projects"
     done <"$scratch/markers"
   done
-  LC_ALL=C sort -zu "$scratch/projects"
+  while IFS= read -r -d '' path; do
+    printf '%s\t%s\0' "${names[$path]:-$path}" "$path"
+  done <"$scratch/projects" | LC_ALL=C sort -zu
 }
 
 pick() {
-  local rex_cli=$1 fzf_cli=$2 fd_cli=$3 client=$4 server=$5 selected status producer producer_status=0
+  local rex_cli=$1 fzf_cli=$2 fd_cli=$3 client=$4 server=$5 display selected status producer producer_status=0
   shift 5
   export PROJECT_PICKER_FD=$fd_cli
   # A GUI-launched server may have a minimal PATH. These are stable profile paths.
@@ -44,6 +94,7 @@ pick() {
   producer=$!
   if FZF_DEFAULT_OPTS='' FZF_DEFAULT_OPTS_FILE='' "$fzf_cli" \
     --read0 --print0 --sync --no-multi --scheme=path --layout=reverse --border=none \
+    --delimiter='\t' --with-nth=1 --accept-nth=1,2 \
     --prompt='Project > ' --header='Enter: open project   Esc: cancel' \
     --color='fg:#cdd6f4,bg:#1e1e2e,hl:#cba6f7,fg+:#cdd6f4,bg+:#313244,hl+:#a6e3a1,prompt:#cba6f7,pointer:#a6e3a1' \
     --bind='ctrl-n:down,ctrl-p:up' <"$scratch/stream" >|"$scratch/selected"; then
@@ -56,6 +107,9 @@ pick() {
   case $status in
   0)
     IFS= read -r -d '' selected <"$scratch/selected" || return
+    # The accepted line is NAME<TAB>PATH; an unnamed project repeats its path.
+    display=${selected%%$'\t'*}
+    selected=${selected#*$'\t'}
     ;;
   1 | 130)
     # A reader that goes away early kills the producer with SIGPIPE: that is a cancel.
@@ -75,9 +129,11 @@ pick() {
   esac
   local rex_args=(--autostart=false --color=never -C "$client")
   [[ -z $server ]] || rex_args+=(-S "$server")
+  local open_args=("path=$selected")
+  [[ $display == "$selected" ]] || open_args+=("name=$display")
   "$rex_cli" "${rex_args[@]}" 'do' rex_project_picker_open \
     --session "${REX_SESSION:?Missing Rex popup session}" \
-    --block "${REX_BLOCK:?Missing Rex popup block}" "path=$selected"
+    --block "${REX_BLOCK:?Missing Rex popup block}" "${open_args[@]}"
 }
 
 case ${1:-popup} in
@@ -106,7 +162,7 @@ popup)
   "$rex_cli" "${rex_args[@]}" 'do' rex_project_picker --session "$session"
   ;;
 *)
-  echo "Usage: $0 [popup SESSION [APP_CLIENT] | list [ROOT DEPTH ...]]" >&2
+  echo "Usage: $0 [popup SESSION [APP_CLIENT] | list [ROOT DEPTH | --project PATH | --name PATH NAME]...]" >&2
   exit 2
   ;;
 esac

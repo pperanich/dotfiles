@@ -53,11 +53,31 @@ local function setup(config)
 	assert(type(options.roots) == "table" and #options.roots > 0, "Configure at least one project root")
 	for _, root in ipairs(options.roots) do
 		assert(type(root.path) == "string" and root.path:sub(1, 1) == "/", "Project roots must be absolute paths")
-		assert(
-			type(root.depth) == "number" and root.depth >= 0 and root.depth <= 32 and root.depth % 1 == 0,
-			"Root depths must be integers in 0..32"
-		)
+		if root.project then
+			-- A declared project is that one directory, marker or not, so a depth
+			-- would only make the declaration mean something else.
+			assert(root.depth == nil or root.depth == 0, "A declared project takes no depth")
+		else
+			assert(
+				type(root.depth) == "number" and root.depth >= 0 and root.depth <= 32 and root.depth % 1 == 0,
+				"Root depths must be integers in 0..32"
+			)
+		end
 	end
+	-- names maps an absolute project path to the text the picker shows for it.
+	-- A named path still has to be discovered through a root, so naming alone
+	-- never adds a project.
+	options.names = options.names or {}
+	local named_paths = {}
+	for path, name in pairs(options.names) do
+		assert(type(path) == "string" and path:sub(1, 1) == "/", "Name keys must be absolute paths")
+		assert(
+			type(name) == "string" and name ~= "" and not name:find("[%z\t\r\n]"),
+			"Name values must be one line of non-empty text"
+		)
+		named_paths[#named_paths + 1] = path
+	end
+	table.sort(named_paths)
 	rex.action({
 		name = "rex_project_picker",
 		title = "rex-project-picker: Open Project…",
@@ -75,8 +95,18 @@ local function setup(config)
 				ctx.server or "",
 			}
 			for _, root in ipairs(options.roots) do
-				command[#command + 1] = root.path
-				command[#command + 1] = tostring(root.depth)
+				if root.project then
+					command[#command + 1] = "--project"
+					command[#command + 1] = root.path
+				else
+					command[#command + 1] = root.path
+					command[#command + 1] = tostring(root.depth)
+				end
+			end
+			for _, path in ipairs(named_paths) do
+				command[#command + 1] = "--name"
+				command[#command + 1] = path
+				command[#command + 1] = options.names[path]
 			end
 			local request = {
 				session_id = ctx.session_id,
@@ -121,6 +151,17 @@ local function setup(config)
 		end
 	end
 
+	-- True when a root declared the path with project = true. The literal key is
+	-- the common case; canonical() covers a declared path behind a symlink.
+	local function declared_project(path)
+		for _, root in ipairs(options.roots) do
+			if root.project and (root.path == path or canonical(root.path) == path) then
+				return true
+			end
+		end
+		return false
+	end
+
 	local function block_cwd(session, block)
 		local args = { session_id = session, block_id = block.block_id }
 		local process = rex.block.call(terminal, "process", args)
@@ -145,12 +186,23 @@ local function setup(config)
 	rex.action({
 		name = "rex_project_picker_open",
 		title = "rex-project-picker: Open Directory",
-		args = { path = "string" },
+		args = { path = "string", name = "string?" },
 		run = function(ctx, args)
 			local path = assert(canonical(args.path), "Project directory is unavailable")
-			local marker = io.open(path .. "/.git", "r")
-			assert(marker, "Selected directory has no .git marker")
-			marker:close()
+			-- A root declared with project = true is a project without a marker;
+			-- everything else still has to prove it is a repository.
+			if not declared_project(path) then
+				local marker = io.open(path .. "/.git", "r")
+				assert(marker, "Selected directory has no .git marker")
+				marker:close()
+			end
+			-- A configured name is the session's name: it labels a new session and
+			-- is re-applied when an existing one is reused, so a session created
+			-- before the name existed stops showing the directory name.
+			local custom_label = args.name or options.names[path]
+			if custom_label then
+				custom_label = custom_label:gsub("%c", " "):sub(1, 100)
+			end
 			local match
 			for _, session in ipairs(checked(rex.call("session.list")).sessions or {}) do
 				-- The attach helper exists in scripts, but this Beta's config engine needs rex.call.
@@ -181,13 +233,19 @@ local function setup(config)
 					match = {
 						session_id = session.session_id,
 						window_id = windows[view.active_window_id] and view.active_window_id or window_id,
+						label = session.label,
 					}
 				end
 			end
 			local reused = match ~= nil
-			if not match then
+			if match then
+				if custom_label and match.label ~= custom_label then
+					checked(rex.call("session.set_label", { session_id = match.session_id, label = custom_label }))
+					match.label = custom_label
+				end
+			else
 				local created = checked(rex.call("session.create", {
-					label = path:match("([^/]+)$"):gsub("%c", " "):sub(1, 100),
+					label = custom_label or path:match("([^/]+)$"):gsub("%c", " "):sub(1, 100),
 					initial_windows = {
 						{
 							window_label = "Terminal",

@@ -135,7 +135,7 @@
               launchanim = false;
               persistent-apps = [
                 # Workspace 1: Term
-                "/Applications/Ghostty.app"
+                "/Applications/Rex Beta.app"
                 # Workspace 2: Web
                 "/Applications/Brave Browser.app"
                 # Workspace 3: Notes

@@ -1,5 +1,5 @@
 ---
-description: Run the work as an orchestrator: plan, batch, delegate implementation and review, integrate, verify
+description: "Run the work as an orchestrator: plan, batch, delegate implementation and review, integrate, verify"
 argument-hint: "[task, or the work already discussed]"
 ---
 

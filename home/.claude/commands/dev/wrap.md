@@ -24,8 +24,7 @@ Findings go back through a fix subagent (implementer template from `/dev:execute
 
 Prefer the project's own pipeline, in its order:
 
-- Aurora: `/aurora:push-safe` (or the `no-mistakes` skill if that is the configured gate), then `/aurora:pr`, which owns the PR body contract. Do not hand-write an Aurora PR body.
-- Other projects: whatever gate and PR command their `.claude/` config defines.
+- Project tooling: run its push gate (or the `no-mistakes` skill when that is the configured gate), then its PR command, which owns the PR body contract. Do not hand-write a body it generates.
 - No project tooling: push the branch and open the PR with `gh pr create`. Body: 1-3 plain sentences on what was broken or missing and what this does about it, then a test-plan section built from the plan's Acceptance checks. Write it like a note to a teammate, with real specifics.
 
 ## Step 3: Close the loop

@@ -11,7 +11,7 @@ You are running the design phase of the dev loop (design -> plan -> execute -> w
 
 ## Project tooling first
 
-Before anything else, skim the project's agent config: root `CLAUDE.md`, `.claude/commands/`, `.claude/skills/`. If the project has its own design or spec workflow that the user is already invested in (in Aurora: `/aurora:define-issue` and `/aurora:scope-issue`, or the agent-os spec commands), say so and ask whether to use that instead. Otherwise proceed here, but apply the project's conventions to everything you produce.
+Before anything else, skim the project's agent config: root `CLAUDE.md`, `.claude/commands/`, `.claude/skills/`. If the project has its own design or spec workflow that the user is already invested in (a define-issue or scope-issue command, or the agent-os spec commands), say so and ask whether to use that instead. Otherwise proceed here, but apply the project's conventions to everything you produce.
 
 ## How to run the conversation
 

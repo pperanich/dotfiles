@@ -13,10 +13,10 @@ You are running the plan phase of the dev loop (design -> plan -> execute -> wra
 
 Read the project's root `CLAUDE.md` and note which of these the project provides, because the plan's validation and finalization tasks must use them instead of generic commands:
 
-- Lint / typecheck / test commands (Aurora: `/aurora:lint`, plus per-subsystem CLAUDE.md commands)
-- Commit conventions or a commit command (Aurora: `/aurora:commit-changes`, conventional commits)
-- A pre-push gate (Aurora: `/aurora:push-safe` or the `no-mistakes` skill)
-- Domain skills that constrain how code is written (Aurora: the `frontend-*`, `backend-*`, `global-*` skills)
+- Lint / typecheck / test commands, including per-subsystem CLAUDE.md commands
+- Commit conventions or a commit command
+- A pre-push gate, or the `no-mistakes` skill when that is the configured gate
+- Domain skills that constrain how code is written
 
 Record the relevant ones in the plan's Conventions section so executors do not have to rediscover them.
 
@@ -91,7 +91,7 @@ Fix violations and re-run the checker until it passes. Do not present a plan tha
 
 Present a short summary: goal, wave count, task count, anything risky. The human reviews the plan file itself; reviewing plans is where their attention buys the most (fixing a plan is cheap, fixing 20 commits is not).
 
-When they approve, set `Status: Approved` in the plan file. If the work is tied to a GitHub issue and the project tracks progress there (Aurora does), also post the plan as an issue comment.
+When they approve, set `Status: Approved` in the plan file. If the work is tied to a GitHub issue and the project tracks progress there, also post the plan as an issue comment.
 
 `/dev:execute` refuses Draft plans, so approval is not skippable by accident.
 

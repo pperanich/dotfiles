@@ -13,7 +13,7 @@ You are the orchestrator for the execute phase of the dev loop. You coordinate; 
 
 Read the plan file. If `Status:` is not `Approved`, stop and tell the user the plan needs review and approval first (`/dev:plan` sets it on approval). Do not proceed on a Draft plan.
 
-Note the Conventions section: those are the commit, lint, and test commands you and your subagents will use. In a project with its own commit command (Aurora: `/aurora:commit-changes`), never fall back to raw `git commit`.
+Note the Conventions section: those are the commit, lint, and test commands you and your subagents will use. In a project with its own commit command, never fall back to raw `git commit`.
 
 ## Working tree setup
 

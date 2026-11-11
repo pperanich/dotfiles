@@ -132,11 +132,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nix-apple-fonts = {
-      url = "github:pperanich/nix-apple-fonts";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     personal-site = {
       url = "github:pperanich/personal-site";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -148,20 +143,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    tmux-agents = {
-      url = "github:pperanich/tmux-agents";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
+    nix-apple-fonts.url = "github:pperanich/nix-apple-fonts";
+    tmux-agents.url = "github:pperanich/tmux-agents";
     llm-agents.url = "github:numtide/llm-agents.nix";
-
-    # nixpkgs still ships 0.5.0; this fork is 0.6.1 plus the fix for control-mode
-    # clients hiding sessions. Point back at nixpkgs once that lands upstream.
-    tmux-sessionizer = {
-      url = "github:pperanich/tmux-sessionizer/fix/control-mode-clients-hide-sessions";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.rust-overlay.follows = "rust-overlay";
-    };
+    tmux-sessionizer.url = "github:jrmoulton/tmux-sessionizer";
 
     bun2nix = {
       url = "github:nix-community/bun2nix";

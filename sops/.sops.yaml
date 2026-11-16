@@ -39,11 +39,6 @@ creation_rules:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
-  - path_regex: (^|sops/)machines/pp-ll1\.yaml$
-    key_groups:
-      - age:
-          - *pperanich-admin
-          - *yubikey0-slot1
   - path_regex: (^|sops/)machines/pp-ld1\.yaml$
     key_groups:
       - age:

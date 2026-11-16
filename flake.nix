@@ -14,10 +14,6 @@
     hardware = {
       url = "github:nixos/nixos-hardware";
     };
-    t2-apple-audio-dsp = {
-      url = "github:lemmyg/t2-apple-audio-dsp/3f9ad7b738ffad22b713a4d5e11fbfdddefcddb9";
-      flake = false;
-    };
     determinate = {
       url = "github:DeterminateSystems/determinate";
       inputs.nixpkgs.follows = "nixpkgs";

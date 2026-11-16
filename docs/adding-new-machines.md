@@ -23,7 +23,7 @@ This guide covers adding a NixOS host and a Darwin host: the host configuration,
 | **Type**   | `l` (laptop), `d` (desktop)                        |
 | **Role**   | `nas`, `rpi`, `router`, etc.                       |
 
-Examples: `pp-ll1` (personal Linux laptop), `pp-nas1` (personal NAS), `pp-ml1` (personal Mac laptop)
+Examples: `pp-ld1` (personal Linux desktop), `pp-nas1` (personal NAS), `pp-ml1` (personal Mac laptop)
 
 ## How a host gets built
 

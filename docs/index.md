@@ -113,7 +113,6 @@ sudo headscale preauthkeys create --user 1 --expiration 1h --tags tag:<tag>
 | Hostname   | Type    | OS     | Description                                          |
 | ---------- | ------- | ------ | ---------------------------------------------------- |
 | pp-ml1     | Laptop  | Darwin | Personal MacBook, the only admin machine             |
-| pp-ll1     | Laptop  | NixOS  | Personal Linux laptop (off until re-imaged)          |
 | pp-ld1     | Desktop | NixOS  | Personal Linux desktop (off until re-imaged)         |
 | pp-nas1    | Server  | NixOS  | NAS (BeeLink)                                        |
 | pp-router1 | Server  | NixOS  | Router and Headscale server                          |

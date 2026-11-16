@@ -135,7 +135,6 @@ let
 
   expectedHosts = [
     "pp-ld1"
-    "pp-ll1"
     "pp-ml1"
     "pp-nas1"
     "pp-router1"

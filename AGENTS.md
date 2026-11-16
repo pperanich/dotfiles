@@ -53,12 +53,11 @@ nix flake check --no-build
 nix build --no-link .#checks.aarch64-darwin.{treefmt,hosts-eval,deploy-nodes-eval,backup-module-eval}
 ```
 
-Deploy nodes are defined in `modules/flake-parts/deploy.nix`. `pp-ld1`, `pp-ll1` and `pp-rpi1` are powered off until they are re-imaged, so they have no node; their configurations still evaluate.
+Deploy nodes are defined in `modules/flake-parts/deploy.nix`. `pp-ld1` and `pp-rpi1` are powered off until they are re-imaged, so they have no node; their configurations still evaluate.
 
 ### Hostnames Reference
 
 - `pp-ml1` - Darwin laptop (Apple Silicon), the only admin machine
-- `pp-ll1` - NixOS laptop (MacBook w/ T2), powered off until re-imaged
 - `pp-ld1` - NixOS desktop, powered off until re-imaged
 - `pp-nas1` - NixOS NAS (BeeLink MeMini)
 - `pp-router1` - NixOS router, also runs Headscale
@@ -140,7 +139,7 @@ imports = with modules.darwin; [ base rust ];
   - OS codes: `l`=Linux, `m`=macOS, `wsl`=WSL
   - Type codes: `l`=laptop, `d`=desktop
   - Role names: `nas`, `rpi` for dedicated-purpose machines
-  - Examples: `pp-ll1` (Linux Laptop 1), `pp-nas1` (NAS 1), `pp-rpi1` (Raspberry Pi 1)
+  - Examples: `pp-ld1` (Linux Desktop 1), `pp-nas1` (NAS 1), `pp-rpi1` (Raspberry Pi 1)
 - **Modules**: lowercase, kebab-case filenames (e.g., `cloudflare-dns.nix`, `cloudflare-tunnel.nix`)
 - **Export names**: camelCase (e.g., `cloudflareDns`, `cloudflareTunnel`, `routerFirewall`)
 - **Functions**: camelCase in lib (e.g., `mkHomeConfigurations`, `relativeToRoot`)

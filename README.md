@@ -145,7 +145,6 @@ Every platform's `base` module applies all overlays automatically via `builtins.
 | Hostname   | OS     | Type    | Description                      |
 | ---------- | ------ | ------- | -------------------------------- |
 | pp-ml1     | Darwin | Laptop  | Personal MacBook (Apple Silicon) |
-| pp-ll1     | NixOS  | Laptop  | Personal Linux laptop            |
 | pp-ld1     | NixOS  | Desktop | Personal Linux desktop           |
 | pp-nas1    | NixOS  | Server  | NAS (BeeLink)                    |
 | pp-router1 | NixOS  | Server  | Router                           |

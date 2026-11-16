@@ -178,7 +178,11 @@ _: {
 
         launchd.user.envVariables = config.home-manager.users.pperanich.home.sessionVariables;
 
-        nix.settings.trusted-users = lib.mkIf cfg.trustedNixUser [ "pperanich" ];
+        # Determinate owns nix.conf on darwin (nix.enable = false), so nix.settings is never written.
+        determinateNix.customSettings.trusted-users = lib.mkIf cfg.trustedNixUser [
+          "root"
+          "pperanich"
+        ];
 
         # Configure home-manager for this user
         home-manager = {

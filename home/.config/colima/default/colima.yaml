@@ -215,10 +215,13 @@ sshPort: 0
 # NOTE: In Colima <= 0.10.1, both `mounts: []` and `mounts: null` evaluate
 # `len(c.Mounts) == 0` inside `MountsOrDefault()`, falling back to mounting all
 # of $HOME read-write (exposing ~/.ssh, ~/.config/sops, etc. inside the VM).
-# Mounting a single dedicated scratch directory (`~/colima-shared`, created
-# 0700 by modules/services/colima.nix) prevents the $HOME fallback.
+# Mounting explicit directories prevents the $HOME fallback: a scratch directory
+# (`~/colima-shared`, created 0700 by modules/services/colima.nix) and the repos
+# whose compose files bind-mount from their checkouts.
 mounts:
   - location: ~/colima-shared
+    writable: true
+  - location: ~/Documents/repos
     writable: true
 # Specify a custom disk image for the virtual machine.
 # When not specified, Colima downloads an appropriate disk image from Github at

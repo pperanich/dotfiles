@@ -1,4 +1,4 @@
-# Fleet deployment definitions via deploy-rs (magicRollback + interactiveSudo).
+# Fleet deployment definitions via deploy-rs (root over SSH with the admin key, magicRollback).
 # deploy-rs's own nixpkgs pin stays out of deployed system closures (see templates/private/docs/upstream-contract.md).
 {
   inputs,
@@ -33,9 +33,8 @@ let
 in
 {
   flake.deploy = {
-    sshUser = "pperanich";
+    sshUser = "root";
     user = "root";
-    interactiveSudo = true;
     magicRollback = true;
     autoRollback = true;
 
@@ -84,9 +83,9 @@ in
     {
       checks.deploy-nodes-eval =
         assert actualNodes == expectedNodes;
-        assert deployCfg.sshUser == "pperanich";
+        assert deployCfg.sshUser == "root";
         assert deployCfg.user == "root";
-        assert deployCfg.interactiveSudo;
+        assert !(deployCfg.interactiveSudo or false);
         assert deployCfg.magicRollback;
         assert deployCfg.autoRollback;
         assert lib.all (n: n.remoteBuild or false) (builtins.attrValues deployCfg.nodes);

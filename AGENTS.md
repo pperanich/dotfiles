@@ -39,7 +39,7 @@ bin/build-report.sh
 nh darwin switch . -H pp-ml1
 
 # NixOS hosts: deploy-rs builds on the target, activates, and rolls back if
-# it cannot reconnect (needs the dev shell; asks for the sudo password once)
+# it cannot reconnect (needs the dev shell; logs in as root with pp-ml1's key)
 deploy .#pp-wsl1                                  # target pp-wsl1.pp-ts
 deploy --hostname pp-nas1.pp-ts .#pp-nas1             # tailnet names: Nix-launched ssh on
 deploy --hostname pp-router1.pp-ts .#pp-router1       # the Mac cannot resolve home.arpa

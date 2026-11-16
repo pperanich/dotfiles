@@ -4,7 +4,7 @@ How day-to-day changes are made from `pp-ml1`, and the traps that have cost time
 
 ## Working methods
 
-- **Sudo runs in a terminal pane the owner can see.** Open a split running `ssh -t pperanich@<host>.pp-ts`, or `nix develop --command deploy ...`, and let the owner type the password. Copy a script to the host first and run `sudo bash /tmp/<script>.sh 2>&1 | tee /tmp/<script>.log`, so the result can be read back even if the pane closes. Never `set -e` in the interactive shell itself.
+- **Sudo runs in a terminal pane the owner can see.** Open a split running `ssh -t pperanich@<host>.pp-ts` and let the owner type the password. Deploys need none: deploy-rs logs in as root with the admin key. Copy a script to the host first and run `sudo bash /tmp/<script>.sh 2>&1 | tee /tmp/<script>.log`, so the result can be read back even if the pane closes. Never `set -e` in the interactive shell itself.
 - **Secrets never pass through a chat or a log.** The owner copies a new token to the clipboard; the command that stores it reads `pbpaste` (for example `sops set --value-stdin`). Generated values go straight from the host into sops or Bitwarden without being printed.
 - **Bitwarden through `bw serve`.** The owner runs `export BW_SESSION="$(bw unlock --raw)"; bw serve --hostname 127.0.0.1 --port 8087` in their own terminal. Use its REST API with `curl` and print only names and IDs. Homelab entries match on host, token entries never match.
 - **Snapshot before a database-migrating upgrade.** On the NAS: `sudo systemctl start postgresqlBackup.service`, then `sudo zfs snapshot -r rpool/var@<name> rpool/tank@<name>`. On the router, copy the Gitea and Grafana SQLite files with both services stopped. A generation rollback restores programs, not migrated data.

@@ -542,7 +542,7 @@ in
     # SSH hardening for router
     openssh.settings = {
       X11Forwarding = false;
-      PermitRootLogin = "no";
+      PermitRootLogin = "prohibit-password"; # deploy-rs, admin key only (decision 0008)
       PasswordAuthentication = false; # Disable password auth entirely
       KbdInteractiveAuthentication = false; # Disable keyboard-interactive
       MaxAuthTries = 3;

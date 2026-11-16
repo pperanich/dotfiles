@@ -241,7 +241,7 @@ deploy .#<hostname>
 deploy --hostname <hostname>.home.arpa .#<hostname>
 ```
 
-deploy-rs asks for the sudo password once, runs `nix flake check`, builds on the target, and rolls back by itself if it cannot reconnect within about 30 seconds. A typo in the sudo password shows up as a rollback.
+deploy-rs logs in as root with `pp-ml1`'s key, runs `nix flake check`, builds on the target, and rolls back by itself if it cannot reconnect within about 30 seconds.
 
 A Darwin host has no deploy node; it switches locally (Step 6).
 

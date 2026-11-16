@@ -1,5 +1,8 @@
 # Library functions for dotfiles management
 { lib, ... }:
+let
+  adminKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBo5QIQYUJUadtK19vPdCROhdFbB63XX0XYfonzTqiuA pperanich@pp-ml1";
+in
 {
   # Use path relative to the root of the project
   relativeToRoot = lib.path.append ../.;
@@ -9,8 +12,12 @@
   # Flat attrset shape (`builtins.attrValues lib.my.sshKeys`) is part of the
   # downstream `~/nix-private` upstream contract.
   sshKeys = {
-    pp-ml1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBo5QIQYUJUadtK19vPdCROhdFbB63XX0XYfonzTqiuA pperanich@pp-ml1";
+    pp-ml1 = adminKey;
   };
+
+  # Keys that log in as root, which is how deploy-rs activates (decision 0008).
+  # The admin workstation only: a key added to sshKeys must not land here.
+  deploySshKeys = [ adminKey ];
 
   # Host public keys pinned in every host's known_hosts (`programs.ssh.knownHosts`).
   sshHostKeys = import ./ssh-host-keys.nix;

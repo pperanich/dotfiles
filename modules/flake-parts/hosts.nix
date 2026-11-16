@@ -87,9 +87,11 @@ let
             settings = {
               PasswordAuthentication = lib.mkDefault false;
               KbdInteractiveAuthentication = lib.mkDefault false;
-              PermitRootLogin = lib.mkDefault "no";
+              PermitRootLogin = lib.mkDefault "prohibit-password";
             };
           };
+          # deploy-rs logs in as root with the admin workstation's key (decision 0008).
+          users.users.root.openssh.authorizedKeys.keys = lib.my.deploySshKeys;
 
           # Networking defaults. Keep the block whole: networkd
           # with wait-online on can fail a switch on a host with an unplugged interface.

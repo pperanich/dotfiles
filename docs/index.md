@@ -36,6 +36,7 @@ Nix-based system configuration using the dendritic pattern with flake-parts. Hos
 - [0005: Every host follows nixpkgs-unstable](decisions/0005-nixpkgs-unstable-for-every-host.md)
 - [0006: Credentials left unrotated](decisions/0006-credentials-left-unrotated.md)
 - [0007: Accepted root-equivalent access](decisions/0007-accepted-root-equivalents.md)
+- [0008: Deploys log in as root with the admin key](decisions/0008-deploys-log-in-as-root.md)
 
 ## Quick Start
 
@@ -50,7 +51,7 @@ deploy --hostname pp-router1.pp-ts .#pp-router1
 nh darwin switch . -H pp-ml1                      # the Mac switches locally
 ```
 
-deploy-rs asks for the sudo password once, builds on the target, and rolls back if it cannot reconnect. Nodes are defined in `modules/flake-parts/deploy.nix`. Use the tailnet names: ssh launched by Nix on the Mac cannot resolve `home.arpa` ([Operating the Fleet](operations.md#traps)).
+deploy-rs logs in as root with `pp-ml1`'s key ([decision 0008](decisions/0008-deploys-log-in-as-root.md)), builds on the target, and rolls back if it cannot reconnect. Nodes are defined in `modules/flake-parts/deploy.nix`. Use the tailnet names: ssh launched by Nix on the Mac cannot resolve `home.arpa` ([Operating the Fleet](operations.md#traps)).
 
 ### Add a New Machine
 
@@ -87,7 +88,7 @@ All secrets are sops-nix secrets encrypted with age. Each host has its own file,
 
 ## Access
 
-- `pperanich` logs in over SSH with `pp-ml1`'s key (`sshKeys` in `lib/default.nix`). Root SSH is off.
+- `pperanich` logs in over SSH with `pp-ml1`'s key (`sshKeys` in `lib/default.nix`). Root accepts that key only, for deploy-rs (`deploySshKeys`); passwords are off for both.
 - Remote access is Headscale on `pp-router1` with a Tailscale client on every host. Tailnet names are `<host>.pp-ts`. `home.arpa` names resolve on the LAN only.
 - Host public keys are pinned in `known_hosts` from `lib/ssh-host-keys.nix`.
 

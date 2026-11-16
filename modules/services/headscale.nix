@@ -30,7 +30,7 @@ _: {
         };
 
         acls = [
-          # Full administrative access from workstation nodes (pp-ml1, pp-ld1)
+          # Full administrative access from workstation nodes (pp-ml1)
           {
             action = "accept";
             src = [ "tag:admin" ];

@@ -17,7 +17,7 @@ The Google Drive tier is defined in `modules/services/backup/restic-gdrive.nix` 
 - `pp-nas1`: all of `/tank`, `/var/lib` and `/home`, minus Immich thumbnails and transcoded video and the films and TV folders. The run first snapshots `rpool/tank`, `rpool/tank/appdata`, `rpool/tank/backups`, `rpool/var` and `rpool/home` in one atomic `zfs snapshot` and reads from those snapshots, so every database file is captured at the same instant. It refuses to start unless a finished, non-empty Postgres dump (`all.sql.*`) newer than 26 hours exists.
 - `pp-router1`: the same paths and excludes as its Borg job, after the same SQLite `.backup` step.
 - `pp-wsl1`: `/home/pperanich`, minus caches and build output.
-- `pp-ld1`, `pp-rpi1`: import the module, enabled when they are re-imaged.
+- `pp-rpi1`: imports the module, enabled when it is re-imaged.
 - `pp-ml1`: not covered by this tier; the macOS backup is a separate piece of work.
 
 Each run backs up, prunes to 7 daily, 4 weekly and 12 monthly snapshots, then reads back 2% of the repository's data (`restic check --read-data-subset=2%`).

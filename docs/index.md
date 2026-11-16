@@ -111,11 +111,10 @@ sudo headscale preauthkeys create --user 1 --expiration 1h --tags tag:<tag>
 
 ## Machines
 
-| Hostname   | Type    | OS     | Description                                          |
-| ---------- | ------- | ------ | ---------------------------------------------------- |
-| pp-ml1     | Laptop  | Darwin | Personal MacBook, the only admin machine             |
-| pp-ld1     | Desktop | NixOS  | Personal Linux desktop (off until re-imaged)         |
-| pp-nas1    | Server  | NixOS  | NAS (BeeLink)                                        |
-| pp-router1 | Server  | NixOS  | Router and Headscale server                          |
-| pp-rpi1    | SBC     | NixOS  | Raspberry Pi 3B+ GPIO debugger (off until re-imaged) |
-| pp-wsl1    | VM      | NixOS  | WSL instance                                         |
+| Hostname   | Type   | OS     | Description                                          |
+| ---------- | ------ | ------ | ---------------------------------------------------- |
+| pp-ml1     | Laptop | Darwin | Personal MacBook, the only admin machine             |
+| pp-nas1    | Server | NixOS  | NAS (BeeLink)                                        |
+| pp-router1 | Server | NixOS  | Router and Headscale server                          |
+| pp-rpi1    | SBC    | NixOS  | Raspberry Pi 3B+ GPIO debugger (off until re-imaged) |
+| pp-wsl1    | VM     | NixOS  | WSL instance                                         |

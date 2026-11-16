@@ -40,7 +40,7 @@ in
 
     # Nodes build on themselves: no other host is set up as a builder for them.
     # pp-ml1 has no sshd and switches locally with nh darwin switch.
-    # pp-ld1 and pp-rpi1 are powered off; their nodes return when they are re-imaged.
+    # pp-rpi1 is powered off; its node returns when it is re-imaged.
     nodes = {
       pp-router1 = {
         hostname = "pp-router1.home.arpa";

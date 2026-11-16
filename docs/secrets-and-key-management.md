@@ -21,7 +21,7 @@ There is one file per host and no shared file. A host's file is not readable by 
 | YubiKey             | The hardware token (`&yubikey0-slot1` in `.sops.yaml`)            | Every file                                              | Fallback for editing if the admin key file is missing |
 | Host key (per host) | `/etc/ssh/ssh_host_ed25519_key` on that host                      | That host's file (and the tunnel file for `pp-router1`) | System decryption at activation                       |
 
-The host recipient is the SSH host key converted to age with `ssh-to-age`; it is not a separate key to manage. `.sops.yaml` lists a recipient for each of `pp-ml1` (as `&pp-ml1-ssh`), `pp-nas1`, `pp-router1` and `pp-wsl1`. `pp-ld1` and `pp-rpi1` are powered off until re-imaged, so their files are encrypted to the admin key and the YubiKey only; a host recipient goes in when the machine gets a new key (see [Adding New Machines](adding-new-machines.md)).
+The host recipient is the SSH host key converted to age with `ssh-to-age`; it is not a separate key to manage. `.sops.yaml` lists a recipient for each of `pp-ml1` (as `&pp-ml1-ssh`), `pp-nas1`, `pp-router1` and `pp-wsl1`. `pp-rpi1` is powered off until re-imaged, so its file is encrypted to the admin key and the YubiKey only; a host recipient goes in when the machine gets a new key (see [Adding New Machines](adding-new-machines.md)).
 
 A secret is readable by any one recipient of its file. The admin key and YubiKey can therefore read everything; a host can read only its own file.
 

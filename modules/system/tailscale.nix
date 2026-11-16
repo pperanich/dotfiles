@@ -46,7 +46,7 @@ _: {
                 || ((config.my.desktop.enable or false) && (config.services.resolved.enable or false))
               );
             defaultText = lib.literalExpression "!(config.my.router.enable or false) && (pkgs.stdenv.hostPlatform.isDarwin || ((config.my.desktop.enable or false) && (config.services.resolved.enable or false)))";
-            description = "Accept Headscale split MagicDNS (`100.100.100.100`) on roaming admin workstations (`pp-ml1`, `pp-ld1`, which hold `tag:admin` -> `*:*`); disabled on router, WSL, and always-on LAN servers (`pp-nas1`, `pp-rpi1`, which resolve `*.pp-ts` via the router's Unbound forward zone without injecting `tailscale0` per-link search domains into `systemd-resolved`).";
+            description = "Accept Headscale split MagicDNS (`100.100.100.100`) on roaming admin workstations (`pp-ml1`, which holds `tag:admin` -> `*:*`); disabled on router, WSL, and always-on LAN servers (`pp-nas1`, `pp-rpi1`, which resolve `*.pp-ts` via the router's Unbound forward zone without injecting `tailscale0` per-link search domains into `systemd-resolved`).";
           };
 
           expectedIpv4 = lib.mkOption {

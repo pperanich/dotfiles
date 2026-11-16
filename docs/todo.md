@@ -28,7 +28,7 @@ Open work. Remove an item when it is done; record a decision in `docs/decisions/
 
 - NAS disk encryption: starts from the local branch `nas-zfs-encryption`. Its migration script leaves the space reservation dropped and a partial copy, with no recovery path, if the baseline copy fails; fix that and rehearse on a throwaway pool first.
 - macOS backup: starts from the local branch `darwin-drive-backup`. Its script runs `restic init` on any failed repository probe, so a stale lock stops backups for good; fix that first.
-- Re-image `pp-ld1` and `pp-rpi1`, give them deploy nodes, and decide where `pp-rpi1` builds.
+- Re-image `pp-rpi1`, give it a deploy node, and decide where it builds.
 
 ### Code health
 

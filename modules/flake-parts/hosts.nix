@@ -136,7 +136,6 @@ let
     lib.mapAttrs (host: _: buildHost host) (lib.filterAttrs (host: _: classOf host == class) hosts);
 
   expectedHosts = [
-    "pp-ld1"
     "pp-ml1"
     "pp-nas1"
     "pp-router1"

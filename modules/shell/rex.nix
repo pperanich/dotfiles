@@ -10,7 +10,41 @@ in
 {
   flake.modules = {
     darwin.rex = profileSupport;
-    nixos.rex = profileSupport;
+
+    nixos.rex =
+      { config, lib, ... }:
+      let
+        cfg = config.my.rex.loginServer;
+      in
+      {
+        imports = [ inputs.rex.nixosModules.default ];
+
+        options.my.rex.loginServer = {
+          enable = lib.mkEnableOption "the Rex login server on this host's tailnet addresses";
+
+          port = lib.mkOption {
+            type = lib.types.port;
+            default = 7297;
+            description = "Tailnet TCP port of the Rex login server. Clients connect to `http://<host>.<tailnet>:<port>`.";
+          };
+        };
+
+        config = lib.mkMerge [
+          profileSupport
+          (lib.mkIf cfg.enable {
+            services.rex.loginServer = {
+              enable = true;
+              # Headscale issues no tailnet certificates and Serve hides tagged callers,
+              # so the listener is plain HTTP inside WireGuard. User modules add accounts.
+              extraListen = [ "tailnet://:${toString cfg.port}" ];
+            };
+
+            networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts = [
+              cfg.port
+            ];
+          })
+        ];
+      };
 
     homeManager.rex =
       {
@@ -31,9 +65,8 @@ in
           sshGuard = false; # home/.ssh/config includes home/.config/rex/ssh_config
         };
 
-        # On Linux a user service keeps the server up (reach it with `rex -S ssh://host`);
-        # on macOS the app owns the server and services.rex fails the build.
-        services.rex.enable = pkgs.stdenv.hostPlatform.isLinux;
+        # No user service: the login server or `rex -S ssh://host` starts the account's
+        # server on demand, and a unit on the same socket loses the race to it.
         home.packages = [ pkgs.rexpick ];
 
         # Install Rex's agent skill and hooks with session naming off. Agents

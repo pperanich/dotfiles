@@ -58,6 +58,9 @@ in
       passwordHashSecret = "passwords/pperanich";
     };
 
+    # Rex sessions over the tailnet, for admin workstations (tag:admin) only
+    rex.loginServer.enable = true;
+
     # Nextcloud — file sync, calendar, contacts
     # Accessed via local Caddy TLS termination (nextcloud.prestonperanich.com)
     nextcloud = {

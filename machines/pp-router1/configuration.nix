@@ -66,6 +66,9 @@ in
       passwordHashSecret = "passwords/pperanich";
     };
 
+    # Rex sessions over the tailnet, for admin workstations (tag:admin) only
+    rex.loginServer.enable = true;
+
     headscale.enable = true;
 
     # Headscale web UI (LAN + tailnet via Caddy, API-key login)
@@ -227,6 +230,7 @@ in
           iifname "br-main" tcp dport 631 accept comment "CUPS IPP from LAN"
           iifname "br-main" ip saddr 10.0.0.105 tcp dport 3100 accept comment "Loki ingest from pp-nas1"
           iifname "tailscale0" tcp dport { 22, 443 } accept comment "SSH and Caddy HTTPS from Tailscale"
+          iifname "tailscale0" tcp dport ${toString config.my.rex.loginServer.port} accept comment "Rex login server from Tailscale"
           iifname "tailscale0" udp dport 53 accept comment "DNS UDP from Tailscale"
           iifname "tailscale0" tcp dport 53 accept comment "DNS TCP from Tailscale"
         '';
@@ -234,6 +238,7 @@ in
           iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
           iifname "br-main" tcp dport 631 accept comment "CUPS IPP from LAN"
           iifname "tailscale0" tcp dport { 22, 443 } accept comment "SSH and Caddy HTTPS from Tailscale"
+          iifname "tailscale0" tcp dport ${toString config.my.rex.loginServer.port} accept comment "Rex login server from Tailscale"
           iifname "tailscale0" udp dport 53 accept comment "DNS UDP from Tailscale"
           iifname "tailscale0" tcp dport 53 accept comment "DNS TCP from Tailscale"
         '';

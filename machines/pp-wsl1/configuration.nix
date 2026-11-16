@@ -38,6 +38,9 @@
   };
   users.mutableUsers = false;
 
+  # Rex sessions over the tailnet, for admin workstations (tag:admin) only
+  my.rex.loginServer.enable = true;
+
   # No node exporter here, so Healthchecks.io is what notices a failed or missing run.
   my.backup.googleDrive = {
     enable = true;

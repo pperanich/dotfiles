@@ -40,4 +40,13 @@ end
 
 picker.setup(settings)
 
+-- Hosts that run the Rex login server (my.rex.loginServer). It admits admin
+-- workstations only; ssh reaches the same account when the tailnet port is shut.
+for _, host in ipairs({ "pp-nas1", "pp-router1", "pp-wsl1" }) do
+	rex.host({
+		label = host,
+		endpoints = { "http://" .. host .. ".pp-ts:7297", "ssh://" .. host .. ".pp-ts" },
+	})
+end
+
 rex.bind("cmd+shift+k", "rex_project_picker")

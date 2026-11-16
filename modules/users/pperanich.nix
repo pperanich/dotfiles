@@ -70,7 +70,7 @@ _: {
           ) config.sops.secrets.${cfg.passwordHashSecret}.path;
           shell = pkgs.zsh;
           packages = [ pkgs.home-manager ];
-          # User services, the Rex server among them, keep running after logout.
+          # Keeps /run/user/<uid> after logout, where the Rex server and its sessions live.
           linger = true;
           extraGroups = [
             "wheel"
@@ -89,6 +89,10 @@ _: {
         };
 
         nix.settings.trusted-users = lib.mkIf cfg.trustedNixUser [ "pperanich" ];
+
+        # Read only where a host turns on my.rex.loginServer: admin workstations
+        # get this account's Rex server without a password or key.
+        services.rex.loginServer.accounts.pperanich.principals = [ "tailscale:tag:admin" ];
 
         # Configure home-manager for this user
         home-manager = {

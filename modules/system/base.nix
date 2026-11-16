@@ -337,7 +337,7 @@
         home = {
           # User session variables
           sessionVariables = {
-            FLAKE = "${config.home.homeDirectory}/dotfiles/";
+            NH_FLAKE = "${config.home.homeDirectory}/dotfiles/";
             SHELL = "${pkgs.zsh}/bin/zsh";
             LANG = "en_US.UTF-8";
             LC_ALL = "en_US.UTF-8";

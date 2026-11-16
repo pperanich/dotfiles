@@ -87,6 +87,9 @@
 
           programs.nh.enable = true;
 
+          # sudo prints its "usual lecture" the first time an account is asked for a password.
+          security.sudo.extraConfig = "Defaults lecture = never";
+
           programs.ssh.knownHosts = lib.my.mkKnownHosts lib.my.sshHostKeys;
 
           programs.nix-ld = {

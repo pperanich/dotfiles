@@ -14,6 +14,8 @@
     hardware = {
       url = "github:nixos/nixos-hardware";
     };
+    # Built-in schemas for `nix flake check`, extended in modules/flake-parts/schemas.nix.
+    flake-schemas.url = "github:DeterminateSystems/flake-schemas";
     determinate = {
       url = "github:DeterminateSystems/determinate";
       inputs.nixpkgs.follows = "nixpkgs";

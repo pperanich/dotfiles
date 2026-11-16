@@ -79,7 +79,7 @@ _: {
           openssh.openFirewall = false;
 
           # UPnP/NAT-PMP for automatic port forwarding
-          # H4: ACL rules restrict forwards to non-privileged ports only (1024-65535)
+          # ACL rules restrict forwards to non-privileged ports only (1024-65535)
           # Prevents LAN devices from exposing privileged services (SSH, DNS, etc.) via UPnP
           miniupnpd = lib.mkIf cfg.upnp.enable {
             enable = true;

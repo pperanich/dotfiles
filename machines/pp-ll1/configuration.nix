@@ -6,30 +6,28 @@
   config,
   ...
 }:
-let
-  t2-apple-audio-dsp = builtins.fetchGit {
-    url = "https://github.com/lemmyg/t2-apple-audio-dsp";
-    rev = "3f9ad7b738ffad22b713a4d5e11fbfdddefcddb9";
-  };
-in
 {
   imports = [
     ./hardware-configuration.nix
     # Include the T2 security chip module from nixos-hardware
     inputs.hardware.nixosModules.apple-t2
     inputs.hardware.nixosModules.common-cpu-intel
-    "${t2-apple-audio-dsp}/nixos/pipewire_sink_conf.nix"
+    "${inputs.t2-apple-audio-dsp}/nixos/pipewire_sink_conf.nix"
   ]
   ++ (with modules.nixos; [
     # Core system configuration
     base
     sops
+    tailscale
 
     # User setup
     pperanich
 
     # Development environment
     rust
+
+    # Offsite Google Drive Restic backup (docs/backups.md)
+    backup
   ]);
 
   # T2Linux-specific Nix settings
@@ -47,8 +45,6 @@ in
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@192.168.0.181";
-  clan.core.networking.buildHost = "root@192.168.0.181";
 
   services = {
     # Enable the login manager
@@ -188,7 +184,6 @@ in
 
   # Boot configuration
   boot = {
-    initrd.systemd.enable = true;
     binfmt.emulatedSystems = [ "aarch64-linux" ];
     loader = {
       systemd-boot.enable = true;
@@ -233,6 +228,6 @@ in
     audio.enable = true;
     alsa.enable = true;
     alsa.support32Bit = true;
-    jack.enable = true;
+    # jack.enable is deprecated; run JACK programs through pipewire's pw-jack wrapper.
   };
 }

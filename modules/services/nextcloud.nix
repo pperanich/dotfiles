@@ -4,7 +4,8 @@
 # Uses PostgreSQL + Redis for performance. Nginx handles PHP-FPM locally.
 #
 # Access: via Caddy reverse proxy on the router (e.g., nextcloud.prestonperanich.com)
-# Admin: log in with the admin credentials configured via adminPasswordFile option
+# Admin: the `admin` account made at installation; reset it with
+# `nextcloud-occ user:resetpassword admin` (nixpkgs no longer manages it).
 _: {
   flake.modules.nixos.nextcloud =
     {
@@ -42,6 +43,24 @@ _: {
           description = "Default phone region (ISO 3166-1 alpha-2).";
         };
 
+        listenAddress = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Address for the local Nginx backend to bind to.";
+        };
+
+        listenPort = lib.mkOption {
+          type = lib.types.port;
+          default = 8088;
+          description = "Port for the local Nginx backend to listen on.";
+        };
+
+        openFirewall = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = "Whether to open listenPort in the host firewall.";
+        };
+
         extraTrustedDomains = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
@@ -51,8 +70,14 @@ _: {
 
         trustedProxies = lib.mkOption {
           type = lib.types.listOf lib.types.str;
-          default = [ ];
-          example = [ "10.0.0.1" ];
+          default = [
+            "127.0.0.1"
+            "::1"
+          ];
+          example = [
+            "127.0.0.1"
+            "::1"
+          ];
           description = "Reverse proxy IPs to trust for X-Forwarded-For headers.";
         };
 
@@ -67,18 +92,15 @@ _: {
           ];
           description = "Nextcloud apps to install from nixpkgs (by attribute name).";
         };
-
-        adminPasswordFile = lib.mkOption {
-          type = lib.types.path;
-          description = "Path to file containing the Nextcloud admin password";
-        };
       };
 
       config = {
         services = {
           nextcloud = {
             enable = true;
-            package = pkgs.nextcloud33;
+            # One major per deploy, and each must run once (nextcloud-setup upgrades the database):
+            # Upgrade one major at a time; Nextcloud refuses to skip one.
+            package = pkgs.nextcloud35;
             inherit (cfg) hostName;
             inherit (cfg) datadir;
             https = true;
@@ -90,8 +112,6 @@ _: {
 
             config = {
               dbtype = "pgsql";
-              adminuser = "admin";
-              adminpassFile = cfg.adminPasswordFile;
             };
 
             settings = {
@@ -135,24 +155,24 @@ _: {
             };
           };
 
-          # Nginx listens on port 80 locally — Caddy on the router handles HTTPS
+          # Nginx listens on loopback locally; Caddy terminates HTTPS in front
           nginx.virtualHosts.${cfg.hostName} = {
             listen = [
               {
-                addr = "0.0.0.0";
-                port = 80;
+                addr = cfg.listenAddress;
+                port = cfg.listenPort;
               }
             ];
           };
 
-          # Automatic database backups
+          # Automatic database backups (mkDefault so hosts can customize schedule/location)
           postgresqlBackup = {
-            enable = true;
-            startAt = "*-*-* 02:00:00";
+            enable = lib.mkDefault true;
+            startAt = lib.mkDefault "*-*-* 02:00:00";
           };
         };
 
-        networking.firewall.allowedTCPPorts = [ 80 ];
+        networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.listenPort ];
 
         # Ensure data directory exists with correct ownership
         systemd.tmpfiles.settings."10-nextcloud" = {

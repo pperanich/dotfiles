@@ -37,10 +37,17 @@ type shareState struct {
 	DNSRecordID   string `json:"dnsRecordID"`
 	ZoneID        string `json:"zoneID"`
 	AccountID     string `json:"accountID"`
-	CredsTempPath string `json:"credsTempPath"`
+	CredsTempPath string `json:"credsTempPath,omitempty"`
 	TunnelID      string `json:"tunnelID"`
 	CreatedTunnel bool   `json:"createdTunnel"`
 	UsedExec      bool   `json:"usedExec"`
+}
+
+// tunnelTokenPayload matches cloudflared's base64 TUNNEL_TOKEN JSON schema.
+type tunnelTokenPayload struct {
+	AccountTag   string `json:"a"`
+	TunnelID     string `json:"t"`
+	TunnelSecret string `json:"s"`
 }
 
 func shareUpCmd(args []string) {
@@ -102,6 +109,11 @@ func shareUpCmd(args []string) {
 		log.Fatalf("Failed to resolve zone: %v", err)
 	}
 
+	statePath, logPath, err := shareRuntimePaths(fullHost)
+	if err != nil {
+		log.Fatalf("Failed to initialize state directory: %v", err)
+	}
+
 	fmt.Println("=== cf share up ===")
 	fmt.Printf("  Host:     %s\n", fullHost)
 	fmt.Printf("  Origin:   http://localhost:%d\n", *port)
@@ -111,8 +123,11 @@ func shareUpCmd(args []string) {
 	}
 	fmt.Println()
 
-	st := &shareState{FullHost: fullHost, ZoneID: zoneID, AccountID: acctID}
-	statePath := shareStatePath(fullHost)
+	st := &shareState{
+		FullHost:  fullHost,
+		ZoneID:    zoneID,
+		AccountID: acctID,
+	}
 
 	// Best-effort teardown of whatever we managed to create so far.
 	var appChild, cfChild *exec.Cmd
@@ -129,7 +144,7 @@ func shareUpCmd(args []string) {
 		}
 	}
 	teardown := func() {
-		shareTeardown(ctx, client, st, stopCf, appChild, statePath)
+		shareTeardown(ctx, client, st, stopCf, appChild, statePath, logPath)
 	}
 	fail := func(format string, a ...interface{}) {
 		fmt.Fprintf(os.Stderr, "Error: "+format+"\n", a...)
@@ -137,41 +152,39 @@ func shareUpCmd(args []string) {
 		os.Exit(1)
 	}
 
-	// 2. Obtain a tunnel + creds temp file (0600). Ephemeral by default;
-	// persistent mode reads an existing tunnel from sops creds.
-	var tmpCreds, tunnelUUID string
+	// 2. Obtain tunnel credentials in memory and build TUNNEL_TOKEN (never written
+	// to /tmp or passed on argv).
+	var creds tunnelCredentials
 	if persistent {
 		credsPath := *credsFile
 		if credsPath == "" {
 			credsPath = filepath.Join(findRepoRoot(), "sops", "cloudflared-share.json")
 		}
-		path, credsTunnelID, derr := decryptSharedCreds(credsPath)
+		decrypted, derr := decryptSharedCreds(credsPath)
 		if derr != nil {
 			log.Fatalf("Failed to decrypt credentials: %v", derr)
 		}
-		tmpCreds = path
-		tunnelUUID = credsTunnelID
+		creds = decrypted
 		if *tunnelID != "" {
-			tunnelUUID = *tunnelID
+			creds.TunnelID = *tunnelID
 		}
 	} else {
 		name := "cf-share-" + sanitizeHost(fullHost)
-		id, credsJSON, cerr := createEphemeralTunnel(ctx, client, acctID, name)
+		ephemeralCreds, cerr := createEphemeralTunnel(ctx, client, acctID, name)
 		if cerr != nil {
 			log.Fatalf("Failed to create tunnel: %v", cerr)
 		}
-		st.TunnelID = id
+		creds = ephemeralCreds
+		st.TunnelID = creds.TunnelID
 		st.CreatedTunnel = true
-		tunnelUUID = id
-		path, werr := writeTempCreds(credsJSON)
-		if werr != nil {
-			cleanupTunnel(ctx, client, acctID, id)
-			log.Fatalf("Failed to stage credentials: %v", werr)
-		}
-		tmpCreds = path
-		fmt.Printf("Created ephemeral tunnel %s\n", id)
+		fmt.Printf("Created ephemeral tunnel %s\n", creds.TunnelID)
 	}
-	st.CredsTempPath = tmpCreds
+
+	tunnelToken, err := buildTunnelToken(creds)
+	if err != nil {
+		fail("failed to encode tunnel token: %v", err)
+	}
+	tunnelUUID := creds.TunnelID
 	fmt.Printf("Tunnel:   %s\n", tunnelUUID)
 
 	// 3. Optional app subprocess.
@@ -186,23 +199,32 @@ func shareUpCmd(args []string) {
 		st.UsedExec = true
 	}
 
-	// 4. Access application (gate before exposing), reused if it already exists.
+	// 4. Access application (gate before exposing), reconciling allowlist policy
+	// if an app for the domain already exists.
 	appID, policyID, createdApp, err := ensureAccessApp(ctx, client, acctID, fullHost, *sessionDuration, emails)
 	if err != nil {
-		fail("failed to create Access application: %v", err)
+		fail("failed to ensure Access application: %v", err)
 	}
 	st.AppID = appID
 	st.PolicyID = policyID
 	st.CreatedApp = createdApp
 	fmt.Printf("Access application ready: %s\n", appID)
 
-	// 5. Start cloudflared as a child bound to its own context.
+	// Pre-create the 0600 log file inside the 0700 state directory.
+	if err := touchPrivateFile(logPath); err != nil {
+		fail("failed to prepare logfile: %v", err)
+	}
+
+	// 5. Start cloudflared as a child bound to its own context, passing the
+	// secret tunnel token via TUNNEL_TOKEN environment variable rather than argv.
 	cfCtx, cancel := context.WithCancel(ctx)
 	cfCancel = cancel
-	cfChild = exec.CommandContext(cfCtx, "cloudflared", "tunnel", "run",
-		"--credentials-file", tmpCreds,
+	cfChild = exec.CommandContext(cfCtx, "cloudflared", "tunnel",
+		"--logfile", logPath,
+		"run",
 		"--url", fmt.Sprintf("http://localhost:%d", *port),
-		tunnelUUID)
+	)
+	cfChild.Env = append(filteredEnv("TUNNEL_TOKEN"), "TUNNEL_TOKEN="+tunnelToken)
 	cfChild.Stdout = os.Stdout
 	cfChild.Stderr = os.Stderr
 	// Graceful stop: SIGTERM lets cloudflared drain edge connections, so an
@@ -275,11 +297,14 @@ func shareDownCmd(args []string) {
 	ctx := context.Background()
 
 	fullHost := joinHost(*host, zone)
-	statePath := shareStatePath(fullHost)
+	statePath, logPath, err := shareRuntimePaths(fullHost)
+	if err != nil {
+		log.Fatalf("Failed to resolve state directory: %v", err)
+	}
 
 	if st, err := readShareState(statePath); err == nil {
 		fmt.Printf("Tearing down %s from statefile...\n", fullHost)
-		shareTeardown(ctx, client, st, func() {}, nil, statePath)
+		shareTeardown(ctx, client, st, func() {}, nil, statePath, logPath)
 		return
 	}
 
@@ -303,7 +328,7 @@ func shareDownCmd(args []string) {
 		st.PolicyID = policyID
 		st.CreatedApp = true
 	}
-	shareTeardown(ctx, client, st, func() {}, nil, statePath)
+	shareTeardown(ctx, client, st, func() {}, nil, statePath, logPath)
 }
 
 // joinHost treats a dotless host as a subdomain label of the zone.
@@ -319,15 +344,46 @@ func sanitizeHost(fullHost string) string {
 	return strings.NewReplacer("/", "_", ".", "_", string(os.PathSeparator), "_").Replace(fullHost)
 }
 
-func runtimeDir() string {
-	if dir := os.Getenv("XDG_RUNTIME_DIR"); dir != "" {
-		return dir
+// stateDir returns $XDG_STATE_HOME/cf (fallback $HOME/.local/state/cf),
+// ensuring it exists with mode 0700. Never falls back to world-writable /tmp.
+func stateDir() (string, error) {
+	base := os.Getenv("XDG_STATE_HOME")
+	if base == "" {
+		home, err := os.UserHomeDir()
+		if err != nil || home == "" {
+			return "", fmt.Errorf("cannot determine user home directory: %w", err)
+		}
+		base = filepath.Join(home, ".local", "state")
 	}
-	return os.TempDir()
+	dir := filepath.Join(base, "cf")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return "", fmt.Errorf("create state dir %s: %w", dir, err)
+	}
+	if err := os.Chmod(dir, 0700); err != nil {
+		return "", fmt.Errorf("chmod state dir %s: %w", dir, err)
+	}
+	return dir, nil
 }
 
-func shareStatePath(fullHost string) string {
-	return filepath.Join(runtimeDir(), "cf-share-"+sanitizeHost(fullHost)+".json")
+func shareRuntimePaths(fullHost string) (statePath, logPath string, err error) {
+	dir, err := stateDir()
+	if err != nil {
+		return "", "", err
+	}
+	stem := filepath.Join(dir, "share-"+sanitizeHost(fullHost))
+	return stem + ".json", stem + ".log", nil
+}
+
+func touchPrivateFile(path string) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	if err := f.Chmod(0600); err != nil {
+		f.Close()
+		return err
+	}
+	return f.Close()
 }
 
 func writeShareState(path string, st *shareState) error {
@@ -335,7 +391,27 @@ func writeShareState(path string, st *shareState) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0600)
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, ".share-state-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	if err := tmp.Chmod(0600); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+	return os.Rename(tmpName, path)
 }
 
 func readShareState(path string) (*shareState, error) {
@@ -350,60 +426,64 @@ func readShareState(path string) (*shareState, error) {
 	return &st, nil
 }
 
-// decryptSharedCreds runs sops, writes plaintext creds to a 0600 temp file, and
-// returns the temp path plus the tunnel UUID embedded in the credentials.
-func decryptSharedCreds(credsFile string) (path, tunnelID string, err error) {
+// buildTunnelToken encodes tunnel credentials into a cloudflared TUNNEL_TOKEN.
+func buildTunnelToken(creds tunnelCredentials) (string, error) {
+	if creds.AccountTag == "" || creds.TunnelID == "" || creds.TunnelSecret == "" {
+		return "", fmt.Errorf("incomplete tunnel credentials (accountTag/tunnelID/tunnelSecret required)")
+	}
+	raw, err := json.Marshal(tunnelTokenPayload{
+		AccountTag:   creds.AccountTag,
+		TunnelID:     creds.TunnelID,
+		TunnelSecret: creds.TunnelSecret,
+	})
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(raw), nil
+}
+
+// filteredEnv returns os.Environ() with any existing entry for key removed.
+func filteredEnv(key string) []string {
+	prefix := key + "="
+	env := os.Environ()
+	out := make([]string, 0, len(env)+1)
+	for _, kv := range env {
+		if !strings.HasPrefix(kv, prefix) {
+			out = append(out, kv)
+		}
+	}
+	return out
+}
+
+// decryptSharedCreds runs sops and parses credentials in memory without
+// writing plaintext secrets to disk.
+func decryptSharedCreds(credsFile string) (tunnelCredentials, error) {
 	if !fileExists(credsFile) {
-		return "", "", fmt.Errorf("creds file %s not found", credsFile)
+		return tunnelCredentials{}, fmt.Errorf("creds file %s not found", credsFile)
 	}
 	cmd := exec.Command("sops", "-d", "--input-type", "binary", "--output-type", "binary", credsFile)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {
-		return "", "", fmt.Errorf("sops decrypt failed: %w", err)
+		return tunnelCredentials{}, fmt.Errorf("sops decrypt failed: %w", err)
 	}
 
 	var creds tunnelCredentials
 	if err := json.Unmarshal(out, &creds); err != nil {
-		return "", "", fmt.Errorf("parse decrypted creds: %w", err)
+		return tunnelCredentials{}, fmt.Errorf("parse decrypted creds: %w", err)
 	}
 	if creds.TunnelID == "" {
-		return "", "", fmt.Errorf("creds file %s has no TunnelID", credsFile)
+		return tunnelCredentials{}, fmt.Errorf("creds file %s has no TunnelID", credsFile)
 	}
-
-	path, err = writeTempCreds(out)
-	return path, creds.TunnelID, err
+	return creds, nil
 }
 
-// writeTempCreds stages cloudflared credentials in a 0600 temp file.
-func writeTempCreds(credsJSON []byte) (string, error) {
-	f, err := os.CreateTemp(runtimeDir(), "cf-share-creds-*.json")
-	if err != nil {
-		return "", err
-	}
-	if err := f.Chmod(0600); err != nil {
-		f.Close()
-		os.Remove(f.Name())
-		return "", err
-	}
-	if _, err := f.Write(credsJSON); err != nil {
-		f.Close()
-		os.Remove(f.Name())
-		return "", err
-	}
-	if err := f.Close(); err != nil {
-		os.Remove(f.Name())
-		return "", err
-	}
-	return f.Name(), nil
-}
-
-// createEphemeralTunnel creates a throwaway tunnel and returns its ID plus the
-// cloudflared credentials JSON, kept in memory (never sops-encrypted).
-func createEphemeralTunnel(ctx context.Context, client *cloudflare.Client, accountID, name string) (string, []byte, error) {
+// createEphemeralTunnel creates a throwaway tunnel and returns its credentials
+// in memory (never written to disk or sops-encrypted).
+func createEphemeralTunnel(ctx context.Context, client *cloudflare.Client, accountID, name string) (tunnelCredentials, error) {
 	secretBytes := make([]byte, 32)
 	if _, err := rand.Read(secretBytes); err != nil {
-		return "", nil, fmt.Errorf("generate tunnel secret: %w", err)
+		return tunnelCredentials{}, fmt.Errorf("generate tunnel secret: %w", err)
 	}
 	secret := base64.StdEncoding.EncodeToString(secretBytes)
 
@@ -414,19 +494,14 @@ func createEphemeralTunnel(ctx context.Context, client *cloudflare.Client, accou
 		TunnelSecret: cloudflare.F(secret),
 	})
 	if err != nil {
-		return "", nil, err
+		return tunnelCredentials{}, err
 	}
 
-	credsJSON, err := json.Marshal(tunnelCredentials{
+	return tunnelCredentials{
 		AccountTag:   t.AccountTag,
 		TunnelID:     t.ID,
 		TunnelSecret: secret,
-	})
-	if err != nil {
-		cleanupTunnel(ctx, client, accountID, t.ID)
-		return "", nil, fmt.Errorf("marshal credentials: %w", err)
-	}
-	return t.ID, credsJSON, nil
+	}, nil
 }
 
 // findShareTunnel returns the ID of a non-deleted tunnel with the given name.
@@ -444,11 +519,27 @@ func findShareTunnel(ctx context.Context, client *cloudflare.Client, accountID, 
 	return ""
 }
 
-// ensureAccessApp returns an existing self-hosted app for the domain, or creates
-// one with a reusable allowlist policy attached. The v6.7.0 inline policy union
-// carries no decision/include, so we create the policy via Policies.New and link it.
+// validateExistingShareApp refuses to adopt or overwrite an existing Cloudflare
+// Access application unless its name carries shareAppPrefix ("cf-share: ").
+// Without this check, running `cf share up` against a hostname already gated by
+// a permanent `cf-access:` application would overwrite its allowlist policy and
+// leave the modified policy in place after teardown.
+func validateExistingShareApp(name, domain, id string) error {
+	if !strings.HasPrefix(name, shareAppPrefix) {
+		return fmt.Errorf(
+			"refusing to modify existing non-cf-share Access application %q (%s) on %s; only %q-prefixed apps may be reconciled",
+			name, id, domain, shareAppPrefix,
+		)
+	}
+	return nil
+}
+
+// ensureAccessApp reconciles an existing `cf-share:` self-hosted app for the
+// domain (verifying and updating its allowlist policy and session duration if
+// drifted), refuses to touch unmanaged apps on that domain, or creates a new
+// `cf-share:` app with an allowlist policy attached.
 // created reports whether this call created the app; teardown only deletes apps
-// it created, so a reused (pre-existing) app is left alone.
+// it created, so a reused (pre-existing `cf-share:`) app is left in place.
 func ensureAccessApp(ctx context.Context, client *cloudflare.Client, acctID, domain, sessionDuration string, emails []string) (appID, policyID string, created bool, err error) {
 	iter := client.ZeroTrust.Access.Applications.ListAutoPaging(ctx, zero_trust.AccessApplicationListParams{
 		AccountID: cloudflare.F(acctID),
@@ -456,11 +547,45 @@ func ensureAccessApp(ctx context.Context, client *cloudflare.Client, acctID, dom
 		Exact:     cloudflare.F(true),
 	})
 	for iter.Next() {
-		app := iter.Current()
-		if strings.EqualFold(app.Domain, domain) {
-			fmt.Printf("Reusing existing Access application %s\n", app.ID)
-			return app.ID, "", false, nil
+		raw := iter.Current()
+		if !strings.EqualFold(raw.Domain, domain) {
+			continue
 		}
+		sh, ok := raw.AsUnion().(zero_trust.AccessApplicationListResponseSelfHostedApplication)
+		if !ok {
+			return "", "", false, fmt.Errorf("existing Access application %s for %s has unsupported type %q", raw.ID, domain, raw.Type)
+		}
+		if err := validateExistingShareApp(sh.Name, domain, sh.ID); err != nil {
+			return "", "", false, err
+		}
+
+		existing := managedAccessApp{
+			id:              sh.ID,
+			domain:          sh.Domain,
+			name:            sh.Name,
+			sessionDuration: sh.SessionDuration,
+			tags:            sh.Tags,
+		}
+		if len(sh.Policies) > 0 {
+			p := sh.Policies[0]
+			existing.policyID = p.ID
+			existing.emails = policyEmails(p.Include)
+		}
+
+		needsReconcile := existing.policyID == "" ||
+			len(sh.Policies) != 1 ||
+			!emailsEqual(existing.emails, emails) ||
+			existing.sessionDuration != sessionDuration
+
+		if needsReconcile {
+			fmt.Printf("Reconciling existing cf-share Access application %s (updating policy/session)...\n", sh.ID)
+			if err := updateManagedApp(ctx, client, acctID, existing, existing.name, sessionDuration, emails); err != nil {
+				return "", "", false, fmt.Errorf("reconcile existing Access application %s: %w", sh.ID, err)
+			}
+		} else {
+			fmt.Printf("Reusing existing cf-share Access application %s (policy verified)\n", sh.ID)
+		}
+		return sh.ID, "", false, nil
 	}
 	if err := iter.Err(); err != nil {
 		return "", "", false, fmt.Errorf("list applications: %w", err)
@@ -516,8 +641,8 @@ func createShareCNAME(ctx context.Context, client *cloudflare.Client, zoneID, fu
 }
 
 // shareTeardown reverses `up` best-effort: DNS, Access app+policy, children,
-// ephemeral tunnel, temp files.
-func shareTeardown(ctx context.Context, client *cloudflare.Client, st *shareState, stopCf func(), appChild *exec.Cmd, statePath string) {
+// ephemeral tunnel, runtime files.
+func shareTeardown(ctx context.Context, client *cloudflare.Client, st *shareState, stopCf func(), appChild *exec.Cmd, statePath, logPath string) {
 	deleteShareCNAME(ctx, client, st)
 
 	// Only tear down the Access app/policy this share created; a reused
@@ -553,6 +678,9 @@ func shareTeardown(ctx context.Context, client *cloudflare.Client, st *shareStat
 		if err := os.Remove(st.CredsTempPath); err != nil && !os.IsNotExist(err) {
 			fmt.Fprintf(os.Stderr, "Warning: failed to remove temp creds %s: %v\n", st.CredsTempPath, err)
 		}
+	}
+	if err := os.Remove(logPath); err != nil && !os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Warning: failed to remove logfile %s: %v\n", logPath, err)
 	}
 	if err := os.Remove(statePath); err != nil && !os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "Warning: failed to remove statefile %s: %v\n", statePath, err)

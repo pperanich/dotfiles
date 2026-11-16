@@ -42,6 +42,7 @@ opt_host=""
 opt_mode=""
 opt_dir=""
 opt_repo=""
+opt_extra_files_dir=""
 opt_assume_yes=false
 opt_dry_run=false
 
@@ -774,6 +775,73 @@ host_age_recipient() {
   fi
 }
 
+# Prepare an ephemeral --extra-files tree containing /etc/ssh/ssh_host_ed25519_key
+# (0600) for nixos-anywhere bare-metal bootstrapping, and print its age1...
+# recipient to stdout.
+prepare_nixos_anywhere_extra_files() {
+  local raw_dir="$1" target ssh_dir key comment ssh_to_age recipient
+  target="$(expand_tilde "$raw_dir")"
+
+  if ! command_exists ssh-keygen; then
+    log_error "ssh-keygen not found; cannot generate SSH host key"
+    exit 1
+  fi
+
+  ssh_to_age="$(resolve_cmd ssh-to-age)"
+  if [ -z "$ssh_to_age" ]; then
+    if load_nix_env; then
+      log_step "Building ssh-to-age from nixpkgs"
+      ssh_to_age="$(nix_bin ssh-to-age ssh-to-age)"
+    fi
+  fi
+  if [ -z "$ssh_to_age" ]; then
+    log_error "ssh-to-age not found (run inside 'nix develop' or install Nix)"
+    exit 1
+  fi
+
+  ssh_dir="$target/etc/ssh"
+  key="$ssh_dir/ssh_host_ed25519_key"
+  comment="root@${opt_host:-nixos}"
+
+  if [ "$opt_dry_run" = true ]; then
+    log_info "dry run: would create $key (0600) and derive age1 recipient"
+    exit 0
+  fi
+
+  mkdir -p "$ssh_dir"
+  chmod 755 "$target/etc" "$ssh_dir"
+
+  if [ -e "$key" ]; then
+    log_info "reusing existing host key at $key"
+  else
+    log_step "Generating ephemeral SSH host key at $key"
+    (
+      umask 077
+      ssh-keygen -t ed25519 -N '' -C "$comment" -f "$key" -q 1>&2
+    )
+  fi
+  chmod 600 "$key"
+  chmod 644 "${key}.pub"
+
+  recipient="$("$ssh_to_age" -i "${key}.pub" 2>/dev/null || true)"
+  case "$recipient" in
+  age1*) ;;
+  *)
+    log_error "could not derive an age recipient from ${key}.pub"
+    exit 1
+    ;;
+  esac
+
+  log_info "SSH public key: $(cat "${key}.pub")"
+  log_info "Age recipient:  $recipient"
+  log_info "Next steps for nixos-anywhere:"
+  log_info "  1. Add '&${opt_host:-<host>} $recipient' to sops/.sops.yaml"
+  log_info "  2. sops --config sops/.sops.yaml updatekeys sops/machines/${opt_host:-<host>}.yaml"
+  log_info "  3. nix run github:nix-community/nixos-anywhere -- --extra-files \"$target\" --flake .#${opt_host:-<host>} root@<target-ip>"
+  log_info "  4. shred -u \"$key\" && rm -rf \"$target\"  (or rm -rf \"$target\" on APFS/tmpfs)"
+  printf '%s\n' "$recipient"
+}
+
 # Fills in real age recipients, a password hash and the user's private key,
 # then encrypts. Returns non-zero without leaving plaintext behind.
 #
@@ -834,9 +902,6 @@ bootstrap_secrets() {
   {
     printf 'passwords:\n'
     printf '  %s: "%s"\n' "$user" "$hash"
-    printf 'private_keys:\n'
-    printf '  %s: |\n' "$user"
-    sed 's/^/    /' "$key"
     # The private template's profile declares no api keys, and a key nothing
     # asks for is one more thing to keep encrypted for no reason.
     if [ "$kind" != private ]; then
@@ -1319,99 +1384,6 @@ switch_home_manager() {
   "$out/activate"
 }
 
-# --- clan vars ------------------------------------------------------------
-
-CLAN_KEY_FILE="/var/lib/sops-nix/key.txt"
-
-# Machine names in this flake's clan inventory; empty when it has no clan.
-clan_inventory_machines() {
-  nix eval --raw "${FLAKE_DIR}#clan.inventory.machines" \
-    --apply 'set: builtins.concatStringsSep "\n" (builtins.attrNames set)' 2>/dev/null || true
-}
-
-host_in_clan() {
-  local names
-  names="$(clan_inventory_machines)"
-  [ -n "$names" ] || return 1
-  printf '%s\n' "$names" | grep -Fxq "$1"
-}
-
-# The clan CLI from a flake's own dev shell, so it matches what that repo pins
-# and inherits any override it applies. clan-cli is not in nixpkgs.
-clan_bin() {
-  nix develop "$1" --command bash -c 'command -v clan' 2>/dev/null || true
-}
-
-# Put the machine's clan-generated age key where sops-nix looks for it. Without
-# it a machine whose secrets clan owns cannot decrypt anything at activation.
-#
-# clan runs as the invoking user, because it needs that user's admin key to
-# decrypt; only the final move needs root. `--directory` names where the key
-# file is written, so this is the local equivalent of uploading over ssh.
-install_clan_key() {
-  local dir="$1" host="$2" clan stage
-  clan="$(clan_bin "$dir")"
-  if [ -z "$clan" ]; then
-    log_error "no clan CLI in the dev shell at $dir"
-    return 1
-  fi
-
-  ensure_tmp_dir
-  stage="$TMP_DIR/clanvars"
-  mkdir -p "$stage"
-  chmod 700 "$stage"
-
-  log_step "Fetching this machine's clan key"
-  if ! "$clan" vars upload "$host" --flake "$dir" --directory "$stage"; then
-    log_error "clan vars upload failed"
-    return 1
-  fi
-  if [ ! -s "$stage/key.txt" ]; then
-    log_error "clan wrote no key; has 'clan vars generate $host' been run?"
-    return 1
-  fi
-
-  sudo_preflight
-
-  # The path is a single file, so a machine already in another clan already has
-  # a key here. Existence alone says nothing about whose it is; compare.
-  if sudo test -e "$CLAN_KEY_FILE"; then
-    if sudo cmp -s "$stage/key.txt" "$CLAN_KEY_FILE"; then
-      log_info "clan key already correct at $CLAN_KEY_FILE"
-      rm -f "$stage/key.txt"
-      return 0
-    fi
-    log_warn "a different key is already installed at $CLAN_KEY_FILE"
-    log_warn "this machine looks like it belongs to another clan, and the two"
-    log_warn "cannot share this path"
-    if ! ask_yes_no "Replace it, keeping a backup?"; then
-      rm -f "$stage/key.txt"
-      return 1
-    fi
-    if ! sudo cp -p "$CLAN_KEY_FILE" "$CLAN_KEY_FILE.replaced"; then
-      log_error "could not back up $CLAN_KEY_FILE"
-      rm -f "$stage/key.txt"
-      return 1
-    fi
-    log_info "previous key kept at $CLAN_KEY_FILE.replaced"
-  fi
-
-  if ! sudo install -d -m 700 -o root "$(dirname "$CLAN_KEY_FILE")"; then
-    log_error "could not create $(dirname "$CLAN_KEY_FILE")"
-    return 1
-  fi
-  if ! sudo install -m 600 -o root "$stage/key.txt" "$CLAN_KEY_FILE"; then
-    log_error "could not write $CLAN_KEY_FILE; staged copy kept at $stage"
-    return 1
-  fi
-  if ! sudo cmp -s "$stage/key.txt" "$CLAN_KEY_FILE"; then
-    log_error "$CLAN_KEY_FILE does not match what clan produced"
-    return 1
-  fi
-  rm -f "$stage/key.txt"
-  log_info "installed $CLAN_KEY_FILE"
-}
-
 # --- plan -----------------------------------------------------------------
 
 plan_action() {
@@ -1460,14 +1432,17 @@ Usage:
   curl -fsSL https://raw.githubusercontent.com/pperanich/dotfiles/main/bin/install.sh | bash
 
 Options:
-  --host <name>   Flake configuration to apply (default: this machine's hostname)
-  --home-only     Apply standalone home-manager instead of the system config
-  --dir <path>    Where to clone the repo when not run from a checkout
-  --ref <ref>     Branch or tag to clone/update (default: main)
-  --repo <url>    Repository to clone (default: github.com/pperanich/dotfiles)
-  --dry-run       Print the plan and exit without changing anything
-  -y, --yes       Skip the confirmation prompt
-  -h, --help      Show this help
+  --host <name>                 Flake configuration to apply (default: this machine's hostname)
+  --home-only                   Apply standalone home-manager instead of the system config
+  --prepare-extra-files <dir>   Generate <dir>/etc/ssh/ssh_host_ed25519_key (0600) and print
+                                its age1... recipient for nixos-anywhere --extra-files
+  --extra-files-dir <dir>       Alias for --prepare-extra-files <dir>
+  --dir <path>                  Where to clone the repo when not run from a checkout
+  --ref <ref>                   Branch or tag to clone/update (default: main)
+  --repo <url>                  Repository to clone (default: github.com/pperanich/dotfiles)
+  --dry-run                     Print the plan and exit without changing anything
+  -y, --yes                     Skip the confirmation prompt
+  -h, --help                    Show this help
 
 Environment:
   DOTFILES_DIR    Same as --dir
@@ -1542,6 +1517,14 @@ parse_args() {
       opt_mode="home"
       shift
       ;;
+    --prepare-extra-files | --extra-files-dir)
+      opt_extra_files_dir="${2:-}"
+      [ -n "$opt_extra_files_dir" ] || {
+        log_error "$1 requires a directory path"
+        exit 1
+      }
+      shift 2
+      ;;
     --dry-run)
       opt_dry_run=true
       shift
@@ -1566,6 +1549,11 @@ parse_args() {
 
 main() {
   parse_args "$@"
+
+  if [ -n "$opt_extra_files_dir" ]; then
+    prepare_nixos_anywhere_extra_files "$opt_extra_files_dir"
+    exit 0
+  fi
 
   OS="$(detect_os)"
   if [ -z "$OS" ]; then
@@ -1637,22 +1625,6 @@ main() {
 
   install_nix
   resolve_flake_target
-
-  # A machine in the clan inventory decrypts with a key clan owns, not with
-  # anything nixos-rebuild or darwin-rebuild provides. Activation fails without
-  # it, so offer to place it first.
-  # The key itself is unreadable without root, but its directory is not, and a
-  # missing directory means the machine was never provisioned. Gate on that so
-  # an already-provisioned host never has to escalate just to be checked.
-  if [ "$opt_mode" != home ] && [ ! -d "$(dirname "$CLAN_KEY_FILE")" ] &&
-    host_in_clan "$opt_host"; then
-    log_warn "$opt_host is in this clan but has no $CLAN_KEY_FILE"
-    log_warn "sops secrets cannot be decrypted at activation without it"
-    if ask_yes_no "Install the clan key now?"; then
-      install_clan_key "$FLAKE_DIR" "$opt_host" ||
-        log_warn "continuing without it; activation may fail on secrets"
-    fi
-  fi
 
   if [ "$opt_mode" = nixos ]; then
     sudo_preflight

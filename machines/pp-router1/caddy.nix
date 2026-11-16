@@ -1,10 +1,10 @@
 # Caddy reverse proxy + the Cloudflare DNS records that must stay in sync
 # with its vhosts. HTTPS via DNS-01 (caddyDns01 module) — no public ports.
-# Access from LAN (10.0.0.1) and WireGuard VPN.
+# Access from LAN (10.0.0.1) and the tailnet.
 #
 # Records point to private IPs — unreachable from the public internet.
-# LAN clients resolve via Unbound (10.0.0.1), VPN clients via public DNS +
-# WireGuard. Synced every 12h via systemd timer. Manual: systemctl start
+# LAN clients resolve via Unbound (10.0.0.1), tailnet clients via public DNS +
+# Tailscale. Synced every 12h via systemd timer. Manual: systemctl start
 # cf-dns-sync. When adding a new virtualHost, add a matching record.
 {
   config,
@@ -13,37 +13,31 @@
   ...
 }:
 let
-  wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
-  wgAddress = "${wgPrefix}::1";
   routerIp = config.my.router.lan.address;
   nasHost = "pp-nas1.${config.my.router.dhcp.domainName}";
   inherit (lib.my.homelab) publicDomain mkSub;
 
-  # AAAA-only records pointing subdomains at the router's WireGuard address.
-  # No A records on purpose: LAN clients get split-horizon answers from
-  # Unbound, and a public A of 10.0.0.1 poisoned WireGuard clients — the
-  # IPv6-only tunnel can't route it, so Happy Eyeballs raced a dead
-  # (carrier-CGNAT) path and page loads stalled intermittently. WG clients
-  # reach wgAddress through the tunnel; LAN DoH clients reach it via the
-  # router's v6 default route. Both land on the same Caddy.
+  # AAAA-only records pointing subdomains at the router's tailnet ULA; LAN
+  # clients get split-horizon A answers from Unbound instead.
   mkDnsRecords =
     subdomains:
     map (sub: {
       type = "AAAA";
       name = mkSub sub;
-      content = wgAddress;
+      content = config.my.headscale.routerTailscaleIpv6;
     }) subdomains;
 
-  # Caddy vhost listening on LAN + WireGuard with custom config
+  # Caddy vhost listening on LAN + Tailscale with custom config
   mkVhost = extraConfig: {
     listenAddresses = [
       routerIp
-      wgAddress
+      config.my.headscale.routerTailscaleIpv4
+      config.my.headscale.routerTailscaleIpv6
     ];
     inherit extraConfig;
   };
 
-  # Simple reverse proxy vhost (LAN + WireGuard)
+  # Simple reverse proxy vhost (LAN + Tailscale)
   mkProxy =
     backend:
     mkVhost ''
@@ -51,7 +45,7 @@ let
     '';
 
   # Proxy to the NAS's own Caddy over TLS (split-horizon: LAN clients reach
-  # it directly, this vhost carries the WG/hairpin path). Dial the stable
+  # it directly, this vhost carries the tailnet/hairpin path). Dial the stable
   # .home.arpa name but verify the upstream cert against the public name —
   # resolving the public name here could self-loop via our own vhost.
   mkNasProxy =
@@ -73,12 +67,21 @@ in
   my.caddyDns01.enable = true;
 
   # Per-request metrics (latency/status per vhost) on the admin endpoint,
-  # scraped by the local Prometheus as job "caddy"
+  # scraped by the local Prometheus as job "caddy".
+  # Only trust forwarded client IP headers from loopback (cloudflared tunnel
+  # listeners) so LAN/tailnet peers cannot spoof X-Forwarded-For.
+  # Disable automatic HTTP->HTTPS redirects on :80: port 80 is closed on both
+  # WAN and LAN, and mixing IP-bound :443 vhosts with the wildcard :9443
+  # Headscale listener would otherwise make Caddy bind both 10.0.0.1:80 and
+  # [::]:80, which fails with EADDRINUSE on Linux.
   services.caddy.globalConfig = ''
+    auto_https disable_redirects
     servers {
       metrics {
         per_host
       }
+      trusted_proxies static 127.0.0.1/32 ::1/128
+      client_ip_headers Cf-Connecting-Ip X-Forwarded-For
     }
   '';
 
@@ -102,9 +105,9 @@ in
         "hass" # home assistant (pp-nas1)
         "home" # dashboard (pp-router1)
         "grafana" # observability dashboard
-        "alerts" # alertmanager UI
         "vault-admin" # vaultwarden admin panel (pp-router1)
         "gitea" # self-hosted git (pp-router1)
+        "headplane" # headscale web UI (pp-router1)
       ]
       ++ [
         # Mail deliverability (SPF + DKIM + DMARC)
@@ -143,7 +146,6 @@ in
     # --- Simple reverse proxies (router-local services) ---
     "${mkSub "home"}" = mkProxy "localhost:8082";
     "${mkSub "grafana"}" = mkProxy "localhost:3010";
-    "${mkSub "alerts"}" = mkProxy "localhost:9093";
     "${mkSub "ntopng"}" = mkProxy "localhost:3000";
     "${mkSub "vault"}" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
     "${mkSub "vault-admin"}" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
@@ -156,6 +158,12 @@ in
       request_body {
         max_size 5G
       }
+    '';
+
+    # Headplane serves its UI under /admin only.
+    "${config.my.headplane.domain}" = mkVhost ''
+      redir / /admin 302
+      reverse_proxy localhost:${toString config.my.headplane.port}
     '';
 
     # Unifi controller (self-signed cert, requires origin header rewrite for CSRF)
@@ -213,6 +221,18 @@ in
     "${mkSub "jellyfin"}" = mkNasProxy (mkSub "jellyfin") "";
     "${mkSub "navidrome"}" = mkNasProxy (mkSub "navidrome") "";
 
+    # --- Headscale control plane (public WAN :9443 via gray-cloud DDNS) ---
+    # Unbound listenAddresses so WAN clients reach :9443 directly while all
+    # :443 vhosts above remain strictly bound to LAN + Tailscale IPs.
+    # Cloudflare Tunnel cannot carry Tailscale's TS2021 `Upgrade: tailscale-control-protocol`.
+    "https://${config.my.headscale.domain}:${toString config.my.headscale.publicPort}" = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:${toString config.my.headscale.listenPort} {
+          flush_interval -1
+        }
+      '';
+    };
+
     # --- Cloudflare Tunnel listeners (localhost only) ---
     # Personal site (public via tunnel)
     "http://:8224" = {
@@ -232,7 +252,9 @@ in
           respond "Forbidden" 403
         }
         handle {
-          reverse_proxy localhost:${toString config.my.vaultwarden.port}
+          reverse_proxy localhost:${toString config.my.vaultwarden.port} {
+            header_up X-Forwarded-For {client_ip}
+          }
         }
       '';
     };

@@ -17,9 +17,71 @@ _: {
       dnsCfg = cfg.dns;
       enabled = cfg.enable && dnsCfg.enable && cfg.dhcp.enable && dnsCfg.ddns.enable;
       domain = cfg.dhcp.domainName; # "home.arpa"
+      domainLower = lib.toLower domain;
       leaseFile = "/var/lib/kea/dhcp4-leases.csv";
       trackingFile = "/run/kea-unbound-sync/records";
       unboundPkg = config.services.unbound.package;
+
+      allStaticReservations = cfg._internal.staticHostReservations or [ ];
+
+      extraLocalHostnames =
+        let
+          extractHost =
+            raw:
+            let
+              tok = lib.removeSuffix "." (lib.toLower (builtins.head (lib.splitString " " (lib.trim raw))));
+            in
+            if lib.hasSuffix ".${domainLower}" tok then
+              builtins.head (lib.splitString "." (lib.removeSuffix ".${domainLower}" tok))
+            else if !(lib.hasInfix "." tok) then
+              tok
+            else
+              null;
+        in
+        lib.filter (h: h != null && h != "") (
+          map extractHost dnsCfg.extraLocalData ++ map (s: extractHost s.name) cfg.services
+        );
+
+      protectedHostnames = lib.unique (
+        [
+          "router"
+          "gateway"
+          "unifi"
+          "wpad"
+          "isatap"
+          "localhost"
+          (lib.toLower cfg.hostname)
+          (lib.toLower config.networking.hostName)
+        ]
+        ++ map (r: r.hostname) allStaticReservations
+        ++ extraLocalHostnames
+        ++ lib.optionals cfg.networks.enable (map lib.toLower (lib.attrNames cfg.networks.segments))
+        ++ map lib.toLower dnsCfg.ddns.extraBlockedHostnames
+      );
+
+      subnetZoneEntries =
+        if cfg.networks.enable then
+          lib.mapAttrsToList (
+            segName: seg:
+            let
+              zone =
+                if seg.isolation == "none" then
+                  domain
+                else if dnsCfg.ddns.isolatedSegmentMode == "subdomain" then
+                  "${lib.toLower segName}.${domain}"
+                else
+                  "__EXCLUDE__";
+            in
+            "[${lib.escapeShellArg seg.subnet}]=${lib.escapeShellArg zone}"
+          ) cfg.networks.segments
+        else
+          [ "[${lib.escapeShellArg cfg.lan.subnet}]=${lib.escapeShellArg domain}" ];
+
+      protectedHostnameEntries = map (h: "[${lib.escapeShellArg h}]=1") protectedHostnames;
+
+      staticReservationIpEntries = map (
+        r: "[${lib.escapeShellArg r.hostname}]=${lib.escapeShellArg r.ip}"
+      ) allStaticReservations;
 
       syncScript = pkgs.writeShellApplication {
         name = "kea-unbound-sync";
@@ -30,6 +92,16 @@ _: {
           TRACKING_FILE="${trackingFile}"
           UNBOUND="${unboundPkg}/bin/unbound-control"
           NOW=$(date +%s)
+
+          declare -A PROTECTED_HOSTS=(
+            ${lib.concatStringsSep "\n  " protectedHostnameEntries}
+          )
+          declare -A RESERVED_IPS=(
+            ${lib.concatStringsSep "\n  " staticReservationIpEntries}
+          )
+          declare -A SUBNET_ZONES=(
+            ${lib.concatStringsSep "\n  " subnetZoneEntries}
+          )
 
           # Pre-flight: skip if Unbound isn't ready
           if ! "$UNBOUND" status >/dev/null 2>&1; then
@@ -68,8 +140,27 @@ _: {
               hostname="''${hostname%"''${hostname##*[!-]}"}"
               [[ -z "$hostname" ]] && continue
 
-              # Last lease for a given hostname wins
-              CURRENT_LEASES["$hostname"]="$address"
+              # Reject protected/static hostnames so dynamic leases cannot hijack them
+              if [[ -n "''${PROTECTED_HOSTS[$hostname]:-}" ]]; then
+                if [[ "''${RESERVED_IPS[$hostname]:-}" == "$address" ]]; then
+                  # Legitimate Kea lease for a static reservation (already in static local-data)
+                  continue
+                fi
+                echo "[ddns] REJECTED protected hostname '$hostname' claimed by lease $address" >&2
+                continue
+              fi
+
+              # Scope zone by lease subnet / segment isolation
+              subnet_prefix="''${address%.*}"
+              target_zone="''${SUBNET_ZONES[$subnet_prefix]:-}"
+              if [[ -z "$target_zone" || "$target_zone" == "__EXCLUDE__" ]]; then
+                continue
+              fi
+
+              fqdn="''${hostname}.''${target_zone}."
+
+              # Last lease for a given FQDN within its authorized zone wins
+              CURRENT_LEASES["$fqdn"]="$address"
             done < "$lf"
           done
 
@@ -77,7 +168,12 @@ _: {
           declare -A OLD_RECORDS=()
           if [[ -f "$TRACKING_FILE" ]]; then
             while IFS='=' read -r name addr; do
-              [[ -n "$name" ]] && OLD_RECORDS["$name"]="$addr"
+              [[ -z "$name" ]] && continue
+              # Migrate legacy bare-hostname tracking entries if present
+              if [[ "$name" != *"." ]]; then
+                name="''${name}.''${DOMAIN}."
+              fi
+              OLD_RECORDS["$name"]="$addr"
             done < "$TRACKING_FILE"
           fi
 
@@ -85,15 +181,14 @@ _: {
           # Always call local_data for every lease (idempotent) — self-heals after
           # Unbound restarts even if the tracking file wasn't properly cleared.
           if [[ ''${#CURRENT_LEASES[@]} -gt 0 ]]; then
-            for hostname in "''${!CURRENT_LEASES[@]}"; do
-              addr="''${CURRENT_LEASES[$hostname]}"
-              fqdn="''${hostname}.''${DOMAIN}."
+            for fqdn in "''${!CURRENT_LEASES[@]}"; do
+              addr="''${CURRENT_LEASES[$fqdn]}"
 
               # Remove stale entry if IP changed
-              if [[ -n "''${OLD_RECORDS[$hostname]:-}" && "''${OLD_RECORDS[$hostname]}" != "$addr" ]]; then
+              if [[ -n "''${OLD_RECORDS[$fqdn]:-}" && "''${OLD_RECORDS[$fqdn]}" != "$addr" ]]; then
                 "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
                 echo "[ddns] $fqdn -> $addr (updated)"
-              elif [[ -z "''${OLD_RECORDS[$hostname]:-}" ]]; then
+              elif [[ -z "''${OLD_RECORDS[$fqdn]:-}" ]]; then
                 echo "[ddns] $fqdn -> $addr"
               fi
 
@@ -103,14 +198,18 @@ _: {
               fi
 
               # Mark as processed
-              unset "OLD_RECORDS[$hostname]" 2>/dev/null || true
+              unset "OLD_RECORDS[$fqdn]" 2>/dev/null || true
             done
           fi
 
           # --- Remove records for expired/released leases ---
           if [[ ''${#OLD_RECORDS[@]} -gt 0 ]]; then
-            for hostname in "''${!OLD_RECORDS[@]}"; do
-              fqdn="''${hostname}.''${DOMAIN}."
+            for fqdn in "''${!OLD_RECORDS[@]}"; do
+              base_host="''${fqdn%%.*}"
+              if [[ -n "''${PROTECTED_HOSTS[$base_host]:-}" && "$fqdn" == "''${base_host}.''${DOMAIN}." ]]; then
+                # Never remove static local-data records migrated from an older tracking file
+                continue
+              fi
               "$UNBOUND" local_data_remove "$fqdn" 2>/dev/null || true
               echo "[ddns] removed $fqdn"
             done
@@ -118,10 +217,11 @@ _: {
 
           # --- Persist current state (atomic write) ---
           TMPFILE="''${TRACKING_FILE}.tmp"
+          rm -f "$TMPFILE"
           : > "$TMPFILE"
           if [[ ''${#CURRENT_LEASES[@]} -gt 0 ]]; then
-            for hostname in "''${!CURRENT_LEASES[@]}"; do
-              echo "''${hostname}=''${CURRENT_LEASES[$hostname]}" >> "$TMPFILE"
+            for fqdn in "''${!CURRENT_LEASES[@]}"; do
+              echo "''${fqdn}=''${CURRENT_LEASES[$fqdn]}" >> "$TMPFILE"
             done
           fi
           mv "$TMPFILE" "$TRACKING_FILE"
@@ -133,6 +233,23 @@ _: {
     {
       options.my.router.dns.ddns = {
         enable = lib.mkEnableOption "dynamic DNS updates from DHCP leases to Unbound";
+        isolatedSegmentMode = lib.mkOption {
+          type = lib.types.enum [
+            "subdomain"
+            "exclude"
+          ];
+          default = "subdomain";
+          description = ''
+            How DHCP leases from isolated VLAN segments (`isolation != "none"`) are registered in DNS:
+            - `subdomain`: register only under `<hostname>.<segment>.<domain>` (e.g. `device.iot.home.arpa`)
+            - `exclude`: do not register dynamic DNS records for isolated VLAN clients
+          '';
+        };
+        extraBlockedHostnames = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Additional hostnames blocked from dynamic DHCP DNS registration.";
+        };
       };
 
       config = lib.mkMerge [
@@ -168,10 +285,35 @@ _: {
                   RuntimeDirectory = "kea-unbound-sync";
                   RuntimeDirectoryPreserve = true;
 
-                  # Sandboxing — script parses attacker-influenced DHCP hostnames
+                  # Sandboxing: script parses attacker-influenced DHCP hostnames.
+                  # Runs as unbound (owns unbound_control.key) with read-only DAC
+                  # bypass so it can read Kea's DynamicUser /var/lib/private/kea CSV.
+                  User = config.services.unbound.user;
+                  Group = config.services.unbound.group;
+                  AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
+                  CapabilityBoundingSet = [ "CAP_DAC_READ_SEARCH" ];
                   ProtectSystem = "strict";
                   ProtectHome = true;
                   PrivateTmp = true;
+                  PrivateDevices = true;
+                  ProtectHostname = true;
+                  ProtectClock = true;
+                  ProtectKernelTunables = true;
+                  ProtectKernelModules = true;
+                  ProtectKernelLogs = true;
+                  ProtectControlGroups = true;
+                  RestrictAddressFamilies = [
+                    "AF_UNIX"
+                    "AF_INET"
+                    "AF_INET6"
+                  ];
+                  RestrictNamespaces = true;
+                  RestrictRealtime = true;
+                  RestrictSUIDSGID = true;
+                  LockPersonality = true;
+                  MemoryDenyWriteExecute = true;
+                  SystemCallArchitectures = "native";
+                  UMask = "0077";
                   NoNewPrivileges = true;
                 };
               };

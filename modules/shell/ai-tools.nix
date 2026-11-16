@@ -20,7 +20,7 @@ in
     };
 
     homeManager.aiTools =
-      { pkgs, ... }:
+      { pkgs, lib, ... }:
       let
         agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
       in
@@ -29,6 +29,7 @@ in
 
         home.packages = [
           agents.claude-code
+          agents.claude-desktop
           agents.opencode2
           agents.codex
           agents.herdr
@@ -36,8 +37,8 @@ in
           agents.antigravity-cli
           agents.antigravity-hub
           agents.qmd
-          agents.handy
-        ];
+        ]
+        ++ lib.optional (agents ? handy) agents.handy;
       };
   };
 }

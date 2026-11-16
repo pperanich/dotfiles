@@ -2,21 +2,21 @@
 
 > **Note:** This document is superseded by [Service Exposure Pathways](service-exposure.md)
 > for the recommended approach to exposing services. The DDNS information below remains
-> accurate for domains that require direct WAN IP resolution (e.g., WireGuard VPN endpoint).
+> accurate for domains that require direct WAN IP resolution (e.g., the Headscale control plane).
 
 Guide for hosting websites from pp-router1 using DDNS + reverse proxy.
 
 ## Current State
 
-DDNS is configured and working. The following DNS records auto-update with your home IP every 5 minutes:
+DDNS is configured and working for one record: `hs.prestonperanich.com` (the Headscale control plane) updates with the home IPv4 address. The apex and `www` records below are not managed by DDNS yet.
 
-| Record                    | Status |
-| ------------------------- | ------ |
-| `prestonperanich.com`     | Active |
-| `www.prestonperanich.com` | Active |
-| `vpn.prestonperanich.com` | Active |
+| Record                    | Status      |
+| ------------------------- | ----------- |
+| `hs.prestonperanich.com`  | Active      |
+| `prestonperanich.com`     | Not managed |
+| `www.prestonperanich.com` | Not managed |
 
-Configuration: `modules/flake-parts/clan.nix` (dyndns instance)
+Configuration: `services.cloudflare-dyndns` in `machines/pp-router1/configuration.nix`
 
 ## Remaining Steps
 

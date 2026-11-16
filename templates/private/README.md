@@ -90,11 +90,12 @@ are supported; the value cannot depend on `config` or `pkgs`.
 
    If the target lacks `ssh-to-age`, copy its public host key to the
    workstation and convert it there. Put the recipients in
-   `sops/.sops.yaml`. The admin recipient must match the user private key
-   stored under `private_keys/<user>`, since Home Manager uses that key.
+   `sops/.sops.yaml`. Home Manager decrypts with the user's own
+   `~/.ssh/id_ed25519`, so add that key's recipient for every machine the
+   user logs in to; the key itself never goes into `secrets.yaml`.
 
 5. **Replace and encrypt the placeholder secrets.** Before the first switch,
-   fill in the password hash and user SSH private key. The checked-in file
+   fill in the password hash. The checked-in file
    starts as plaintext, so encrypt it explicitly:
 
    ```bash

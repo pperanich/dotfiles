@@ -3,6 +3,7 @@ _: {
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -38,6 +39,8 @@ _: {
 
       config = lib.mkIf cfg.enable {
         services.stalwart = {
+          # Explicit: the `stalwart` alias warns that it is pinned to 0.15 (0.16 does not fit the module yet).
+          package = pkgs.stalwart_0_15;
           enable = true;
 
           # 26.05 adopts the upstream user/state-dir rename: user + group

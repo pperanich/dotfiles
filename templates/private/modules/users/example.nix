@@ -1,5 +1,5 @@
 # Rename this file, username, home-profiles/example, machine imports/options,
-# and the passwords/example and private_keys/example keys in secrets.yaml.
+# and the passwords/example key in secrets.yaml.
 _:
 let
   username = "example";
@@ -21,22 +21,13 @@ in
       };
 
       config = {
-        sops.secrets."passwords/${username}".neededForUsers = true;
+        my.desktop.enable = lib.mkDefault config.my.${username}.desktop;
 
-        # The host key decrypts this before Home Manager needs the user's key.
-        sops.secrets."private_keys/${username}" = {
-          owner = username;
-          group = "users";
-          mode = "0400";
-          path = "/home/${username}/.ssh/id_ed25519";
-        };
+        sops.secrets."passwords/${username}".neededForUsers = true;
 
         users.users.${username} = {
           isNormalUser = true;
-          extraGroups = [
-            "wheel"
-            "keys"
-          ];
+          extraGroups = [ "wheel" ];
           shell = pkgs.zsh;
           packages = [ pkgs.home-manager ];
           hashedPasswordFile = config.sops.secrets."passwords/${username}".path;
@@ -44,7 +35,6 @@ in
         };
 
         programs.zsh.enable = true;
-        nix.settings.trusted-users = [ username ];
 
         home-manager = {
           useUserPackages = true;
@@ -66,12 +56,8 @@ in
       lib,
       pkgs,
       modules,
-      options,
       ...
     }:
-    let
-      usingDeterminate = config.determinateNix.enable or false;
-    in
     {
       options.my.${username}.desktop = lib.mkOption {
         type = lib.types.bool;
@@ -80,12 +66,7 @@ in
       };
 
       config = {
-        sops.secrets."private_keys/${username}" = {
-          owner = username;
-          group = "staff";
-          mode = "0400";
-          path = "/Users/${username}/.ssh/id_ed25519";
-        };
+        my.desktop.enable = lib.mkDefault config.my.${username}.desktop;
 
         # Describes an account macOS already created. To create it with
         # nix-darwin, also give it a uid and add it to users.knownUsers.
@@ -97,7 +78,11 @@ in
         };
 
         system.primaryUser = username;
-        nix.settings.trusted-users = lib.mkIf (!usingDeterminate) [ username ];
+
+        # Note: trusted-users grants root-equivalent access to nix-daemon and is
+        # omitted by default. Only enable it on hosts accepting unsigned remote-build
+        # closures (via determinateNix.customSettings.trusted-users when Determinate
+        # Nix is enabled, or nix.settings.trusted-users otherwise).
 
         # zim owns compinit.
         programs.zsh.enableGlobalCompInit = false;
@@ -111,11 +96,6 @@ in
           };
           users.${username}.imports = [ ../../home-profiles/example ];
         };
-      }
-      // lib.optionalAttrs (options ? determinateNix.customSettings) {
-        # Determinate disables nix-darwin's nix.settings. Remote builds need
-        # trusted-users in the active daemon's config to accept unsigned paths.
-        determinateNix.customSettings.trusted-users = lib.mkIf usingDeterminate [ username ];
       };
     };
 }

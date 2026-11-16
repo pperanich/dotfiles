@@ -90,7 +90,7 @@ nix build .#hello-dendritic                  # custom package smoke test
 
 **A machine**: `mkdir machines/nixos/<host>`, add `configuration.nix` (copy the example), generate `hardware-configuration.nix`, add the host's age recipient to `sops/.sops.yaml`, run `sops updatekeys sops/secrets.yaml`.
 
-**A user**: copy `modules/users/example.nix` and `home-profiles/example/`, add password and SSH key entries to `sops/secrets.yaml`.
+**A user**: copy `modules/users/example.nix` and `home-profiles/example/`, add a password entry to `sops/secrets.yaml` and the user key's age recipient to `sops/.sops.yaml`.
 
 ## Private machines
 

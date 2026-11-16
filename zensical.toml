@@ -17,7 +17,7 @@ site_name = "Dotfiles"
 # meaningful description of the site content for use by search engines.
 #
 # Read more: https://zensical.org/docs/setup/basics/#site_description
-site_description = "Nix-based system configuration using dendritic flake-parts and clan-core"
+site_description = "Nix-based system configuration using dendritic flake-parts and deploy-rs"
 
 # The site_author attribute. This is used in the HTML head element.
 #
@@ -48,10 +48,11 @@ nav = [
   { "Home" = "index.md" },
   { "Adding New Machines" = "adding-new-machines.md" },
   { "Secrets and Key Management" = "secrets-and-key-management.md" },
+  { "Backups" = "backups.md" },
   { "Router Module" = "router-module.md" },
   { "Service Exposure" = "service-exposure.md" },
   { "Web Hosting Setup" = "web-hosting-setup.md" },
-  { "Troubleshooting" = "clan-machines-update-troubleshooting.md" },
+  { "To Do" = "todo.md" },
 ]
 
 # With the "extra_css" option you can add your own CSS styling to customize

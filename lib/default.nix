@@ -4,10 +4,29 @@
   # Use path relative to the root of the project
   relativeToRoot = lib.path.append ../.;
 
-  # SSH public keys for users — single source of truth
+  # SSH public keys for interactive OS login (`wheel` / admin workstations only;
+  # never add WSL or untrusted VM keys here).
+  # Flat attrset shape (`builtins.attrValues lib.my.sshKeys`) is part of the
+  # downstream `~/nix-private` upstream contract.
   sshKeys = {
-    pperanich = lib.strings.trim (builtins.readFile ./pperanich_id_ed25519.pub);
+    pp-ml1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBo5QIQYUJUadtK19vPdCROhdFbB63XX0XYfonzTqiuA pperanich@pp-ml1";
   };
+
+  # Host public keys pinned in every host's known_hosts (`programs.ssh.knownHosts`).
+  sshHostKeys = import ./ssh-host-keys.nix;
+
+  mkKnownHosts = lib.mapAttrs (
+    host: publicKey: {
+      hostNames = [
+        host
+        "${host}.home.arpa"
+        "${host}.pp-ts"
+      ]
+      # Services that answer SSH on a host's key under another name (Gitea's git@ remote).
+      ++ ({ pp-router1 = [ "gitea.prestonperanich.com" ]; }.${host} or [ ]);
+      inherit publicKey;
+    }
+  );
 
   # Homelab-wide constants — single source of truth for the public zone
   homelab = rec {

@@ -1,6 +1,6 @@
 ---
 description: Verify an executed /dev:plan end-to-end and hand off to the project's PR tooling
-argument-hint: '<plan-file path>'
+argument-hint: "<plan-file path>"
 ---
 
 # Wrap Up

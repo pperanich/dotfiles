@@ -31,8 +31,9 @@ in
           sshGuard = false; # home/.ssh/config includes home/.config/rex/ssh_config
         };
 
-        # No services.rex: the macOS app owns its server. Linux service enablement
-        # is a separate host decision, not a side effect of installing the CLI.
+        # On Linux a user service keeps the server up (reach it with `rex -S ssh://host`);
+        # on macOS the app owns the server and services.rex fails the build.
+        services.rex.enable = pkgs.stdenv.hostPlatform.isLinux;
         home.packages = [ pkgs.rexpick ];
 
         # Install Rex's agent skill and hooks with session naming off. Agents

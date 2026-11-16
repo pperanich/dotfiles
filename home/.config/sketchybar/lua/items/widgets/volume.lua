@@ -65,11 +65,15 @@ local function get_volume_icon(vol)
 	end
 end
 
+local function shell_quote(s)
+	return "'" .. tostring(s or ""):gsub("'", "'\\''") .. "'"
+end
+
 volume:subscribe("volume_change", function(env)
 	local vol = tonumber(env.INFO) or 0
 
 	-- Check for headphones/airpods
-	sbar.exec("/opt/homebrew/bin/SwitchAudioSource -t output -c", function(result)
+	sbar.exec("SwitchAudioSource -t output -c", function(result)
 		local device = result and result:sub(1, -2) or ""
 		local icon
 		if device:find("Headphone", 1, true) or device:find("MOMENTUM", 1, true) then
@@ -116,9 +120,9 @@ local function volume_toggle_details(env)
 						width = popup_width,
 						align = "center",
 						label = { string = device, color = color },
-						click_script = 'SwitchAudioSource -s "'
-							.. device
-							.. '" && sketchybar --set /volume.device\\.*/ label.color='
+						click_script = "SwitchAudioSource -s "
+							.. shell_quote(device)
+							.. " && sketchybar --set /volume.device\\.*/ label.color="
 							.. string.format("0x%08X", colors.grey)
 							.. " --set $NAME label.color="
 							.. string.format("0x%08X", colors.white),

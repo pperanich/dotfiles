@@ -59,28 +59,30 @@ The system's `my.example.desktop` option is also passed explicitly through
 imports; reading Home Manager's own `config` inside `imports` recurses.
 Every caller must supply the argument. Both platforms use the same profile.
 
-On Darwin, the user module configures trusted users through
-`determinateNix.customSettings` when Determinate Nix is enabled and that
-option exists. Otherwise it uses `nix.settings`. The active daemon needs
-this setting to accept the unsigned paths copied for remote builds.
+`modules/users/example.nix` leaves `trusted-users` unset by default on both
+NixOS and Darwin because Nix daemon trust is equivalent to passwordless root.
+Only enable it on hosts that deliberately accept unsigned store paths copied for
+remote builds (via `determinateNix.customSettings.trusted-users` on Darwin when
+Determinate Nix is enabled, or `nix.settings.trusted-users` otherwise), or
+prefer signed binary cache keys (`nix.settings.trusted-public-keys`).
 
 ## Secrets and bootstrap order
 
 Each machine overrides these upstream defaults:
 
-| Setting                | Private value                                      |
-| ---------------------- | -------------------------------------------------- |
-| `sops.defaultSopsFile` | this repo's `sops/secrets.yaml`                    |
-| `sops.age.keyFile`     | `null`, since there is no Clan-provisioned age key |
-| `sops.age.sshKeyPaths` | `[ "/etc/ssh/ssh_host_ed25519_key" ]`              |
+| Setting                | Private value                                 |
+| ---------------------- | --------------------------------------------- |
+| `sops.defaultSopsFile` | this repo's `sops/secrets.yaml`               |
+| `sops.age.keyFile`     | `null`: hosts decrypt with their SSH host key |
+| `sops.age.sshKeyPaths` | `[ "/etc/ssh/ssh_host_ed25519_key" ]`         |
 
 Upstream sets the first two at priority 900, allowing plain assignments
 here. Home Manager independently points `sops.defaultSopsFile` at the
 private file.
 
-The system decrypts with its persistent SSH host key, then installs
-`private_keys/<user>` as the user's SSH key. Home Manager decrypts with
-that installed user key. Encrypt the file to both the host and user/admin
+The system decrypts with its persistent SSH host key. Home Manager
+decrypts with the user's own `~/.ssh/id_ed25519`, which stays on the
+machine that generated it. Encrypt the file to both the host and user
 recipients.
 
 **Never make system decryption depend on a key SOPS itself installs.**
@@ -88,8 +90,8 @@ The installed key points into runtime storage that disappears at reboot.
 On macOS, enable Remote Login and create the host keys before the first
 activation, as described in [the setup guide](../README.md).
 
-The NixOS user module requires `passwords/<user>` and
-`private_keys/<user>`; Darwin requires only the latter. Every additional
+The NixOS user module requires `passwords/<user>`; the Darwin one
+requires no keys. Every additional
 module can introduce more required names. Upstream's Home Manager `sops`
 module declares no secrets of its own. With `sops.validateSopsFiles = true`,
 a declared key missing from the YAML fails the build before activation.
@@ -136,9 +138,7 @@ adding providers.
 
 ## Fleet services
 
-These machines do not join upstream's Clan inventory. WireGuard membership,
-backup relationships, Syncthing peers, and SSH certificate authorities need
-explicit private configuration. Modules that reference `clan.core`
-directly cannot be imported into this scaffold without also supplying Clan.
+These machines are not part of upstream's fleet. Tailnet enrollment, backup
+relationships and pinned SSH host keys need explicit private configuration.
 The optional deploy-rs module adds deployment transport and rollback, not
 fleet membership.

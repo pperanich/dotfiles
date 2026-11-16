@@ -68,7 +68,8 @@ in
           {
             name = "Alertmanager";
             icon = "alertmanager";
-            sub = "alerts";
+            sub = "grafana";
+            path = "/alerting/list";
             desc = "Alert routing & silences";
           }
         ];
@@ -156,6 +157,13 @@ in
             icon = "gitea";
             sub = "gitea";
             desc = "Self-hosted git";
+          }
+          {
+            name = "Headplane";
+            icon = "headscale";
+            sub = "headplane";
+            path = "/admin";
+            desc = "Tailnet admin (Headscale)";
           }
           {
             name = "Vaultwarden Admin";

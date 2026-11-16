@@ -35,8 +35,9 @@ _: {
           enable = true;
 
           package = pkgs.caddy.withPlugins {
-            plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-            hash = "sha256-UPd4CWjm8Cq5EZ9OkBCglE23hD8+przFBSw8Ey6zMz8="; # Build once to get correct hash — nix prints it on failure (caddy 2.11.7 / nixos-26.05)
+            # v0.2.4 is the first release that accepts Cloudflare's `cfut_` token format.
+            plugins = [ "github.com/caddy-dns/cloudflare@v0.2.4" ];
+            hash = "sha256-QSiwKqKvSxhksWBF4/MlBOpyXba5xOQ2sRwA0R7399E="; # caddy 2.11.9; on a bump, set lib.fakeHash and build on a Linux host to get the new one
           };
 
           environmentFile = config.my.cloudflare.envFile;

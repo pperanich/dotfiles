@@ -267,9 +267,7 @@
     "show_tray_icon": true,
     "show_whats_new_on_update": true,
     "sound_theme": "marimba",
-    "spoken_languages": [
-      "en"
-    ],
+    "spoken_languages": ["en"],
     "start_hidden": true,
     "theme": "system",
     "transcribe_accelerator": "auto",

@@ -1,6 +1,6 @@
 ---
 description: Execute an approved /dev:plan wave-by-wave with fresh subagents, per-task commits, and review at wave boundaries
-argument-hint: '<plan-file path>'
+argument-hint: "<plan-file path>"
 ---
 
 # Plan Executor
@@ -90,12 +90,12 @@ Findings go to a fix subagent (fresh implementer, same template, with the findin
 
 ## Failure handling
 
-| Situation | Action |
-|---|---|
-| Validate fails after implementer returned OK | Dispatch a fix subagent with the failure output; 2 retries, then treat as BLOCKED |
-| Implementer errors or returns garbage | Re-dispatch the batch once with the failure noted (a haiku batch escalates to opus on retry); then stop and report |
-| Same task fails 3 times total | Stop the run, report with full failure history |
-| Commit fails | Inspect and fix (never force, never amend someone else's commit), retry |
+| Situation                                    | Action                                                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Validate fails after implementer returned OK | Dispatch a fix subagent with the failure output; 2 retries, then treat as BLOCKED                                  |
+| Implementer errors or returns garbage        | Re-dispatch the batch once with the failure noted (a haiku batch escalates to opus on retry); then stop and report |
+| Same task fails 3 times total                | Stop the run, report with full failure history                                                                     |
+| Commit fails                                 | Inspect and fix (never force, never amend someone else's commit), retry                                            |
 
 ## Completion
 

@@ -19,15 +19,14 @@
           pkgs.age-plugin-yubikey
           pkgs.zensical
 
-          # via overlay: clan-cli with Determinate Nix instead of the bundled pin
-          pkgs.clan-cli
+          # Deployment & activation ergonomics
+          pkgs.deploy-rs
+          pkgs.nh
           inputs'.home-manager.packages.home-manager
 
           # treefmt with config defined in fmt.nix
           config.treefmt.build.wrapper
 
-          # WireGuard peer onboarding
-          # pkgs.wg-add-peer
           # Cloudflare CLI (DNS sync + tunnel provisioning)
           # pkgs.cf
           # ]
@@ -36,10 +35,8 @@
         ];
 
         shellHook = ''
-          # Derive age key from SSH key for sops decryption
-          if [[ -f "$HOME/.ssh/id_ed25519" ]]; then
-            export SOPS_AGE_KEY=$(ssh-to-age -private-key < "$HOME/.ssh/id_ed25519" 2>/dev/null)
-          fi
+          # sops admin key; the YubiKey also works when plugged in
+          export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 
           export PATH=$PWD/bin/:$PATH
         '';

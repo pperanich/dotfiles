@@ -8,11 +8,26 @@ _: {
     let
       cfg = config.my.router;
       dnsCfg = cfg.dns;
-      inherit (cfg.lan) subnet address cidr;
+      inherit (cfg.lan) address cidr;
       inherit (cfg.ipv6) ulaPrefix;
-      inherit (cfg) machines services;
+      inherit (cfg) services;
       enabled = cfg.enable && dnsCfg.enable;
       blockyEnabled = cfg.blocky.enable;
+
+      zoneFqdn = if lib.hasSuffix "." dnsCfg.localZone then dnsCfg.localZone else "${dnsCfg.localZone}.";
+      domain = lib.removeSuffix "." zoneFqdn;
+
+      magicZoneEnabled = dnsCfg.magicDnsForwardZone.enable;
+      magicZoneFqdn =
+        if lib.hasSuffix "." dnsCfg.magicDnsForwardZone.zone then
+          dnsCfg.magicDnsForwardZone.zone
+        else
+          "${dnsCfg.magicDnsForwardZone.zone}.";
+
+      staticHostRecords = map (r: {
+        fqdn = "${r.hostname}.${domain}";
+        inherit (r) ip;
+      }) (cfg._internal.staticHostReservations or [ ]);
     in
     {
       options.my.router.dns = {
@@ -55,6 +70,25 @@ _: {
           example = [ "pp-wsl1.home.arpa. CNAME pperanich-wd1.home.arpa." ];
           description = "Additional local-data entries for Unbound (e.g., CNAME aliases)";
         };
+        magicDnsForwardZone = {
+          enable = lib.mkOption {
+            type = lib.types.bool;
+            default = (config.my.headscale.enable or false) || (config.services.tailscale.enable or false);
+            defaultText = lib.literalExpression "(config.my.headscale.enable or false) || (config.services.tailscale.enable or false)";
+            description = "Delegate the Tailscale MagicDNS zone (`pp-ts.`) to local tailscaled (`100.100.100.100`).";
+          };
+          zone = lib.mkOption {
+            type = lib.types.str;
+            default = "${config.my.headscale.baseDomain or (config.my.tailscale.magicDnsSuffix or "pp-ts")}.";
+            defaultText = lib.literalExpression ''"''${config.my.headscale.baseDomain or "pp-ts"}."'';
+            description = "MagicDNS zone FQDN delegated to local tailscaled.";
+          };
+          forwardAddr = lib.mkOption {
+            type = lib.types.str;
+            default = "100.100.100.100";
+            description = "Local Tailscale Quad100 resolver address.";
+          };
+        };
       };
 
       config = lib.mkIf enabled {
@@ -73,7 +107,7 @@ _: {
               in
               {
                 # When Blocky is enabled, Unbound retreats to localhost:5335 as a backend.
-                # Blocky takes over port 53 on all LAN/VLAN/WireGuard interfaces.
+                # Blocky takes over port 53 on all LAN, VLAN and tailnet interfaces.
                 port = if blockyEnabled then 5335 else 53;
 
                 interface =
@@ -146,27 +180,126 @@ _: {
                   "fd00::/8"
                   "fe80::/10"
                 ];
-                private-domain = [ "\"${dnsCfg.localZone}\"" ] ++ map (d: "\"${d}\"") dnsCfg.privateDomains;
+                private-domain = [
+                  "\"${dnsCfg.localZone}\""
+                ]
+                ++ map (d: "\"${d}\"") dnsCfg.privateDomains
+                ++ lib.optional magicZoneEnabled "\"${magicZoneFqdn}\"";
+                domain-insecure = lib.optional magicZoneEnabled "\"${magicZoneFqdn}\"";
 
                 # Local zone for LAN
-                local-zone = "\"${dnsCfg.localZone}\" static";
-                local-data = [
-                  "\"${cfg.hostname}.${dnsCfg.localZone} IN A ${address}\""
+                local-zone = [
+                  "\"${zoneFqdn}\" static"
                 ]
-                ++ lib.optional cfg.ipv6.enable "\"${cfg.hostname}.${dnsCfg.localZone} IN AAAA ${ulaPrefix}::1\""
-                ++ map (
-                  machine: "\"${machine.name}.${dnsCfg.localZone} IN A ${subnet}.${toString machine.ip}\""
-                ) machines
-                ++ map (service: "\"${service.name} IN A ${service.target}\"") services
-                ++ map (d: "\"${d}\"") dnsCfg.extraLocalData;
+                ++ lib.optional magicZoneEnabled "\"${magicZoneFqdn}\" transparent";
+
+                local-data =
+                  let
+                    extractOwner =
+                      raw:
+                      let
+                        tok = builtins.head (lib.splitString " " (lib.trim raw));
+                      in
+                      lib.removeSuffix "." (lib.toLower tok);
+
+                    explicitOwners =
+                      map extractOwner dnsCfg.extraLocalData
+                      ++ map (s: lib.removeSuffix "." (lib.toLower s.name)) services;
+
+                    routerHostnames = lib.unique [
+                      (lib.toLower cfg.hostname)
+                      (lib.toLower config.networking.hostName)
+                    ];
+
+                    staticCandidates =
+                      (map (h: {
+                        fqdn = "${h}.${domain}";
+                        ip = address;
+                      }) routerHostnames)
+                      ++ staticHostRecords
+                      ++ (map
+                        (alias: {
+                          fqdn = "${alias}.${domain}";
+                          ip = address;
+                        })
+                        [
+                          "router"
+                          "gateway"
+                          "unifi"
+                        ]
+                      );
+
+                    dedupByFqdn =
+                      builtins.foldl'
+                        (
+                          acc: item:
+                          if builtins.elem item.fqdn acc.seen || builtins.elem item.fqdn explicitOwners then
+                            acc
+                          else
+                            {
+                              seen = acc.seen ++ [ item.fqdn ];
+                              items = acc.items ++ [ item ];
+                            }
+                        )
+                        {
+                          seen = [ ];
+                          items = [ ];
+                        }
+                        staticCandidates;
+                  in
+                  (map (item: "\"${item.fqdn}. IN A ${item.ip}\"") dedupByFqdn.items)
+                  ++ lib.optional (
+                    cfg.ipv6.enable && !(builtins.elem "${lib.toLower cfg.hostname}.${domain}" explicitOwners)
+                  ) "\"${lib.toLower cfg.hostname}.${zoneFqdn} IN AAAA ${ulaPrefix}::1\""
+                  ++ map (service: "\"${service.name} IN A ${service.target}\"") services
+                  ++ map (d: "\"${d}\"") dnsCfg.extraLocalData;
+
+                local-data-ptr =
+                  let
+                    ptrCandidates = [
+                      {
+                        ip = address;
+                        fqdn = "${lib.toLower cfg.hostname}.${domain}";
+                      }
+                    ]
+                    ++ lib.optional cfg.ipv6.enable {
+                      ip = "${ulaPrefix}::1";
+                      fqdn = "${lib.toLower cfg.hostname}.${domain}";
+                    }
+                    ++ staticHostRecords;
+
+                    dedupByIp =
+                      builtins.foldl'
+                        (
+                          acc: item:
+                          if builtins.elem item.ip acc.seen then
+                            acc
+                          else
+                            {
+                              seen = acc.seen ++ [ item.ip ];
+                              items = acc.items ++ [ item ];
+                            }
+                        )
+                        {
+                          seen = [ ];
+                          items = [ ];
+                        }
+                        ptrCandidates;
+                  in
+                  map (item: "\"${item.ip} ${item.fqdn}\"") dedupByIp.items;
               };
-            forward-zone = [
-              {
-                name = ".";
-                forward-addr = dnsCfg.upstreamServers;
-                forward-tls-upstream = true;
+            forward-zone =
+              lib.optional magicZoneEnabled {
+                name = magicZoneFqdn;
+                forward-addr = [ dnsCfg.magicDnsForwardZone.forwardAddr ];
               }
-            ];
+              ++ [
+                {
+                  name = ".";
+                  forward-addr = dnsCfg.upstreamServers;
+                  forward-tls-upstream = true;
+                }
+              ];
           };
         };
       };

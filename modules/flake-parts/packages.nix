@@ -8,14 +8,17 @@
         inherit (pkgs)
           runmat
           update-display
-          wg-add-peer
           cf
           rexpick
           personal-site
+          sqlite-snapshot
           ;
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         inherit (pkgs) udp-broadcast-relay-redux;
+      }
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+        inherit (pkgs) sketchybar-helpers;
       };
     };
 }

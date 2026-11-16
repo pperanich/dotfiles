@@ -21,15 +21,7 @@ in
 
     # User setup (headless — no desktop apps/fonts)
     pperanich
-
-    # Development environment
-    rust
-
-    # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
-    wireguardReresolve
-
-    # Accept closure copies from the build host's dedicated key
-    buildHost
+    tailscale
 
     # Self-hosted services
     immich
@@ -57,20 +49,25 @@ in
 
     # VPN (namespace mode — split tunneling for specific services)
     # protonvpn
+    backup
   ]);
 
   my = {
-    pperanich.desktop = false;
+    pperanich = {
+      desktop = false;
+      passwordHashSecret = "passwords/pperanich";
+    };
 
     # Nextcloud — file sync, calendar, contacts
-    # Accessed via Caddy reverse proxy on pp-router1 (nextcloud.prestonperanich.com)
+    # Accessed via local Caddy TLS termination (nextcloud.prestonperanich.com)
     nextcloud = {
       hostName = mkSub "nextcloud";
       datadir = "/tank/appdata/nextcloud";
-      # Router Caddy (WG/hairpin path) + local Caddy (direct LAN path,
-      # dials localhost so both loopback families must be trusted)
+      listenAddress = "127.0.0.1";
+      listenPort = 8088;
+      openFirewall = false;
+      # Local Caddy terminates TLS on :443 and proxies over loopback
       trustedProxies = [
-        "10.0.0.1"
         "127.0.0.1"
         "::1"
       ];
@@ -81,16 +78,15 @@ in
         "tasks"
         "notes"
       ];
-      adminPasswordFile = config.sops.secrets.nextcloud-admin-pass.path;
     };
 
     # OpenCloud — file sync (side-by-side trial with Nextcloud)
-    # Accessed via Caddy reverse proxy on pp-router1 (opencloud.prestonperanich.com)
+    # Accessed via local Caddy TLS termination (opencloud.prestonperanich.com)
     opencloud = {
       url = "https://${mkSub "opencloud"}";
       stateDir = "/tank/appdata/opencloud";
-      address = "0.0.0.0";
-      openFirewall = true;
+      address = "127.0.0.1";
+      openFirewall = false;
       adminPasswordSecret = "opencloud-admin-pass";
     };
 
@@ -104,17 +100,18 @@ in
     };
 
     # scanservjs — web UI for pulling scans from the Canon TR4500 on PP-IoT.
-    # Reverse-proxied at scan.prestonperanich.com via Caddy on pp-router1.
+    # Reverse-proxied at scan.prestonperanich.com via local Caddy.
     # Scans land directly on the ZFS pool at /tank/scans.
     scanservjs = {
-      address = "0.0.0.0";
-      openFirewall = true;
+      address = "127.0.0.1";
+      openFirewall = false;
       outputDir = "/tank/scans";
+      basicAuthHashSecret = "scanservjs-password-hash";
       scanner = {
         name = "Canon TR4500";
-        # FQDN comes from the Kea reservation in pp-router1.configuration.nix
-        # (segments.iot.reservations -> pp-printer1) registered via DDNS.
-        url = "http://pp-printer1.home.arpa/eSCL";
+        # Pinned directly to the Kea reservation in pp-router1.configuration.nix
+        # (segments.iot.reservations -> pp-printer1 = 10.0.20.50) rather than DDNS.
+        url = "http://10.0.20.50/eSCL";
         discovery = false;
       };
     };
@@ -123,8 +120,8 @@ in
     # Ingests from a subdir of the scanservjs output so plain scans stay put;
     # drop files into /tank/scans/paperless to archive them.
     paperless = {
-      address = "0.0.0.0";
-      openFirewall = true;
+      address = "127.0.0.1";
+      openFirewall = false;
       dataDir = "/tank/appdata/paperless";
       consumptionDir = "/tank/scans/paperless";
       domain = mkSub "paperless";
@@ -133,20 +130,19 @@ in
 
     # Home Assistant — automation for the IoT VLAN
     homeAssistant = {
-      openFirewall = true;
+      address = "127.0.0.1";
+      openFirewall = false;
       configDir = "/tank/appdata/hass";
-      # Router Caddy (WG/hairpin path) + local Caddy (direct LAN path,
-      # dials localhost so both loopback families must be trusted)
+      # Local Caddy terminates TLS on :443 and proxies over loopback
       trustedProxies = [
-        "10.0.0.1"
         "127.0.0.1"
         "::1"
       ];
     };
 
-    # Media servers — all proxied via Caddy on pp-router1
+    # Media servers: all proxied via local Caddy TLS termination
     jellyfin = {
-      openFirewall = true;
+      openFirewall = false;
       enableHardwareAcceleration = true;
       mediaDirectories = [
         "/tank/media/movies"
@@ -155,14 +151,14 @@ in
     };
 
     navidrome = {
-      address = "0.0.0.0";
-      openFirewall = true;
+      address = "127.0.0.1";
+      openFirewall = false;
       musicFolder = "/tank/media/music";
     };
 
     audiobookshelf = {
-      address = "0.0.0.0";
-      openFirewall = true;
+      address = "127.0.0.1";
+      openFirewall = false;
       mediaDirectories = [
         "/tank/media/audiobooks"
         "/tank/media/podcasts"
@@ -197,7 +193,6 @@ in
         "immich-server"
         "immich-machine-learning"
         "paperless-.*"
-        "borgbackup-job-pp-router1"
         # Databases behind the services above — likelier to fail than the apps
         "postgresql"
         "redis-.*"
@@ -220,7 +215,7 @@ in
 
     # Caddy — local TLS termination for split-horizon routing. The router's
     # Unbound answers these names with this host's IP for LAN clients (direct
-    # route, no hairpin); WG/public clients resolve to the router, whose Caddy
+    # route, no hairpin); tailnet and public clients resolve to the router, whose Caddy
     # re-proxies here over TLS. Certs via Cloudflare DNS-01, same pattern as
     # pp-router1. See docs/split-horizon-tls.md.
     caddyDns01.enable = true;
@@ -229,20 +224,65 @@ in
     cloudflare.enable = true;
 
     # Immich photo management
-    # Accessed via Caddy reverse proxy on pp-router1 (immich.prestonperanich.com)
+    # Accessed via local Caddy TLS termination (immich.prestonperanich.com)
     immich = {
-      address = "0.0.0.0";
-      openFirewall = true;
+      address = "127.0.0.1";
+      openFirewall = false;
       mediaLocation = "/tank/appdata/immich";
       enableHardwareTranscoding = true;
       enableMachineLearning = false;
     };
+
+    # Borg server for the router, plus the Google Drive tier
+    backup = {
+      borgServer = {
+        enable = true;
+        authorizedKeys = [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOs9dnM1hBiVwKTc8Xf1bFAnm4IaBQRocJF/7kh/khrS borg@pp-router1"
+        ];
+        repoName = "pp-router1";
+        path = "/tank/backups/borg/pp-router1";
+      };
+      googleDrive = {
+        enable = true;
+        passwordSecret = "restic-gdrive-password";
+        rcloneConfigSecret = "rclone-gdrive-conf";
+        # Alertmanager runs on the router; this outside check still fires if the router is down.
+        healthchecksPingUrlSecret = "healthchecks-gdrive-ping-url";
+        # Whole trees, read from one atomic snapshot, so no service's state is left out.
+        paths = [
+          "/tank"
+          "/var/lib"
+          "/home"
+        ];
+        zfsSnapshot.datasets = {
+          "rpool/tank" = "/tank";
+          "rpool/tank/appdata" = "/tank/appdata";
+          "rpool/tank/backups" = "/tank/backups";
+          "rpool/var" = "/var";
+          "rpool/home" = "/home";
+        };
+        # Regenerable (Immich derivatives) or re-downloadable (films, TV).
+        exclude = [
+          "/tank/appdata/immich/thumbs"
+          "/tank/appdata/immich/encoded-video"
+          "/tank/media/movies"
+          "/tank/media/tv"
+          ".cache"
+        ];
+        freshnessChecks = [
+          {
+            # The finished dump only; a failed run leaves a fresh, empty all.in-progress.sql.zstd.
+            path = "/tank/backups/postgres";
+            name = "all.sql.*";
+            maxAgeHours = 26;
+          }
+        ];
+      };
+    };
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pp-nas1.pp-wg";
-  clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
-  my.buildHost.trusted = [ "pp-wsl1" ];
 
   # Networking configuration
   networking = {
@@ -261,7 +301,7 @@ in
       enp2s0.useDHCP = false;
     };
     # Exporters are router-only: Prometheus on pp-router1 is the sole scraper.
-    # User-facing services stay LAN-open for the direct .home.arpa route.
+    # All user-facing HTTP services bind to loopback behind Caddy TLS on :443.
     nftables.enable = true;
     firewall = {
       extraInputRules = ''
@@ -269,28 +309,41 @@ in
       '';
       allowedTCPPorts = [ 443 ];
     };
-    # Containers get internet egress only: no new connections to private
-    # ranges (LAN, IoT, other hosts) or to this host's own services, so a
-    # compromised container can't reach the rest of the NAS. Traffic between
-    # containers on the same bridge is left alone. Separate rules rather
-    # than an interface set, since wildcards in sets need a newer nft.
+    # Containers get internet egress only: no new connections to private/ULA/
+    # link-local/multicast/CGNAT/Tailscale ranges or to this host's own services,
+    # so a compromised container can't reach the rest of the NAS or LAN over
+    # IPv4 or IPv6. Traffic between containers on the same bridge is left alone.
+    # Separate rules rather than an interface set, since wildcards in sets need
+    # a newer nft.
     nftables.tables.container-isolation = {
       family = "inet";
       content = ''
         set private4 {
           type ipv4_addr
           flags interval
+          auto-merge
           elements = { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 }
+        }
+        set private6 {
+          type ipv6_addr
+          flags interval
+          auto-merge
+          elements = { ::1/128, ::ffff:0:0/96, fc00::/7, fd7a:115c:a1e0::/48, fe80::/10, ff00::/8 }
         }
         chain forward {
           type filter hook forward priority filter - 10; policy accept;
           iifname "docker0" oifname != "docker0" ip daddr @private4 drop
           iifname "br-*" oifname != "br-*" ip daddr @private4 drop
+          iifname "podman*" oifname != "podman*" ip daddr @private4 drop
+          iifname "docker0" oifname != "docker0" ip6 daddr @private6 drop
+          iifname "br-*" oifname != "br-*" ip6 daddr @private6 drop
+          iifname "podman*" oifname != "podman*" ip6 daddr @private6 drop
         }
         chain input {
           type filter hook input priority filter - 10; policy accept;
           iifname "docker0" ct state new drop
           iifname "br-*" ct state new drop
+          iifname "podman*" ct state new drop
         }
       '';
     };
@@ -334,19 +387,13 @@ in
       # LoadCredential since it runs under DynamicUser)
       docuseal-secret-key-base = { };
 
-      # Nextcloud: admin password file
-      nextcloud-admin-pass = {
-        owner = "nextcloud";
-        mode = "0400";
-      };
-
     };
   };
 
   # ProtonVPN — namespace mode (split tunneling)
   # Only services listed in confinedServices use the VPN; host traffic is unaffected.
   # Generate a WireGuard config at: ProtonVPN Settings → WireGuard → Create config
-  # Then run `clan vars generate pp-nas1` — you'll be prompted for the private key.
+  # Then add its private key to sops and point interface.privateKeyFile at it.
   # my.protonvpn = {
   #   enable = true;
   #   mode = "namespace";
@@ -365,21 +412,33 @@ in
   # };
 
   # Consume dir lives under scanservjs's 0750 output dir
+  users.mutableUsers = false;
   users.users.paperless.extraGroups = [ "scanservjs" ];
 
   services.caddy = {
     globalConfig = ''
-      # nginx (nextcloud) owns :80; certs come via DNS-01 so Caddy never
-      # needs the HTTP port — skip the auto-HTTPS redirect listener
+      # Certs come via DNS-01 so Caddy never needs the HTTP port; skip the
+      # auto-HTTPS redirect listener and keep :80 closed.
       auto_https disable_redirects
+
+      # Trust X-Forwarded-For only from loopback and pp-router1's LAN re-proxy
+      # (10.0.0.1/32), never direct LAN or Tailscale end-clients.
+      servers {
+        trusted_proxies static 127.0.0.1/32 ::1/128 10.0.0.1/32
+        trusted_proxies_strict
+      }
     '';
 
-    # Caddy sets X-Forwarded-For/-Proto automatically; only body caps differ
+    # Rewrite X-Forwarded-For to Caddy's verified {client_ip} so loopback
+    # backends (Nextcloud, Home Assistant, etc.) that trust only 127.0.0.1/::1
+    # see the real end-client IP rather than router re-proxy 10.0.0.1.
     virtualHosts =
       let
         mkLocalProxy = port: extra: {
           extraConfig = ''
-            reverse_proxy localhost:${toString port}
+            reverse_proxy 127.0.0.1:${toString port} {
+              header_up X-Forwarded-For {client_ip}
+            }
             ${extra}
           '';
         };
@@ -391,15 +450,21 @@ in
       in
       {
         "${mkSub "jellyfin"}" = mkLocalProxy 8096 "";
-        "${mkSub "navidrome"}" = mkLocalProxy 4533 "";
-        "${mkSub "scan"}" = mkLocalProxy 8080 "";
-        "${mkSub "hass"}" = mkLocalProxy 8123 "";
-        "${mkSub "immich"}" = mkLocalProxy 2283 (mkUpload "50G");
-        "${mkSub "nextcloud"}" = mkLocalProxy 80 (mkUpload "16G");
-        "${mkSub "opencloud"}" = mkLocalProxy 9200 (mkUpload "16G");
-        "${mkSub "audiobookshelf"}" = mkLocalProxy 8000 (mkUpload "10G");
-        "${mkSub "paperless"}" = mkLocalProxy 28981 (mkUpload "1G");
-        "${mkSub "docuseal"}" = mkLocalProxy 3000 (mkUpload "1G");
+        "${mkSub "navidrome"}" = mkLocalProxy config.my.navidrome.port "";
+        "${mkSub "scan"}" = mkLocalProxy config.my.scanservjs.port (
+          lib.optionalString (config.my.scanservjs.basicAuthHashSecret != null) ''
+            basic_auth {
+              pperanich ${config.my.scanservjs.basicAuthHashPlaceholder}
+            }
+          ''
+        );
+        "${mkSub "hass"}" = mkLocalProxy config.my.homeAssistant.port "";
+        "${mkSub "immich"}" = mkLocalProxy config.my.immich.port (mkUpload "50G");
+        "${mkSub "nextcloud"}" = mkLocalProxy config.my.nextcloud.listenPort (mkUpload "16G");
+        "${mkSub "opencloud"}" = mkLocalProxy config.my.opencloud.port (mkUpload "16G");
+        "${mkSub "audiobookshelf"}" = mkLocalProxy config.my.audiobookshelf.port (mkUpload "10G");
+        "${mkSub "paperless"}" = mkLocalProxy config.my.paperless.port (mkUpload "1G");
+        "${mkSub "docuseal"}" = mkLocalProxy config.my.docuseal.port (mkUpload "1G");
         # Radicale: Caddy owns authentication; header_up overrides any
         # client-supplied X-Remote-User, which Radicale trusts blindly
         "${mkSub "dav"}" = {
@@ -409,33 +474,14 @@ in
             basic_auth {
               pperanich ${config.my.radicale.basicAuthHashPlaceholder}
             }
-            reverse_proxy localhost:${toString config.my.radicale.port} {
+            reverse_proxy 127.0.0.1:${toString config.my.radicale.port} {
+              header_up X-Forwarded-For {client_ip}
               header_up X-Remote-User {http.auth.user.id}
             }
           '';
         };
       };
   };
-
-  # Borg backup to pp-router1: user data only, service dirs stay on the mirror
-  clan.core.state.userdata.folders = [
-    "/home/pperanich"
-    "/tank/scans"
-  ];
-
-  # Stamp last successful backup for the node-exporter textfile collector.
-  # The unit runs under ProtectSystem=strict, so the textfile dir must be
-  # explicitly writable.
-  systemd.services."borgbackup-job-pp-router1".serviceConfig.ReadWritePaths = [
-    "/var/lib/prometheus-node-exporter-text"
-  ];
-  services.borgbackup.jobs."pp-router1".postHook = ''
-    if [ "$exitStatus" = "0" ]; then
-      dir=/var/lib/prometheus-node-exporter-text
-      printf 'borg_last_success_timestamp_seconds %s\n' "$(date +%s)" > "$dir/borgbackup.prom.tmp"
-      mv "$dir/borgbackup.prom.tmp" "$dir/borgbackup.prom"
-    fi
-  '';
 
   hardware = {
     enableRedistributableFirmware = true;
@@ -465,4 +511,53 @@ in
     fwupd
     linux-firmware
   ];
+
+  # Keep zfs-auto-snapshot off so sanoid is the sole local ZFS snapshot
+  # scheduler on pp-nas1.
+  services.zfs.autoSnapshot.enable = lib.mkForce false;
+
+  # Tier 1 local ZFS snapshots across rpool datasets (disko.nix)
+  services.sanoid = {
+    enable = true;
+    templates = {
+      appdata = {
+        hourly = 24;
+        daily = 30;
+        monthly = 6;
+        autosnap = true;
+        autoprune = true;
+      };
+      bulk = {
+        hourly = 0;
+        daily = 14;
+        monthly = 3;
+        autosnap = true;
+        autoprune = true;
+      };
+      home = {
+        hourly = 24;
+        daily = 14;
+        monthly = 3;
+        autosnap = true;
+        autoprune = true;
+      };
+    };
+    datasets = {
+      "rpool/tank/appdata".useTemplate = [ "appdata" ];
+      "rpool/tank".useTemplate = [ "bulk" ];
+      "rpool/tank/backups".useTemplate = [ "bulk" ];
+      "rpool/home".useTemplate = [ "home" ];
+    };
+  };
+
+  # Nightly logical dumps for all local PostgreSQL databases (Nextcloud, Immich,
+  # Paperless) before offsite Restic tiers run. Upstream postgresql-backup.nix
+  # already emits the `d '/tank/backups/postgres' 0700 postgres - - -` tmpfiles rule.
+  services.postgresqlBackup = {
+    enable = true;
+    backupAll = true;
+    location = "/tank/backups/postgres";
+    startAt = "*-*-* 01:15:00";
+    compression = "zstd";
+  };
 }

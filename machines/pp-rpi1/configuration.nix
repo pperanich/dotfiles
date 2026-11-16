@@ -39,23 +39,18 @@ in
     # Core system configuration
     base
     sops
+    tailscale
 
     # User setup (headless — no desktop apps/fonts)
     pperanich
 
-    # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
-    wireguardReresolve
-
-    # Accept closure copies from the build host's dedicated key
-    buildHost
+    # Offsite Google Drive Restic backup (docs/backups.md)
+    backup
   ]);
 
   my.pperanich.desktop = false;
 
   nixpkgs.hostPlatform = "aarch64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pp-rpi1.pp-wg";
-  clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
-  my.buildHost.trusted = [ "pp-wsl1" ];
 
   hardware = {
     enableRedistributableFirmware = true;
@@ -103,6 +98,7 @@ in
     owner = "wpa_supplicant";
     group = "wpa_supplicant";
     mode = "0400";
+    restartUnits = [ "wpa_supplicant.service" ];
   };
   networking.wireless = {
     enable = true;

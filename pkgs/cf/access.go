@@ -382,19 +382,24 @@ func updateManagedApp(ctx context.Context, client *cloudflare.Client, acctID str
 		}
 	}
 
+	body := zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplication{
+		Domain:          cloudflare.F(app.domain),
+		Type:            cloudflare.F(zero_trust.ApplicationTypeSelfHosted),
+		Name:            cloudflare.F(name),
+		SessionDuration: cloudflare.F(sessionDuration),
+		Policies: cloudflare.F([]zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplicationPolicyUnion{
+			zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplicationPoliciesAccessAppPolicyLink{
+				ID: cloudflare.F(policyID),
+			},
+		}),
+	}
+	if len(app.tags) > 0 {
+		body.Tags = cloudflare.F(app.tags)
+	}
+
 	_, err := client.ZeroTrust.Access.Applications.Update(ctx, app.id, zero_trust.AccessApplicationUpdateParams{
 		AccountID: cloudflare.F(acctID),
-		Body: zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplication{
-			Domain:          cloudflare.F(app.domain),
-			Type:            cloudflare.F(zero_trust.ApplicationTypeSelfHosted),
-			Name:            cloudflare.F(name),
-			SessionDuration: cloudflare.F(sessionDuration),
-			Policies: cloudflare.F([]zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplicationPolicyUnion{
-				zero_trust.AccessApplicationUpdateParamsBodySelfHostedApplicationPoliciesAccessAppPolicyLink{
-					ID: cloudflare.F(policyID),
-				},
-			}),
-		},
+		Body:      body,
 	})
 	if err != nil {
 		return fmt.Errorf("update application: %w", err)

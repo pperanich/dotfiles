@@ -34,14 +34,6 @@ _: {
 
       config = lib.mkIf enabled {
         services.kea = {
-          # M4: Control agent bound to localhost but lacks authentication.
-          ctrl-agent = {
-            enable = true;
-            settings = {
-              http-host = "127.0.0.1";
-              http-port = 8000;
-            };
-          };
           dhcp4 = {
             enable = true;
             settings = {

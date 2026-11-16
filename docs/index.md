@@ -1,50 +1,66 @@
 # Dotfiles Documentation
 
-Nix-based system configuration using the dendritic pattern with flake-parts and clan-core.
+Nix-based system configuration using the dendritic pattern with flake-parts. Hosts are built by `modules/flake-parts/hosts.nix`, NixOS hosts are deployed with deploy-rs, secrets are per-host sops files, and remote access runs over Headscale and Tailscale.
 
 ## Guides
 
 ### Machine Management
 
-- [Adding New Machines](adding-new-machines.md) - Complete guide for onboarding new NixOS/Darwin machines
-- [Troubleshooting Clan Commands](clan-machines-update-troubleshooting.md) - Debug common deployment issues
+- [Adding New Machines](adding-new-machines.md) - Onboarding a NixOS or Darwin host: host config, SSH host key, sops file, deploy node, Headscale enrollment
+- [Private Machines](private-machines.md) - Running hosts from a private flake that consumes this one
+- [Operating the Fleet](operations.md) - How changes are made from pp-ml1, snapshots before upgrades, restore tests, known traps
 - [Atuin Daemon Troubleshooting](atuin-daemon-troubleshooting.md) - Fix the daemon when it stops logging (stale socket)
 
 ### Secrets
 
-- [Secrets and Key Management](secrets-and-key-management.md) - Machine keys vs user keys, SSH-derived keys, anti-patterns
+- [Secrets and Key Management](secrets-and-key-management.md) - Per-host sops files, the key inventory, editing, rotation and recovery
+- [Backups](backups.md) - ZFS snapshots, router-to-NAS Borg, restic to Google Drive; enabling a host, restoring, the offline copy
+- [To do](todo.md) - Open work and the backlog
 
 ### Modules
 
 - [Router Module](router-module.md) - Complete router with VLAN, WiFi, firewall, DHCP, DNS, SQM
 
-### Networking
+### Services
 
-- [WireGuard Split Tunneling](wireguard-split-tunneling.md) - Route specific services through a VPN using network namespaces
-
-### Services (TODO)
-
-- [Service Exposure Pathways](service-exposure.md) - Private (Caddy/LAN/WG) and public (Cloudflare Tunnel) service access
+- [Service Exposure Pathways](service-exposure.md) - Private (Caddy over LAN and tailnet) and public (Cloudflare Tunnel) service access
+- [Split-Horizon TLS](split-horizon-tls.md) - How service names route over the best path for each client
 - [Web Hosting Setup](web-hosting-setup.md) - Self-hosting websites via DDNS + reverse proxy (in progress)
 
+### Decisions
+
+- [0001: Headscale replaces the WireGuard mesh](decisions/0001-headscale-replaces-wireguard-mesh.md)
+- [0002: Kanidm as the identity provider (withdrawn)](decisions/0002-kanidm-identity-provider.md)
+- [0003: Git history is not purged](decisions/0003-git-history-is-not-purged.md)
+- [0004: Google Drive is the only off-site tier](decisions/0004-google-drive-is-the-only-offsite-tier.md)
+- [0005: Every host follows nixpkgs-unstable](decisions/0005-nixpkgs-unstable-for-every-host.md)
+- [0006: Credentials left unrotated](decisions/0006-credentials-left-unrotated.md)
+- [0007: Accepted root-equivalent access](decisions/0007-accepted-root-equivalents.md)
+
 ## Quick Start
+
+Run these from `pp-ml1`, inside `nix develop` at the repo root.
 
 ### Deploy to a Machine
 
 ```bash
-# From admin workstation
-clan vars upload <hostname>
-clan machines update <hostname>
+deploy .#pp-wsl1                                  # target pp-wsl1.pp-ts
+deploy --hostname pp-nas1.pp-ts .#pp-nas1
+deploy --hostname pp-router1.pp-ts .#pp-router1
+nh darwin switch . -H pp-ml1                      # the Mac switches locally
 ```
+
+deploy-rs asks for the sudo password once, builds on the target, and rolls back if it cannot reconnect. Nodes are defined in `modules/flake-parts/deploy.nix`. Use the tailnet names: ssh launched by Nix on the Mac cannot resolve `home.arpa` ([Operating the Fleet](operations.md#traps)).
 
 ### Add a New Machine
 
-1. Create `machines/<hostname>/configuration.nix`
-2. Add to `modules/flake-parts/clan.nix` inventory
-3. Generate secrets: `clan vars generate <hostname>`
-4. Deploy: `clan machines update <hostname>`
+1. Create `machines/<hostname>/configuration.nix` and add the name to `expectedHosts` in `modules/flake-parts/hosts.nix`
+2. Create its SSH host key and add its age recipient and creation rule to `sops/.sops.yaml`
+3. Create `sops/machines/<hostname>.yaml`
+4. Install it; for NixOS, add a node to `modules/flake-parts/deploy.nix`
+5. Enroll it in Headscale with a tagged pre-auth key
 
-See [Adding New Machines](adding-new-machines.md) for detailed steps.
+See [Adding New Machines](adding-new-machines.md) for the commands.
 
 ## Architecture
 
@@ -52,61 +68,54 @@ See [Adding New Machines](adding-new-machines.md) for detailed steps.
 dotfiles/
 ├── machines/           # Host-specific configurations
 ├── modules/            # Reusable NixOS/Darwin/home-manager modules
-│   └── flake-parts/    # Flake infrastructure (clan, nixpkgs, shell)
+│   └── flake-parts/    # Flake infrastructure (hosts, deploy, nixpkgs, shell, fmt)
 ├── home-profiles/      # User environment compositions
-├── sops/               # Secrets management
-│   ├── machines/       # Machine public keys
-│   ├── secrets/        # Encrypted secrets (age keys, passwords)
-│   └── secrets.yaml    # App secrets (traditional sops-nix)
-└── vars/               # Clan-managed variables
-    ├── per-machine/    # Machine-specific vars
-    └── shared/         # Cross-machine vars
+├── lib/                # Library functions and pinned SSH keys
+│   ├── default.nix     # sshKeys (login keys) and helpers
+│   └── ssh-host-keys.nix  # Pinned host public keys
+├── templates/          # Flake templates (dendritic, private)
+└── sops/               # Encrypted secrets
+    ├── .sops.yaml      # Recipients and creation rules
+    ├── machines/       # One file per host
+    ├── users/          # pperanich-desktop.yaml (home-manager API keys)
+    └── cloudflared-tunnel.json
 ```
 
 ## Secret Management
 
-This repo uses a **hybrid approach**:
+All secrets are sops-nix secrets encrypted with age. Each host has its own file, `sops/machines/<host>.yaml`, readable by the admin age key, a YubiKey and that host's SSH-derived age key. Hosts decrypt with `/etc/ssh/ssh_host_ed25519_key`; home-manager decrypts with `~/.config/sops/age/keys.txt`.
 
-| System                   | Purpose                                     | Location                                   |
-| ------------------------ | ------------------------------------------- | ------------------------------------------ |
-| **Clan vars**            | Machine bootstrap, user passwords, SSH keys | `vars/`, `sops/secrets/<machine>-age.key/` |
-| **Traditional sops-nix** | App secrets (tailscale, borg, etc.)         | `sops/secrets.yaml`                        |
+## Access
 
-### Key Concepts
-
-- **Clan-generated keys**: Fresh age keypairs created by clan, stored encrypted in repo
-- **Machine key.json**: Public key used to encrypt secrets FOR a machine
-- **Self-upload**: Machine can decrypt its own bootstrap secrets
-- **Admin upload**: Admin workstation decrypts and uploads to machine
+- `pperanich` logs in over SSH with `pp-ml1`'s key (`sshKeys` in `lib/default.nix`). Root SSH is off.
+- Remote access is Headscale on `pp-router1` with a Tailscale client on every host. Tailnet names are `<host>.pp-ts`. `home.arpa` names resolve on the LAN only.
+- Host public keys are pinned in `known_hosts` from `lib/ssh-host-keys.nix`.
 
 ## Common Commands
 
 ```bash
-# Machine deployment
-clan machines list                    # List all machines
-clan machines update <hostname>       # Deploy to machine
-clan vars upload <hostname>           # Upload secrets only
-
-# Secrets management
-clan vars list <hostname>             # List vars for machine
-clan vars generate <hostname>         # Generate vars
-clan secrets get <secret>             # Decrypt a secret
-clan secrets machines add-secret <m> <s>  # Add machine as recipient
-
 # Development
 nix develop                           # Enter dev shell
 nix fmt                               # Format all files
-nix flake check                       # Validate flake
+nix flake check --no-build            # Evaluate the flake and its checks
+
+# Secrets
+sops --config sops/.sops.yaml sops/machines/<hostname>.yaml
+sops --config sops/.sops.yaml updatekeys sops/machines/<hostname>.yaml
+
+# Headscale (on pp-router1, with sudo)
+sudo headscale nodes list
+sudo headscale preauthkeys create --user 1 --expiration 1h --tags tag:<tag>
 ```
 
 ## Machines
 
-| Hostname   | Type    | OS     | Description                    |
-| ---------- | ------- | ------ | ------------------------------ |
-| pp-ml1     | Laptop  | Darwin | Personal MacBook               |
-| pp-ll1     | Laptop  | NixOS  | Personal Linux laptop          |
-| pp-ld1     | Desktop | NixOS  | Personal Linux desktop         |
-| pp-nas1    | Server  | NixOS  | NAS (BeeLink)                  |
-| pp-router1 | Server  | NixOS  | Router                         |
-| pp-rpi1    | SBC     | NixOS  | Raspberry Pi 3B+ GPIO debugger |
-| pp-wsl1    | VM      | NixOS  | WSL instance                   |
+| Hostname   | Type    | OS     | Description                                          |
+| ---------- | ------- | ------ | ---------------------------------------------------- |
+| pp-ml1     | Laptop  | Darwin | Personal MacBook, the only admin machine             |
+| pp-ll1     | Laptop  | NixOS  | Personal Linux laptop (off until re-imaged)          |
+| pp-ld1     | Desktop | NixOS  | Personal Linux desktop (off until re-imaged)         |
+| pp-nas1    | Server  | NixOS  | NAS (BeeLink)                                        |
+| pp-router1 | Server  | NixOS  | Router and Headscale server                          |
+| pp-rpi1    | SBC     | NixOS  | Raspberry Pi 3B+ GPIO debugger (off until re-imaged) |
+| pp-wsl1    | VM      | NixOS  | WSL instance                                         |

@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 # ── Config ──────────────────────────────────────────────────────────
 NAS_HOST="pp-nas1"
 NAS_BACKUP_DIR="/tank/backups/imessage"
-LOCAL_EXPORT_BASE="/tmp/imessage_export"
+TEMP_DIR=""
+
+cleanup() {
+  if [[ -n ${TEMP_DIR:-} && -d $TEMP_DIR ]]; then
+    rm -rf "$TEMP_DIR"
+  fi
+}
+trap cleanup EXIT INT TERM
 
 # ── Resolve iPhone backup path ──────────────────────────────────────
 BACKUP_BASE="$HOME/Library/Application Support/MobileSync/Backup"
@@ -73,6 +81,11 @@ main() {
   fi
 
   local profile="$1"
+  if [[ ! $profile =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "ERROR: Invalid profile name: $profile" >&2
+    exit 1
+  fi
+
   local snapshot_dir="${NAS_BACKUP_DIR}/${profile}/snapshots"
   local backup_path today local_export latest start_date
 
@@ -98,10 +111,8 @@ main() {
   fi
 
   today=$(date +%Y-%m-%d)
-  local_export="${LOCAL_EXPORT_BASE}_${profile}_${today}"
-
-  # Ensure clean local export dir (tool refuses if files exist)
-  rm -rf "$local_export"
+  TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/imessage-backup.XXXXXX")
+  local_export="${TEMP_DIR}/export"
   mkdir -p "$local_export"
 
   # Find most recent snapshot on NAS
@@ -132,7 +143,6 @@ main() {
 
     if [[ $start_date > $today || $start_date == "$today" ]]; then
       echo "Already up to date (last snapshot: $latest)"
-      rm -rf "$local_export"
       exit 0
     fi
 
@@ -142,17 +152,11 @@ main() {
     echo "No previous snapshots — full export"
   fi
 
-  # Skip export if a previous run's output still exists
-  if [[ -n "$(ls -A "$local_export" 2>/dev/null)" ]]; then
-    echo "Reusing existing export at $local_export"
-  else
-    echo "Exporting messages..."
-    "${cmd[@]}"
-  fi
+  echo "Exporting messages..."
+  "${cmd[@]}"
 
   if [[ -z "$(ls -A "$local_export" 2>/dev/null)" ]]; then
     echo "No new messages to export."
-    rm -rf "$local_export"
     exit 0
   fi
 
@@ -161,8 +165,6 @@ main() {
 
   echo "Syncing to ${NAS_HOST}:${snapshot_dir}/${today}/..."
   rsync -avz "$local_export/" "${NAS_HOST}:${snapshot_dir}/${today}/"
-
-  rm -rf "$local_export"
 
   echo "Done. Snapshot saved: ${snapshot_dir}/${today}"
 }

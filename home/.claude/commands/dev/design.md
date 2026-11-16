@@ -1,6 +1,6 @@
 ---
 description: Structured design conversation that produces a decision record for /dev:plan
-argument-hint: '<topic or problem statement>'
+argument-hint: "<topic or problem statement>"
 ---
 
 # Design Conversation
@@ -34,19 +34,25 @@ Date: <date>
 Status: Agreed
 
 ## Problem
+
 What is broken or missing, who is affected, and the concrete symptom.
 
 ## Decisions
+
 One entry per decision made in the conversation:
+
 - **<decision>** because <rationale>. Rejected: <alternative> (<why>).
 
 ## Constraints
+
 Hard requirements the plan must respect (compatibility, performance, conventions, scope limits).
 
 ## Out of scope
+
 What we explicitly decided not to do, so the planner does not reinvent it.
 
 ## Open questions
+
 Anything unresolved, with who or what resolves it.
 ```
 

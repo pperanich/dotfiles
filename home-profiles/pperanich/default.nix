@@ -13,7 +13,6 @@
       # Core
       base
       sops
-      apiKeys
 
       # Editors
       nvim
@@ -22,16 +21,23 @@
       # rust
 
       tools
-      aiTools
+
+      # Rex CLI on every host, so remote panes can use it; no server is started
+      rex
     ]
     ++ lib.optionals desktop [
+      # AI CLI agents & provider tokens (workstations only, never servers)
+      apiKeys
+      aiTools
+
       # Desktop
       fonts
       applications
-      rex
     ];
 
   # User identity
   home.username = "pperanich";
-  home.sessionVariables.OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode/profiles/default/";
+  home.sessionVariables = lib.mkIf desktop {
+    OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode/profiles/default/";
+  };
 }

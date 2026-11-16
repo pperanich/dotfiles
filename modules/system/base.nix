@@ -5,6 +5,8 @@
     # NixOS Nix configuration
     nixos.base =
       {
+        config,
+        lib,
         pkgs,
         options,
         ...
@@ -14,97 +16,101 @@
           inputs.home-manager.nixosModules.home-manager
           inputs.nix-index-database.nixosModules.nix-index
           inputs.determinate.nixosModules.default
-          inputs.nix-ld.nixosModules.nix-ld
         ];
 
-        system.stateVersion = "26.05";
+        options.my.desktop.enable = lib.mkEnableOption "desktop workstation profile (GUI applications and roaming workstation defaults)";
 
-        # Disable NixOS manual/options doc generation to avoid builtins.toFile warning
-        # (options.json references store paths without proper context)
-        documentation.nixos.enable = false;
-        documentation.nixos.options.splitBuild = false;
+        config = {
+          system.stateVersion = "26.05";
 
-        home-manager.backupFileExtension = "hm-back";
+          # Disable NixOS manual/options doc generation to avoid builtins.toFile warning
+          # (options.json references store paths without proper context)
+          documentation.nixos.enable = false;
+          documentation.nixos.options.splitBuild = false;
 
-        # Resolve bare fleet hostnames (e.g. borg repo host "pp-router1").
-        # home.arpa expands via the LAN's DHCP-provided search domains and is
-        # answered by the router's DNS; pp-wg expands via these global search
-        # domains and is answered by router DNS (blocky hostsFile) on-LAN, or
-        # resolved's own /etc/hosts parsing off-LAN.
-        networking.search = [
-          "home.arpa"
-          "pp-wg"
-        ];
+          home-manager.backupFileExtension = "hm-back";
 
-        # With systemd-resolved, the global search domains above also become
-        # routing domains; resolved's compiled-in fallback (Cloudflare/Google)
-        # would then answer *.home.arpa with NXDOMAIN. No fallback → queries
-        # fall through to the LAN link's DHCP-provided DNS instead.
-        services.resolved.settings.Resolve.FallbackDNS = [ ];
+          # Resolve bare fleet hostnames via the router's DNS; tailnet
+          # connections use explicit *.pp-ts names instead.
+          networking.search = [ "home.arpa" ];
 
-        # networkd ignores DHCP/RA-provided search domains (option 119 / DNSSL)
-        # unless UseDomains is set; without a per-link domain, resolved won't
-        # expand bare fleet hostnames
-        systemd.network.config = {
-          dhcpV4Config.UseDomains = true;
-          dhcpV6Config.UseDomains = true;
-        };
+          # With systemd-resolved, the global search domains above also become
+          # routing domains; resolved's compiled-in fallback (Cloudflare/Google)
+          # would then answer *.home.arpa with NXDOMAIN. No fallback → queries
+          # fall through to the LAN link's DHCP-provided DNS instead.
+          services.resolved.settings.Resolve.FallbackDNS = [ ];
 
-        environment.systemPackages = with pkgs; [
-          ghostty.terminfo
-          # Merged from former file-exploration + networkUtilities modules
-          openssh
-          fzf
-          curl
-          wget
-          bandwhich
-        ];
+          # networkd ignores DHCP/RA-provided search domains (option 119 / DNSSL)
+          # unless UseDomains is set; without a per-link domain, resolved won't
+          # expand bare fleet hostnames
+          systemd.network.config = {
+            dhcpV4Config.UseDomains = true;
+            dhcpV6Config.UseDomains = true;
+          };
 
-        nixpkgs = {
-          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
-          config = {
-            allowUnfree = true;
-            allowUnfreePredicate = _: true;
-            allowBroken = true;
-            permittedInsecurePackages = [
-              # TODO: drop once nixos-26.05 bumps bitwarden-desktop off EOL electron 39
-              "electron-39.8.10"
-              # TODO: drop at the 26.11 bump (Immich 3). 26.05 only ships 2.7.5, which
-              # is end-of-life and flagged for CVE-2026-59258 / CVE-2026-82272.
-              # Accepted short-term: Immich (pp-nas1) is LAN/WireGuard-only.
-              "immich-2.7.5"
+          environment.systemPackages = with pkgs; [
+            ghostty.terminfo
+            # Merged from former file-exploration + networkUtilities modules
+            openssh
+            fzf
+            curl
+            wget
+            bandwhich
+          ];
+
+          nixpkgs = {
+            overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
+            config = {
+              allowUnfree = true;
+              allowUnfreePredicate = _: true;
+              allowBroken = true;
+              permittedInsecurePackages =
+                lib.optionals config.my.desktop.enable [
+                  # TODO: drop once nixos-26.05 bumps bitwarden-desktop off EOL electron 39
+                  "electron-39.8.10"
+                ]
+                ++ lib.optionals (config.services.immich.enable or false) [
+                  # TODO: drop at the 26.11 bump (Immich 3). 26.05 only ships 2.7.5, which
+                  # is end-of-life and flagged for CVE-2026-59258 / CVE-2026-82272.
+                  # Scoped strictly to hosts enabling services.immich (pp-nas1).
+                  "immich-2.7.5"
+                ];
+            };
+          };
+
+          nix.settings = {
+            extra-substituters = [ "https://nix-community.cachix.org" ];
+            extra-trusted-public-keys = [
+              "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
             ];
           };
-        };
 
-        nix.settings = {
-          extra-substituters = [ "https://nix-community.cachix.org" ];
-          extra-trusted-public-keys = [
-            "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-          ];
-        };
+          programs.nh.enable = true;
 
-        programs.nix-ld.dev = {
-          enable = true;
-          libraries =
-            options.programs.nix-ld.dev.libraries.default
-            ++ (with pkgs; [
-              dbus # libdbus-1.so.3
-              fontconfig # libfontconfig.so.1
-              freetype # libfreetype.so.6
-              glib # libglib-2.0.so.0
-              libGL # libGL.so.1
-              libxkbcommon # libxkbcommon.so.0
-              libX11 # libX11.so.6
-              wayland
-            ]);
+          programs.ssh.knownHosts = lib.my.mkKnownHosts lib.my.sshHostKeys;
 
+          programs.nix-ld = {
+            enable = true;
+            libraries =
+              options.programs.nix-ld.libraries.default
+              ++ (with pkgs; [
+                dbus # libdbus-1.so.3
+                fontconfig # libfontconfig.so.1
+                freetype # libfreetype.so.6
+                glib # libglib-2.0.so.0
+                libGL # libGL.so.1
+                libxkbcommon # libxkbcommon.so.0
+                libX11 # libX11.so.6
+                wayland
+              ]);
+          };
         };
       };
 
     # Darwin Nix configuration
     darwin.base =
       {
+        lib,
         pkgs,
         ...
       }:
@@ -114,150 +120,164 @@
           inputs.nix-index-database.darwinModules.nix-index
           inputs.determinate.darwinModules.default
         ];
-        system = {
-          stateVersion = 6;
 
-          # Per-power-source sleep policy (nix-darwin's power.sleep.* is global
-          # via systemsetup, so use pmset directly): sleep on battery, stay
-          # awake with wake-on-LAN on AC. Reasserted on every activation;
-          # System Settings toggles can drift it between rebuilds.
-          activationScripts.extraActivation.text = ''
-            pmset -c sleep 0 womp 1
-          '';
+        options.my.desktop.enable = lib.mkEnableOption "desktop workstation profile (GUI applications and roaming workstation defaults)";
 
-          defaults = {
-            spaces.spans-displays = false;
-            # universalaccess.reduceMotion = true;
-            dock = {
-              autohide = true;
-              showhidden = true;
-              mru-spaces = false;
-              launchanim = false;
-              persistent-apps = [
-                # Workspace 1: Term
-                "/Applications/Rex Beta.app"
-                # Workspace 2: Web
-                "/Applications/Brave Browser.app"
-                # Workspace 3: Notes
-                "/Applications/Obsidian.app"
-                "/System/Applications/Notes.app"
-                # Workspace 4: IDE
-                "/Applications/Visual Studio Code.app"
-                # Workspace 5: Comms
-                # "/Applications/Slack.app"
-                # "/Applications/Microsoft Outlook.app"
-                # "/Applications/zoom.us.app"
-                # Workspace 6: Creative
-                "/Applications/GIMP.app"
-                "/Applications/Blender.app"
-                # "/Applications/REAPER.app"
-                # Workspace 7: Social
-                "/System/Applications/Messages.app"
-                "/Applications/Discord.app"
-                "/Applications/Element.app"
-                # Utils
-                "/System/Applications/System Settings.app"
-              ];
-            };
-            finder = {
-              AppleShowAllExtensions = true;
-              QuitMenuItem = true;
-            };
-            NSGlobalDomain = {
-              AppleKeyboardUIMode = 3;
-              ApplePressAndHoldEnabled = false;
-              AppleFontSmoothing = 1;
-              InitialKeyRepeat = 10;
-              KeyRepeat = 1;
-              "com.apple.mouse.tapBehavior" = 1;
-              "com.apple.swipescrolldirection" = false;
-            };
-            trackpad = {
-              Clicking = true;
-              TrackpadThreeFingerDrag = false;
-            };
-            CustomUserPreferences = {
-              # Leader Key keeps its actions in config.json (stowed from
-              # home/Library/Application Support/), but the activation hotkey
-              # and popup theme live in UserDefaults only.
-              "com.brnbw.Leader-Key" = {
-                # ctrl-space: carbon controlKey (0x1000) + kVK_Space (49).
-                KeyboardShortcuts_navigate = ''{"carbonModifiers":4096,"carbonKeyCode":49}'';
-                theme = "cheater";
-                autoOpenCheatsheet = "always";
+        config = {
+          # Determinate's NixOS module substitutes from here already; on darwin it is only
+          # trusted, so Determinate Nix itself compiled locally. Its keys are already trusted.
+          determinateNix.customSettings.extra-substituters = [ "https://install.determinate.systems" ];
+
+          system = {
+            stateVersion = 6;
+
+            # Per-power-source sleep policy (nix-darwin's power.sleep.* is global
+            # via systemsetup, so use pmset directly): sleep on battery, stay
+            # awake with wake-on-LAN on AC. Reasserted on every activation;
+            # System Settings toggles can drift it between rebuilds.
+            activationScripts.extraActivation.text = ''
+              pmset -c sleep 0 womp 1
+            '';
+
+            defaults = {
+              spaces.spans-displays = false;
+              # universalaccess.reduceMotion = true;
+              dock = {
+                autohide = true;
+                showhidden = true;
+                mru-spaces = false;
+                launchanim = false;
+                persistent-apps = [
+                  # Workspace 1: Term
+                  "/Applications/Rex Beta.app"
+                  # Workspace 2: Web
+                  "/Applications/Brave Browser.app"
+                  # Workspace 3: Notes
+                  "/Applications/Obsidian.app"
+                  "/System/Applications/Notes.app"
+                  # Workspace 4: IDE
+                  "/Applications/Visual Studio Code.app"
+                  # Workspace 5: Comms
+                  # "/Applications/Slack.app"
+                  # "/Applications/Microsoft Outlook.app"
+                  # "/Applications/zoom.us.app"
+                  # Workspace 6: Creative
+                  "/Applications/GIMP.app"
+                  "/Applications/Blender.app"
+                  # "/Applications/REAPER.app"
+                  # Workspace 7: Social
+                  "/System/Applications/Messages.app"
+                  "/Applications/Discord.app"
+                  "/Applications/Element.app"
+                  # Utils
+                  "/System/Applications/System Settings.app"
+                ];
               };
-              # Maccy has no config file; everything is UserDefaults. Same
-              # KeyboardShortcuts library as Leader Key, same carbon encoding.
-              # History lives in its own SQLite store, nothing to stow.
-              "org.p0deje.Maccy" = {
-                # cmd-shift-v: cmdKey (0x100) + shiftKey (0x200) + kVK_ANSI_V (9).
-                KeyboardShortcuts_popup = ''{"carbonModifiers":768,"carbonKeyCode":9}'';
-                pasteByDefault = true;
-                searchMode = "fuzzy";
-                historySize = 200;
-                popupPosition = "cursor";
-                showInStatusBar = false;
-                ignoredApps = [ "com.1password.1password" ];
+              finder = {
+                AppleShowAllExtensions = true;
+                QuitMenuItem = true;
+              };
+              NSGlobalDomain = {
+                AppleKeyboardUIMode = 3;
+                ApplePressAndHoldEnabled = false;
+                AppleFontSmoothing = 1;
+                InitialKeyRepeat = 10;
+                KeyRepeat = 1;
+                "com.apple.mouse.tapBehavior" = 1;
+                "com.apple.swipescrolldirection" = false;
+              };
+              trackpad = {
+                Clicking = true;
+                TrackpadThreeFingerDrag = false;
+              };
+              CustomUserPreferences = {
+                # Leader Key keeps its actions in config.json (stowed from
+                # home/Library/Application Support/), but the activation hotkey
+                # and popup theme live in UserDefaults only.
+                "com.brnbw.Leader-Key" = {
+                  # ctrl-space: carbon controlKey (0x1000) + kVK_Space (49).
+                  KeyboardShortcuts_navigate = ''{"carbonModifiers":4096,"carbonKeyCode":49}'';
+                  theme = "cheater";
+                  autoOpenCheatsheet = "always";
+                };
+                # Maccy has no config file; everything is UserDefaults. Same
+                # KeyboardShortcuts library as Leader Key, same carbon encoding.
+                # History lives in its own SQLite store, nothing to stow.
+                "org.p0deje.Maccy" = {
+                  # cmd-shift-v: cmdKey (0x100) + shiftKey (0x200) + kVK_ANSI_V (9).
+                  KeyboardShortcuts_popup = ''{"carbonModifiers":768,"carbonKeyCode":9}'';
+                  pasteByDefault = true;
+                  searchMode = "fuzzy";
+                  historySize = 200;
+                  popupPosition = "cursor";
+                  showInStatusBar = false;
+                  ignoredApps = [ "com.1password.1password" ];
+                };
               };
             };
           };
-        };
 
-        security.pam.services.sudo_local = {
-          enable = true;
-          touchIdAuth = true;
-          reattach = true;
-        };
-        services.openssh.enable = true;
-        homebrew = {
-          enable = true;
-          greedyCasks = true;
-          taps = [
-            {
-              name = "nikitabobko/tap";
-              trusted = true;
-            }
-          ];
-          brews = [
-            "xcode-build-server"
-            "xcbeautify"
-            "xcp"
-            "uv"
-            "docker"
-            "docker-compose"
-            "docker-credential-helper"
-          ];
-          casks = [
-            "slack"
-            "ghostty"
-            "discord"
-            "element"
-            "visual-studio-code"
-            "reaper"
-            "brave-browser"
-            "gimp"
-            "xquartz"
-            "obsidian"
-            "aerospace"
-            "leader-key"
-            "maccy"
-          ];
-          onActivation = {
-            autoUpdate = true;
-            upgrade = true;
+          security.pam.services.sudo_local = {
+            enable = true;
+            touchIdAuth = true;
+            reattach = true;
           };
-        };
+          # Leave Remote Login (sshd) off by default on roaming macOS laptops;
+          # `/etc/ssh/ssh_host_ed25519_key` for sops-nix persists via `sudo ssh-keygen -A`
+          # without exposing sshd, and stationary Macs can opt in with `services.openssh.enable = true`.
+          services.openssh.enable = lib.mkDefault false;
 
-        environment.systemPackages = with pkgs; [
-          openssh
-        ];
+          programs.ssh.knownHosts = lib.my.mkKnownHosts lib.my.sshHostKeys;
+          homebrew = {
+            enable = true;
+            greedyCasks = true;
+            taps = [
+              {
+                name = "nikitabobko/tap";
+                trusted = true;
+              }
+            ];
+            brews = [
+              "xcode-build-server"
+              "xcbeautify"
+              "xcp"
+              "uv"
+              "docker"
+              "docker-compose"
+              "docker-credential-helper"
+            ];
+            casks = [
+              "slack"
+              "ghostty"
+              "discord"
+              "element"
+              "visual-studio-code"
+              "reaper"
+              "brave-browser"
+              "gimp"
+              "xquartz"
+              "obsidian"
+              "aerospace"
+              "leader-key"
+              "maccy"
+            ];
+            onActivation = {
+              autoUpdate = true;
+              upgrade = true;
+            };
+          };
 
-        nixpkgs = {
-          overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
-          config = {
-            allowUnfree = true;
-            allowUnfreePredicate = _: true;
-            allowBroken = true;
+          # No Nix openssh here: macOS's ssh supports GSSAPI (Colima's ssh_config) and
+          # UseKeychain, and overriding pkgs.openssh rebuilt everything that depends on it.
+          environment.systemPackages = with pkgs; [ nh ];
+
+          nixpkgs = {
+            overlays = builtins.attrValues (import ../../overlays { inherit inputs; });
+            config = {
+              allowUnfree = true;
+              allowUnfreePredicate = _: true;
+              allowBroken = true;
+            };
           };
         };
       };
@@ -335,7 +355,7 @@
               DOTFILES_DIR="${config.home.homeDirectory}/dotfiles"
               if [ ! -d "$DOTFILES_DIR" ]; then
                 echo "Cloning dotfiles repo to $DOTFILES_DIR..."
-                GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -o StrictHostKeyChecking=accept-new" ${pkgs.git}/bin/git clone git@github.com:pperanich/dotfiles.git "$DOTFILES_DIR"
+                ${pkgs.git}/bin/git clone https://github.com/pperanich/dotfiles.git "$DOTFILES_DIR"
               fi
               pushd "$DOTFILES_DIR" >/dev/null
               ${pkgs.stow}/bin/stow home

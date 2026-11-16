@@ -123,6 +123,25 @@ _: {
                 DynamicUser = true;
               };
             };
+
+            # The sync job is inactive between timer runs, so a switch never re-runs it. This
+            # unit stays active and restarts when the tunnel or its hostnames change.
+            cf-tunnel-dns-sync-on-change = lib.mkIf (hostnames != [ ]) {
+              description = "Re-run the Cloudflare Tunnel DNS sync when the tunnel changes";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "network-online.target" ];
+              wants = [ "network-online.target" ];
+              restartTriggers = [
+                cfg.tunnelId
+                cfg.zone
+                hostnameFlags
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                ExecStart = "${config.systemd.package}/bin/systemctl start --no-block cf-tunnel-dns-sync.service";
+              };
+            };
           };
 
           timers.cf-tunnel-dns-sync = lib.mkIf (hostnames != [ ]) {

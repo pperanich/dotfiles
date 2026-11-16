@@ -35,6 +35,10 @@
           "*.xml"
           "*/.gitignore"
           "LICENSE"
+          # sops rewrites these on every edit; reformatting them gains nothing.
+          "sops/cloudflared-tunnel.json"
+          "sops/machines/*.yaml"
+          "sops/users/*.yaml"
         ];
       };
     };

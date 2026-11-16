@@ -16,13 +16,13 @@
       stowPrivate
       nvim
       tools
-      opencode
 
       # Optional: the local apiKeys module discovers this repo's api_keys/*
       # entries, replacing the upstream's fixed provider list.
       # apiKeys
     ]
     ++ lib.optionals desktop [
+      aiTools
       fonts
       applications
     ];

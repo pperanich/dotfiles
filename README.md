@@ -1,6 +1,6 @@
 # Dotfiles
 
-Nix-based system configuration using [flake-parts](https://flake.parts/), [clan-core](https://docs.clan.lol/), and the dendritic pattern via [import-tree](https://github.com/vic/import-tree).
+Nix-based system configuration using [flake-parts](https://flake.parts/), [deploy-rs](https://github.com/serokell/deploy-rs), [sops-nix](https://github.com/Mic92/sops-nix), and the dendritic pattern via [import-tree](https://github.com/vic/import-tree).
 
 ## Quick Start
 
@@ -37,8 +37,9 @@ Once installed, day-to-day work happens in the dev shell:
 
 ```bash
 cd ~/dotfiles
-nix develop                     # formatters, linters, clan-cli
-clan machines update <hostname> # deploy
+nix develop                     # treefmt, sops, ssh-to-age, age-plugin-yubikey, deploy-rs, nh, home-manager
+deploy .#pp-wsl1                # deploy a NixOS host (builds on the target, rolls back on failure)
+nh darwin switch . -H pp-ml1    # the Mac switches locally
 ```
 
 ## How It Works
@@ -57,9 +58,9 @@ outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.imp
 
 The configuration is organized into three layers that build on each other:
 
-**1. Flake infrastructure** (`modules/flake-parts/`) — Configures the flake itself: nixpkgs settings, the dev shell, formatting, clan-core integration, and home-manager wiring. These are standard flake-parts modules that set up the plumbing everything else depends on.
+**1. Flake infrastructure** (`modules/flake-parts/`): Configures the flake itself: nixpkgs settings, the dev shell, formatting, host discovery (`hosts.nix`), deploy-rs nodes, and home-manager wiring. These are standard flake-parts modules that set up the plumbing everything else depends on.
 
-**2. Reusable modules** (`modules/`) — Each file exports configuration under `flake.modules.{nixos,darwin,homeManager}.<name>`. For example, `modules/shell/tools.nix` exports `flake.modules.homeManager.tools`, which defines shell packages. A module can export to one platform or all three. This is the "dendritic pattern" — modules grow like branches, each self-contained and independently composable.
+**2. Reusable modules** (`modules/`): Each file exports configuration under `flake.modules.{nixos,darwin,homeManager}.<name>`. For example, `modules/shell/tools.nix` exports `flake.modules.homeManager.tools`, which defines shell packages. A module can export to one platform or all three. This is the "dendritic pattern": modules grow like branches, each self-contained and independently composable.
 
 ```nix
 # modules/shell/rust.nix — exports a home-manager module
@@ -70,14 +71,14 @@ _: {
 }
 ```
 
-**3. Machine configurations** (`machines/`) — Each host picks the modules it needs by name. The `modules` attrset is passed as a `specialArg` by clan-core, so machines can simply reference `modules.nixos.base`, `modules.darwin.sops`, etc.
+**3. Machine configurations** (`machines/`): Each host picks the modules it needs by name. The `modules` attrset is passed as a `specialArg` by `modules/flake-parts/hosts.nix`, so machines can simply reference `modules.nixos.base`, `modules.darwin.sops`, etc.
 
 ```nix
 # machines/pp-ml1/configuration.nix
 { modules, ... }:
 {
   imports = with modules.darwin; [
-    base sops pperanich rust sketchybar kimaki
+    base sops pperanich rust sketchybar
   ];
   networking.hostName = "pp-ml1";
   nixpkgs.hostPlatform = "aarch64-darwin";
@@ -89,7 +90,7 @@ _: {
 User modules (e.g., `modules/users/pperanich.nix`) bridge system and user config. They export to both `flake.modules.nixos.pperanich` and `flake.modules.darwin.pperanich`, handling:
 
 - System user creation (shell, groups, SSH keys)
-- Secrets deployment via sops-nix (the system decrypts secrets _before_ home-manager runs, solving the bootstrap chicken-and-egg)
+- Secrets via sops-nix (the system decrypts with the host's SSH key; home-manager decrypts with its own age key at `~/.config/sops/age/keys.txt`)
 - Home-manager activation, which loads a **home profile**
 
 **Home profiles** (`home-profiles/`) compose home-manager modules the same way machines compose system modules — by importing from the `homeManager` attrset:
@@ -103,26 +104,25 @@ User modules (e.g., `modules/users/pperanich.nix`) bridge system and user config
 }
 ```
 
-A `generic` profile exists for shared/service accounts, and `mkHomeConfigurations` in `lib/` auto-generates standalone `homeConfigurations` from all profiles (useful for non-NixOS hosts).
+`mkHomeConfigurations` in `lib/` generates a standalone `homeConfigurations` entry for each profile (useful for non-NixOS hosts). The `generic` profile is for other accounts: list their names in `additionalUsers` in `modules/flake-parts/home.nix`.
 
-### Clan-Core & Inventory
+### Hosts, Deploy & Remote Access
 
-Clan-core manages the machine fleet. `modules/flake-parts/clan.nix` defines the **inventory** — which machines exist, their tags, and which clan services they participate in.
+`modules/flake-parts/hosts.nix` turns every `machines/<host>/configuration.nix` into a `nixosConfigurations` or `darwinConfigurations` entry. The builder comes from the `nixpkgs.hostPlatform` that file declares.
 
-Services are assigned by **roles and tags**. For example, the wireguard instance declares `pp-router1` as the controller and other machines as peers. The borgbackup instance makes `pp-router1` the server and `pp-nas1` a client. Tags like `"all"` or `"nixos"` apply services to groups of machines at once.
-
-Deployment is a single command:
+NixOS hosts are deployed with deploy-rs. The nodes are in `modules/flake-parts/deploy.nix`; each builds on its target and rolls back if it cannot reconnect. The Mac has no sshd and switches locally with `nh`:
 
 ```bash
-clan machines update pp-nas1    # builds, uploads, and activates
+deploy .#pp-wsl1                       # target pp-wsl1.pp-ts
+deploy --hostname pp-nas1.pp-ts .#pp-nas1
+nh darwin switch . -H pp-ml1
 ```
 
-### Secrets: Hybrid Approach
+Remote access is Headscale on `pp-router1` with a Tailscale client on every host. Tailnet names are `<host>.pp-ts`; `home.arpa` names resolve on the LAN only.
 
-Two systems handle secrets with different strengths:
+### Secrets
 
-- **Clan vars** — Machine bootstrap secrets (age keypairs, SSH host keys, user passwords, wireguard keys). Generated with `clan vars generate`, uploaded with `clan vars upload`. These are the foundation that everything else decrypts with.
-- **sops-nix** — Application secrets (service passwords, API tokens). Encrypted in `sops/secrets.yaml`, decrypted at activation time using the machine's age key. Modules reference secrets via `sops.secrets.<name>.path`.
+All secrets are sops-nix secrets encrypted with age, one file per host (`sops/machines/<host>.yaml`) plus `sops/users/pperanich-desktop.yaml` for the workstation's API keys. Each file is encrypted to the admin key, a YubiKey, and that host's age key (derived from its SSH host key). Hosts decrypt at activation with `/etc/ssh/ssh_host_ed25519_key`. Modules reference secrets via `sops.secrets.<name>.path`. See [Secrets and Key Management](docs/secrets-and-key-management.md).
 
 ### Stow for Dotfiles
 
@@ -134,9 +134,9 @@ Custom packages live in `pkgs/` and are built with `nix build .#<name>`. An `add
 
 The overlays file (`overlays/default.nix`) serves three purposes:
 
-- **Input overlays** — Pulls in overlays from flake inputs (emacs, neovim-nightly, rust-overlay, ghostty, sops-nix, etc.) so their packages are available in nixpkgs.
+- **Input overlays** — Pulls in overlays from flake inputs (sops-nix, rust-overlay, Determinate Nix, the personal site, Apple fonts) so their packages are available in nixpkgs.
 - **Additions** — Injects custom packages from `pkgs/` into the package set.
-- **Modifications** — Patches or overrides for upstream packages. For example, `atuin` gets a ZFS performance patch, and `my-curl`/`my-git` allow per-machine OpenSSL overrides while keeping a consistent package name.
+- **Modifications** — Patches or overrides for upstream packages. For example, `my-curl`/`my-git` allow per-machine OpenSSL overrides while keeping a consistent package name.
 
 Every platform's `base` module applies all overlays automatically via `builtins.attrValues`, so there's no per-machine overlay wiring needed.
 
@@ -158,17 +158,14 @@ Every platform's `base` module applies all overlays automatically via `builtins.
 # Development
 nix develop                           # Enter dev shell
 nix fmt                               # Format all files
-nix flake check                       # Validate flake
+nix flake check --no-build            # Evaluate the flake and its checks
 
-# Machine deployment
-clan machines list                    # List all machines
-clan machines update <hostname>       # Deploy to machine
-clan vars generate <hostname>         # Generate machine secrets
-clan vars upload <hostname>           # Upload secrets only
+# Machine deployment (see Hosts, Deploy & Remote Access)
+deploy .#<hostname>                   # NixOS host
+nh darwin switch . -H pp-ml1          # Darwin
 
 # Secrets
-clan vars list <hostname>             # List vars for machine
-clan secrets get <secret>             # Decrypt a secret
+sops --config sops/.sops.yaml sops/machines/<hostname>.yaml   # Edit a host's secrets
 
 # Manual builds
 sudo nixos-rebuild switch --flake .#<hostname>    # NixOS
@@ -201,8 +198,8 @@ It runs no clan and no deployment tool: `machines/<class>/<host>/` becomes a `ni
 Detailed guides are available in the [docs/](docs/) directory:
 
 - **[Adding New Machines](docs/adding-new-machines.md)** - Complete onboarding guide
+- **[Secrets and Key Management](docs/secrets-and-key-management.md)** - Per-host sops files, keys, rotation
 - **[Private Machines](docs/private-machines.md)** - Running hosts from a private flake that consumes this one
-- **[Troubleshooting](docs/clan-machines-update-troubleshooting.md)** - Debug deployment issues
 
 ## Manual Setup
 
@@ -228,7 +225,8 @@ nix run home-manager -- switch --flake .#<username>
 ## References
 
 - [Flake-parts](https://flake.parts/)
-- [Clan-core](https://docs.clan.lol/)
+- [deploy-rs](https://github.com/serokell/deploy-rs)
+- [Headscale](https://headscale.net/)
 - [import-tree](https://github.com/vic/import-tree)
 - [sops-nix](https://github.com/Mic92/sops-nix)
 - [NixOS](https://nixos.org/manual/nixos/stable/)

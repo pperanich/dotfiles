@@ -4,9 +4,8 @@
 #   - NixOS/Darwin: the host's SSH key (/etc/ssh/ssh_host_ed25519_key), converted
 #     to an age key by sops-nix at activation. Add each host's age key to
 #     sops/.sops.yaml with `ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`.
-#   - home-manager: the user's ~/.ssh/id_ed25519. On NixOS/Darwin that private
-#     key is itself deployed by the system-level sops in modules/users/example.nix,
-#     which runs before home-manager — that's what breaks the chicken-and-egg.
+#   - home-manager: the user's own ~/.ssh/id_ed25519, which never leaves its
+#     machine. Add its recipient to sops/.sops.yaml for each machine it lives on.
 #   - You, editing secrets: `nix develop` exports SOPS_AGE_KEY from your SSH key.
 #
 # Secrets land in /run/secrets/<name> (system) and

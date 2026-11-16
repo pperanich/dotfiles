@@ -4,7 +4,7 @@
   "autoupdate": true,
   "share": "disabled",
   "plugin": [
-    "opencode-antigravity-auth@latest",
-    "opencode-anthropic-auth@latest"
+    "opencode-antigravity-auth@2.1.2",
+    "opencode-anthropic-auth@0.0.13"
   ]
 }

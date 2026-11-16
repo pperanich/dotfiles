@@ -245,12 +245,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (device) (rate(node_network_receive_bytes_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_receive_bytes_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main\"}[5m]))",
           "legendFormat": "{{device}} rx",
           "refId": "A"
         },
         {
-          "expr": "sum by (device) (rate(node_network_transmit_bytes_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_transmit_bytes_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main\"}[5m]))",
           "legendFormat": "{{device}} tx",
           "refId": "B"
         }
@@ -290,12 +290,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (device) (rate(node_network_receive_drop_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_receive_drop_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main\"}[5m]))",
           "legendFormat": "{{device}} rx drops",
           "refId": "A"
         },
         {
-          "expr": "sum by (device) (rate(node_network_transmit_drop_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main|pp-wg\"}[5m]))",
+          "expr": "sum by (device) (rate(node_network_transmit_drop_total{job=\"node\",instance=\"pp-router1\",device=~\"enp.*|br-main\"}[5m]))",
           "legendFormat": "{{device}} tx drops",
           "refId": "B"
         }

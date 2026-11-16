@@ -24,15 +24,36 @@ ZIM_CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/zimrc"
 ZIM_HOME="$HOME/.zim"
 source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/powerlevel10k-config/p10k.zsh"
 
-# Download zimfw plugin manager if missing.
+# Download zimfw plugin manager if missing (pinned release + SHA-256 verification).
 if [[ ! -e "$ZIM_HOME/zimfw.zsh" ]]; then
-  curl -fsSL --create-dirs -o "$ZIM_HOME/zimfw.zsh" \
-      "https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh"
-fi
-
-# Install missing modules and update init.zsh if config is newer.
-if [[ ! "$ZIM_HOME/init.zsh" -nt "${ZIM_CONFIG_FILE:-${ZDOTDIR:-$HOME}/.zimrc}" ]]; then
-  source "$ZIM_HOME/zimfw.zsh" init
+  () {
+    local zim_version="v1.21.0"
+    local zim_sha256="8f631937bc6afdfdf26f91a8080dad86e84051f92bb1d91db8004dd1c3383cbd"
+    local tmp_zim actual_sha256
+    mkdir -p "$ZIM_HOME"
+    tmp_zim="$(mktemp "$ZIM_HOME/zimfw.zsh.XXXXXX")" || return 1
+    if ! curl -fsSL --proto '=https' --tlsv1.2 -o "$tmp_zim" \
+        "https://github.com/zimfw/zimfw/releases/download/${zim_version}/zimfw.zsh"; then
+      rm -f "$tmp_zim"
+      print -u2 "ERROR: Failed to download zimfw ${zim_version}"
+      return 1
+    fi
+    if command -v shasum >/dev/null 2>&1; then
+      actual_sha256="$(shasum -a 256 "$tmp_zim" | awk '{print $1}')"
+    elif command -v sha256sum >/dev/null 2>&1; then
+      actual_sha256="$(sha256sum "$tmp_zim" | awk '{print $1}')"
+    else
+      rm -f "$tmp_zim"
+      print -u2 "ERROR: Neither shasum nor sha256sum available to verify zimfw.zsh"
+      return 1
+    fi
+    if [[ "$actual_sha256" != "$zim_sha256" ]]; then
+      rm -f "$tmp_zim"
+      print -u2 "ERROR: SHA-256 mismatch for zimfw.zsh (${zim_version}): expected ${zim_sha256}, got ${actual_sha256}"
+      return 1
+    fi
+    mv -f "$tmp_zim" "$ZIM_HOME/zimfw.zsh"
+  }
 fi
 
 # Per-user completions, where tools that follow the XDG layout install them (tma, and anything
@@ -41,8 +62,13 @@ zdatadir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions"
 [[ -d "$zdatadir" ]] && fpath=("$zdatadir" $fpath)
 unset zdatadir
 
-# Initialize modules.
-source "$ZIM_HOME/init.zsh"
+# Install missing modules, update init.zsh if config is newer, and initialize modules.
+if [[ -e "$ZIM_HOME/zimfw.zsh" ]]; then
+  if [[ ! "$ZIM_HOME/init.zsh" -nt "${ZIM_CONFIG_FILE:-${ZDOTDIR:-$HOME}/.zimrc}" ]]; then
+    source "$ZIM_HOME/zimfw.zsh" init
+  fi
+  [[ -e "$ZIM_HOME/init.zsh" ]] && source "$ZIM_HOME/init.zsh"
+fi
 
 
 # ------------------------------------------------------------------------------
@@ -110,6 +136,10 @@ fi
 
 # Increase open file descriptor limit.
 ulimit -n unlimited
+
+# Zim's environment module enables extendedglob, where `#` is a glob operator;
+# keep flake refs like `.#pp-router1` literal for the tools that take them.
+alias nix='noglob nix' deploy='noglob deploy' nh='noglob nh'
 
 # Helper function for port-forwarding over SSH.
 pfwd() {

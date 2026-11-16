@@ -10,6 +10,7 @@ _: {
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -103,6 +104,9 @@ _: {
           };
 
           services.opencloud = {
+            # nixpkgs no longer picks a default. Production (about every 6 months) continues the
+            # 7.x line this host started on; rolling to production would be an unsupported downgrade.
+            package = lib.mkDefault pkgs.opencloud-production;
             enable = true;
             environmentFile = lib.mkIf (envFile != null) envFile;
             inherit (cfg)

@@ -453,7 +453,7 @@ func printNextSteps(tunnelID, name, credsFile, metaFile string, routerDefaults b
 	fmt.Println()
 	fmt.Printf("1. Commit %s and %s\n", metaFile, credsFile)
 	if routerDefaults {
-		fmt.Println("2. Deploy: clan machines update pp-router1")
+		fmt.Println("2. Deploy: deploy --hostname pp-router1.pp-ts .#pp-router1")
 	}
 }
 

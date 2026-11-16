@@ -2,18 +2,18 @@
 
 Services in this infrastructure are exposed through two primary pathways: a private pathway for secure, high-performance local access and a public pathway for convenient access from anywhere without a VPN.
 
-| Pathway     | Transport         | Access From    | DNS                     | Reverse Proxy | WAN Ports |
-| ----------- | ----------------- | -------------- | ----------------------- | ------------- | --------- |
-| **Private** | Caddy + LAN/WG    | LAN, WireGuard | Cloudflare (Private IP) | Caddy         | None      |
-| **Public**  | Cloudflare Tunnel | Internet       | Cloudflare (CNAME)      | cloudflared   | None      |
+| Pathway     | Transport           | Access From  | DNS                     | Reverse Proxy | WAN Ports |
+| ----------- | ------------------- | ------------ | ----------------------- | ------------- | --------- |
+| **Private** | Caddy + LAN/tailnet | LAN, tailnet | Cloudflare (Private IP) | Caddy         | None      |
+| **Public**  | Cloudflare Tunnel   | Internet     | Cloudflare (CNAME)      | cloudflared   | None      |
 
-## Private Pathway (Caddy + LAN/WG)
+## Private Pathway (Caddy + LAN/tailnet)
 
-The private pathway is the primary method for accessing administrative interfaces and high-bandwidth services. It relies on Caddy acting as a reverse proxy that is only accessible from the local network or via WireGuard.
+The private pathway is the primary method for accessing administrative interfaces and high-bandwidth services. It relies on Caddy acting as a reverse proxy that is only accessible from the local network or over the tailnet (Headscale and Tailscale).
 
 ### How it works
 
-- **Binding**: Caddy binds to the LAN IP (10.0.0.1) and the WireGuard interface address.
+- **Binding**: Caddy binds to the LAN IP (10.0.0.1) and the router's tailnet addresses (`100.64.0.1`, `fd7a:115c:a1e0::1`).
 - **TLS**: Certificates are obtained via the DNS-01 challenge, allowing for valid HTTPS even on a private network without opening port 80.
 - **DNS**: Managed via the `cloudflareDns` module, which uses `cf dns sync` to create A/AAAA records pointing to private internal IPs.
 
@@ -60,7 +60,7 @@ Some services benefit from being available on both pathways. This provides the c
 | Service         | Access Path     | Latency | Security            |
 | --------------- | --------------- | ------- | ------------------- |
 | **Vaultwarden** | Public (Tunnel) | Medium  | Cloudflare Auth/WAF |
-| **Vaultwarden** | Private (Caddy) | Low     | LAN/WG Only         |
+| **Vaultwarden** | Private (Caddy) | Low     | LAN/tailnet Only    |
 
 > **Note:** Administrative panels and highly sensitive services are strictly restricted to the private path only.
 
@@ -121,7 +121,7 @@ git add machines/pp-router1/cf-tunnel.json sops/cloudflared-tunnel.json
 git commit -m "feat: provision cloudflare tunnel"
 
 # 6. Deploy
-clan machines update pp-router1
+deploy --hostname pp-router1.home.arpa .#pp-router1
 ```
 
 ### Re-running is safe
@@ -140,13 +140,13 @@ clan machines update pp-router1
 ### Secrets
 
 - **Tunnel Credentials** (`sops/cloudflared-tunnel.json`): sops-encrypted, binary format. Contains the tunnel secret needed by cloudflared at runtime. Decrypted on the target machine by sops-nix.
-- **API Token** (`sops/secrets.yaml`): Used by the `cf-dns` systemd service for DNS record management.
+- **API Token** (`cloudflare-api-token` in the host's file under `sops/machines/`): Used by the `cf-dns` systemd service for DNS record management.
 - **Tunnel Metadata** (`machines/<host>/cf-tunnel.json`): Plaintext. Contains only the tunnel UUID and name — no secrets. Read by Nix at eval time.
 
 ## Architecture Diagram
 
 ```text
-      [ Internet ]          [ LAN / WireGuard ]
+      [ Internet ]          [ LAN / tailnet ]
            |                        |
            v                        |
   [ Cloudflare Edge ]               |

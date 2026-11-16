@@ -40,8 +40,7 @@ export interface RejectedClaim {
 }
 
 export type ClaimResult =
-  | { ok: true; claim: Claim }
-  | { ok: false; rejected: RejectedClaim };
+  { ok: true; claim: Claim } | { ok: false; rejected: RejectedClaim };
 
 export interface LedgerOptions {
   redundancyThreshold: number;

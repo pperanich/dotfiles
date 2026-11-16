@@ -13,20 +13,24 @@ _: {
       lanIface = cfg._internal.lanInterface or bridgeName;
       enabled = cfg.enable && unifiCfg.enable;
 
-      # All LAN interfaces that need access to the controller
-      # Main LAN bridge + any VLAN bridges where APs might be
-      controllerInterfaces = [
-        lanIface
-      ]
-      ++ lib.optionals cfg.networks.enable (
-        lib.mapAttrsToList (name: _: "br-${name}") (
-          lib.filterAttrs (_: seg: seg.vlan != null) cfg.networks.segments
-        )
-      );
+      # Only expose the UniFi controller on the trusted main LAN bridge by default
+      # (never on isolated IoT/Guest VLAN bridges unless explicitly requested).
+      controllerInterfaces = lib.unique ([ lanIface ] ++ unifiCfg.extraInterfaces);
     in
     {
       options.my.router.unifi = {
         enable = lib.mkEnableOption "Unifi controller for managing Ubiquiti access points";
+
+        extraInterfaces = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "br-mgmt" ];
+          description = ''
+            Additional interfaces allowed to access the UniFi controller ports.
+            Defaults to empty so isolated VLANs (IoT, Guest) cannot reach the
+            admin UI (:8443) or device inform endpoint (:8080).
+          '';
+        };
 
         openFirewall = lib.mkOption {
           type = lib.types.bool;

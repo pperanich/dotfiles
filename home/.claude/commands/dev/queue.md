@@ -1,6 +1,6 @@
 ---
 description: Pull issues assigned to you in this repo and run the dev loop per issue, pausing only for plan approval
-argument-hint: '[issue numbers... | blank to pick from the list]'
+argument-hint: "[issue numbers... | blank to pick from the list]"
 ---
 
 # Issue Queue Runner

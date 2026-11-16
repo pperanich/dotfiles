@@ -48,6 +48,9 @@ in
       browsedConf = ''
         BrowseRemoteProtocols dnssd
         BrowseLocalProtocols dnssd
+        BrowseOrder Deny,Allow
+        BrowseDeny All
+        BrowseAllow 10.0.20.50
         CreateIPPPrinterQueues All
         # Skip cupsd's own broker republish to break the feedback loop —
         # without this, cups-browsed sees `... @ pp-router1` on br-main and
@@ -60,8 +63,8 @@ in
       # CUPS publishes its shared queue via avahi. The router's mdns module
       # defaults disable-user-service-publishing=yes, which causes
       # "DNS-SD registration ... failed: Not permitted" in cupsd logs.
-      # userServices=true flips that to allow per-service publishing.
-      publish.userServices = true;
+      # Allow per-service publishing.
+      settings.publish.disable-user-service-publishing = false;
 
       # Disable IPv6 NSS resolution for .local names. The Canon TR4500 only
       # advertises an IPv6 link-local A record (no global v6) for its mDNS

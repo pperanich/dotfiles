@@ -8,28 +8,31 @@ _: {
     }:
     let
       # Inherit session variables so XDG_CONFIG_HOME, COLIMA_PROFILE, etc.
-      # are baked into the plist — no dependency on launchctl setenv ordering.
+      # are baked into the plist, with no dependency on launchctl setenv ordering.
       inherit (config.system) primaryUser;
+      homeDir = config.home-manager.users.${primaryUser}.home.homeDirectory;
       sessionVars = config.home-manager.users.${primaryUser}.home.sessionVariables;
+
+      # Ensure the narrow scratch mount directory exists with 0700 permissions
+      # before Colima starts so Colima never falls back to mounting $HOME.
+      colimaStart = pkgs.writeShellScript "colima-launchd-start" ''
+        /bin/mkdir -p -m 0700 ${lib.escapeShellArg "${homeDir}/colima-shared"}
+        exec "${pkgs.colima}/bin/colima" start --foreground --save-config=false
+      '';
     in
     {
       environment.systemPackages = [ pkgs.colima ];
 
       launchd.user.agents.colima = {
         serviceConfig = {
-          ProgramArguments = [
-            "${pkgs.colima}/bin/colima"
-            "start"
-            "--foreground"
-            "--save-config=false"
-          ];
+          ProgramArguments = [ "${colimaStart}" ];
           RunAtLoad = true;
           KeepAlive = {
             # Restart on unexpected failures, but allow a clean manual stop.
             SuccessfulExit = false;
           };
           ThrottleInterval = 30;
-          WorkingDirectory = config.home-manager.users.${primaryUser}.home.homeDirectory;
+          WorkingDirectory = homeDir;
           EnvironmentVariables = sessionVars // {
             PATH =
               lib.makeBinPath [
@@ -40,8 +43,8 @@ _: {
               ]
               + ":/usr/bin:/bin:/usr/sbin:/sbin";
           };
-          StandardOutPath = "/tmp/colima.stdout.log";
-          StandardErrorPath = "/tmp/colima.stderr.log";
+          StandardOutPath = "${homeDir}/Library/Logs/colima.stdout.log";
+          StandardErrorPath = "${homeDir}/Library/Logs/colima.stderr.log";
         };
       };
     };

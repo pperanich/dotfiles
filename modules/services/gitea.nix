@@ -42,6 +42,11 @@ _: {
           default = 22;
           description = "Port advertised in SSH clone URLs. Defaults to the system sshd port.";
         };
+        requireSigninView = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Require users to sign in before viewing any Gitea pages or repositories.";
+        };
         mail = {
           enable = lib.mkEnableOption "outbound mail (relayed via localhost:25)";
           from = lib.mkOption {
@@ -94,7 +99,6 @@ _: {
 
           settings = {
             server = {
-              DOMAIN = cfg.domain;
               ROOT_URL = "https://${cfg.domain}/";
               HTTP_ADDR = cfg.address;
               HTTP_PORT = cfg.port;
@@ -113,6 +117,15 @@ _: {
               DISABLE_REGISTRATION = true;
               SHOW_REGISTRATION_BUTTON = false;
               DEFAULT_KEEP_EMAIL_PRIVATE = true;
+              REQUIRE_SIGNIN_VIEW = cfg.requireSigninView;
+            };
+            security = {
+              DISABLE_GIT_HOOKS = lib.mkDefault true;
+            };
+            # Bare `uses: actions/checkout@v4` resolves against github.com.
+            actions = {
+              ENABLED = true;
+              DEFAULT_ACTIONS_URL = "github";
             };
             session.COOKIE_SECURE = true;
             log.LEVEL = "Warn";

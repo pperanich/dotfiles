@@ -1,7 +1,6 @@
 {
   inputs,
   modules,
-  lib,
   pkgs,
   ...
 }:
@@ -14,6 +13,7 @@
     # Core system configuration
     base
     sops
+    tailscale
 
     # User setup (headless — no desktop apps/fonts)
     pperanich
@@ -21,24 +21,61 @@
     # Development environment (minimal for WSL)
     rust
 
-    # Periodic WireGuard endpoint re-resolution (handles WAN IP rotation)
-    wireguardReresolve
+    # Offsite Google Drive Restic backup (docs/backups.md)
+    backup
 
-    # Dedicated key for copying closures to the machines it builds for
-    buildHost
+    # Gitea Actions runner (native dockerd inside WSL)
+    giteaRunner
   ]);
 
-  clan.core = {
-    networking = {
-      # targetHost = lib.mkForce "root@pp-wsl1.pp-wg";
-      targetHost = lib.mkForce "root@pp-wsl1";
-    };
-    enableRecommendedDefaults = false;
-    deployment.requireExplicitUpdate = true;
+  # WSL manages its own network; overrides the networkd defaults in modules/flake-parts/hosts.nix.
+  networking.useNetworkd = false;
+  systemd.network.wait-online.enable = true;
+
+  my.pperanich = {
+    desktop = false;
+    passwordHashSecret = "passwords/pperanich";
+  };
+  users.mutableUsers = false;
+
+  # No node exporter here, so Healthchecks.io is what notices a failed or missing run.
+  my.backup.googleDrive = {
+    enable = true;
+    passwordSecret = "restic-gdrive-password";
+    rcloneConfigSecret = "rclone-gdrive-conf";
+    healthchecksPingUrlSecret = "healthchecks-gdrive-ping-url";
+    metricsDir = null;
+    paths = [ "/home/pperanich" ];
+    # Caches, toolchains and build output: about 60 of the home's 90 GB, all rebuildable.
+    exclude =
+      map (dir: "/home/pperanich/${dir}") [
+        ".cache"
+        "micromamba"
+        ".npm"
+        ".npm-global"
+        ".rustup"
+        ".cargo"
+        "go"
+        ".vscode-server"
+        ".windsurf-server"
+      ]
+      # Most Rust target/ dirs carry CACHEDIR.TAG (skipped by --exclude-caches); cargo-leptos
+      # builds do not, and a bare "target" would hit kernel and Zephyr source folders.
+      ++ [
+        "target/debug"
+        "target/release"
+        "target/front"
+        "node_modules"
+        ".venv"
+        ".direnv"
+      ];
   };
 
-  my.pperanich.desktop = false;
-  my.buildHost.enable = true;
+  my.giteaRunner = {
+    enable = true;
+    url = "https://gitea.prestonperanich.com";
+    tokenSecret = "gitea-runner-token";
+  };
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
@@ -60,7 +97,8 @@
   wsl = {
     enable = true;
     defaultUser = "pperanich";
-    docker-desktop.enable = true;
+    # Native dockerd (enabled by giteaRunner) replaces the Docker Desktop integration.
+    docker-desktop.enable = false;
     interop.register = true;
     startMenuLaunchers = true;
     usbip.enable = true;

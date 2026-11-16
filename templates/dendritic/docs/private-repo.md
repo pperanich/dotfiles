@@ -208,11 +208,11 @@ $ nix eval --raw .#…config.sops.secrets."passwords/example".sopsFile
 
 With more than one private host, put that line in a private module and import it everywhere rather than repeating it.
 
-**Repointing the file doesn't repoint the requirements.** Every module you import brings its declared key names with it — `modules/users/example.nix` alone demands `passwords/example` and `private_keys/example` — so the private `secrets.yaml` must contain each one. Set `sops.validateSopsFiles = true` and a missing key is a build error:
+**Repointing the file doesn't repoint the requirements.** Every module you import brings its declared key names with it (`modules/users/example.nix` alone demands `passwords/example`), so the private `secrets.yaml` must contain each one. Set `sops.validateSopsFiles = true` and a missing key is a build error:
 
 ```
-sops-install-secrets: manifest is not valid: secret private_keys/example in
-/nix/store/…-secrets.yaml is not valid: the key 'private_keys' cannot be found
+sops-install-secrets: manifest is not valid: secret passwords/example in
+/nix/store/…-secrets.yaml is not valid: the key 'passwords' cannot be found
 ```
 
 Leave it false and that config builds clean, then fails partway through `nixos-rebuild switch`. Either audit the imported modules for the keys they declare, or let the build tell you.

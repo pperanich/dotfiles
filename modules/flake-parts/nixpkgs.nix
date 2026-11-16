@@ -20,7 +20,7 @@ in
   _module.args.lib = extendedLib;
 
   perSystem =
-    { system, pkgs, ... }:
+    { system, ... }:
     {
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;
@@ -30,7 +30,6 @@ in
           allowBroken = true;
         };
       };
-      clan.pkgs = pkgs;
     };
 
   flake = {

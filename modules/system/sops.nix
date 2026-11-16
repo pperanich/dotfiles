@@ -5,31 +5,23 @@ let
   # Base sops config shared between NixOS and Darwin
   # Note: age.plugins is added per-platform below since it needs pkgs
   #
-  # Priority 900 throughout, not mkDefault: clan-core defines
-  # sops.defaultSopsFile at mkDefault (1000), so an equal-priority default here
-  # is a conflict. 900 beats clan's default while still losing to a plain
-  # assignment, which is what lets a machine defined in another flake repoint
-  # these at its own secrets. See docs/private-machines.md.
+  # Priority 900: a machine defined in another flake repoints these with a
+  # plain assignment. See docs/private-machines.md.
   sopsCommon =
-    lib:
+    lib: hostName:
     let
       overridable = lib.mkOverride 900;
     in
     {
-      defaultSopsFile = overridable "${sopsFolder}/secrets.yaml";
+      defaultSopsFile = overridable (sopsFolder + "/machines/${hostName}.yaml");
       # Runs sops-install-secrets -check-mode=sopsfile in the manifest's build
       # phase: every declared secret must name a key that exists in the file.
       # Key names are plaintext in a sops file, so nothing is decrypted. Missing
       # keys fail the build instead of failing partway through activation.
       validateSopsFiles = overridable true;
       age = {
-        # Use clan-managed age key for decryption
-        keyFile = overridable "/var/lib/sops-nix/key.txt";
-        # Also import host SSH keys as age keys
-        sshKeyPaths = [
-          # "/etc/ssh/ssh_host_ed25519_key"
-          # "/run/secrets/vars/openssh/ssh.id_ed25519"
-        ];
+        keyFile = overridable null;
+        sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
       };
       # secrets will be output to /run/secrets
       # e.g. /run/secrets/msmtp-password
@@ -47,13 +39,10 @@ in
         ...
       }:
       {
-        # clan-core imports this too; the module system dedupes by path and
-        # clan-core.inputs.sops-nix follows ours, so both resolve to the same
-        # module. Importing it here keeps this module usable from a flake that
-        # doesn't go through clan.
+        # Imported here so the module works from any flake that uses it.
         imports = [ inputs.sops-nix.nixosModules.sops ];
         sops = lib.mkMerge [
-          (sopsCommon lib)
+          (sopsCommon lib config.networking.hostName)
           {
             package = pkgs.sops-install-secrets;
             # YubiKey support for system-level secrets
@@ -64,7 +53,6 @@ in
             ((config.my.router.hostapd.enable or false) || (config.networking.wireless.enable or false))
             {
               secrets.wifi_passphrase = {
-                sopsFile = "${sopsFolder}/secrets.yaml";
                 mode = "0400";
               };
             }
@@ -72,11 +60,9 @@ in
           # Additional WiFi passphrases for network segmentation (IoT, Guest SSIDs)
           (lib.mkIf (config.my.router.networks.enable or false) {
             secrets.wifi_passphrase_iot = {
-              sopsFile = "${sopsFolder}/secrets.yaml";
               mode = "0400";
             };
             secrets.wifi_passphrase_guest = {
-              sopsFile = "${sopsFolder}/secrets.yaml";
               mode = "0400";
             };
           })
@@ -84,11 +70,16 @@ in
         environment.systemPackages = [ pkgs.sops ];
       };
     darwin.sops =
-      { pkgs, lib, ... }:
+      {
+        pkgs,
+        config,
+        lib,
+        ...
+      }:
       {
         imports = [ inputs.sops-nix.darwinModules.sops ];
         sops = lib.mkMerge [
-          (sopsCommon lib)
+          (sopsCommon lib config.networking.hostName)
           {
             package = pkgs.sops-install-secrets;
             # YubiKey support for system-level secrets
@@ -117,7 +108,7 @@ in
         # The home-manager module sets PATH = lib.makeBinPath cfg.age.plugins, which
         # results in empty PATH when no plugins are configured, breaking LaunchAgent.
         # We include age-plugin-yubikey in the PATH for YubiKey decryption support.
-        launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
+        launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
           enable = true;
           config = {
             EnvironmentVariables = {
@@ -131,9 +122,8 @@ in
         sops = {
           package = pkgs.sops-install-secrets;
           age = {
-            # Use SSH key for decryption (converted to age key automatically by sops-nix)
-            # The SSH private key is deployed via system-level sops BEFORE home-manager runs
-            # secrets.yaml is encrypted for the SSH-derived age key (e.g., &pperanich)
+            # The workstation's admin (or per-workstation) age key; a missing file fails the install.
+            keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
             sshKeyPaths = [
               "${config.home.homeDirectory}/.ssh/id_ed25519"
               "/etc/ssh/ssh_host_ed25519_key"
@@ -146,7 +136,7 @@ in
           # mkDefault so a profile in another flake can point these at its own
           # secrets file with a plain assignment. Nothing else defines them, so
           # unlike the system side this needs no priority juggling.
-          defaultSopsFile = lib.mkDefault "${sopsFolder}/secrets.yaml";
+          defaultSopsFile = lib.mkDefault (sopsFolder + "/users/pperanich-desktop.yaml");
           validateSopsFiles = lib.mkDefault true;
           # SSH private key is deployed via system-level sops in user modules
           # (modules/users/*.nix) BEFORE home-manager runs, breaking the

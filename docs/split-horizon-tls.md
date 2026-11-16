@@ -24,11 +24,11 @@ with a Caddy instance on both the router and the NAS holding valid Let's
 Encrypt certificates for the same names (DNS-01 makes this possible; issuance
 never depends on where the name points).
 
-| Client                               | Resolver               | Answer                              | Path                                                                                    |
-| ------------------------------------ | ---------------------- | ----------------------------------- | --------------------------------------------------------------------------------------- |
-| LAN device                           | router DNS (from DHCP) | `A 10.0.0.105` (Unbound local-data) | direct to NAS Caddy through the switch. No hairpin, TLS terminates at the NAS.          |
-| WireGuard phone                      | public DNS             | `AAAA <wg-prefix>::1`               | tunnel to router Caddy, then TLS re-proxy to the NAS Caddy. Encrypted on every segment. |
-| LAN device with hardcoded public DNS | 8.8.8.8 etc.           | `A 10.0.0.1`                        | hairpin through router Caddy, same as WG path. Works, just not optimal.                 |
+| Client                               | Resolver               | Answer                              | Path                                                                                               |
+| ------------------------------------ | ---------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| LAN device                           | router DNS (from DHCP) | `A 10.0.0.105` (Unbound local-data) | direct to NAS Caddy through the switch. No hairpin, TLS terminates at the NAS.                     |
+| Tailnet phone                        | public DNS             | `AAAA fd7a:115c:a1e0::1`            | tailnet to router Caddy, then TLS re-proxy to the NAS Caddy. Encrypted on every segment.           |
+| LAN device with hardcoded public DNS | 8.8.8.8 etc.           | `AAAA fd7a:115c:a1e0::1`            | not reachable from the LAN unless the device is on the tailnet: the public zone has no `A` record. |
 
 The router's Unbound serves the split horizon via `dns.extraLocalData` A
 records. Unbound's transparent local-zone semantics return NODATA for AAAA
@@ -46,15 +46,15 @@ client ──TLS──> NAS Caddy (:443) ──localhost──> service port
 DNS: client asks 10.0.0.1 → local-data answer 10.0.0.105. Router never sees
 the traffic. The only plaintext is loopback inside the NAS.
 
-### WireGuard client
+### Tailnet client
 
 ```
-phone ──TLS-in-WireGuard──> router Caddy ──TLS──> NAS Caddy ──localhost──> service
+phone ──TLS over the tailnet──> router Caddy ──TLS──> NAS Caddy ──localhost──> service
 ```
 
 DNS: phone uses its normal resolver → public zone → `AAAA` = router's
-WireGuard address (`A` = 10.0.0.1 is unroutable in the v6-only tunnel and
-fails fast). The router vhost re-proxies with:
+tailnet address (`fd7a:115c:a1e0::1`; the public zone has no `A` record). The
+router vhost re-proxies with:
 
 ```caddyfile
 reverse_proxy https://pp-nas1.home.arpa {
@@ -72,7 +72,7 @@ router's own DNS and risk a self-loop back into the same vhost.
 
 - Both Caddys obtain real Let's Encrypt certs via the Cloudflare DNS-01
   challenge (`caddy-dns/cloudflare` plugin, token from sops
-  `cloudflare-api-token`, shared fleet secret).
+  `cloudflare-api-token` in each host's file).
 - Renewals are independent per host. The blackbox target
   `https://jellyfin.prestonperanich.com` exercises the NAS cert (resolves to
   the NAS from the router) and the `CertExpiringSoon` alert fires under 14
@@ -83,13 +83,13 @@ router's own DNS and risk a self-loop back into the same vhost.
 
 ## Where the config lives
 
-| Concern                                                 | Location                                                                         |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| NAS Caddy + vhosts (`mkLocalProxy` helper, upload caps) | `machines/pp-nas1/configuration.nix`                                             |
-| Router re-proxy vhosts (`mkNasProxy` helper)            | `machines/pp-router1/configuration.nix`                                          |
-| Split-horizon A records                                 | `machines/pp-router1/configuration.nix` (`dns.extraLocalData`)                   |
-| Public zone records (A 10.0.0.1 + AAAA wg)              | `machines/pp-router1/configuration.nix` (`my.cloudflareDns`, via `mkDnsRecords`) |
-| Cert monitoring                                         | `my.observability.blackbox.httpTargets` + `CertExpiringSoon` rule                |
+| Concern                                                    | Location                                                                         |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| NAS Caddy + vhosts (`mkLocalProxy` helper, upload caps)    | `machines/pp-nas1/configuration.nix`                                             |
+| Router re-proxy vhosts (`mkNasProxy` helper)               | `machines/pp-router1/configuration.nix`                                          |
+| Split-horizon A records                                    | `machines/pp-router1/configuration.nix` (`dns.extraLocalData`)                   |
+| Public zone records (AAAA to the router's tailnet address) | `machines/pp-router1/configuration.nix` (`my.cloudflareDns`, via `mkDnsRecords`) |
+| Cert monitoring                                            | `my.observability.blackbox.httpTargets` + `CertExpiringSoon` rule                |
 
 ## Adding a new NAS-hosted service
 
@@ -111,10 +111,11 @@ router's own DNS and risk a self-loop back into the same vhost.
   plain HTTP). Deliberate: direct-by-IP access stays valid. Closing them
   would mean binding services to localhost once all clients migrate to the
   TLS names.
-- **WireGuard clients must not use the router's DNS.** The split-horizon
-  answer (10.0.0.105) is unroutable inside the v6-only tunnel. Generated peer
-  configs (`docs/wireguard/*.conf`) set no DNS override, so phones use public
-  DNS and get the correct AAAA. Keep it that way when adding peers.
+- **Tailnet clients must not use the router's DNS for these names.** The
+  split-horizon answer (10.0.0.105) is a LAN address. Headscale pushes no DNS
+  override (`override_local_dns = false`) and no split DNS, so phones keep
+  using public DNS and get the correct AAAA. Keep it that way when adding
+  nodes.
 - **Prometheus exporters** (9633 smartctl, 9640 node) are firewalled to the
   router only; they are scrape targets, not user services.
 - The NAS's DHCP reservation pins 10.0.0.105; the local-data records assume

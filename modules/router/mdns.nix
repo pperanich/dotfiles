@@ -13,20 +13,35 @@ _: {
       enabled = cfg.enable && mdnsCfg.enable;
 
       # VLAN bridges that opted into mDNS via per-segment `mdns = true`
+      # Exclude fully isolated segments (e.g. guest) so mDNS never leaks to them
       mdnsNetworkBridges =
         if cfg.networks.enable then
           lib.mapAttrsToList (name: _: "br-${name}") (
-            lib.filterAttrs (_: seg: seg.mdns && seg.vlan != null) cfg.networks.segments
+            lib.filterAttrs (
+              _: seg: seg.mdns && seg.vlan != null && seg.isolation != "full"
+            ) cfg.networks.segments
           )
         else
           [ ];
 
+      # Explicitly deny WAN + fully isolated (guest) VLAN bridges
+      deniedInterfaces = lib.unique (
+        [ cfg.wan.interface ]
+        ++ lib.optionals cfg.networks.enable (
+          lib.mapAttrsToList (name: _: "br-${name}") (
+            lib.filterAttrs (_: seg: seg.vlan != null && seg.isolation == "full") cfg.networks.segments
+          )
+        )
+      );
+
       # Build list of interfaces to allow mDNS on
-      mdnsInterfaces = [
-        lanIface
-      ]
-      ++ mdnsNetworkBridges
-      ++ mdnsCfg.extraInterfaces;
+      mdnsInterfaces = lib.unique (
+        [
+          lanIface
+        ]
+        ++ mdnsNetworkBridges
+        ++ mdnsCfg.extraInterfaces
+      );
     in
     {
       options.my.router.mdns = {
@@ -75,25 +90,39 @@ _: {
             default = false;
             description = "Publish workstation service (usually not needed for router)";
           };
+
+          hinfo = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Publish OS and CPU HINFO record via mDNS";
+          };
         };
       };
 
       config = lib.mkIf enabled {
-        # L4: Prevent mDNS reflector from leaking service discovery across isolated VLANs
-        assertions = lib.optional cfg.networks.enable {
-          assertion = builtins.all (
-            iface:
-            let
-              segName = lib.removePrefix "br-" iface;
-            in
-            !(
-              lib.hasPrefix "br-" iface
-              && lib.hasAttr segName cfg.networks.segments
-              && cfg.networks.segments.${segName}.isolation != "none"
-            )
-          ) mdnsCfg.extraInterfaces;
-          message = "router: mDNS extraInterfaces must not include isolated VLAN bridges — this would leak service discovery across security boundaries";
-        };
+        # Prevent mDNS reflector from leaking service discovery across isolated VLANs
+        assertions = lib.optionals cfg.networks.enable [
+          {
+            assertion = builtins.all (
+              iface:
+              let
+                segName = lib.removePrefix "br-" iface;
+              in
+              !(
+                lib.hasPrefix "br-" iface
+                && lib.hasAttr segName cfg.networks.segments
+                && cfg.networks.segments.${segName}.isolation != "none"
+              )
+            ) mdnsCfg.extraInterfaces;
+            message = "router: mDNS extraInterfaces must not include isolated VLAN bridges; this would leak service discovery across security boundaries";
+          }
+          {
+            assertion = builtins.all (seg: !(seg.isolation == "full" && seg.mdns)) (
+              lib.attrValues cfg.networks.segments
+            );
+            message = "router: fully isolated VLAN segments (isolation = \"full\") cannot enable mDNS";
+          }
+        ];
 
         # Export firewall rules for injection into the main filterV4/filterV6 input chains.
         # mDNS rules MUST be in the main filter tables — separate nftables tables with
@@ -112,30 +141,31 @@ _: {
         services.avahi = {
           enable = true;
 
-          # Reflect mDNS across interfaces (important for bridged networks)
-          inherit (mdnsCfg) reflector;
-
-          # Only allow on LAN interfaces
-          allowInterfaces = mdnsInterfaces;
-
           # Don't open wide to the world
           openFirewall = false;
-
-          # Publishing settings
-          publish = {
-            inherit (mdnsCfg.publish) enable;
-            inherit (mdnsCfg.publish) addresses;
-            inherit (mdnsCfg.publish) domain;
-            inherit (mdnsCfg.publish) workstation;
-          };
 
           # Enable NSS module for .local resolution
           nssmdns4 = true;
           nssmdns6 = cfg.ipv6.enable;
 
-          # Domain settings
-          domainName = "local";
-          browseDomains = [ "local" ];
+          settings = {
+            server = {
+              # Only allow on LAN/discovery interfaces, and explicitly deny WAN + guest VLANs
+              allow-interfaces = mdnsInterfaces;
+              deny-interfaces = deniedInterfaces;
+              domain-name = "local";
+              browse-domains = [ "local" ];
+            };
+            # Reflect mDNS across interfaces (important for bridged networks)
+            reflector.enable-reflector = mdnsCfg.reflector;
+            publish = {
+              disable-publishing = lib.mkDefault (!mdnsCfg.publish.enable);
+              publish-addresses = mdnsCfg.publish.addresses;
+              publish-domain = mdnsCfg.publish.domain;
+              publish-workstation = mdnsCfg.publish.workstation;
+              publish-hinfo = mdnsCfg.publish.hinfo;
+            };
+          };
         };
       };
     };

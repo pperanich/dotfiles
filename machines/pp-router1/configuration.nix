@@ -7,15 +7,7 @@
   ...
 }:
 let
-  # WireGuard controller IPv6 address (derived from clan-managed prefix)
-  wgPrefix = config.clan.core.vars.generators.wireguard-network-pp-wg.files.prefix.value;
-  wgAddress = "${wgPrefix}::1";
   routerIp = config.my.router.lan.address;
-  # A fleet host's clan-generated pp-wg public key (committed plaintext var).
-  # Peer vars belong to other machines, so read the file rather than config.
-  fleetPeerPubkey =
-    host:
-    lib.trim (builtins.readFile ../../vars/per-machine/${host}/wireguard-keys-pp-wg/publickey/value);
   domain = config.my.router.dhcp.domainName;
   inherit (lib.my.homelab) publicDomain mkSub;
 in
@@ -23,7 +15,6 @@ in
   imports = [
     ./disko.nix
     ./caddy.nix
-    ./tunnel-apps.nix
     ./printing.nix
     ./homepage.nix
     inputs.nixos-facter-modules.nixosModules.facter
@@ -32,6 +23,7 @@ in
     # Core system configuration
     base
     sops
+    tailscale
 
     # User setup (headless — no desktop apps/fonts)
     pperanich
@@ -42,20 +34,14 @@ in
     # Disk health (local NVMe)
     smartMonitoring
 
-    # Shared Cloudflare API credentials (token env file for the four below)
+    # Shared Cloudflare API credentials (token env file for the Cloudflare modules below)
     cloudflareCredentials
 
     # Cloudflare DNS sync
     cloudflareDns
 
-    # Cloudflare Access sync (allowlists for ./tunnel-apps.nix)
-    cloudflareAccess
-
     # Caddy + DNS-01 certificates (vhosts in ./caddy.nix)
     caddyDns01
-
-    # Accept closure copies from the build host's dedicated key
-    buildHost
 
     # Public services (via Cloudflare Tunnel)
     cloudflareTunnel
@@ -63,15 +49,38 @@ in
     gitea
     observability
 
+    # Self-hosted Tailscale control plane (gray-cloud DDNS + Caddy :9443)
+    headscale
+    headplane
+
     # Outbound transactional email
     stalwart
 
-    # Development environment
-    rust
+    # Router-to-NAS Borg and the Google Drive tier
+    backup
   ]);
 
   my = {
-    pperanich.desktop = false;
+    pperanich = {
+      desktop = false;
+      passwordHashSecret = "passwords/pperanich";
+    };
+
+    headscale.enable = true;
+
+    # Headscale web UI (LAN + tailnet via Caddy, API-key login)
+    headplane = {
+      enable = true;
+      domain = mkSub "headplane";
+      cookieSecretSecret = "headplane-cookie-secret";
+    };
+
+    # Custom router nftables already opens UDP 41641 on WAN
+    tailscale = {
+      openFirewall = false;
+      expectedIpv4 = config.my.headscale.routerTailscaleIpv4;
+      expectedIpv6 = config.my.headscale.routerTailscaleIpv6;
+    };
 
     # Vaultwarden password manager
     vaultwarden = {
@@ -81,7 +90,7 @@ in
       smtpFrom = "vault@${publicDomain}";
     };
 
-    # Gitea — self-hosted git over LAN + WireGuard
+    # Gitea: self-hosted git over LAN + Tailscale
     gitea = {
       enable = true;
       domain = mkSub "gitea";
@@ -106,30 +115,25 @@ in
     observability = {
       enable = true;
       grafana.hostname = mkSub "grafana";
-      # Drop non-always-on WireGuard peers from the fleet liveness alerts:
-      # pp-rpi1 is offline, pp-wsl1/pp-ml1 are roaming dev hosts that sleep.
-      alerts.wireguardFleetPeerExcludes = map fleetPeerPubkey [
-        "pp-rpi1" # offline
-        "pp-wsl1" # roaming
-        "pp-ml1" # roaming
-      ];
-      # Accept journal pushes from fleet hosts (firewall restricts to the NAS)
-      loki.listenAddress = "0.0.0.0";
+      # Accept journal pushes from fleet hosts on LAN IP only (never IoT/Guest/WAN)
+      loki.listenAddress = "10.0.0.1";
       blackbox.httpTargets = [
         "https://${config.my.observability.grafana.hostname}"
         "https://${mkSub "home"}"
         "https://${config.my.vaultwarden.domain}"
         # End-to-end probe of the public site through the Cloudflare tunnel
         "https://${publicDomain}"
+        # Self-hosted Headscale control plane (:9443 TLS + /health)
+        "https://${config.my.headscale.domain}:${toString config.my.headscale.publicPort}/health"
       ]
       # Router-terminated vhosts: every name carries an independently renewed
       # DNS-01 cert, so each needs its own probe for CertExpiringSoon
       ++ map (sub: "https://${mkSub sub}") [
         "gitea"
-        "alerts"
         "vault-admin"
         "ntopng"
         "unifi"
+        "headplane"
       ]
       # NAS vhosts: resolve to the NAS via split-horizon, exercising the NAS
       # Caddy's per-name certs and the service behind each one
@@ -140,16 +144,16 @@ in
         "opencloud"
         "navidrome"
         "audiobookshelf"
-        "scan"
         "paperless"
         "hass"
         "docuseal"
       ];
-      # One probe through the router Caddy → NAS Caddy leg (the WireGuard
+      blackbox.authHttpTargets = [ "https://${mkSub "scan"}" ];
+      # One probe through the router Caddy → NAS Caddy leg (the tailnet
       # client path). Regular probes resolve via split-horizon straight to
       # the NAS and never exercise it.
       blackbox.proxyCanary = {
-        url = "https://[${wgAddress}]/web/";
+        url = "https://[${config.my.headscale.routerTailscaleIpv6}]/web/";
         serverName = mkSub "jellyfin";
       };
       dropMonitor = {
@@ -170,7 +174,7 @@ in
           to = "pperanich+alerts@gmail.com";
           from = "alerts@${publicDomain}";
         };
-        externalUrl = "https://${mkSub "alerts"}";
+        externalUrl = "https://${config.my.observability.grafana.hostname}/alerting/list";
         # 10G trunk to the switch — carrier loss here takes down the whole LAN
         carrierInterfaces = [ "enp1s0f1np1" ];
         deadman.pingUrlFile = config.sops.secrets.healthchecks-ping-url.path;
@@ -206,20 +210,32 @@ in
     router = {
       enable = true;
 
-      # WireGuard VPN: open UDP port on WAN and trust the tunnel interface
+      # WAN & VPN firewall rules:
+      # - TCP 9443: Headscale TS2021 control plane via Caddy TLS
+      # - UDP 41641: Tailscale direct WireGuard peer hole-punching
+      # Note: tailscale0 is intentionally NOT in trustedInterfaces (zero-trust:
+      # explicit per-port input rules below, no router LAN subnet forwarding).
       firewall = {
-        openPorts.udp = [ 51820 ];
-        trustedInterfaces = [ "pp-wg" ];
+        openPorts = {
+          tcp = [ config.my.headscale.publicPort ];
+          udp = [ 41641 ];
+        };
         hairpinNat.enable = true;
-        # Open HTTPS for Caddy on LAN (WireGuard is already trusted via @trusted_ifaces)
+        # Open HTTPS for Caddy on LAN
         extraInputRules = ''
           iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
           iifname "br-main" tcp dport 631 accept comment "CUPS IPP from LAN"
           iifname "br-main" ip saddr 10.0.0.105 tcp dport 3100 accept comment "Loki ingest from pp-nas1"
+          iifname "tailscale0" tcp dport { 22, 443 } accept comment "SSH and Caddy HTTPS from Tailscale"
+          iifname "tailscale0" udp dport 53 accept comment "DNS UDP from Tailscale"
+          iifname "tailscale0" tcp dport 53 accept comment "DNS TCP from Tailscale"
         '';
         extraInputRulesV6 = ''
           iifname "br-main" tcp dport 443 accept comment "Caddy HTTPS from LAN"
           iifname "br-main" tcp dport 631 accept comment "CUPS IPP from LAN"
+          iifname "tailscale0" tcp dport { 22, 443 } accept comment "SSH and Caddy HTTPS from Tailscale"
+          iifname "tailscale0" udp dport 53 accept comment "DNS UDP from Tailscale"
+          iifname "tailscale0" tcp dport 53 accept comment "DNS TCP from Tailscale"
         '';
       };
 
@@ -249,12 +265,20 @@ in
       dns = {
         enable = true;
         privateDomains = [ publicDomain ]; # Allow private IP responses for Caddy subdomains
-        extraInterfaces = [ wgAddress ]; # Serve DNS to WireGuard VPN clients
-        extraAccessControl = [ "${wgPrefix}::/40 allow" ]; # Allow queries from WireGuard subnet
+        extraInterfaces = [
+          config.my.headscale.routerTailscaleIpv4 # Tailscale IPv4 split-DNS
+          config.my.headscale.routerTailscaleIpv6 # Tailscale ULA IPv6 split-DNS
+        ];
+        extraAccessControl = [
+          "100.64.0.0/10 allow"
+          "fd7a:115c:a1e0::/48 allow"
+        ];
         ddns.enable = true; # Auto-register DHCP client hostnames in DNS
         extraLocalData = [
           # WSL mirrored networking shares the Windows host's IP
           "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."
+          # Split-horizon for Headscale so LAN clients reach 10.0.0.1:9443 directly
+          "${config.my.headscale.domain}. A ${routerIp}"
         ]
         # Split-horizon: LAN clients resolve NAS-hosted services to the NAS
         # itself (direct route, TLS terminates at its Caddy) instead of the
@@ -274,40 +298,39 @@ in
           "dav"
           "hass"
         ]
-        # Router-terminated vhosts: public DNS is AAAA-only (the wg ULA) so
-        # off-net WireGuard clients aren't poisoned by an unroutable A. LAN
+        # Router-terminated vhosts: public DNS is AAAA-only (the tailnet ULA) so
+        # off-net tailnet clients aren't poisoned by an unroutable A. LAN
         # clients need a v4 answer though — an AAAA-only name backed by a ULA is
         # unresolvable under getaddrinfo's AI_ADDRCONFIG (no global v6), so give
         # them a split-horizon A pointing at this router's Caddy.
         ++ map (sub: "${mkSub sub}. A ${routerIp}") [
           "home"
           "grafana"
-          "alerts"
           "vault-admin"
           "gitea"
           "ntopng"
           "unifi"
+          "headplane"
         ];
       };
 
-      # Clients search home.arpa (LAN hosts via DDNS) then pp-wg (WireGuard
-      # overlay, served from /etc/hosts by blocky below)
+      # Clients search home.arpa (LAN hosts via DDNS) then the tailnet domain
       dhcp.searchDomains = [
         config.my.router.dhcp.domainName
-        "pp-wg"
+        config.my.headscale.baseDomain
       ];
 
       # DNS ad-blocking via Blocky (sits in front of Unbound on port 53)
       # Unbound retreats to localhost:5335 as DNSSEC/DoT backend
       blocky = {
         enable = true;
-        # Serve /etc/hosts over DNS: *.pp-wg peer names (clan fleet + external
-        # peers) become resolvable by every LAN/VPN client, not just this host
+        # Serve /etc/hosts over DNS so its names resolve for every LAN/tailnet
+        # client, not just this host
         extraSettings.hostsFile = {
           sources = [ "/etc/hosts" ];
           hostsTTL = "5m";
           loading.refreshPeriod = "5m";
-          # Never serve loopback entries (e.g. clan's "127.0.0.2 pp-router1")
+          # Never serve loopback entries (e.g. "127.0.0.2 pp-router1")
           # to LAN clients
           filterLoopback = true;
         };
@@ -421,21 +444,52 @@ in
       # AP connects via trunk port and is managed by the Unifi controller above
     };
 
-    # Shared Cloudflare API credentials: cf-dns, cf-tunnel, cf-access and Caddy
+    # Shared Cloudflare API credentials: cf-dns, cf-tunnel and Caddy
     # all read the env file this builds. Env var names live in the module.
     cloudflare = {
       enable = true;
-      accountIdSecret = "cloudflare-account-id"; # cf access needs it
+      accountIdSecret = "cloudflare-account-id"; # cf tunnel sync-dns needs it
+    };
+
+    # Borg client to the NAS, plus the Google Drive tier
+    backup = {
+      autoDetectSqlite = true;
+      borgClient = {
+        enable = true;
+        passphraseSecret = "borg-router-passphrase";
+        sshKeySecret = "borg-router-ssh-key";
+        serverHostKey = "pp-nas1.home.arpa ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEgsuBDxHDx8irZVlgID0eevgFTCpbRFKPZRyWFcvgQO";
+        repo = "ssh://borg@pp-nas1.home.arpa/tank/backups/borg/pp-router1";
+        paths = [
+          "/var/backups/sqlite"
+          "/var/lib/vaultwarden"
+          "/var/lib/gitea"
+          "/var/lib/headscale"
+          "/var/lib/unifi/data/backup"
+        ];
+        exclude = [
+          "/var/lib/vaultwarden/db.sqlite3*"
+          "/var/lib/gitea/data/gitea.db*"
+          "/var/lib/headscale/db.sqlite*"
+        ];
+      };
+      # Offsite copy of the same data; Borg stays the LAN copy for restores while the router is down.
+      googleDrive = {
+        enable = true;
+        passwordSecret = "restic-gdrive-password";
+        rcloneConfigSecret = "rclone-gdrive-conf";
+        # Prometheus and Alertmanager run on this host, so an outside check also watches its backup.
+        healthchecksPingUrlSecret = "healthchecks-gdrive-ping-url";
+        inherit (config.my.backup.borgClient) paths exclude;
+      };
     };
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  clan.core.networking.targetHost = lib.mkForce "root@pp-router1.pp-wg";
-  clan.core.networking.buildHost = "root@pp-wsl1.pp-wg";
-  my.buildHost.trusted = [ "pp-wsl1" ];
 
   # Networking configuration
   networking.hostName = "pp-router1";
+  users.mutableUsers = false;
 
   # Local time for logs and alert email timestamps
   time.timeZone = "America/New_York";
@@ -452,12 +506,56 @@ in
     "net.core.default_qdisc" = "fq";
     "net.ipv4.tcp_congestion_control" = "bbr";
     "net.ipv4.tcp_slow_start_after_idle" = 0;
+    # Allow Caddy and Blocky to bind pp-router1's Tailscale IPs (100.64.0.1 /
+    # fd7a:115c:a1e0::1) at boot before tailscaled brings up tailscale0
+    "net.ipv4.ip_nonlocal_bind" = 1;
+    "net.ipv6.ip_nonlocal_bind" = 1;
   };
 
-  services.irqbalance.enable = true;
+  services = {
+    irqbalance.enable = true;
+
+    # The pinned build already on the router (flake.nix, nixpkgs-mongodb): nixpkgs' MongoDB is
+    # unfree, never cached, and takes hours to compile on this N150.
+    unifi.mongodbPackage =
+      (import inputs.nixpkgs-mongodb {
+        inherit (pkgs.stdenv.hostPlatform) system;
+        config.allowUnfree = true;
+      }).mongodb;
+
+    # Gray-cloud DDNS for Headscale control plane (Cloudflare proxy/tunnel
+    # strips TS2021 `Upgrade: tailscale-control-protocol` headers).
+    cloudflare-dyndns = {
+      enable = true;
+      apiTokenFile = config.sops.secrets.${config.my.cloudflare.apiTokenSecret}.path;
+      domains = [ config.my.headscale.domain ];
+      proxied = false;
+      ipv4 = true;
+      ipv6 = false;
+    };
+
+    # SSH hardening for router
+    openssh.settings = {
+      X11Forwarding = false;
+      PermitRootLogin = "no";
+      PasswordAuthentication = false; # Disable password auth entirely
+      KbdInteractiveAuthentication = false; # Disable keyboard-interactive
+      MaxAuthTries = 3;
+      LoginGraceTime = 20;
+      ClientAliveInterval = 300;
+      ClientAliveCountMax = 2;
+      MaxStartups = "10:30:60"; # Rate limit: start:rate:full
+    };
+  };
   systemd = {
     services = {
       "serial-getty@ttyS0".enable = true;
+
+      # Activation restarts networkd and blocky; a DDNS run in that gap fails and aborts the deploy.
+      cloudflare-dyndns.serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = 30;
+      };
 
       # 10G trunk dropped carrier (2026-07-03) and needed a power cycle: bounce
       # link at 30s down, rebind PCI function at 90s (equivalent of NIC reset).
@@ -495,19 +593,6 @@ in
         '';
       };
     };
-
-    # External WireGuard peers (non-clan devices like phones, tablets)
-    # Managed via wg-external-peers.json — use `wg-add-peer` in devshell to add new devices
-    # Private keys stored in sops/secrets.yaml, configs saved to docs/wireguard/
-    network.netdevs."40-pp-wg".wireguardPeers =
-      let
-        peers = builtins.fromJSON (builtins.readFile ./wg-external-peers.json);
-      in
-      lib.mapAttrsToList (_name: peer: {
-        PublicKey = peer.publicKey;
-        AllowedIPs = [ "${wgPrefix}::${peer.addressSuffix}/128" ];
-        PersistentKeepalive = 25;
-      }) peers;
   };
 
   # Router-appropriate packages (no desktop environment)
@@ -535,19 +620,6 @@ in
 
   ];
 
-  # SSH hardening for router
-  services.openssh.settings = {
-    X11Forwarding = false;
-    PermitRootLogin = "prohibit-password"; # Key-only root access
-    PasswordAuthentication = false; # Disable password auth entirely
-    KbdInteractiveAuthentication = false; # Disable keyboard-interactive
-    MaxAuthTries = 3;
-    LoginGraceTime = 20;
-    ClientAliveInterval = 300;
-    ClientAliveCountMax = 2;
-    MaxStartups = "10:30:60"; # Rate limit: start:rate:full
-  };
-
   # --- Secrets wiring (sops-nix) ---
   sops = {
     secrets = {
@@ -555,6 +627,7 @@ in
       vaultwarden-admin-token = {
         owner = "vaultwarden";
         mode = "0400";
+        restartUnits = [ "vaultwarden.service" ]; # the token env file is built at service start
       };
 
       # Gitea: initial admin password (consumed by gitea-admin-bootstrap.service)
@@ -568,6 +641,7 @@ in
         # stalwart stateVersion 26.05 renamed the service user stalwart-mail -> stalwart
         owner = "stalwart";
         mode = "0400";
+        restartUnits = [ "stalwart.service" ];
       };
 
       # Cloudflare API token and account ID are declared by
@@ -583,6 +657,7 @@ in
       unpoller-password = {
         owner = "unifi-poller";
         mode = "0400";
+        restartUnits = [ "unifi-poller.service" ]; # it reads the file only at startup
       };
 
       # Dead-man's switch ping URL (create a check at healthchecks.io, then:
@@ -597,15 +672,6 @@ in
       };
     };
   };
-
-  # Hostnames for external WireGuard peers
-  networking.extraHosts =
-    let
-      peers = builtins.fromJSON (builtins.readFile ./wg-external-peers.json);
-    in
-    lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (name: peer: "${wgPrefix}::${peer.addressSuffix} ${name}.pp-wg") peers
-    );
 
   # Minimal hardware config for headless router
   hardware = {

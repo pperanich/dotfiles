@@ -10,7 +10,7 @@ Secrets live encrypted in `sops/secrets.yaml`, committed to git. Decryption keys
 | Each host | `/etc/ssh/ssh_host_ed25519_key`  | system secrets at activation               |
 | Each user | `~/.ssh/id_ed25519` on that host | home-manager secrets at activation         |
 
-The user's private key is itself a secret: the system-level sops in `modules/users/example.nix` writes it to `~/.ssh/id_ed25519` using the **host** key, and home-manager's sops then uses it. That ordering is why a fresh machine works with nothing hand-copied.
+Each user's SSH key stays on the machine that made it; it is never stored in `secrets.yaml`. On a new machine, add that user key's recipient (`ssh-to-age < ~/.ssh/id_ed25519.pub`) to `sops/.sops.yaml` and run `sops updatekeys sops/secrets.yaml` before home-manager needs its secrets.
 
 ## First-time setup
 
@@ -66,10 +66,10 @@ sops.templates."service.env" = {
 
 Secrets are declared in _modules_, not only in machine files, so importing a module imports its key requirements. In this template:
 
-| module                                   | keys it needs in `secrets.yaml`             |
-| ---------------------------------------- | ------------------------------------------- |
-| `modules/users/example.nix`              | `passwords/example`, `private_keys/example` |
-| `modules/system/sops.nix` (home-manager) | whatever you uncomment under `secrets`      |
+| module                                   | keys it needs in `secrets.yaml`        |
+| ---------------------------------------- | -------------------------------------- |
+| `modules/users/example.nix`              | `passwords/example`                    |
+| `modules/system/sops.nix` (home-manager) | whatever you uncomment under `secrets` |
 
 Treat those key names as part of the module's interface: any `secrets.yaml` a host points at must contain every key its imported modules declare.
 
@@ -78,8 +78,8 @@ Treat those key names as part of the module's interface: any `secrets.yaml` a ho
 `sops.validateSopsFiles` decides when a missing key surfaces. With it on, the manifest's build phase runs `sops-install-secrets -check-mode=sopsfile` and the build fails:
 
 ```
-sops-install-secrets: manifest is not valid: secret private_keys/example in
-/nix/store/…-sops/secrets.yaml is not valid: the key 'private_keys' cannot be found
+sops-install-secrets: manifest is not valid: secret passwords/example in
+/nix/store/…-sops/secrets.yaml is not valid: the key 'passwords' cannot be found
 ```
 
 With it off, that same config builds fine and fails during activation instead — after the switch has started. Key names are plaintext in a sops file, so the check decrypts nothing and needs no key material. Turn it on once your `secrets.yaml` is real.

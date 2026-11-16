@@ -4,9 +4,6 @@
   required = true
   smudge = "git-lfs smudge -- %f"
 
-[protocol "file"]
-  allow = "always"
-
 [user]
 name = Preston Peranich
 email = pperanich@gmail.com

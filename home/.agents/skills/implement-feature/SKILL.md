@@ -69,6 +69,7 @@ or tools are installed. If delegation is unavailable, perform the same workflow
 sequentially and disclose that limitation.
 
 For every delegated task, provide a self-contained brief:
+
 - Objective and relevant acceptance criteria.
 - Relevant paths, repository rules, and agreed interface decisions.
 - Dependencies and the exact working directory/base state to use.
@@ -175,6 +176,7 @@ that is not fully verified.
 
 Keep progress updates brief and limited to meaningful decisions, milestones,
 and blockers. End with:
+
 - Status: complete, implemented but not fully verified, or blocked.
 - What changed and the principal files involved.
 - Acceptance criteria covered and verification commands/results.

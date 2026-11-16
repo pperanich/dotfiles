@@ -21,7 +21,7 @@ local apple = sbar.add("item", "apple", {
 		height = settings.item.height,
 		corner_radius = settings.item.corner_radius,
 	},
-	click_script = base_dir .. "/helpers/menus/bin/menus -s 0",
+	click_script = "menus -s 0",
 })
 
 sbar.add("item", { width = settings.group_paddings })

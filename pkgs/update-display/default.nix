@@ -7,34 +7,46 @@
   name = "update-display";
 
   text = ''
-    # The problem:
-    # When you `ssh -X` into a machine and attach to an existing tmux session, the session
-    # contains the old $DISPLAY env variable. In order the x-server/client to work properly,
-    # you have to update $DISPLAY after connection. For example, the old $DISPLAY=:0 and
-    # you need to change to DISPLAY=localhost:10.0 for the ssh session to
-    # perform x-forwarding properly.
+    # When re-attaching to an existing tmux session over `ssh -X`, update $DISPLAY
+    # in interactive shells and editors from tmux's session environment after
+    # strictly validating DISPLAY so shell/vim metacharacters can never execute.
 
-    # The solution:
-    # When attaching to tmux session, update $DISPLAY for each tmux pane in that session
-    # This is performed by using tmux send-keys to the shell.
-    # This script handles updating $DISPLAY within vim also
+    if [[ -z "''${TMUX:-}" ]]; then
+      echo "update-display: must be run inside a tmux session." >&2
+      exit 1
+    fi
 
-    # NEW_DISPLAY=$DISPLAY
     NEW_DISPLAY=$(tmux show-env | sed -n 's/^DISPLAY=//p')
+    if [[ -z "$NEW_DISPLAY" ]]; then
+      echo "update-display: DISPLAY is unset in tmux session environment." >&2
+      exit 0
+    fi
 
-    # Update $DISPLAY in bash, zsh and vim/nvim
-    tmux list-panes -s -F "#{session_name}:#{window_index}.#{pane_index} #{pane_current_command}" | \
-    while read -r pane_process
-    do
-        IFS=' ' read -ra pane_process <<< "$pane_process"
-        if [[ "''${pane_process[1]}" == "zsh" || "''${pane_process[1]}" == "bash" ]]; then
-            tmux send-keys -t "''${pane_process[0]}" "export DISPLAY=$NEW_DISPLAY" Enter
-        elif [[ "''${pane_process[1]}" == *"vi"* ]]; then
-            tmux send-keys -t "''${pane_process[0]}" Escape
-            tmux send-keys -t "''${pane_process[0]}" ":let \$DISPLAY = \"$NEW_DISPLAY\"" Enter
-            tmux send-keys -t "''${pane_process[0]}" ":silent! xrestore" Enter
-        fi
-    done
+    if [[ ! "$NEW_DISPLAY" =~ ^[A-Za-z0-9_:./-]+$ ]]; then
+      echo "ERROR: Refusing unsafe DISPLAY value: $NEW_DISPLAY" >&2
+      exit 1
+    fi
+
+    while IFS=$'\t' read -r pane_id pane_cmd pane_in_mode; do
+      # Do not inject keystrokes into panes currently in tmux copy/view mode.
+      if [[ "$pane_in_mode" != "0" ]]; then
+        continue
+      fi
+
+      case "$pane_cmd" in
+        zsh | bash)
+          tmux send-keys -t "$pane_id" -l " export DISPLAY='$NEW_DISPLAY'"
+          tmux send-keys -t "$pane_id" Enter
+          ;;
+        vi | vim | nvim)
+          tmux send-keys -t "$pane_id" Escape
+          tmux send-keys -t "$pane_id" -l ":let \$DISPLAY = '$NEW_DISPLAY'"
+          tmux send-keys -t "$pane_id" Enter
+          tmux send-keys -t "$pane_id" -l ":silent! xrestore"
+          tmux send-keys -t "$pane_id" Enter
+          ;;
+      esac
+    done < <(tmux list-panes -s -F $'#{pane_id}\t#{pane_current_command}\t#{pane_in_mode}')
   '';
 })
 // {

@@ -1,330 +1,125 @@
 # Secrets and Key Management
 
-This document explains how secrets and age keys work in this clan-managed infrastructure, including the distinction between machine keys and user keys, and common anti-patterns to avoid.
+How secrets are encrypted, who can decrypt them, and how to edit, add and rotate them. Secrets use sops-nix with age keys. There is no other secret system in this repo.
 
-## Key Concepts
+## Layout
 
-### Two Types of Age Keys
+| File                                | Holds                                                          | Decrypted by             |
+| ----------------------------------- | -------------------------------------------------------------- | ------------------------ |
+| `sops/machines/<host>.yaml`         | That host's service secrets and its `passwords/pperanich` hash | The host, at activation  |
+| `sops/users/pperanich-desktop.yaml` | API keys that home-manager installs on the admin workstation   | Home-manager on `pp-ml1` |
+| `sops/cloudflared-tunnel.json`      | The Cloudflare Tunnel credential                               | `pp-router1`             |
+| `sops/.sops.yaml`                   | Recipients and creation rules for all of the above             | (not encrypted)          |
 
-| Key Type        | Location                                 | Purpose                                                       | Managed By                   |
-| --------------- | ---------------------------------------- | ------------------------------------------------------------- | ---------------------------- |
-| **Machine Key** | `/var/lib/sops-nix/key.txt`              | Decrypt secrets deployed TO this machine at boot/activation   | clan-core + sops-nix         |
-| **User Key**    | `~/.config/sops/age/keys.txt` or SSH key | User identity for running `clan vars upload`, editing secrets | User (manual or SSH-derived) |
+There is one file per host and no shared file. A host's file is not readable by any other host. The old monolithic `sops/secrets.yaml` no longer exists.
 
-### Machine Keys
+## Keys
 
-Machine keys are automatically generated and managed by clan-core:
+| Key                 | Where the private half lives                                      | Recipient of                                            | Purpose                                               |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| Admin age key       | `~/.config/sops/age/keys.txt` on `pp-ml1`, plus an offline backup | Every file                                              | Editing secrets, re-encrypting files                  |
+| YubiKey             | The hardware token (`&yubikey0-slot1` in `.sops.yaml`)            | Every file                                              | Fallback for editing if the admin key file is missing |
+| Host key (per host) | `/etc/ssh/ssh_host_ed25519_key` on that host                      | That host's file (and the tunnel file for `pp-router1`) | System decryption at activation                       |
 
-```bash
-# Generate machine age key (creates keypair, stores in vars/)
-clan vars generate <hostname>
+The host recipient is the SSH host key converted to age with `ssh-to-age`; it is not a separate key to manage. `.sops.yaml` lists a recipient for each of `pp-ml1` (as `&pp-ml1-ssh`), `pp-nas1`, `pp-router1` and `pp-wsl1`. `pp-ld1`, `pp-ll1` and `pp-rpi1` are powered off until re-imaged, so their files are encrypted to the admin key and the YubiKey only; a host recipient goes in when the machine gets a new key (see [Adding New Machines](adding-new-machines.md)).
 
-# Upload machine key to the machine
-clan vars upload <hostname>
-```
+A secret is readable by any one recipient of its file. The admin key and YubiKey can therefore read everything; a host can read only its own file.
 
-The machine's age key is:
+## How decryption works
 
-- Stored encrypted in `sops/secrets/<hostname>-age.key/secret`
-- Deployed to `/var/lib/sops-nix/key.txt` on the target machine
-- Used by sops-nix to decrypt system-level secrets at activation time
-- Owned by `root:root` with mode `0400`
+Hosts decrypt with their SSH host key and nothing else (`modules/system/sops.nix` sets `sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ]` and `sops.age.keyFile = null`). Each host's `sops.defaultSopsFile` is `sops/machines/<networking.hostName>.yaml`.
 
-### User Keys
+Home-manager decrypts with `~/.config/sops/age/keys.txt` and reads `sops/users/pperanich-desktop.yaml`. A missing key file fails the install, so a workstation needs the file in place before its first switch. Home-manager runs as the user and cannot read the host key, which is why it has a key of its own. On `pp-ml1` the file holds the admin key.
 
-User keys represent a person's identity. There are two approaches:
+`sops.validateSopsFiles = true`, so a secret that a module declares but the host's file lacks fails the build, not the activation. Key names are plaintext in a sops file, so this check decrypts nothing.
 
-#### Option 1: SSH-Derived Key (Recommended)
+The Mac needs two extras (both in `modules/system/sops.nix`): the system module forces a minimal `PATH` so `hdiutil` is found, and the home-manager launch agent adds `age-plugin-yubikey` to its `PATH`.
 
-Your SSH ed25519 key can be used as an age key. This is the simplest approach:
+## Editing secrets
 
-```bash
-# Convert SSH public key to age format
-cat ~/.ssh/id_ed25519.pub | ssh-to-age
-# or: nix run nixpkgs#ssh-to-age -- < ~/.ssh/id_ed25519.pub
-```
-
-**Advantages:**
-
-- No separate key to manage
-- SSH key already synced across machines (via sops)
-- sops-nix automatically imports SSH keys as age keys
-
-#### Option 2: Standalone Age Key
-
-A dedicated age key at `~/.config/sops/age/keys.txt`:
+From the repo root, inside `nix develop` (which exports `SOPS_CONFIG` through `.envrc` and `SOPS_AGE_KEY_FILE` through the dev shell):
 
 ```bash
-# Generate standalone age key
-age-keygen -o ~/.config/sops/age/keys.txt
-
-# Or via clan
-clan secrets key generate
+sops --config sops/.sops.yaml sops/machines/pp-nas1.yaml
 ```
 
-**When to use:**
-
-- Hardware security keys (YubiKey via age-plugin-yubikey)
-- If you need a key independent of your SSH key
-- Legacy setups (not recommended for new configurations)
-
-## How Secrets Are Encrypted
-
-Secrets in `sops/secrets.yaml` are encrypted for multiple recipients defined in `sops/.sops.yaml`:
-
-```yaml
-creation_rules:
-  - path_regex: secrets.yaml$
-    key_groups:
-      - age:
-          # Admin users (can edit secrets)
-          - *pperanich           # SSH-derived age key
-          - *pperanich-pperanich-ml1  # Standalone age key
-          # Machine keys (can decrypt at runtime)
-          - *pp-ll1
-          - *pp-nas1
-          - *pp-router1
-```
-
-**Key insight:** A secret can be decrypted by ANY key in the recipient list. This means:
-
-- Machines can decrypt secrets deployed to them (via machine key)
-- Users can decrypt secrets to edit them (via user key)
-
-## This Repository's Configuration
-
-### SSH Key Deployment (Breaking the Chicken-and-Egg)
-
-The SSH private key is deployed via **system-level sops** in user modules, which runs BEFORE home-manager. This is done identically on both NixOS and Darwin:
-
-```nix
-# modules/users/pperanich.nix (NixOS)
-sops.secrets."private_keys/pperanich" = {
-  sopsFile = "${sopsFolder}/secrets.yaml";
-  owner = "pperanich";
-  group = "users";  # "staff" on Darwin
-  mode = "0400";
-  path = "/home/pperanich/.ssh/id_ed25519";  # /Users/... on Darwin
-};
-```
-
-### Home-Manager Sops Configuration
-
-Home-manager sops uses the **SSH key** (already deployed by system-level sops) on both platforms:
-
-```nix
-# modules/system/sops.nix
-sops.age = {
-  # Use SSH key for decryption (converted to age key automatically)
-  sshKeyPaths = [
-    "${config.home.homeDirectory}/.ssh/id_ed25519"
-  ];
-};
-```
-
-### Why This Works
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  1. System activation starts                                │
-│                          ↓                                  │
-│  2. System sops decrypts using MACHINE key                  │
-│     (/var/lib/sops-nix/key.txt)                             │
-│                          ↓                                  │
-│  3. SSH private key deployed to ~/.ssh/id_ed25519           │
-│                          ↓                                  │
-│  4. Home-manager activation starts                          │
-│                          ↓                                  │
-│  5. Home-manager sops uses SSH key to decrypt API keys      │
-│                          ↓                                  │
-│  ✅ No chicken-and-egg!                                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Key insight:** System-level sops uses the machine key (which is always available), and deploys the SSH key first. Then home-manager sops can use the SSH key for everything else.
-
-**No separate `~/.config/sops/age/keys.txt` needed** - the SSH key serves as the user's age key on all platforms.
-
-## Registering User Keys with Clan
-
-User public keys are registered in `sops/users/<username>/key.json`:
+This opens the decrypted file in `$EDITOR` and re-encrypts on save. To set one value without writing it to disk or the shell history:
 
 ```bash
-# Show current key
-clan secrets users get <username>
-
-# Register/update user key (use SSH-derived key)
-SSH_AGE_KEY=$(cat ~/.ssh/id_ed25519.pub | ssh-to-age)
-clan secrets users add <username> $SSH_AGE_KEY --force
+printf '%s' "$VALUE" | jq -Rs . | sops --config sops/.sops.yaml set --value-stdin sops/machines/pp-nas1.yaml '["some-key"]'
 ```
 
-**Important:** The registered key should match the key you actually have. If they're mismatched:
+A nested name such as `passwords/pperanich` is a nested mapping, so its index is `'["passwords"]["pperanich"]'`.
 
-- You won't be able to decrypt secrets encrypted for "you"
-- `clan vars upload` may fail
+## Adding a secret
 
-### Verifying Key Alignment
+1. Declare it in the module that uses it (`sops.secrets.<name>`; see [Secrets in Modules](../AGENTS.md#secrets-in-modules) for the pattern, including templates and the missing-secret assertion).
+2. Add the value under the same name to the `sops/machines/<host>.yaml` of every host that enables that module.
+3. Build. A host whose file lacks the key fails with `the key '<name>' cannot be found`.
+
+Secrets for home-manager go in `sops/users/pperanich-desktop.yaml` and are declared in `modules/shell/api-keys.nix`. That file is encrypted to the admin key, the YubiKey and `pp-ml1` only; keep servers and WSL out of its rule.
+
+## Rotating a secret
+
+1. Change the value in the file (`sops set` or the editor).
+2. Deploy the host (`deploy .#<host>`, or `nh darwin switch . -H pp-ml1`).
+3. Restart whatever read the old value, if the module does not do it for you.
+
+Two things decide whether a rotation takes effect:
+
+- A service that reads a secret only at startup needs `restartUnits` on that secret (or its template), or the old value stays in memory until the next reboot. Existing examples are in `modules/services/headplane.nix` and `modules/services/radicale.nix`.
+- An application that reads an admin password only at first setup (a database seeded on first run, for instance) ignores later changes to the file. Change the password inside the application as well.
+
+To replace the data key of a file without changing recipients, run `sops --config sops/.sops.yaml rotate -i <file>`. `updatekeys` changes recipients but keeps the same data key, so it is not a substitute.
+
+## Changing recipients
+
+After editing recipients or rules in `sops/.sops.yaml`, re-encrypt each file that the rule covers:
 
 ```bash
-# Your local key (what you can actually use)
-clan secrets key show
-
-# Registered user key (what's in the repo)
-clan secrets users get <username>
-
-# SSH key converted to age (should match if using SSH-derived)
-cat ~/.ssh/id_ed25519.pub | ssh-to-age
+sops --config sops/.sops.yaml updatekeys sops/machines/<host>.yaml
 ```
 
-All three should produce the same public key for SSH-derived setups.
-
-## Anti-Patterns to Avoid
-
-### 1. Copying Machine Key to User Directory
-
-**Wrong:**
+`updatekeys` asks for confirmation and needs a current recipient's private key (the admin key or the YubiKey). Then check the result:
 
 ```bash
-# DON'T DO THIS
-sudo cat /var/lib/sops-nix/key.txt > ~/.config/sops/age/keys.txt
+grep -n "recipient:" sops/machines/<host>.yaml
 ```
 
-**Why it's wrong:**
+### Replacing a host key
 
-- Blurs the distinction between machine identity and user identity
-- Machine keys are for system-level decryption, not user operations
-- If machine key is rotated, user config breaks
+1. Create the new key on the host (or at install time, as in [Adding New Machines](adding-new-machines.md)).
+2. Put its new age recipient in `.sops.yaml` and its public key in `lib/ssh-host-keys.nix`.
+3. Run `updatekeys` on the host's file (and on `sops/cloudflared-tunnel.json` for `pp-router1`).
+4. Deploy. Do not replace the key on the host before step 3, or its next activation cannot decrypt.
 
-**Correct approach:** Use SSH-derived key or standalone user key.
+### Replacing the admin key
 
-### 2. Running `clan vars upload` from Target Machine
+1. Generate the new key into a separate file, never over the current one: `age-keygen -o ~/.config/sops/age/keys-new.txt`.
+2. Replace the `&pperanich-admin` recipient in `.sops.yaml` with the new public key.
+3. Run `updatekeys` on every file in `sops/`, using the old key or the YubiKey.
+4. Move the new file into place as `keys.txt`, back it up offline, and rotate each file's data key with `sops rotate -i`.
 
-**Wrong:**
+## If the admin key is lost
 
-```bash
-# On pp-ll1, trying to upload to itself
-clan vars upload pp-ll1
-```
+The YubiKey is a recipient of every file, so it can still read and re-encrypt everything.
 
-**Why it's problematic:**
+1. Plug the YubiKey in. `age-plugin-yubikey` must be on `PATH` (the dev shell has it). Print its identity into a file that sops can read: `age-plugin-yubikey --identity > ~/.config/sops/age/yubikey-identity.txt`, then `export SOPS_AGE_KEY_FILE=~/.config/sops/age/yubikey-identity.txt`.
+2. Generate a new admin key and follow "Replacing the admin key" above, from step 1.
+3. Back the new key up offline.
 
-- Requires root SSH access to self (extra setup)
-- The machine's age key is for RECEIVING secrets, not SENDING
-- Creates confusion about key ownership
+If both the admin key and the YubiKey are gone, only each host's own key can still decrypt its file. Reading a file back off a host requires root on that host. Re-create anything else from the services that issued it.
 
-**Correct approach:** Run `clan vars upload` from your admin workstation (Mac) where you have your personal key.
+## Traps
 
-### 3. Multiple Mismatched Keys for Same User
-
-**Wrong:** Having different keys in:
-
-- `~/.config/sops/age/keys.txt` (standalone key)
-- `clan secrets users get` (registered key)
-- `.sops.yaml` (recipient list)
-
-**Why it's wrong:**
-
-- Secrets encrypted for one key can't be decrypted by another
-- Leads to "permission denied" or "no identity matched" errors
-
-**Correct approach:** Pick ONE key (preferably SSH-derived) and ensure all references match.
-
-### 4. Setting `keyFile` to Machine Key on Linux
-
-**Wrong:**
-
-```nix
-sops.age.keyFile = "/var/lib/sops-nix/key.txt";  # Machine key
-```
-
-**Why it's wrong:**
-
-- Machine key is `0400 root:root` - user can't read it
-- Even with `keys` group, it's mixing machine/user concerns
-- SSH key already works and is deployed for the user
-
-**Correct approach:** Don't set `keyFile` on Linux; let sops-nix use `sshKeyPaths`.
-
-## Workflow Summary
-
-### Adding a New User to Secrets
-
-1. Ensure their SSH public key is in the repo:
-
-   ```bash
-   # modules/users/<username>_id_ed25519.pub
-   ```
-
-2. Register their age key (SSH-derived):
-
-   ```bash
-   AGE_KEY=$(cat modules/users/<username>_id_ed25519.pub | ssh-to-age)
-   clan secrets users add <username> $AGE_KEY
-   ```
-
-3. Add to `.sops.yaml` recipients:
-
-   ```yaml
-   - &<username> <age-public-key>
-   ```
-
-4. Re-encrypt secrets:
-   ```bash
-   cd sops && sops updatekeys secrets.yaml
-   ```
-
-### Deploying Secrets to a New Machine
-
-1. Generate machine vars (creates age keypair):
-
-   ```bash
-   clan vars generate <hostname>
-   ```
-
-2. Add machine to `.sops.yaml` recipients
-
-3. Re-encrypt secrets for new machine
-
-4. Upload vars and deploy:
-   ```bash
-   clan vars upload <hostname>
-   clan machines update <hostname>
-   ```
-
-## Troubleshooting
-
-### "permission denied" on `/var/lib/sops-nix/key.txt`
-
-**Cause:** Home-manager sops trying to read machine key (wrong approach).
-
-**Fix:** Remove `keyFile` config on Linux, use SSH key only.
-
-### "no identity matched any of the recipients"
-
-**Cause:** Your key isn't in the recipient list for that secret.
-
-**Fix:**
-
-1. Check which keys can decrypt: `sops -d <file>` (will show error with key list)
-2. Ensure your key is in `.sops.yaml` and re-run `sops updatekeys`
-
-### Clan user key doesn't match local key
-
-**Cause:** Key was regenerated or registered incorrectly.
-
-**Fix:**
-
-```bash
-# Get your actual key
-LOCAL_KEY=$(clan secrets key show | jq -r '.[0].publickey')
-
-# Update registration
-clan secrets users add <username> $LOCAL_KEY --force
-```
+- Outside `nix develop`, plain `sops` cannot find `sops/.sops.yaml`. The `SOPS_CONFIG` export from `.envrc` hides this inside the repo. Always pass `--config sops/.sops.yaml` in scripts, tmux panes and one-off shells.
+- Encrypting to the YubiKey recipient needs `age-plugin-yubikey` on `PATH`. In a bare shell, add it: `nix shell nixpkgs#sops nixpkgs#age-plugin-yubikey -c sops ...`.
+- treefmt rewrites encrypted files and breaks every later edit. `modules/flake-parts/fmt.nix` excludes `sops/cloudflared-tunnel.json`, `sops/machines/*.yaml` and `sops/users/*.yaml`; keep new sops files under those globs.
+- A new `creation_rules` entry only applies to files created after it. For an existing file, run `updatekeys`.
 
 ## References
 
-- [sops-nix documentation](https://github.com/Mic92/sops-nix)
-- [clan-core secrets documentation](https://docs.clan.lol/getting-started/secrets/)
-- [age encryption](https://github.com/FiloSottile/age)
+- [sops-nix](https://github.com/Mic92/sops-nix)
+- [age](https://github.com/FiloSottile/age)
 - [ssh-to-age](https://github.com/Mic92/ssh-to-age)
+- [age-plugin-yubikey](https://github.com/str4d/age-plugin-yubikey)

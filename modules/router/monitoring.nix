@@ -123,7 +123,7 @@ _: {
         users.users.ntopng.extraGroups = [ "networkd" ];
 
         # Add packet capture capability
-        # M5: Only cap_net_raw is needed for packet capture — cap_net_admin omitted
+        # Only cap_net_raw is needed for packet capture: cap_net_admin omitted
         # to prevent firewall/routing modification if ntopng is compromised
         security.wrappers.ntopng = {
           owner = "root";

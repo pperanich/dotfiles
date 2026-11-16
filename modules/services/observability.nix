@@ -16,6 +16,20 @@ _: {
       # C+ copy rule never refreshed dashboards once the file existed.
       mkDashboardLinkRule = name: src: "L+ ${dashboardDir}/${name} - - - - ${src}";
 
+      # Local dial address for Loki consumers (Prometheus, Grafana, Alloy).
+      # When Loki binds a specific interface IP (e.g. 10.0.0.1), 127.0.0.1 is
+      # not bound, so local clients must dial that IP instead.
+      lokiDialHost =
+        if
+          builtins.elem cfg.loki.listenAddress [
+            "0.0.0.0"
+            "::"
+          ]
+        then
+          "127.0.0.1"
+        else
+          cfg.loki.listenAddress;
+
       # Rewrite scrape instance labels to short hostnames: 127.0.0.1 targets
       # become this host, host targets keep their first label whether they
       # carry a domain (pp-nas1.home.arpa:9640) or just a port (pp-nas1:9640).
@@ -25,7 +39,7 @@ _: {
       friendlyInstance = [
         {
           source_labels = [ "__address__" ];
-          regex = "127\\.0\\.0\\.1(:[0-9]+)?";
+          regex = "(127\\.0\\.0\\.1|${lib.escapeRegex lokiDialHost})(:[0-9]+)?";
           target_label = "instance";
           replacement = config.networking.hostName;
         }
@@ -44,17 +58,11 @@ _: {
         "logs-overview.json" = ./observability-assets/dashboards/logs-overview.json;
         "wan-remote-access.json" = ./observability-assets/dashboards/wan-remote-access.json;
         "fleet-health.json" = ./observability-assets/dashboards/fleet-health.json;
+        "web-ingress.json" = ./observability-assets/dashboards/web-ingress.json;
       };
 
       # Render alert email timestamps in the host timezone (UTC if unset)
       alertTimezone = if config.time.timeZone != null then config.time.timeZone else "Etc/UTC";
-
-      # Negative label matchers appended to the fleet WireGuard rules so
-      # named peers (offline/retired hosts) stop firing without dropping
-      # coverage for the rest of the mesh.
-      wgFleetExcludeMatchers = lib.concatMapStrings (
-        k: ",public_key!=\"${k}\""
-      ) cfg.alerts.wireguardFleetPeerExcludes;
 
       mkPromRule = expr: alert: description: {
         inherit alert expr;
@@ -122,8 +130,7 @@ _: {
             write_out()
       '';
 
-      # Blackbox modules generated here (not static YAML) so the proxy-path
-      # canary can embed the router's WireGuard address at eval time.
+      # Generated, not static YAML, so the proxy canary can set its Host and SNI at eval time.
       blackboxConfig = (pkgs.formats.yaml { }).generate "blackbox.yml" {
         modules = {
           icmp_v4 = {
@@ -148,6 +155,15 @@ _: {
               validate_answer_rrs.fail_if_matches_regexp = [ "^$" ];
             };
           };
+          http_401 = {
+            prober = "http";
+            timeout = "5s";
+            http = {
+              preferred_ip_protocol = "ip4";
+              method = "GET";
+              valid_status_codes = [ 401 ];
+            };
+          };
           http_2xx = {
             prober = "http";
             timeout = "5s";
@@ -163,9 +179,8 @@ _: {
           };
         }
         // lib.optionalAttrs (cfg.blackbox.proxyCanary.url != null) {
-          # Exercises the router Caddy → NAS Caddy leg that WireGuard
-          # clients use; LAN probes take the split-horizon direct path and
-          # can't see it break
+          # The router Caddy → NAS Caddy leg tailnet clients use; LAN probes go
+          # straight to the NAS by split-horizon DNS and never see it break.
           http_via_proxy = {
             prober = "http";
             timeout = "5s";
@@ -231,12 +246,18 @@ _: {
           description = "HTTP endpoints to probe with blackbox exporter";
         };
 
+        blackbox.authHttpTargets = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "HTTP endpoints behind basic auth, probed in the same job; a 401 counts as up.";
+        };
+
         blackbox.proxyCanary = {
           url = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
             default = null;
             example = "https://[fd00::1]/web/";
-            description = "IP-literal URL probing the router-to-NAS proxy path that WireGuard clients traverse";
+            description = "IP-literal URL probing the router-to-NAS proxy path that tailnet clients traverse";
           };
           serverName = lib.mkOption {
             type = lib.types.str;
@@ -278,13 +299,6 @@ _: {
             default = [ ];
             example = [ "enp1s0f1np1" ];
             description = "Interfaces to alert on for sustained carrier loss and link flapping";
-          };
-
-          wireguardFleetPeerExcludes = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ ];
-            example = [ "AGteAW+gpAUywy7ITC6A+uzZaIYC9AwMl/96d1CM3Xw=" ];
-            description = "WireGuard fleet peer public keys to exclude from the silent/never-handshaked alerts (e.g. an offline or retired host)";
           };
         };
 
@@ -364,7 +378,7 @@ _: {
                 job_name = "loki";
                 relabel_configs = friendlyInstance;
                 metrics_path = "/metrics";
-                static_configs = [ { targets = [ "127.0.0.1:3100" ]; } ];
+                static_configs = [ { targets = [ "${lokiDialHost}:3100" ]; } ];
               }
               {
                 job_name = "blocky";
@@ -398,13 +412,6 @@ _: {
                   { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.kea.port}" ]; }
                 ];
               }
-              {
-                job_name = "wireguard";
-                relabel_configs = friendlyInstance;
-                static_configs = [
-                  { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.wireguard.port}" ]; }
-                ];
-              }
             ]
             ++ lib.optionals (cfg.smartctlTargets != [ ]) [
               {
@@ -427,6 +434,14 @@ _: {
                 job_name = "caddy";
                 relabel_configs = friendlyInstance;
                 static_configs = [ { targets = [ "127.0.0.1:2019" ]; } ];
+              }
+            ]
+            ++ lib.optionals (config.my.headscale.enable or false) [
+              {
+                job_name = "headscale";
+                relabel_configs = friendlyInstance;
+                metrics_path = "/metrics";
+                static_configs = [ { targets = [ "127.0.0.1:${toString config.my.headscale.metricsPort}" ]; } ];
               }
             ]
             ++ lib.optionals (cfg.alerts.email.to != null) [
@@ -485,7 +500,13 @@ _: {
                 params = {
                   module = [ "http_2xx" ];
                 };
-                static_configs = [ { targets = cfg.blackbox.httpTargets; } ];
+                static_configs = [
+                  { targets = cfg.blackbox.httpTargets; }
+                ]
+                ++ lib.optional (cfg.blackbox.authHttpTargets != [ ]) {
+                  targets = cfg.blackbox.authHttpTargets;
+                  labels.__param_module = "http_401";
+                };
                 relabel_configs = blackboxRelabelConfigs;
               }
             ]
@@ -508,7 +529,7 @@ _: {
                       # dies, every probe_success series goes absent and all
                       # probe/cert alerts stop evaluating without this rule.
                       (mkPromRule
-                        "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|wireguard|unpoller|caddy|alertmanager|blackbox-.*\"} == 0"
+                        "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|unpoller|caddy|headscale|alertmanager|blackbox-.*\"} == 0"
                         "ObservabilityTargetDown"
                         "An observability target has been down for 5 minutes."
                       )
@@ -586,7 +607,7 @@ _: {
                         "HTTP probe against {{ $labels.instance }} has been failing for 5 minutes."
                       )
                       (mkPromRule "probe_success{job=\"blackbox-proxy-canary\"} == 0" "NasProxyPathBroken"
-                        "The router-to-NAS Caddy proxy path (used by WireGuard clients) has been failing for 5 minutes."
+                        "The router-to-NAS Caddy proxy path (used by tailnet clients) has been failing for 5 minutes."
                       )
                       {
                         alert = "SystemdUnitFailed";
@@ -636,6 +657,21 @@ _: {
                         labels.severity = "warning";
                         annotations.description = "No borg backup success metric has been scraped for 6 hours.";
                       }
+                      {
+                        # Also fires for a configured host whose backup has never succeeded
+                        alert = "ResticBackupStale";
+                        expr = "restic_backup_configured == 1 unless on(instance, repo) (time() - restic_last_success_timestamp_seconds < 172800)";
+                        for = "6h";
+                        labels.severity = "critical";
+                        annotations.description = "Restic backup {{ $labels.repo }} on {{ $labels.instance }} has not succeeded in 48 hours, or ever.";
+                      }
+                      {
+                        # Daily forget drops about one snapshot a day; a bigger fall means deletion from outside
+                        alert = "ResticSnapshotsDropped";
+                        expr = "max_over_time(restic_snapshots_total[2d]) - restic_snapshots_total > 3";
+                        labels.severity = "critical";
+                        annotations.description = "Restic repository {{ $labels.repo }} on {{ $labels.instance }} lost more than 3 snapshots in 2 days.";
+                      }
                       # The kea exporter emits each subnet twice (with and
                       # without a pool label); match only the pool-less series
                       # so a full subnet raises one alert, not two.
@@ -644,29 +680,6 @@ _: {
                         "DhcpPoolNearlyFull"
                         "DHCP subnet {{ $labels.subnet }} is above 90 percent lease utilization."
                       )
-                      # Fleet peers (routed /96 allowed_ips, always-on hosts)
-                      # should handshake every ~2 minutes. Phones (/128) roam
-                      # and sleep — excluded. The < 1e9 guard skips peers that
-                      # have never handshaked since interface creation (the
-                      # exporter reports epoch-now for those).
-                      {
-                        alert = "WireguardFleetPeerSilent";
-                        expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 900 < 1e9";
-                        for = "5m";
-                        labels.severity = "warning";
-                        annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has not handshaked in over 15 minutes.";
-                      }
-                      # Companion for the epoch-sized values the guard above
-                      # excludes: a router reboot resets handshake state, so a
-                      # fleet peer that stays down would otherwise go silently
-                      # unmonitored forever.
-                      {
-                        alert = "WireguardFleetPeerNeverHandshaked";
-                        expr = "wireguard_latest_handshake_delay_seconds{interface=\"pp-wg\",allowed_ips=~\".*/96\"${wgFleetExcludeMatchers}} > 1e9";
-                        for = "30m";
-                        labels.severity = "warning";
-                        annotations.description = "WireGuard fleet peer {{ $labels.allowed_ips }} ({{ $labels.public_key }}) has never handshaked since the interface came up.";
-                      }
                     ]
                     ++ lib.optionals (cfg.alerts.email.to != null) [
                       # Alertmanager delivers everything above; if Prometheus
@@ -719,13 +732,16 @@ _: {
               })
             ];
 
-            # Alerts leave via local Stalwart relay over WAN — independent of the
+            # Alerts leave via local Stalwart relay over WAN, independent of the
             # LAN path, so delivery survives a dead trunk (local dashboards don't).
             alertmanager = lib.mkIf (cfg.alerts.email.to != null) {
               enable = true;
               listenAddress = "127.0.0.1";
               port = 9093;
               webExternalUrl = lib.mkIf (cfg.alerts.externalUrl != null) cfg.alerts.externalUrl;
+              # Keep HTTP API and /metrics rooted at "/" even when webExternalUrl
+              # carries a UI subpath (such as Grafana's /alerting/list).
+              extraFlags = [ "--web.route-prefix=/" ];
               configuration = {
                 global = {
                   smtp_smarthost = "127.0.0.1:25";
@@ -786,12 +802,6 @@ _: {
                 # control-sockets forwarding map, so stats never flowed over HTTP)
                 targets = [ "/run/kea/kea-dhcp4.socket" ];
               };
-              wireguard = {
-                enable = true;
-                listenAddress = "127.0.0.1";
-                interfaces = [ "pp-wg" ];
-                latestHandshakeDelay = true;
-              };
             };
           };
           grafana = {
@@ -839,9 +849,20 @@ _: {
                     uid = "loki";
                     type = "loki";
                     access = "proxy";
-                    url = "http://127.0.0.1:3100";
+                    url = "http://${lokiDialHost}:3100";
                   }
-                ];
+                ]
+                ++ lib.optional (cfg.alerts.email.to != null) {
+                  name = "Alertmanager";
+                  uid = "alertmanager";
+                  type = "alertmanager";
+                  access = "proxy";
+                  url = "http://127.0.0.1:9093";
+                  jsonData = {
+                    implementation = "prometheus";
+                    handleGrafanaManagedAlerts = false;
+                  };
+                };
               };
               dashboards.settings = {
                 apiVersion = 1;
@@ -1026,6 +1047,20 @@ _: {
                 ];
               };
             };
+            loki =
+              lib.mkIf
+                (
+                  !builtins.elem cfg.loki.listenAddress [
+                    "127.0.0.1"
+                    "::1"
+                    "0.0.0.0"
+                    "::"
+                  ]
+                )
+                {
+                  after = [ "network-online.target" ];
+                  wants = [ "network-online.target" ];
+                };
           };
           timers = {
             deadman-ping = lib.mkIf (cfg.alerts.deadman.pingUrlFile != null) {
@@ -1054,7 +1089,7 @@ _: {
         environment.etc."alloy/config.alloy".text = ''
           loki.write "local" {
             endpoint {
-              url = "http://127.0.0.1:3100/loki/api/v1/push"
+              url = "http://${lokiDialHost}:3100/loki/api/v1/push"
             }
           }
 
@@ -1063,7 +1098,7 @@ _: {
 
             rule {
               source_labels = ["__journal__systemd_unit"]
-              regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|prometheus|grafana|loki|alloy|homepage-dashboard|sshd|alertmanager|vaultwarden|gitea|stalwart|unifi|smartd|trunk-link-watchdog)\\.service"
+              regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|cloudflare-dyndns|headscale|tailscaled|prometheus|grafana|loki|alloy|homepage-dashboard|sshd|alertmanager|vaultwarden|gitea|stalwart|unifi|smartd|trunk-link-watchdog)\\.service"
               action = "keep"
             }
             rule {

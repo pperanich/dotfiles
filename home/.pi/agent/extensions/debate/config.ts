@@ -92,8 +92,8 @@ export function loadConfig(cwd: string, agentDir: string): DebateConfig {
 
 export function activeSeats(config: DebateConfig): SeatConfig[] {
   return config.activeSeats
-    ? config.activeSeats.map(
-        (id) => config.seats.find((seat) => seat.id === id)!,
+    ? config.activeSeats.map((id) =>
+        config.seats.find((seat) => seat.id === id)!,
       )
     : config.seats;
 }

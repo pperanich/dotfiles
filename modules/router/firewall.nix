@@ -54,7 +54,7 @@ _: {
       # Get Unifi controller interfaces if available
       unifiControllerInterfaces = internal.unifiControllerInterfaces or [ ];
 
-      # H3: Debug uplink is NOT added to trusted interfaces — gets SSH-only access instead
+      # Debug uplink is NOT added to trusted interfaces: gets SSH-only access instead
       allTrustedInterfaces = fwCfg.trustedInterfaces;
 
       # Helper to generate an nftables named set of interface names
@@ -163,22 +163,32 @@ _: {
           icmpRate = lib.mkOption {
             type = lib.types.str;
             default = "10/second";
-            description = "ICMP rate limit (nftables format)";
+            description = "Per-source-IP WAN ICMPv4 echo-request rate limit (nftables format)";
           };
           icmpBurst = lib.mkOption {
             type = lib.types.int;
-            default = 50;
-            description = "ICMP burst limit";
+            default = 20;
+            description = "Per-source-IP WAN ICMPv4 echo-request burst limit";
+          };
+          icmpv6Rate = lib.mkOption {
+            type = lib.types.str;
+            default = "20/second";
+            description = "Per-/64-prefix WAN ICMPv6 echo-request rate limit (nftables format)";
+          };
+          icmpv6Burst = lib.mkOption {
+            type = lib.types.int;
+            default = 40;
+            description = "Per-/64-prefix WAN ICMPv6 echo-request burst limit";
           };
           newConnRate = lib.mkOption {
             type = lib.types.str;
-            default = "100/second";
-            description = "New connection rate limit";
+            default = "25/second";
+            description = "Per-source-IP WAN new connection rate limit";
           };
           newConnBurst = lib.mkOption {
             type = lib.types.int;
-            default = 200;
-            description = "New connection burst limit";
+            default = 50;
+            description = "Per-source-IP WAN new connection burst limit";
           };
         };
       };
@@ -196,12 +206,51 @@ _: {
                 ${lib.optionalString (unifiControllerInterfaces != [ ]) (
                   mkIfaceSet "unifi_ifaces" unifiControllerInterfaces
                 )}
+                ${lib.optionalString fwCfg.rateLimiting.enable ''
+                  set wan_icmpv4 {
+                    type ipv4_addr
+                    size 65535
+                    flags dynamic, timeout
+                    timeout 1m
+                  }
+                ''}
+                ${lib.optionalString (fwCfg.rateLimiting.enable && fwCfg.openPorts.tcp != [ ]) ''
+                  set wan_new_tcp {
+                    type ipv4_addr
+                    size 65535
+                    flags dynamic, timeout
+                    timeout 1m
+                  }
+                ''}
+                ${lib.optionalString (fwCfg.rateLimiting.enable && fwCfg.openPorts.udp != [ ]) ''
+                  set wan_new_udp {
+                    type ipv4_addr
+                    size 65535
+                    flags dynamic, timeout
+                    timeout 1m
+                  }
+                ''}
 
                 # Named counters — exported to Prometheus via the
                 # nftables-metrics textfile collector (observability module)
                 counter wan_input_drop { }
                 counter wan_new_accept_tcp { }
                 counter wan_new_accept_udp { }
+
+                ${lib.optionalString (fwCfg.openPorts.tcp != [ ]) ''
+                  chain accept_wan_tcp {
+                    counter name wan_new_accept_tcp comment "Count accepted new WAN TCP"
+                    limit rate 1/second burst 20 packets log prefix "nft-wan-accept: " comment "Log new WAN TCP (source IPs)"
+                    accept
+                  }
+                ''}
+                ${lib.optionalString (fwCfg.openPorts.udp != [ ]) ''
+                  chain accept_wan_udp {
+                    counter name wan_new_accept_udp comment "Count accepted new WAN UDP"
+                    limit rate 1/second burst 20 packets log prefix "nft-wan-accept: " comment "Log new WAN UDP (source IPs)"
+                    accept
+                  }
+                ''}
 
                 chain input {
                   type filter hook input priority 0; policy drop;
@@ -239,7 +288,7 @@ _: {
                   # Trusted interfaces (VPN tunnels, etc.)
                   ${lib.optionalString (allTrustedInterfaces != [ ]) "iifname @trusted_ifaces accept"}
 
-                  # H3: Debug uplink — SSH access only (not full trust)
+                  # Debug uplink: SSH access only (not full trust)
                   ${lib.optionalString cfg.debugUplink.enable ''
                     iifname "${cfg.debugUplink.interface}" tcp dport 22 accept comment "Debug uplink: SSH only"
                   ''}
@@ -262,37 +311,27 @@ _: {
                   # Machine-specific input rules
                   ${fwCfg.extraInputRules}
 
-                  # WAN input rules
+                  # WAN input rules (solicited echo-reply already accepted by ct state established,related)
                   ${
                     if fwCfg.rateLimiting.enable then
-                      ''
-                        iifname "${wan}" icmp type echo-request limit rate ${fwCfg.rateLimiting.icmpRate} burst ${toString fwCfg.rateLimiting.icmpBurst} packets accept comment "ICMP ping rate limited"
-                        iifname "${wan}" icmp type echo-reply accept comment "Allow ping responses"''
+                      ''iifname "${wan}" icmp type echo-request update @wan_icmpv4 { ip saddr limit rate ${fwCfg.rateLimiting.icmpRate} burst ${toString fwCfg.rateLimiting.icmpBurst} packets } accept comment "ICMP ping per-IP rate limited"''
                     else
-                      ''iifname "${wan}" icmp type { echo-request, echo-reply } accept''
+                      ''iifname "${wan}" icmp type echo-request accept comment "ICMP ping"''
                   }
-                  ${lib.optionalString (fwCfg.openPorts.tcp != [ ]) ''
-                    iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } counter name wan_new_accept_tcp comment "Count new WAN TCP"
-                    iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } limit rate 1/second burst 20 packets log prefix "nft-wan-accept: " comment "Log new WAN TCP (source IPs)"
-                    ${
-                      if fwCfg.rateLimiting.enable then
-                        ''iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets accept comment "Open TCP ports (rate limited)"''
-                      else
-                        ''iifname "${wan}" tcp dport { ${tcpPortsStr} } accept comment "Open TCP ports"''
-                    }
-                  ''}
-                  ${lib.optionalString (fwCfg.openPorts.udp != [ ]) ''
-                    iifname "${wan}" ct state new udp dport { ${udpPortsStr} } counter name wan_new_accept_udp comment "Count new WAN UDP"
-                    iifname "${wan}" ct state new udp dport { ${udpPortsStr} } limit rate 1/second burst 20 packets log prefix "nft-wan-accept: " comment "Log new WAN UDP (source IPs)"
-                    ${
-                      if fwCfg.rateLimiting.enable then
-                        ''iifname "${wan}" ct state new udp dport { ${udpPortsStr} } limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets accept comment "Open UDP ports (rate limited)"''
-                      else
-                        ''iifname "${wan}" udp dport { ${udpPortsStr} } accept comment "Open UDP ports"''
-                    }
-                  ''}
+                  ${lib.optionalString (fwCfg.openPorts.tcp != [ ]) (
+                    if fwCfg.rateLimiting.enable then
+                      ''iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } update @wan_new_tcp { ip saddr limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets } jump accept_wan_tcp comment "Open TCP ports (per-IP rate limited)"''
+                    else
+                      ''iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } jump accept_wan_tcp comment "Open TCP ports"''
+                  )}
+                  ${lib.optionalString (fwCfg.openPorts.udp != [ ]) (
+                    if fwCfg.rateLimiting.enable then
+                      ''iifname "${wan}" ct state new udp dport { ${udpPortsStr} } update @wan_new_udp { ip saddr limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets } jump accept_wan_udp comment "Open UDP ports (per-IP rate limited)"''
+                    else
+                      ''iifname "${wan}" ct state new udp dport { ${udpPortsStr} } jump accept_wan_udp comment "Open UDP ports"''
+                  )}
 
-                  # Hairpin NAT: accept WAN-facing ports from LAN (for router-local services like WireGuard)
+                  # Hairpin NAT: accept WAN-facing ports from LAN (for router-local services such as Headscale)
                   ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.tcp != [ ]) ''
                     iifname "${lanIface}" tcp dport { ${tcpPortsStr} } accept comment "Hairpin: open TCP ports from LAN"
                   ''}
@@ -304,7 +343,7 @@ _: {
                   # budget than LAN so scan sources are visible in Loki
                   iifname "${wan}" counter name wan_input_drop comment "Count WAN input drops"
                   iifname "${wan}" limit rate 30/minute burst 20 packets log prefix "nft-drop-wan: " level info
-                  # L1: Log dropped packets for forensics (rate limited to prevent log flooding)
+                  # Log dropped packets for forensics (rate limited to prevent log flooding)
                   iifname != "${wan}" limit rate 5/minute burst 10 packets log prefix "nft-drop-input: " level info
                 }
 
@@ -336,7 +375,7 @@ _: {
                   # Network/VLAN forwarding rules (injected)
                   ${netFw.forwardRules}
 
-                  # L1: Log dropped packets for forensics (rate limited)
+                  # Log dropped packets for forensics (rate limited)
                   limit rate 5/minute burst 10 packets log prefix "nft-drop-forward: " level info
                 }
               '';
@@ -352,7 +391,7 @@ _: {
                 }
                 chain postrouting {
                   type nat hook postrouting priority 100;
-                  # M1: Scoped to RFC1918 — prevents NAT of unexpected traffic from routing misconfigs
+                  # Scoped to RFC1918: prevents NAT of unexpected traffic from routing misconfigs
                   ip saddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } oifname "${wan}" masquerade
                   # Hairpin NAT: masquerade LAN-to-LAN DNAT'd traffic so return path goes through router
                   ${lib.optionalString fwCfg.hairpinNat.enable ''
@@ -370,9 +409,50 @@ _: {
                 ${lib.optionalString (allTrustedInterfaces != [ ]) (
                   mkIfaceSet "trusted_ifaces" allTrustedInterfaces
                 )}
+                ${lib.optionalString fwCfg.rateLimiting.enable ''
+                  set wan_icmpv6 {
+                    type ipv6_addr
+                    size 65535
+                    flags dynamic, timeout
+                    timeout 1m
+                  }
+                ''}
+                ${lib.optionalString (fwCfg.rateLimiting.enable && fwCfg.openPorts.tcp != [ ]) ''
+                  set wan_new_tcp {
+                    type ipv6_addr
+                    size 65535
+                    flags dynamic, timeout
+                    timeout 1m
+                  }
+                ''}
+                ${lib.optionalString (fwCfg.rateLimiting.enable && fwCfg.openPorts.udp != [ ]) ''
+                  set wan_new_udp {
+                    type ipv6_addr
+                    size 65535
+                    flags dynamic, timeout
+                    timeout 1m
+                  }
+                ''}
 
-                # Named counter — exported via nftables-metrics textfile collector
+                # Named counters, exported via nftables-metrics textfile collector
                 counter wan_input_drop { }
+                counter wan_new_accept_tcp { }
+                counter wan_new_accept_udp { }
+
+                ${lib.optionalString (fwCfg.openPorts.tcp != [ ]) ''
+                  chain accept_wan_tcp {
+                    counter name wan_new_accept_tcp comment "Count accepted new WAN IPv6 TCP"
+                    limit rate 1/second burst 20 packets log prefix "nft6-wan-accept: " comment "Log new WAN IPv6 TCP (source IPs)"
+                    accept
+                  }
+                ''}
+                ${lib.optionalString (fwCfg.openPorts.udp != [ ]) ''
+                  chain accept_wan_udp {
+                    counter name wan_new_accept_udp comment "Count accepted new WAN IPv6 UDP"
+                    limit rate 1/second burst 20 packets log prefix "nft6-wan-accept: " comment "Log new WAN IPv6 UDP (source IPs)"
+                    accept
+                  }
+                ''}
 
                 chain input {
                   type filter hook input priority 0; policy drop;
@@ -382,7 +462,7 @@ _: {
                   ct state established,related accept
                   ct state invalid drop
 
-                  # M2: IPv6 anti-spoofing on WAN (expanded bogon list per IANA special-purpose registry)
+                  # IPv6 anti-spoofing on WAN (expanded bogon list per IANA special-purpose registry)
                   # Note: fe80::/10 (link-local) NOT blocked — needed for RA, NDP, DHCPv6 from ISP.
                   # Unsolicited RAs arrive with fe80:: source BEFORE ct state can track them.
                   iifname "${wan}" ip6 saddr {
@@ -407,15 +487,40 @@ _: {
                   ${fwCfg.extraInputRulesV6}
 
                   # WAN input rules - ICMPv6 required for IPv6 operation
-                  # Rate limit echo-request to prevent ping floods
-                  iifname "${wan}" icmpv6 type echo-request limit rate 10/second burst 50 packets accept comment "ICMPv6 ping rate limited"
+                  # Per-/64-prefix rate limit echo-request to prevent ping floods
+                  ${
+                    if fwCfg.rateLimiting.enable then
+                      ''iifname "${wan}" icmpv6 type echo-request update @wan_icmpv6 { ip6 saddr & ffff:ffff:ffff:ffff:: limit rate ${fwCfg.rateLimiting.icmpv6Rate} burst ${toString fwCfg.rateLimiting.icmpv6Burst} packets } accept comment "ICMPv6 ping per-prefix rate limited"''
+                    else
+                      ''iifname "${wan}" icmpv6 type echo-request accept comment "ICMPv6 ping"''
+                  }
                   iifname "${wan}" icmpv6 type {
                     destination-unreachable, packet-too-big, time-exceeded,
                     parameter-problem, nd-neighbor-solicit, nd-neighbor-advert
                   } accept comment "ICMPv6 required for IPv6"
                   # Router advertisements from ISP (needed for SLAAC/DHCP-PD)
                   iifname "${wan}" icmpv6 type nd-router-advert accept comment "ISP router advertisements"
-                  iifname "${wan}" udp dport dhcpv6-client udp sport dhcpv6-server accept comment "DHCPv6 from ISP"
+                  iifname "${wan}" ip6 daddr fe80::/64 udp sport 547 udp dport 546 accept comment "DHCPv6 from ISP"
+                  ${lib.optionalString (fwCfg.openPorts.tcp != [ ]) (
+                    if fwCfg.rateLimiting.enable then
+                      ''iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } update @wan_new_tcp { ip6 saddr & ffff:ffff:ffff:ffff:: limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets } jump accept_wan_tcp comment "Open TCP ports (per-prefix rate limited)"''
+                    else
+                      ''iifname "${wan}" ct state new tcp dport { ${tcpPortsStr} } jump accept_wan_tcp comment "Open TCP ports"''
+                  )}
+                  ${lib.optionalString (fwCfg.openPorts.udp != [ ]) (
+                    if fwCfg.rateLimiting.enable then
+                      ''iifname "${wan}" ct state new udp dport { ${udpPortsStr} } update @wan_new_udp { ip6 saddr & ffff:ffff:ffff:ffff:: limit rate ${fwCfg.rateLimiting.newConnRate} burst ${toString fwCfg.rateLimiting.newConnBurst} packets } jump accept_wan_udp comment "Open UDP ports (per-prefix rate limited)"''
+                    else
+                      ''iifname "${wan}" ct state new udp dport { ${udpPortsStr} } jump accept_wan_udp comment "Open UDP ports"''
+                  )}
+
+                  # Hairpin: accept WAN-facing ports from LAN
+                  ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.tcp != [ ]) ''
+                    iifname "${lanIface}" tcp dport { ${tcpPortsStr} } accept comment "Hairpin: open TCP ports from LAN"
+                  ''}
+                  ${lib.optionalString (fwCfg.hairpinNat.enable && fwCfg.openPorts.udp != [ ]) ''
+                    iifname "${lanIface}" udp dport { ${udpPortsStr} } accept comment "Hairpin: open UDP ports from LAN"
+                  ''}
 
                   # RA Guard: Block rogue router advertisements from LAN clients (input chain)
                   # Note: This only protects the router — see raGuard bridge table for LAN client protection
@@ -424,7 +529,7 @@ _: {
                   # WAN drop accounting (see filterV4 for rationale)
                   iifname "${wan}" counter name wan_input_drop comment "Count WAN input drops"
                   iifname "${wan}" limit rate 30/minute burst 20 packets log prefix "nft6-drop-wan: " level info
-                  # L1: Log dropped packets for forensics (rate limited)
+                  # Log dropped packets for forensics (rate limited)
                   iifname != "${wan}" limit rate 5/minute burst 10 packets log prefix "nft6-drop-input: " level info
                 }
 
@@ -447,7 +552,7 @@ _: {
                     iifname @trusted_ifaces oifname @trusted_ifaces accept comment "VPN peer-to-peer"
                     iifname @trusted_ifaces oifname "${wan}" accept''}
 
-                  # L1: Log dropped packets for forensics (rate limited)
+                  # Log dropped packets for forensics (rate limited)
                   limit rate 5/minute burst 10 packets log prefix "nft6-drop-forward: " level info
                 }
               '';
@@ -499,7 +604,7 @@ _: {
                 '';
               };
 
-            # H1: Bridge-level RA Guard — blocks rogue Router Advertisements at L2
+            # Bridge-level RA Guard: blocks rogue Router Advertisements at L2
             # The input chain RA Guard only protects the router itself. Rogue RAs are
             # multicast at L2 on the bridge, reaching all LAN hosts directly.
             # This bridge-family table drops RAs forwarded between bridge ports.
@@ -547,7 +652,7 @@ _: {
         boot.kernel.sysctl = {
           # nf_conntrack_max is set in network.nix - don't duplicate
           "net.netfilter.nf_conntrack_tcp_timeout_established" = lib.mkDefault 7200;
-          # M3: Disable bridge-nf-call — forces all bridged L2 frames through netfilter,
+          # Disable bridge-nf-call: forces all bridged L2 frames through netfilter,
           # causing performance overhead and unexpected interactions with nftables rules.
           # Only enable if running containers (Docker/podman) that need it.
           "net.bridge.bridge-nf-call-iptables" = lib.mkDefault 0;

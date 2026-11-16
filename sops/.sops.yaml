@@ -1,26 +1,15 @@
-# SOPS configuration for traditional secrets.yaml
-# For clan-managed vars, see vars/ directory (managed by clan CLI)
-#
-# Users: Admin keys for decrypting/editing secrets
-# Hosts: Machine keys for runtime decryption (clan-generated keys for clan-managed machines)
-# Keys: Hardware security keys
+# One sops file per host (admins + that host) plus the desktop user vault.
+# Users: admin keys for editing. Hosts: age keys from each host's SSH key. Keys: hardware keys.
 keys:
   # Admin user keys (for editing secrets from workstations)
   - &users "":
-      - &pperanich age1ndzu8uesepn26g0dehpgwldrgawfzzdh6m9efepgf8nfugdlvp6sd3f6ja
-      - &pperanich-pperanich-ml1 age10djyw5sv5m367smak0nav6scdp9mr9sncs7dlv6f7z2xkf4w7efszmhqww
-  # Machine keys (clan-generated for clan-managed machines)
+      - &pperanich-admin age1gm7hnljkwdn0uprqwzjxawj0l4ytgzrgjlc6qnw0gnws7zr424rsht6h2v
+  # Host keys, derived from /etc/ssh/ssh_host_ed25519_key
   - &hosts "":
-      # Darwin machines (clan-managed)
-      - &pp-ml1 age1cmmf27yjx3qchljpzsnwpftlshy8hjmp97j2fx8gl5h2n89yjfpsfju3xa
       - &pp-ml1-ssh age1d0jvrgrtlecphg8s2svaly2ql9hlpp60qhfldeznkj8q46ggmqjq67ptcx
-      # NixOS machines (clan-managed)
-      - &pp-ld1 age12fefxmnpw4e63u8nj86atqen28dawdmh02vjsn23akxrqp5xzfastya7v7
-      - &pp-ll1 age1xdlr9shxgf4vrsz9uh2t90pxw5xq8pym487v2gz2mcd02yw5up4sxm0m2m
-      - &pp-nas1 age1d5ayyw97mevjemgaka6ag4ajep9pppr2h06stfu3pngkur0y95uqnanfhc
-      - &pp-router1 age1amd39n0ruhd220mz3qad4y4ngsct25c00r6jad4e448z2q68qqlq7ma8ka
-      - &pp-rpi1 age14sqpltns04kd53hslj23wuqrxzxzc5g38l8u9vrwlz7z3wteaepqcl8hcr
-      - &pp-wsl1 age14skf7pejrvwnepqyq5zyz3f38zlex3f0gtufmhg8vml6g8ze6cnq84zc70
+      - &pp-nas1 age1vk22wnz747vrmyeft860uyazt7xa0zpj3ku0xsvn8lgn7rw7hqcqedwzd2
+      - &pp-router1 age1netgxhgrtxzn6dzxqdvfxdkhc53wcehtf47yyh5p3tedgllqgfrs5kdm73
+      - &pp-wsl1 age10fkqfduhmmg4z0evm6rery5eggsamtyjkgtsrmrz63d8jycrzqnssnxyv7
   # Hardware security keys
   - &keys "":
       - &yubikey0-slot1 age1yubikey1qdxm3n7yv2d065hewfmy3u5xk2n62udd8n992azmkzl9yp7mel3tgyzrzrv
@@ -29,24 +18,53 @@ creation_rules:
   - path_regex: cloudflared-tunnel\.json$
     key_groups:
       - age:
-          - *pperanich
-          - *pperanich-pperanich-ml1
+          - *pperanich-admin
           - *yubikey0-slot1
           - *pp-router1
-  # Main secrets file (all machines)
-  - path_regex: secrets.yaml$
+  # Per-machine compartments (one file per host)
+  - path_regex: (^|sops/)machines/pp-router1\.yaml$
     key_groups:
       - age:
-          # Admin users (can edit secrets)
-          - *pperanich
-          - *pperanich-pperanich-ml1
+          - *pperanich-admin
           - *yubikey0-slot1
-          # Darwin machines
-          - *pp-ml1
-          # NixOS machines
-          - *pp-ld1
-          - *pp-ll1
-          - *pp-nas1
           - *pp-router1
-          - *pp-rpi1
+  - path_regex: (^|sops/)machines/pp-nas1\.yaml$
+    key_groups:
+      - age:
+          - *pperanich-admin
+          - *yubikey0-slot1
+          - *pp-nas1
+  - path_regex: (^|sops/)machines/pp-rpi1\.yaml$
+    key_groups:
+      - age:
+          - *pperanich-admin
+          - *yubikey0-slot1
+  - path_regex: (^|sops/)machines/pp-ll1\.yaml$
+    key_groups:
+      - age:
+          - *pperanich-admin
+          - *yubikey0-slot1
+  - path_regex: (^|sops/)machines/pp-ld1\.yaml$
+    key_groups:
+      - age:
+          - *pperanich-admin
+          - *yubikey0-slot1
+  - path_regex: (^|sops/)machines/pp-ml1\.yaml$
+    key_groups:
+      - age:
+          - *pperanich-admin
+          - *yubikey0-slot1
+          - *pp-ml1-ssh
+  - path_regex: (^|sops/)machines/pp-wsl1\.yaml$
+    key_groups:
+      - age:
+          - *pperanich-admin
+          - *yubikey0-slot1
           - *pp-wsl1
+  # Physical desktop user secrets only (excludes servers and WSL)
+  - path_regex: (^|sops/)users/pperanich-desktop\.yaml$
+    key_groups:
+      - age:
+          - *pperanich-admin
+          - *yubikey0-slot1
+          - *pp-ml1-ssh

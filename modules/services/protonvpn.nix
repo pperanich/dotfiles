@@ -3,13 +3,9 @@
 # Requires a WireGuard config from the ProtonVPN portal:
 #   Settings → WireGuard → Create certificate/configuration
 #
-# During `clan vars generate <hostname>`, you'll be prompted for
-# the private key from the generated config. All other values
+# The private key from the generated config comes from a file
+# (interface.privateKeyFile, e.g. a sops secret). All other values
 # (server IP, public key, local IP) are set as module options.
-#
-# Does NOT conflict with the pp-wg mesh (which uses networking.wireguard.interfaces
-# with systemd-networkd; host mode uses wg-quick, namespace mode uses raw wg/ip
-# in a separate network namespace).
 #
 # ## Host mode (default) — all traffic through VPN
 #
@@ -46,12 +42,7 @@ _: {
     }:
     let
       cfg = config.my.protonvpn;
-      useClanVars = cfg.interface.privateKeyFile == null;
-      keyFile =
-        if useClanVars then
-          config.clan.core.vars.generators.protonvpn.files.private-key.path
-        else
-          cfg.interface.privateKeyFile;
+      keyFile = cfg.interface.privateKeyFile;
       ifName = cfg.interface.name;
       nsName = cfg.namespace.name;
 
@@ -129,12 +120,15 @@ _: {
         # Allow traffic to VPN endpoint (WireGuard handshake only)
         ${iptables} -A ${chainName} -d ${cfg.endpoint.ip}/32 -p udp --dport ${toString cfg.endpoint.port} -j ACCEPT
 
-        # Allow RFC1918 IPv4 (LAN + pp-wg mesh)
+        # Allow RFC1918 IPv4 (LAN)
         ${iptables} -A ${chainName} -d 10.0.0.0/8 -j ACCEPT
         ${iptables} -A ${chainName} -d 172.16.0.0/12 -j ACCEPT
         ${iptables} -A ${chainName} -d 192.168.0.0/16 -j ACCEPT
 
-        # Allow ULA IPv6 (pp-wg mesh uses fdb4::/16 prefix)
+        # Allow CGNAT IPv4 (Tailscale / Headscale mesh overlay uses 100.64.0.0/10)
+        ${iptables} -A ${chainName} -d 100.64.0.0/10 -j ACCEPT
+
+        # Allow ULA IPv6 (covers LAN ULA and Headscale ULA fd7a:115c:a1e0::/48)
         ${ip6tables} -A ${chainName} -d fc00::/7 -j ACCEPT
 
         # Allow link-local IPv6 (neighbor discovery)
@@ -214,17 +208,6 @@ _: {
 
       # --- Config blocks ---
       sharedConfig = {
-        # Clan vars: prompt for private key during `clan vars generate`
-        clan.core.vars.generators.protonvpn = lib.mkIf useClanVars {
-          files.private-key = { };
-          prompts.private-key = {
-            description = "ProtonVPN WireGuard private key (Settings → WireGuard → Create config)";
-            type = "hidden";
-            persist = true;
-          };
-          script = "cp \"$prompts/private-key\" \"$out/private-key\"";
-        };
-
         # Don't block boot waiting for the VPN interface
         systemd.network.wait-online.ignoredInterfaces = [ ifName ];
       };
@@ -232,7 +215,7 @@ _: {
       hostModeConfig = lib.mkIf (cfg.mode == "host") {
         # Prevent systemd-networkd from removing wg-quick routing rules.
         # wg-quick creates `ip rule` entries for policy routing. Without this,
-        # systemd-networkd (used by the pp-wg mesh) may garbage-collect them.
+        # systemd-networkd may garbage-collect them.
         systemd = {
           network.config.networkConfig.ManageForeignRoutingPolicyRules = false;
 
@@ -598,7 +581,7 @@ _: {
               Suitable when the entire machine should be behind ProtonVPN.
             - "namespace": The VPN runs inside a network namespace using raw wg/ip commands.
               Only services explicitly confined to the namespace use the VPN. Host traffic
-              is unaffected. See docs/wireguard-split-tunneling.md for details.
+              is unaffected.
           '';
         };
 
@@ -638,11 +621,8 @@ _: {
             default = null;
             example = "/run/secrets/protonvpn-key";
             description = ''
-              Path to the WireGuard private key file. When null (default),
-              the key is managed via clan vars — you'll be prompted during
-              `clan vars generate <hostname>`.
-
-              Set this to use sops-nix or another secret manager instead.
+              Path to the WireGuard private key file, e.g. a sops-nix secret.
+              Required when the module is enabled.
             '';
           };
         };
@@ -697,8 +677,9 @@ _: {
               restores normal routing.
             - "persistent": A dedicated systemd service installs an iptables chain
               that survives VPN restarts. Traffic is blocked even between VPN stop
-              and start. LAN (RFC1918), ULA IPv6 (pp-wg mesh), loopback, and the
-              VPN endpoint are always allowed.
+              and start. LAN (RFC1918), Tailscale/Headscale IPv4 overlay
+              (100.64.0.0/10), ULA IPv6 (LAN + Headscale fd7a:115c:a1e0::/48),
+              loopback, and the VPN endpoint are always allowed.
 
             Only applies in host mode. For namespace mode, services are inherently
             isolated — they can only reach the network through the VPN.
@@ -759,6 +740,12 @@ _: {
           # --- Assertions ---
           {
             assertions = [
+              {
+                assertion = cfg.interface.privateKeyFile != null;
+                message = ''
+                  my.protonvpn.interface.privateKeyFile must be set (e.g. via sops.secrets.<name>.path).
+                '';
+              }
               {
                 assertion = cfg.mode == "host" || cfg.killSwitch == "none";
                 message = ''

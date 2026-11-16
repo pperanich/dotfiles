@@ -27,8 +27,7 @@ _: {
 
           # Terminal Multiplexers
           tmux # Terminal multiplexer
-          tmux-sessionizer # The fastest way to manage projects as tmux sessions
-          tma # Agent state monitor, picker, jump, and stamping for tmux
+          tmux-sessionizer # Projects as tmux sessions (nixpkgs' build, which is cached)
           # zellij # A terminal workspace with batteries included
 
           # Version Control
@@ -124,7 +123,6 @@ _: {
           reattach-to-user-namespace # A wrapper that provides access to the Mac OS X pasteboard service
           pam-reattach # Reattach to the user's GUI session on macOS during authentication (for Touch ID support in tmux)
           # xquartz  # Version of the X.Org X Window System that runs on macOS
-          glibtool # GNU Libtool, a generic library support script. Needed to compile libvterm on Mac
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           # ghostty # Fast, native, feature-rich terminal emulator pushing modern features

@@ -88,6 +88,13 @@ _: {
           ];
         })
         {
+          assertions = [
+            {
+              assertion = cfg.basicAuthHashSecret != null;
+              message = "my.radicale.basicAuthHashSecret is unset; Radicale trusts X-Remote-User and requires proxy authentication.";
+            }
+          ];
+
           # PrivateUsers remaps UIDs inside the namespace, making external paths
           # (like /tank on ZFS) appear owned by nobody. Disable it so Radicale
           # can write to its data directory. Other sandboxing remains in place.

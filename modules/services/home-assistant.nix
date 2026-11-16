@@ -15,6 +15,12 @@ _: {
     in
     {
       options.my.homeAssistant = {
+        address = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Address for the Home Assistant web interface to bind to";
+        };
+
         port = lib.mkOption {
           type = lib.types.port;
           default = 8123;
@@ -29,8 +35,14 @@ _: {
 
         trustedProxies = lib.mkOption {
           type = lib.types.listOf lib.types.str;
-          default = [ ];
-          example = [ "10.0.0.1" ];
+          default = [
+            "127.0.0.1"
+            "::1"
+          ];
+          example = [
+            "127.0.0.1"
+            "::1"
+          ];
           description = "Reverse proxies allowed to set X-Forwarded-For";
         };
 
@@ -48,6 +60,9 @@ _: {
       };
 
       config = {
+        # nixpkgs dropped services.home-assistant.openFirewall (it cannot know the port any more).
+        networking.firewall.allowedTCPPorts = lib.optional cfg.openFirewall cfg.port;
+
         # The !include'd files must exist or HA boots into recovery mode
         systemd.tmpfiles.rules = [
           "f ${cfg.configDir}/automations.yaml 0644 hass hass -"
@@ -57,7 +72,7 @@ _: {
 
         services.home-assistant = {
           enable = true;
-          inherit (cfg) configDir openFirewall;
+          inherit (cfg) configDir;
           extraComponents = [
             "default_config"
             "met"
@@ -69,6 +84,7 @@ _: {
           config = {
             default_config = { };
             http = {
+              server_host = cfg.address;
               server_port = cfg.port;
               trusted_proxies = cfg.trustedProxies;
               use_x_forwarded_for = cfg.trustedProxies != [ ];

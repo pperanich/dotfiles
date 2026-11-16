@@ -53,38 +53,38 @@ The default has one direct input. Optional deploy-rs adds a second input while k
 
 ## Secrets
 
-The private repo owns its own `sops/secrets.yaml`, encrypted to your admin key and to each host's age key (derived from its SSH host key with `ssh-to-age`). Three settings in the machine file make that work, and all three override upstream defaults:
+The private repo owns its own `sops/secrets.yaml`, encrypted to your admin key and to each host's age key (derived from its SSH host key with `ssh-to-age`). Three settings in the machine file make that work:
 
-| setting                   | why                                                                   |
-| ------------------------- | --------------------------------------------------------------------- |
-| `sops.defaultSopsFile`    | otherwise the host reads this repo's secrets, which it cannot decrypt |
-| `sops.age.keyFile = null` | our default is `/var/lib/sops-nix/key.txt`, which clan provisions     |
-| `sops.age.sshKeyPaths`    | what replaces it, with no clan in the picture                         |
+| setting                   | why                                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `sops.defaultSopsFile`    | upstream points a host at `sops/machines/<host>.yaml` in this repo, which a private host cannot decrypt |
+| `sops.age.keyFile = null` | upstream already sets this: the host decrypts with its SSH host key alone                               |
+| `sops.age.sshKeyPaths`    | the host key sops reads; upstream already sets `/etc/ssh/ssh_host_ed25519_key`                          |
 
-`modules/system/sops.nix` sets the first two with `lib.mkOverride 900` specifically so a plain assignment downstream wins: `mkDefault` would tie with clan-core's own definition and error out. If a future edit makes either a plain assignment, every private machine breaks with `has conflicting definition values`.
+Only `defaultSopsFile` has to change. `modules/system/sops.nix` sets it, `keyFile` and `validateSopsFiles` with `lib.mkOverride 900` specifically so a plain assignment downstream wins. If a future edit makes any of them a plain assignment upstream, every private machine that assigns it breaks with `has conflicting definition values`.
 
 Every module a private machine imports brings its declared keys with it, and `validateSopsFiles = true` means a key missing from the private `secrets.yaml` fails the build rather than the activation:
 
 ```
-sops-install-secrets: manifest is not valid: secret private_keys/pperanich in
-/nix/store/…-secrets.yaml is not valid: the key 'private_keys' cannot be found
+sops-install-secrets: manifest is not valid: secret passwords/example in
+/nix/store/…-secrets.yaml is not valid: the key 'passwords' cannot be found
 ```
 
 The homeManager `sops` module declares no secrets itself. The private template offers an optional local `apiKeys` replacement that discovers names under its own `api_keys` mapping instead of requiring upstream's fixed provider list. Keep secret declarations separate from shared SOPS wiring.
 
-System decryption must use the persistent host key, including on macOS. The user key is itself installed by SOPS and cannot bootstrap system decryption after reboot clears runtime secrets. Enable Remote Login and create the host keys before the first Darwin activation; encrypt to both the host and user/admin recipients.
+System decryption must use the persistent host key, including on macOS: enable Remote Login and create the host keys before the first Darwin activation. Home Manager decrypts with the user's own `~/.ssh/id_ed25519`, which never goes into `secrets.yaml`, so encrypt to each host's recipient and to the user key's recipient on every machine that user logs in to.
 
 ## The user module is copied, not imported
 
-`modules/users/pperanich.nix` here hardcodes this repo's sops file and leaves account creation (`isNormalUser`, `hashedPasswordFile`) to clan's `users` service. A private machine has neither, so the template ships its own `modules/users/<user>.nix` that creates the account properly, and composes the **same** upstream homeManager modules in `home-profiles/<user>/`. Keep that list matching `home-profiles/pperanich/` and a private host feels identical to log into.
+`modules/users/pperanich.nix` here creates the `pperanich` account, authorizes the login keys in `lib/default.nix` (`sshKeys`) and imports `home-profiles/pperanich`. A private machine wants its own user and keys, so the template ships its own `modules/users/<user>.nix`, and composes the **same** upstream homeManager modules in `home-profiles/<user>/`. Keep that list matching `home-profiles/pperanich/` and a private host feels identical to log into.
 
 One non-obvious line in that module: `extraSpecialArgs = { inherit pkgs; … }`. home-manager otherwise builds its own nixpkgs without our overlays, and the first upstream home module that wants an overlaid package fails with `attribute 'sops-install-secrets' missing`.
 
 ## What this costs
 
-These hosts are not in this repo's clan inventory, so they cannot be a peer in the `pp-wg` wireguard instance, a borgbackup client of `pp-router1`, a syncthing peer, or a holder of the clan's sshd CA certificates. Anything of that kind has to be configured by hand in the private repo. `protonvpn` references `clan.core` directly and will not evaluate outside a clan at all.
+These hosts are not in this repo's `machines/`, so this repo knows nothing about them. They have no deploy-rs node here, no entry in `lib/ssh-host-keys.nix` (so the fleet does not pin their host keys), and no recipient in `sops/.sops.yaml`. They are not Headscale nodes until you enroll them, and they are not a borg client of `pp-router1` unless the private repo configures it. Anything of that kind has to be set up by hand in the private repo.
 
-If a private machine genuinely needs the mesh, the only arrangement that keeps one fleet is to invert the repos: move the inventory and `vars/`+`sops/` into the private repo, and let this one keep modules, the templates, and no machines. One clan has exactly one `directory`, and that directory is where clan reads `sops/secrets`, `sops/groups` and in-repo vars, so there is no split where public vars stay public and private vars stay private inside one clan.
+A private machine can join the tailnet by importing the upstream `tailscale` module and enrolling with a tagged pre-auth key, as in [Adding New Machines](adding-new-machines.md).
 
 ## Switching
 

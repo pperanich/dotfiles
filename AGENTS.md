@@ -7,7 +7,7 @@ Guidelines for AI agents working in this Nix-based dotfiles repository.
 ### Primary Commands
 
 ```bash
-# Enter development shell (includes formatters, linters, clan-cli)
+# Enter development shell (treefmt, sops, ssh-to-age, age-plugin-yubikey, deploy-rs, nh, home-manager)
 nix develop
 
 # Format all files (Nix, JSON, YAML, Shell, Lua)
@@ -16,44 +16,53 @@ nix fmt
 # Check flake for errors
 nix flake check
 
-# Update all flake inputs
-nix flake update
+# Update all flake inputs except the pinned ones (never a bare `nix flake update`)
+bin/update-inputs.sh
 
-# Update specific input
-nix flake update nixpkgs
+# Update specific inputs
+bin/update-inputs.sh nixpkgs home-manager
+
+# Before deploying an update: what each host would compile instead of download
+bin/build-report.sh
 ```
+
+### Flake inputs
+
+- Every host follows `nixpkgs` on `nixpkgs-unstable` ([decision 0005](docs/decisions/0005-nixpkgs-unstable-for-every-host.md)); home-manager, nix-darwin and nixos-wsl follow their main branches. Run `bin/build-report.sh` before deploying an update, and snapshot the NAS before one that upgrades a service with a database.
+- Inputs that provide modules or `lib` (home-manager, nix-darwin, sops-nix, disko, deploy-rs) follow `nixpkgs`. Package inputs with their own binary cache (llm-agents) do not, or their cache never matches. Other package inputs follow `nixpkgs`; they compile either way.
+- Pinned in `bin/update-inputs.sh`: `nix-apple-fonts` (a bump rebuilds every font) and `nixpkgs-mongodb` (UniFi's MongoDB compiles for hours on the router). The personal site keeps its own nixpkgs, whose flake still evaluates `x86_64-darwin`.
 
 ### System Build Commands
 
 ```bash
-# NixOS system rebuild
-sudo nixos-rebuild switch --flake .#<hostname>
+# Darwin (pp-ml1 has no sshd, so it always switches locally)
+nh darwin switch . -H pp-ml1
 
-# Darwin (macOS) system rebuild
-darwin-rebuild switch --flake .#<hostname>
+# NixOS hosts: deploy-rs builds on the target, activates, and rolls back if
+# it cannot reconnect (needs the dev shell; asks for the sudo password once)
+deploy .#pp-wsl1                                  # target pp-wsl1.pp-ts
+deploy --hostname pp-nas1.pp-ts .#pp-nas1             # tailnet names: Nix-launched ssh on
+deploy --hostname pp-router1.pp-ts .#pp-router1       # the Mac cannot resolve home.arpa
 
-# Home-manager standalone
-home-manager switch --flake .#<username>
+# Build or dry-run without activating
+deploy --dry-activate --hostname pp-router1.pp-ts .#pp-router1
+nh darwin build . -H pp-ml1
 
-# Via clan-core (preferred for multi-machine)
-clan machines update <hostname>
-clan machines list
-clan machines show <hostname>
-
-# Clan vars (machine secrets)
-clan vars generate <hostname>
-clan vars upload <hostname>
-clan vars list <hostname>
+# Evaluation checks (Linux closures build on their targets, not on the Mac)
+nix flake check --no-build
+nix build --no-link .#checks.aarch64-darwin.{treefmt,hosts-eval,deploy-nodes-eval,backup-module-eval}
 ```
+
+Deploy nodes are defined in `modules/flake-parts/deploy.nix`. `pp-ld1`, `pp-ll1` and `pp-rpi1` are powered off until they are re-imaged, so they have no node; their configurations still evaluate.
 
 ### Hostnames Reference
 
-- `pp-ml1` - Darwin laptop (Apple Silicon)
-- `pp-ll1` - NixOS laptop (MacBook w/ T2)
-- `pp-ld1` - NixOS desktop
+- `pp-ml1` - Darwin laptop (Apple Silicon), the only admin machine
+- `pp-ll1` - NixOS laptop (MacBook w/ T2), powered off until re-imaged
+- `pp-ld1` - NixOS desktop, powered off until re-imaged
 - `pp-nas1` - NixOS NAS (BeeLink MeMini)
-- `pp-router1` - NixOS router
-- `pp-rpi1` - NixOS Raspberry Pi
+- `pp-router1` - NixOS router, also runs Headscale
+- `pp-rpi1` - NixOS Raspberry Pi, powered off until re-imaged
 - `pp-wsl1` - WSL instance
 
 ## Architecture Overview
@@ -62,7 +71,10 @@ This is a **dendritic Nix flake** using:
 
 - **flake-parts**: Composable flake architecture
 - **import-tree**: Automatic module discovery (all `.nix` files in `/modules` auto-imported)
-- **clan-core**: Infrastructure-as-code machine deployment
+- **`modules/flake-parts/hosts.nix`**: Builds every `machines/<host>/configuration.nix` as a `nixosConfigurations` or `darwinConfigurations` entry; the class comes from the `nixpkgs.hostPlatform` that file declares
+- **deploy-rs**: Remote NixOS deployment with rollback (`modules/flake-parts/deploy.nix`)
+- **sops-nix**: One encrypted file per host, decrypted with the host's SSH key
+- **Headscale and Tailscale**: Remote access. Headscale runs on `pp-router1`, every host runs a Tailscale client, and tailnet names are `<host>.pp-ts`. `home.arpa` names resolve on the LAN only
 - **GNU Stow**: Dotfiles deployment (runs automatically as a home-manager activation script)
 
 ### Module Export Pattern
@@ -133,28 +145,29 @@ imports = with modules.darwin; [ base rust ];
 - **Export names**: camelCase (e.g., `cloudflareDns`, `cloudflareTunnel`, `routerFirewall`)
 - **Functions**: camelCase in lib (e.g., `mkHomeConfigurations`, `relativeToRoot`)
 - **Custom options**: Use `my.*` namespace (e.g., `my.router.*`, `my.jellyfin.*`, `my.pperanich.desktop`)
-- **Upstream-style modules**: Use `services.*` only for modules structured like upstream NixOS modules (currently only `kimaki`)
+- **Upstream-style modules**: Use `services.*` only for modules structured like upstream NixOS modules (none at present)
 
 ### Directory Structure
 
 ```
 /modules/           # Auto-imported modules (dendritic pattern)
-  flake-parts/      # Flake infrastructure (clan, nixpkgs, fmt, shell)
+  flake-parts/      # Flake infrastructure (hosts, deploy, nixpkgs, fmt, shell)
   desktop/          # Desktop apps (fonts, applications, sketchybar)
   router/           # NixOS router framework (firewall, DHCP, DNS, VLANs)
   services/         # Self-hosted services (immich, nextcloud, vaultwarden, etc.)
   shell/            # Shell environment (nvim, opencode, rust, tools)
-  system/           # Core system configs (base, sops)
+  system/           # Core system configs (base, sops, tailscale)
   users/            # User account modules (pperanich)
 /machines/          # Host-specific configurations
 /home-profiles/     # User environment compositions
 /home/              # Raw dotfiles (symlinked via stow activation)
-/docs/              # Guides (adding machines, troubleshooting)
+/docs/              # Guides (adding machines, secrets, services)
 /lib/               # Custom library functions (lib.my.*)
 /overlays/          # Nixpkgs overlays
 /pkgs/              # Custom package definitions
-/sops/              # Encrypted secrets
-/vars/              # Non-secret variables
+/bin/               # Install and helper scripts
+/templates/         # Flake templates (dendritic, private)
+/sops/              # Encrypted secrets (machines/<host>.yaml, users/, cloudflared-tunnel.json, .sops.yaml)
 ```
 
 ### Error Handling
@@ -171,6 +184,19 @@ imports = with modules.darwin; [ base rust ];
 3. Provide sensible defaults
 4. Use `lib.my.relativeToRoot` for path references
 5. Minimize cross-module dependencies
+
+### Design Rules
+
+These apply to new and rewritten code. Existing code is brought into line when it is next touched.
+
+1. The owning module registers itself: a service declares its own SQLite path, alert, insecure-package permit and mount dependency.
+2. No host names under `modules/`. Options are named by role; anything about one machine lives in `machines/`.
+3. No `config.x or false` across modules. If two modules need the same fact, one declares an option for it.
+4. Programs over about 30 lines live in `pkgs/` or `bin/`, not in Nix strings.
+5. Comments: two lines at most, no finding or decision codes, no history.
+6. Every transition flag names the step that removes it.
+7. Anything that moves data or repartitions is rehearsed on a throwaway target before review.
+8. A departure from an agreed plan gets a short decision record in the same change.
 
 ### Secrets in Modules
 
@@ -198,7 +224,7 @@ config = {
   to be set — a missing secret should be a loud assertion, not a silent skip.
 - `restartUnits` on every template, or a rotated secret sits unused until reboot.
 - `sops.validateSopsFiles = true` (set in `modules/system/sops.nix`) makes a key
-  missing from `sops/secrets.yaml` a build failure rather than an activation one.
+  missing from the host's sops file a build failure rather than an activation one.
   Key names are plaintext in a sops file, so the check decrypts nothing.
 - When a machine must reference a var name (e.g. inside a Caddy vhost), export
   it from the module as a read-only option. Note `{$''${var}}` inside an
@@ -226,22 +252,25 @@ Applied globally to nixpkgs. Use for:
 - Patch application
 - Package modifications
 
-### Secrets (Hybrid Approach)
+### Secrets
 
-Two systems handle secrets with different strengths:
+All secrets are sops-nix secrets, encrypted with age. There is one file per host and no shared file:
 
-- **Clan vars** — Machine bootstrap secrets (age keypairs, SSH host keys, user passwords, wireguard keys). Generated and uploaded via clan CLI.
-- **sops-nix** — Application secrets (service passwords, API tokens). Encrypted in `sops/secrets.yaml`, decrypted at activation time using the machine's age key. Modules reference secrets via `sops.secrets.<name>.path`.
+- `sops/machines/<host>.yaml` for each host
+- `sops/users/pperanich-desktop.yaml` for the API keys home-manager reads on the admin workstation
+- `sops/cloudflared-tunnel.json` for the tunnel credential (admin recipients and `pp-router1`)
+
+Rules live in `sops/.sops.yaml`. Every file is encrypted to the admin age key, a YubiKey recipient, and that host's age key (derived from its SSH host key). A host decrypts with `/etc/ssh/ssh_host_ed25519_key` alone (`sops.age.keyFile = null`); home-manager decrypts with `~/.config/sops/age/keys.txt`. Modules reference secrets via `sops.secrets.<name>.path`.
 
 ```bash
-# Clan vars
-clan vars generate <hostname>       # Generate machine secrets
-clan vars upload <hostname>         # Upload secrets to machine
-clan vars list <hostname>           # List vars for machine
+# Edit a file (--config is needed outside the dev shell, which exports SOPS_CONFIG)
+sops --config sops/.sops.yaml sops/machines/<hostname>.yaml
 
-# sops-nix
-sops sops/secrets.yaml              # Edit secrets (requires age key)
+# After changing recipients in sops/.sops.yaml
+sops --config sops/.sops.yaml updatekeys sops/machines/<hostname>.yaml
 ```
+
+Encrypting to the YubiKey recipient needs `age-plugin-yubikey` on `PATH`. Encrypted files are excluded from treefmt in `modules/flake-parts/fmt.nix`; keep new ones under those globs. See [docs/secrets-and-key-management.md](docs/secrets-and-key-management.md).
 
 Never commit plaintext secrets.
 
@@ -252,6 +281,8 @@ Configured via git-hooks.nix:
 - `nix-fmt`: Auto-format on commit
 
 ## Common Pitfalls
+
+Fleet operations (sudo in a visible pane, secrets via the clipboard, snapshots before upgrades) and a table of known traps are in [docs/operations.md](docs/operations.md).
 
 1. **Module not found**: Check export path matches `flake.modules.<platform>.<name>`
 2. **Stow conflicts**: Check `/home` directory for file conflicts

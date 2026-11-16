@@ -1,5 +1,5 @@
-# Single owner of the Cloudflare API credentials shared by cf-dns, cf-tunnel,
-# cf-access and Caddy's DNS-01 solver.
+# Single owner of the Cloudflare API credentials shared by cf-dns, cf-tunnel
+# and Caddy's DNS-01 solver.
 #
 # The env var names live here and nowhere else: machines name the sops keys,
 # consumers read my.cloudflare.envFile. Nothing outside this file spells
@@ -8,7 +8,7 @@
 # Usage in machine config:
 #   my.cloudflare = {
 #     enable = true;
-#     accountIdSecret = "cloudflare-account-id";  # only cf-access needs it
+#     accountIdSecret = "cloudflare-account-id";  # cf tunnel sync-dns needs it
 #   };
 _: {
   flake.modules.nixos.cloudflareCredentials =
@@ -34,8 +34,9 @@ _: {
           type = lib.types.nullOr lib.types.str;
           default = null;
           description = ''
-            sops key holding the account ID. Only cf access needs it; leave null
-            when just DNS, tunnel or Caddy consume these credentials.
+            sops key holding the account ID. The tunnel DNS sync (cf tunnel
+            sync-dns) needs it; leave null when only DNS or Caddy consume these
+            credentials.
           '';
         };
 

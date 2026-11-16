@@ -95,7 +95,7 @@
       },
       "targets": [
         {
-          "expr": "up{job=~\"prometheus|grafana|loki|blocky|node|systemd|unbound|kea|wireguard\"}",
+          "expr": "up{job=~\"prometheus|grafana|loki|blocky|node|systemd|unbound|kea\"}",
           "legendFormat": "{{job}} {{instance}}",
           "refId": "A"
         }

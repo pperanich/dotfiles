@@ -1,0 +1,86 @@
+# Gitea Actions runner registered against the self-hosted Gitea. Docker labels
+# run jobs under the host's own dockerd; `native:host` runs them on the host.
+_: {
+  flake.modules.nixos.giteaRunner =
+    {
+      config,
+      lib,
+      pkgs,
+      utils,
+      ...
+    }:
+    let
+      cfg = config.my.giteaRunner;
+      instanceName = config.networking.hostName;
+      unitName = "gitea-runner-${utils.escapeSystemdPath instanceName}.service";
+    in
+    {
+      options.my.giteaRunner = {
+        enable = lib.mkEnableOption "Gitea Actions runner";
+
+        url = lib.mkOption {
+          type = lib.types.str;
+          example = "https://gitea.example.com";
+          description = "Base URL of the Gitea instance the runner registers with.";
+        };
+
+        tokenSecret = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "gitea-runner-token";
+          description = "sops key holding the runner registration token.";
+        };
+
+        labels = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [
+            "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest"
+            "ubuntu-24.04:docker://docker.gitea.com/runner-images:ubuntu-24.04"
+            "native:host"
+          ];
+          description = ''
+            Runner labels mapping `runs-on` values to an execution environment.
+            Changing them makes the runner re-register on next start.
+          '';
+        };
+      };
+
+      config = lib.mkIf cfg.enable {
+        assertions = [
+          {
+            assertion = cfg.tokenSecret != null;
+            message = "my.giteaRunner.tokenSecret is unset; the runner cannot register with Gitea.";
+          }
+        ];
+
+        sops = lib.mkIf (cfg.tokenSecret != null) {
+          secrets.${cfg.tokenSecret} = { };
+          templates."gitea-runner.env" = {
+            content = "TOKEN=${config.sops.placeholder.${cfg.tokenSecret}}";
+            restartUnits = [ unitName ];
+          };
+        };
+
+        virtualisation.docker.enable = true;
+
+        services.gitea-actions-runner.instances.${instanceName} = {
+          enable = true;
+          name = instanceName;
+          inherit (cfg) url labels;
+          tokenFile = lib.mkIf (cfg.tokenSecret != null) config.sops.templates."gitea-runner.env".path;
+          # Upstream defaults plus nix, so `native:host` jobs can run `nix build`.
+          hostPackages = with pkgs; [
+            bash
+            coreutils
+            curl
+            gawk
+            gitMinimal
+            gnused
+            nix
+            nodejs
+            wget
+          ];
+        };
+      };
+    };
+}

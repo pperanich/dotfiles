@@ -15,6 +15,7 @@ buildGoModule {
       ./dns.go
       ./tunnel.go
       ./share.go
+      ./share_test.go
       ./access.go
     ];
   };

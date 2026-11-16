@@ -1,6 +1,6 @@
 ---
 description: Decompose a design or request into a wave-grouped, validated task plan for /dev:execute
-argument-hint: '<design-doc path | issue ref | description>'
+argument-hint: "<design-doc path | issue ref | description>"
 ---
 
 # Plan Writer
@@ -38,18 +38,22 @@ Source: <design doc path, issue URL, or "conversation">
 Date: <date>
 
 ## Goal
+
 Two or three sentences: the observable end state.
 
 ## Conventions
+
 Project commands the executors must use (commit, lint, test, gate), with exact invocations.
 
 ## Waves
 
 ### Wave 1: <name>
+
 Depends on: none
-Parallel: yes|no   (parallel means the wave's batches run concurrently)
+Parallel: yes|no (parallel means the wave's batches run concurrently)
 
 #### Batch 1a
+
 Realm: <the subsystem or area these tasks share>
 Model: opus
 
@@ -62,13 +66,16 @@ Model: opus
   - ...
 
 ### Wave 2: <name>
+
 Depends on: Wave 1
 ...
 
 ## Acceptance
+
 The end-to-end checks that prove the goal, beyond per-task validation. Runnable commands or concrete manual steps.
 
 ## Deviation log
+
 (empty; executors append here)
 ```
 

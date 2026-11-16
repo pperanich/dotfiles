@@ -187,6 +187,25 @@ _: {
         my.router._internal = {
           dhcpStart = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.start}";
           dhcpEnd = "${cfg.lan.subnet}.${toString cfg.lan.dhcpRange.end}";
+          staticHostReservations =
+            (map (m: {
+              hostname = lib.toLower m.name;
+              ip = "${cfg.lan.subnet}.${toString m.ip}";
+            }) cfg.machines)
+            ++ (
+              if cfg.networks.enable or false then
+                lib.concatLists (
+                  lib.mapAttrsToList (
+                    _: seg:
+                    map (r: {
+                      hostname = lib.toLower r.hostname;
+                      ip = "${seg.subnet}.${toString r.ip}";
+                    }) seg.reservations
+                  ) cfg.networks.segments
+                )
+              else
+                [ ]
+            );
         };
 
         # Build-time warnings for security-sensitive configurations
@@ -216,7 +235,7 @@ _: {
             assertion = builtins.all (m: m.ip != 1) cfg.machines;
             message = "router: Machine IP .1 is reserved for the router";
           }
-          # H2: Prevent duplicate port forward collisions (same port+protocol across machines)
+          # Prevent duplicate port forward collisions (same port+protocol across machines)
           {
             assertion =
               let
@@ -227,7 +246,7 @@ _: {
               allPorts == lib.unique allPorts;
             message = "router: Duplicate port forwards detected — each (port, protocol) pair must be unique across all machines";
           }
-          # H2: Prevent duplicate machine IPs
+          # Prevent duplicate machine IPs
           {
             assertion =
               let
@@ -236,7 +255,7 @@ _: {
               ips == lib.unique ips;
             message = "router: Duplicate machine IPs detected — each machine must have a unique IP";
           }
-          # H2: Prevent duplicate machine names
+          # Prevent duplicate machine names
           {
             assertion =
               let

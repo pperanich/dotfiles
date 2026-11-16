@@ -1,12 +1,17 @@
 # Sketchybar status bar and jankyborders
 _: {
   flake.modules.darwin.sketchybar =
-    { pkgs, ... }:
+    { config, pkgs, ... }:
+    let
+      inherit (config.system) primaryUser;
+      homeDir = config.home-manager.users.${primaryUser}.home.homeDirectory;
+    in
     {
       services.sketchybar = {
         enable = true;
         package = pkgs.sketchybar;
         extraPackages = [
+          pkgs.sketchybar-helpers
           pkgs.switchaudio-osx
         ];
       };
@@ -38,8 +43,10 @@ _: {
         pkgs.sketchybar-app-font
       ];
 
-      # For sketchybar debugging
-      launchd.user.agents.sketchybar.serviceConfig.StandardErrorPath = "/tmp/sketchybar.err.log";
-      launchd.user.agents.sketchybar.serviceConfig.StandardOutPath = "/tmp/sketchybar.out.log";
+      # Store SketchyBar logs in user-private ~/Library/Logs instead of world-readable /tmp
+      launchd.user.agents.sketchybar.serviceConfig = {
+        StandardErrorPath = "${homeDir}/Library/Logs/sketchybar.err.log";
+        StandardOutPath = "${homeDir}/Library/Logs/sketchybar.out.log";
+      };
     };
 }

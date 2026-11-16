@@ -13,17 +13,20 @@ _: {
       lanIface = cfg._internal.lanInterface or bridgeName;
       enabled = cfg.enable && ssdpCfg.enable;
 
-      # Auto-discover VLAN bridges that opted into discovery (mdns = true)
-      discoveryBridges =
+      # Auto-discover VLAN segments that opted into discovery (mdns = true),
+      # excluding fully isolated segments (e.g. guest).
+      discoverySegments =
         if cfg.networks.enable then
-          lib.mapAttrsToList (name: _: "br-${name}") (
-            lib.filterAttrs (_: seg: seg.mdns && seg.vlan != null) cfg.networks.segments
-          )
+          lib.filterAttrs (
+            _: seg: seg.mdns && seg.vlan != null && seg.isolation != "full"
+          ) cfg.networks.segments
         else
-          [ ];
+          { };
+
+      discoveryBridges = lib.mapAttrsToList (name: _: "br-${name}") discoverySegments;
 
       # All interfaces the relay should operate on (main LAN + discovery-enabled VLANs)
-      relayInterfaces = [ lanIface ] ++ discoveryBridges;
+      relayInterfaces = lib.unique ([ lanIface ] ++ discoveryBridges);
 
       # Build --dev flags for the relay command
       devFlags = lib.concatMapStringsSep " " (iface: "--dev ${iface}") relayInterfaces;
@@ -31,6 +34,15 @@ _: {
     {
       options.my.router.ssdp = {
         enable = lib.mkEnableOption "SSDP relay for cross-VLAN device discovery (Chromecast, DIAL)";
+        allowUnicastReplies = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Allow tightly-scoped SSDP unicast UDP replies (sport 1900 -> ephemeral
+            1024-65535 on LAN client IPs, excluding the router) from discovery VLANs.
+            Disabled by default to avoid stateless cross-VLAN UDP holes.
+          '';
+        };
       };
 
       config = lib.mkIf enabled {
@@ -57,10 +69,32 @@ _: {
             Restart = "on-failure";
             RestartSec = "5s";
 
-            # Needs raw sockets for source IP spoofing
+            # Systemd sandboxing: needs raw/admin net capabilities for multicast relay & source IP spoofing
+            DynamicUser = true;
+            NoNewPrivileges = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            PrivateTmp = true;
+            PrivateDevices = true;
+            ProtectHostname = true;
+            ProtectClock = true;
+            ProtectKernelTunables = true;
+            ProtectKernelModules = true;
+            ProtectKernelLogs = true;
+            ProtectControlGroups = true;
+            RestrictNamespaces = true;
+            RestrictRealtime = true;
+            RestrictSUIDSGID = true;
+            LockPersonality = true;
+            MemoryDenyWriteExecute = true;
+            SystemCallArchitectures = "native";
+            CapabilityBoundingSet = [
+              "CAP_NET_RAW"
+              "CAP_NET_ADMIN"
+            ];
             AmbientCapabilities = [
               "CAP_NET_RAW"
-              "CAP_NET_BIND_SERVICE"
+              "CAP_NET_ADMIN"
             ];
           };
         };
@@ -72,11 +106,13 @@ _: {
           inputRules = lib.concatMapStringsSep "\n" (
             iface: ''iifname "${iface}" udp dport 1900 accept comment "SSDP relay ${iface}"''
           ) relayInterfaces;
-          forwardRules = lib.optionalString (discoveryBridges != [ ]) (
-            lib.concatMapStringsSep "\n" (
-              iface:
-              ''iifname "${iface}" oifname "${lanIface}" udp sport 1900 accept comment "SSDP unicast responses ${iface}"''
-            ) discoveryBridges
+          forwardRules = lib.optionalString (ssdpCfg.allowUnicastReplies && discoverySegments != { }) (
+            lib.concatStringsSep "\n" (
+              lib.mapAttrsToList (
+                name: seg:
+                ''iifname "br-${name}" oifname "${lanIface}" ip saddr ${seg.subnet}.0/24 ip daddr ${cfg.lan.cidr} ip daddr != ${cfg.lan.address} udp sport 1900 udp dport 1024-65535 limit rate 20/second burst 40 packets accept comment "SSDP unicast responses br-${name}"''
+              ) discoverySegments
+            )
           );
         };
       };

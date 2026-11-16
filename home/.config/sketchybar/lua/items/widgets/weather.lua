@@ -8,8 +8,20 @@ local update_freq = tonumber(os.getenv("WEATHER_UPDATE_FREQ")) or 900 -- 15 minu
 -- NWS API requires User-Agent header
 local user_agent = "sketchybar-weather/1.0"
 
--- Store current coordinates for click handler
+-- Store current validated coordinates for click handler
 local current_lat, current_lon = nil, nil
+
+local function parse_coords(raw_lat, raw_lon)
+	local nlat = tonumber((raw_lat or ""):match("^%s*([+-]?%d+%.?%d*)%s*$"))
+	local nlon = tonumber((raw_lon or ""):match("^%s*([+-]?%d+%.?%d*)%s*$"))
+	if not nlat or not nlon then
+		return nil, nil
+	end
+	if nlat < -90 or nlat > 90 or nlon < -180 or nlon > 180 then
+		return nil, nil
+	end
+	return string.format("%.4f", nlat), string.format("%.4f", nlon)
+end
 
 -- Weather condition to SF Symbol mapping
 local function get_weather_icon(forecast_short)
@@ -64,11 +76,17 @@ local weather = sbar.add("item", "widgets.weather", {
 
 sbar.add("item", { position = "right", width = settings.group_paddings })
 
--- Function to fetch weather once we have coordinates
-local function fetch_weather(lat, lon)
+-- Function to fetch weather once we have validated coordinates
+local function fetch_weather(raw_lat, raw_lon)
+	local lat, lon = parse_coords(raw_lat, raw_lon)
+	if not lat or not lon then
+		weather:set({ label = "ERR" })
+		return
+	end
 	current_lat, current_lon = lat, lon
 
-	local points_cmd = string.format("curl -sk -A '%s' 'https://api.weather.gov/points/%s,%s'", user_agent, lat, lon)
+	local points_cmd =
+		string.format("curl -fsSL --max-time 10 -A '%s' 'https://api.weather.gov/points/%s,%s'", user_agent, lat, lon)
 
 	sbar.exec(points_cmd, function(points_res)
 		if not points_res or not points_res.properties or not points_res.properties.forecastHourly then
@@ -76,9 +94,16 @@ local function fetch_weather(lat, lon)
 			return
 		end
 
-		-- Use hourly forecast for more accurate current temperature
+		-- Use hourly forecast for more accurate current temperature; validate origin & safe URL characters
 		local forecast_url = points_res.properties.forecastHourly
-		local forecast_cmd = string.format("curl -sk -A '%s' '%s'", user_agent, forecast_url)
+		if
+			type(forecast_url) ~= "string"
+			or not forecast_url:match("^https://api%.weather%.gov/[%w%-%._/~:?#%[%]@!$&()*+,;=%%]+$")
+		then
+			weather:set({ label = "ERR" })
+			return
+		end
+		local forecast_cmd = string.format("curl -fsSL --max-time 10 -A '%s' '%s'", user_agent, forecast_url)
 
 		sbar.exec(forecast_cmd, function(forecast_res)
 			if not forecast_res or not forecast_res.properties or not forecast_res.properties.periods then
@@ -104,11 +129,11 @@ weather:subscribe({ "forced", "routine", "system_woke" }, function()
 			fetch_weather(lat, lon)
 		end
 	else
-		sbar.exec("curl -sk 'https://ipinfo.io/loc'", function(loc)
+		sbar.exec("curl -fsSL --max-time 10 'https://ipinfo.io/loc'", function(loc)
 			if loc and loc ~= "" then
 				local lat, lon = loc:match("([^,]+),([^,]+)")
 				if lat and lon then
-					fetch_weather(lat:gsub("%s+", ""), lon:gsub("%s+", ""))
+					fetch_weather(lat, lon)
 				end
 			end
 		end)

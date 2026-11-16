@@ -4,9 +4,7 @@ local settings = require("lua.settings")
 
 -- Execute the event provider binary which provides the event "cpu_update" for
 -- the cpu load data, which is fired every 2.0 seconds.
-sbar.exec(
-	"killall cpu_load >/dev/null; " .. base_dir .. "/helpers/event_providers/cpu_load/bin/cpu_load cpu_update 2.0"
-)
+sbar.exec("killall cpu_load >/dev/null 2>&1; cpu_load cpu_update 2.0")
 
 -- CPU widget (magenta border)
 local cpu = sbar.add("item", "widgets.cpu", {

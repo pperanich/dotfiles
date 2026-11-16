@@ -28,9 +28,6 @@ in
       extraSpecialArgs = {
         desktop = true;
       };
-      additionalUsers = [
-        "prest"
-      ];
     }
   );
 }

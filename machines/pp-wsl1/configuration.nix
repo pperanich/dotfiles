@@ -37,9 +37,17 @@
     passwordHashSecret = "passwords/pperanich";
   };
   users.mutableUsers = false;
+  # NixOS-WSL turns the sudo password off by default; pperanich has one here.
+  security.sudo.wheelNeedsPassword = true;
 
-  # Rex sessions over the tailnet, for admin workstations (tag:admin) only
-  my.rex.loginServer.enable = true;
+  # Rex sessions over the tailnet, for admin workstations and the phone
+  my.rex.loginServer = {
+    enable = true;
+    principals = [
+      "tailscale:tag:admin"
+      "tailscale:tag:mobile"
+    ];
+  };
 
   # No node exporter here, so Healthchecks.io is what notices a failed or missing run.
   my.backup.googleDrive = {

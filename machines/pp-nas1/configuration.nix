@@ -56,10 +56,18 @@ in
     pperanich = {
       desktop = false;
       passwordHashSecret = "passwords/pperanich";
+      # Deploys log in as root, so a pperanich shell need not be root-equivalent (decision 0008).
+      trustedNixUser = false;
     };
 
-    # Rex sessions over the tailnet, for admin workstations (tag:admin) only
-    rex.loginServer.enable = true;
+    # Rex sessions over the tailnet, for admin workstations and the phone
+    rex.loginServer = {
+      enable = true;
+      principals = [
+        "tailscale:tag:admin"
+        "tailscale:tag:mobile"
+      ];
+    };
 
     # Nextcloud — file sync, calendar, contacts
     # Accessed via local Caddy TLS termination (nextcloud.prestonperanich.com)

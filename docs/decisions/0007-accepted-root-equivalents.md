@@ -10,7 +10,7 @@ Two settings give root-equivalent power without going through sudo. Both were qu
 
 ## Decision
 
-- **`pperanich` is a trusted Nix user** (`my.pperanich.trustedNixUser`, default true). Other users are not. A trusted user can, for example, import unsigned store paths, which is root-equivalent on that host. It keeps remote builds and `nix copy` to the host working without extra signing setup.
+- **`pperanich` is a trusted Nix user** (`my.pperanich.trustedNixUser`, default true; off on `pp-nas1` and `pp-router1` since [0008](0008-deploys-log-in-as-root.md)). Other users are not. A trusted user can, for example, import unsigned store paths, which is root-equivalent on that host. It keeps remote builds and `nix copy` to the host working without extra signing setup.
 - **The console gives a root shell without a password** in initrd and in stage-2 emergency and rescue mode (`modules/flake-parts/hosts.nix`). Root has no password, and console recovery must work even when secrets fail to install. Physical access to these machines already allows booting other media.
 
 ## Consequences

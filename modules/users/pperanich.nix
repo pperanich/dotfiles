@@ -90,9 +90,9 @@ _: {
 
         nix.settings.trusted-users = lib.mkIf cfg.trustedNixUser [ "pperanich" ];
 
-        # Read only where a host turns on my.rex.loginServer: admin workstations
+        # Read only where a host turns on my.rex.loginServer: the identities it admits
         # get this account's Rex server without a password or key.
-        services.rex.loginServer.accounts.pperanich.principals = [ "tailscale:tag:admin" ];
+        services.rex.loginServer.accounts.pperanich.principals = config.my.rex.loginServer.principals;
 
         # Configure home-manager for this user
         home-manager = {

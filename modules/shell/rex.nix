@@ -27,6 +27,16 @@ in
             default = 7297;
             description = "Tailnet TCP port of the Rex login server. Clients connect to `http://<host>.<tailnet>:<port>`.";
           };
+
+          principals = lib.mkOption {
+            type = with lib.types; listOf str;
+            default = [ "tailscale:tag:admin" ];
+            example = [
+              "tailscale:tag:admin"
+              "tailscale:tag:mobile"
+            ];
+            description = "Tailnet identities this host admits. User modules map them to their account; the tailnet ACL must also let them reach the port.";
+          };
         };
 
         config = lib.mkMerge [

@@ -37,14 +37,17 @@ _: {
             dst = [ "*:*" ];
           }
 
-          # Mobile devices: HTTPS apps + DNS only (no SSH to any host)
+          # Mobile devices: HTTPS apps, DNS and the Rex login servers (no SSH to any host)
           {
             action = "accept";
             src = [ "tag:mobile" ];
             dst = [
               "tag:router:53"
               "tag:router:443"
+              "tag:router:7297"
               "tag:nas:443"
+              "tag:nas:7297"
+              "tag:dev:7297"
             ];
           }
 

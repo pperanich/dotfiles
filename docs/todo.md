@@ -29,6 +29,7 @@ Open work. Remove an item when it is done; record a decision in `docs/decisions/
 - NAS disk encryption: starts from the local branch `nas-zfs-encryption`. Its migration script leaves the space reservation dropped and a partial copy, with no recovery path, if the baseline copy fails; fix that and rehearse on a throwaway pool first.
 - macOS backup: starts from the local branch `darwin-drive-backup`. Its script runs `restic init` on any failed repository probe, so a stale lock stops backups for good; fix that first.
 - Re-image `pp-rpi1`, give it a deploy node, and decide where it builds.
+- Rex on `pp-ml1` over the tailnet: revisit when Headscale 0.30.0 is released. It adds `tailscale cert` and HTTPS `tailscale serve` ([juanfont/headscale#3554](https://github.com/juanfont/headscale/pull/3554)), which the Rex Mac app's built-in Tailscale needs; the app has no other supported way to listen on the tailnet. It needs `dns.base_domain` to be a public domain (today `pp-ts`, so every `<host>.pp-ts` name changes) and a DNS-01 provider (Cloudflare is built in). The Linux hosts keep their `tailnet://` listener: Serve cannot identify tagged callers, and every device here is tagged.
 
 ### Code health
 

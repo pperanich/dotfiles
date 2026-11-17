@@ -6,7 +6,7 @@
   nix-apple-fonts = final: _prev: {
     apple-fonts = inputs.nix-apple-fonts.packages.${final.stdenv.hostPlatform.system};
   };
-  # The site's own package output, built on our nixpkgs (flake.nix makes it follow).
+  # The site's own package output, built on the nixpkgs in the site's flake.lock.
   personal-site = final: _prev: {
     personal-site = inputs.personal-site.packages.${final.stdenv.hostPlatform.system}.personal-site;
   };

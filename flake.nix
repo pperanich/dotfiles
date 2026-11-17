@@ -98,11 +98,9 @@
 
     personal-site = {
       url = "github:pperanich/personal-site";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        # bun2nix's own systems list still has x86_64-darwin, which nixpkgs-unstable dropped.
-        bun2nix.inputs.systems.follows = "systems";
-      };
+      # Built on the site's own nixpkgs (decision 0005), so it rebuilds only when the site's lock moves.
+      # bun2nix lists x86_64-darwin, which a site lock past nixpkgs' drop of it would fail to evaluate.
+      inputs.bun2nix.inputs.systems.follows = "systems";
     };
 
     # Upstream CLI/terminfo; Lua configuration remains Stow-managed under home/.

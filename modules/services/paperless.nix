@@ -83,6 +83,8 @@ _: {
           consumptionDir = lib.mkIf (cfg.consumptionDir != null) cfg.consumptionDir;
           # Scanner writes as a different user; let the consumer pick files up anyway
           consumptionDirIsPublic = true;
+          # All languages: a trimmed list rebuilds tesseract, ocrmypdf and paperless from source
+          tesseractLanguages = null;
           settings = {
             PAPERLESS_URL = "https://${cfg.domain}";
             PAPERLESS_OCR_LANGUAGE = "eng";

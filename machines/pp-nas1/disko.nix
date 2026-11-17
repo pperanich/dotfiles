@@ -1,8 +1,11 @@
+{ lib, ... }:
 {
   boot.loader.grub = {
     enable = true;
     efiSupport = true;
     efiInstallAsRemovable = true;
+    # /boot is vfat and kernels are copied there; the ZFS-enabled grub is never cached
+    zfsSupport = lib.mkForce false;
     mirroredBoots = [
       {
         devices = [ "nodev" ];

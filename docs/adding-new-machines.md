@@ -149,6 +149,7 @@ Then add a rule for the host's file. Every rule lists the admin key, the YubiKey
     - age:
         - *pperanich-admin
         - *yubikey0-slot1
+        - *yubikey1-slot1
         - *<hostname>
 ```
 

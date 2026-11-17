@@ -13,6 +13,7 @@ keys:
   # Hardware security keys
   - &keys "":
       - &yubikey0-slot1 age1yubikey1qdxm3n7yv2d065hewfmy3u5xk2n62udd8n992azmkzl9yp7mel3tgyzrzrv
+      - &yubikey1-slot1 age1yubikey1qd08p9texfucjcjpf2uxc02zzytw983md4zsumtvkdxtrx5u9s94zdkmu2y
 creation_rules:
   # Cloudflare Tunnel credentials (only admin + pp-router1)
   - path_regex: cloudflared-tunnel\.json$
@@ -20,6 +21,7 @@ creation_rules:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
+          - *yubikey1-slot1
           - *pp-router1
   # Per-machine compartments (one file per host)
   - path_regex: (^|sops/)machines/pp-router1\.yaml$
@@ -27,29 +29,34 @@ creation_rules:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
+          - *yubikey1-slot1
           - *pp-router1
   - path_regex: (^|sops/)machines/pp-nas1\.yaml$
     key_groups:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
+          - *yubikey1-slot1
           - *pp-nas1
   - path_regex: (^|sops/)machines/pp-rpi1\.yaml$
     key_groups:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
+          - *yubikey1-slot1
   - path_regex: (^|sops/)machines/pp-ml1\.yaml$
     key_groups:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
+          - *yubikey1-slot1
           - *pp-ml1-ssh
   - path_regex: (^|sops/)machines/pp-wsl1\.yaml$
     key_groups:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
+          - *yubikey1-slot1
           - *pp-wsl1
   # Physical desktop user secrets only (excludes servers and WSL)
   - path_regex: (^|sops/)users/pperanich-desktop\.yaml$
@@ -57,4 +64,5 @@ creation_rules:
       - age:
           - *pperanich-admin
           - *yubikey0-slot1
+          - *yubikey1-slot1
           - *pp-ml1-ssh

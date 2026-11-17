@@ -18,12 +18,12 @@ There is one file per host and no shared file. A host's file is not readable by 
 | Key                 | Where the private half lives                                      | Recipient of                                            | Purpose                                               |
 | ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
 | Admin age key       | `~/.config/sops/age/keys.txt` on `pp-ml1`, plus an offline backup | Every file                                              | Editing secrets, re-encrypting files                  |
-| YubiKey             | The hardware token (`&yubikey0-slot1` in `.sops.yaml`)            | Every file                                              | Fallback for editing if the admin key file is missing |
+| YubiKeys            | Two tokens (`&yubikey0-slot1`, `&yubikey1-slot1` in `.sops.yaml`) | Every file                                              | Fallback for editing if the admin key file is missing |
 | Host key (per host) | `/etc/ssh/ssh_host_ed25519_key` on that host                      | That host's file (and the tunnel file for `pp-router1`) | System decryption at activation                       |
 
-The host recipient is the SSH host key converted to age with `ssh-to-age`; it is not a separate key to manage. `.sops.yaml` lists a recipient for each of `pp-ml1` (as `&pp-ml1-ssh`), `pp-nas1`, `pp-router1` and `pp-wsl1`. `pp-rpi1` is powered off until re-imaged, so its file is encrypted to the admin key and the YubiKey only; a host recipient goes in when the machine gets a new key (see [Adding New Machines](adding-new-machines.md)).
+The host recipient is the SSH host key converted to age with `ssh-to-age`; it is not a separate key to manage. `.sops.yaml` lists a recipient for each of `pp-ml1` (as `&pp-ml1-ssh`), `pp-nas1`, `pp-router1` and `pp-wsl1`. `pp-rpi1` is powered off until re-imaged, so its file is encrypted to the admin key and the YubiKeys only; a host recipient goes in when the machine gets a new key (see [Adding New Machines](adding-new-machines.md)).
 
-A secret is readable by any one recipient of its file. The admin key and YubiKey can therefore read everything; a host can read only its own file.
+A secret is readable by any one recipient of its file. The admin key and either YubiKey can therefore read everything; a host can read only its own file.
 
 ## How decryption works
 
@@ -102,7 +102,7 @@ grep -n "recipient:" sops/machines/<host>.yaml
 
 ## If the admin key is lost
 
-The YubiKey is a recipient of every file, so it can still read and re-encrypt everything.
+Each YubiKey is a recipient of every file, so either one can still read and re-encrypt everything.
 
 1. Plug the YubiKey in. `age-plugin-yubikey` must be on `PATH` (the dev shell has it). Print its identity into a file that sops can read: `age-plugin-yubikey --identity > ~/.config/sops/age/yubikey-identity.txt`, then `export SOPS_AGE_KEY_FILE=~/.config/sops/age/yubikey-identity.txt`.
 2. Generate a new admin key and follow "Replacing the admin key" above, from step 1.

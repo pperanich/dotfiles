@@ -258,7 +258,7 @@ All secrets are sops-nix secrets, encrypted with age. There is one file per host
 - `sops/users/pperanich-desktop.yaml` for the API keys home-manager reads on the admin workstation
 - `sops/cloudflared-tunnel.json` for the tunnel credential (admin recipients and `pp-router1`)
 
-Rules live in `sops/.sops.yaml`. Every file is encrypted to the admin age key, a YubiKey recipient, and that host's age key (derived from its SSH host key). A host decrypts with `/etc/ssh/ssh_host_ed25519_key` alone (`sops.age.keyFile = null`); home-manager decrypts with `~/.config/sops/age/keys.txt`. Modules reference secrets via `sops.secrets.<name>.path`.
+Rules live in `sops/.sops.yaml`. Every file is encrypted to the admin age key, two YubiKey recipients, and that host's age key (derived from its SSH host key). A host decrypts with `/etc/ssh/ssh_host_ed25519_key` alone (`sops.age.keyFile = null`); home-manager decrypts with `~/.config/sops/age/keys.txt`. Modules reference secrets via `sops.secrets.<name>.path`.
 
 ```bash
 # Edit a file (--config is needed outside the dev shell, which exports SOPS_CONFIG)

@@ -4,8 +4,8 @@
 set -euo pipefail
 
 if [ $# -ne 1 ]; then
-  echo "usage: $(basename "$0") <pattern>" >&2
-  exit 1
+	echo "usage: $(basename "$0") <pattern>" >&2
+	exit 1
 fi
 
 pkill -9 -f "$1"

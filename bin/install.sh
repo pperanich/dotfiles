@@ -23,9 +23,9 @@ NIX_INSTALLER_URL="${NIX_INSTALLER_URL:-https://install.determinate.systems/nix}
 # Extra profile dirs to search, since a freshly installed Nix, nix-darwin or
 # home-manager is not on PATH until the next login shell.
 PROFILE_DIRS=(
-  "/run/current-system/sw/bin"
-  "$HOME/.nix-profile/bin"
-  "/nix/var/nix/profiles/default/bin"
+	"/run/current-system/sw/bin"
+	"$HOME/.nix-profile/bin"
+	"/nix/var/nix/profiles/default/bin"
 )
 
 # Populated by preflight
@@ -49,14 +49,14 @@ opt_dry_run=false
 # --- output ---------------------------------------------------------------
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != "dumb" ]; then
-  C_RED=$'\033[0;31m'
-  C_GREEN=$'\033[0;32m'
-  C_YELLOW=$'\033[1;33m'
-  C_BLUE=$'\033[0;34m'
-  C_BOLD=$'\033[1m'
-  C_RESET=$'\033[0m'
+	C_RED=$'\033[0;31m'
+	C_GREEN=$'\033[0;32m'
+	C_YELLOW=$'\033[1;33m'
+	C_BLUE=$'\033[0;34m'
+	C_BOLD=$'\033[1m'
+	C_RESET=$'\033[0m'
 else
-  C_RED='' C_GREEN='' C_YELLOW='' C_BLUE='' C_BOLD='' C_RESET=''
+	C_RED='' C_GREEN='' C_YELLOW='' C_BLUE='' C_BOLD='' C_RESET=''
 fi
 
 # All four go to stderr: several functions reserve stdout for a value, and a
@@ -67,7 +67,7 @@ log_warn() { printf '%s[warn]%s %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 log_error() { printf '%s[error]%s %s\n' "$C_RED" "$C_RESET" "$*" >&2; }
 
 on_error() {
-  log_error "failed at line $1 (exit $2)"
+	log_error "failed at line $1 (exit $2)"
 }
 trap 'on_error "$LINENO" "$?"' ERR
 # PLAINTEXT_SECRETS holds a secrets file between being written and being
@@ -75,8 +75,8 @@ trap 'on_error "$LINENO" "$?"' ERR
 # a password hash on disk.
 PLAINTEXT_SECRETS=""
 cleanup() {
-  if [ -n "$PLAINTEXT_SECRETS" ]; then rm -f "$PLAINTEXT_SECRETS"; fi
-  if [ -n "$TMP_DIR" ]; then rm -rf "$TMP_DIR"; fi
+	if [ -n "$PLAINTEXT_SECRETS" ]; then rm -f "$PLAINTEXT_SECRETS"; fi
+	if [ -n "$TMP_DIR" ]; then rm -rf "$TMP_DIR"; fi
 }
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT
@@ -85,12 +85,12 @@ trap 'cleanup; exit 143' TERM
 # nix-daemon.sh dereferences unset variables and returns non-zero, so strict
 # mode and the ERR trap have to stand down while it is sourced.
 relax_strict() {
-  trap - ERR
-  set +eu
+	trap - ERR
+	set +eu
 }
 restore_strict() {
-  set -eu
-  trap 'on_error "$LINENO" "$?"' ERR
+	set -eu
+	trap 'on_error "$LINENO" "$?"' ERR
 }
 
 # --- helpers --------------------------------------------------------------
@@ -101,129 +101,129 @@ command_exists() { command -v "$1" >/dev/null 2>&1; }
 # dirs that a not-yet-reloaded shell is missing. Prints nothing and still
 # succeeds when absent, so callers in $(...) do not trip the ERR trap.
 resolve_cmd() {
-  local dir
-  if command_exists "$1"; then
-    command -v "$1"
-    return 0
-  fi
-  for dir in "${PROFILE_DIRS[@]}"; do
-    if [ -x "$dir/$1" ]; then
-      printf '%s\n' "$dir/$1"
-      return 0
-    fi
-  done
+	local dir
+	if command_exists "$1"; then
+		command -v "$1"
+		return 0
+	fi
+	for dir in "${PROFILE_DIRS[@]}"; do
+		if [ -x "$dir/$1" ]; then
+			printf '%s\n' "$dir/$1"
+			return 0
+		fi
+	done
 }
 
 # -r/-w on /dev/tty only test mode bits and pass even with no controlling
 # terminal, so actually try to open it. The subshell keeps a redirection
 # failure from killing the script.
 have_tty() {
-  [ -e /dev/tty ] || return 1
-  (
-    trap - ERR
-    exec 3<>/dev/tty
-  ) 2>/dev/null
+	[ -e /dev/tty ] || return 1
+	(
+		trap - ERR
+		exec 3<>/dev/tty
+	) 2>/dev/null
 }
 
 ask_yes_no() {
-  local reply
-  if [ "$opt_assume_yes" = true ]; then
-    return 0
-  fi
-  if ! have_tty; then
-    return 1
-  fi
-  printf '%s%s%s [y/N] ' "$C_BOLD" "$1" "$C_RESET" >/dev/tty
-  read -r reply </dev/tty || reply=""
-  case "$reply" in
-  [yY] | [yY][eE][sS]) return 0 ;;
-  *) return 1 ;;
-  esac
+	local reply
+	if [ "$opt_assume_yes" = true ]; then
+		return 0
+	fi
+	if ! have_tty; then
+		return 1
+	fi
+	printf '%s%s%s [y/N] ' "$C_BOLD" "$1" "$C_RESET" >/dev/tty
+	read -r reply </dev/tty || reply=""
+	case "$reply" in
+	[yY] | [yY][eE][sS]) return 0 ;;
+	*) return 1 ;;
+	esac
 }
 
 # A "no" here ends the run; use ask_yes_no for optional steps.
 confirm() {
-  if ask_yes_no "$1"; then
-    return 0
-  fi
-  if [ "$opt_assume_yes" != true ] && ! have_tty; then
-    log_error "no terminal available to confirm; re-run with --yes"
-    exit 1
-  fi
-  log_info "aborted"
-  exit 0
+	if ask_yes_no "$1"; then
+		return 0
+	fi
+	if [ "$opt_assume_yes" != true ] && ! have_tty; then
+		log_error "no terminal available to confirm; re-run with --yes"
+		exit 1
+	fi
+	log_info "aborted"
+	exit 0
 }
 
 # Names typed at a prompt end up in sed replacements and in paths, where a
 # stray | ends the s|| command and a & splices the match back in.
 valid_name() {
-  case "$1" in
-  # . and .. would make a later mv relocate the directory being renamed
-  '' | . | .. | *[!A-Za-z0-9._-]*) return 1 ;;
-  esac
-  return 0
+	case "$1" in
+	# . and .. would make a later mv relocate the directory being renamed
+	'' | . | .. | *[!A-Za-z0-9._-]*) return 1 ;;
+	esac
+	return 0
 }
 
 # Escape a value destined for the right-hand side of sed's s|| so that & does
 # not splice in the match and | does not end the command.
 sed_escape() {
-  printf '%s' "$1" | sed 's/[\\&|]/\\&/g'
+	printf '%s' "$1" | sed 's/[\\&|]/\\&/g'
 }
 
 # Prompted paths are used verbatim; bash does not expand ~ after a read.
 # shellcheck disable=SC2088 # matching a literal tilde is the whole point
 expand_tilde() {
-  case "$1" in
-  '~') printf '%s\n' "$HOME" ;;
-  '~/'*) printf '%s/%s\n' "$HOME" "${1#\~/}" ;;
-  *) printf '%s\n' "$1" ;;
-  esac
+	case "$1" in
+	'~') printf '%s\n' "$HOME" ;;
+	'~/'*) printf '%s/%s\n' "$HOME" "${1#\~/}" ;;
+	*) printf '%s\n' "$1" ;;
+	esac
 }
 
 require_valid_names() {
-  local n
-  for n in "$@"; do
-    if ! valid_name "$n"; then
-      log_error "invalid name: '$n'"
-      log_error "use letters, digits, dot, underscore or hyphen"
-      exit 1
-    fi
-  done
+	local n
+	for n in "$@"; do
+		if ! valid_name "$n"; then
+			log_error "invalid name: '$n'"
+			log_error "use letters, digits, dot, underscore or hyphen"
+			exit 1
+		fi
+	done
 }
 
 # Ask on the tty, echo the reply on stdout, fall back to $2 when it is empty.
 prompt_value() {
-  local question="$1" default="$2" reply
-  printf '%s%s%s [%s] ' "$C_BOLD" "$question" "$C_RESET" "$default" >/dev/tty
-  read -r reply </dev/tty || reply=""
-  if [ -z "$reply" ]; then
-    printf '%s\n' "$default"
-  else
-    printf '%s\n' "$reply"
-  fi
+	local question="$1" default="$2" reply
+	printf '%s%s%s [%s] ' "$C_BOLD" "$question" "$C_RESET" "$default" >/dev/tty
+	read -r reply </dev/tty || reply=""
+	if [ -z "$reply" ]; then
+		printf '%s\n' "$default"
+	else
+		printf '%s\n' "$reply"
+	fi
 }
 
 # Sets the global; do not call this in $(...) or the assignment is lost to the
 # subshell and the EXIT-trap cleanup never has anything to remove.
 ensure_tmp_dir() {
-  if [ -z "$TMP_DIR" ]; then
-    TMP_DIR="$(mktemp -d)"
-  fi
+	if [ -z "$TMP_DIR" ]; then
+		TMP_DIR="$(mktemp -d)"
+	fi
 }
 
 # `sed -i` requires an argument on BSD and refuses one on GNU; sidestep it.
 sed_inplace() {
-  local script="$1" file="$2" tmp
-  ensure_tmp_dir
-  tmp="$TMP_DIR/sed.out"
-  # Without this the failed sed still leaves an empty $tmp, which the cat then
-  # copies over the original. errexit does not save us: callers run inside an
-  # `if`, which suppresses it for the whole call tree.
-  if ! sed "$script" "$file" >"$tmp"; then
-    log_error "sed failed on $file; left unchanged"
-    exit 1
-  fi
-  cat "$tmp" >"$file"
+	local script="$1" file="$2" tmp
+	ensure_tmp_dir
+	tmp="$TMP_DIR/sed.out"
+	# Without this the failed sed still leaves an empty $tmp, which the cat then
+	# copies over the original. errexit does not save us: callers run inside an
+	# `if`, which suppresses it for the whole call tree.
+	if ! sed "$script" "$file" >"$tmp"; then
+		log_error "sed failed on $file; left unchanged"
+		exit 1
+	fi
+	cat "$tmp" >"$file"
 }
 
 # --- detection ------------------------------------------------------------
@@ -231,239 +231,239 @@ sed_inplace() {
 # Prints nothing on an unsupported kernel rather than returning non-zero: a
 # failure inside $(...) trips the ERR trap even in an `if` condition.
 detect_os() {
-  case "$(uname -s)" in
-  Darwin*) printf 'darwin\n' ;;
-  Linux*) printf 'linux\n' ;;
-  esac
+	case "$(uname -s)" in
+	Darwin*) printf 'darwin\n' ;;
+	Linux*) printf 'linux\n' ;;
+	esac
 }
 
 detect_hostname() {
-  if [ "$OS" = darwin ]; then
-    scutil --get LocalHostName 2>/dev/null || hostname -s
-  else
-    hostname -s
-  fi
+	if [ "$OS" = darwin ]; then
+		scutil --get LocalHostName 2>/dev/null || hostname -s
+	else
+		hostname -s
+	fi
 }
 
 # Absolute path of this script, or nothing when it was piped in (curl | bash,
 # process substitution) and has no path on disk.
 script_path() {
-  local src="${BASH_SOURCE[0]:-}"
-  case "$src" in
-  '' | bash | sh | -* | /dev/fd/* | /proc/self/fd/*) return 0 ;;
-  esac
-  if [ -f "$src" ]; then
-    printf '%s/%s\n' "$(cd "$(dirname "$src")" && pwd)" "$(basename "$src")"
-  fi
+	local src="${BASH_SOURCE[0]:-}"
+	case "$src" in
+	'' | bash | sh | -* | /dev/fd/* | /proc/self/fd/*) return 0 ;;
+	esac
+	if [ -f "$src" ]; then
+		printf '%s/%s\n' "$(cd "$(dirname "$src")" && pwd)" "$(basename "$src")"
+	fi
 }
 
 # Prefer the checkout this script was run from; fall back to a managed clone.
 resolve_source() {
-  if [ -n "$opt_dir" ]; then
-    CLONE_DIR="$opt_dir"
-  fi
+	if [ -n "$opt_dir" ]; then
+		CLONE_DIR="$opt_dir"
+	fi
 
-  local self root
-  self="$(script_path)"
-  if [ -n "$self" ]; then
-    root="$(cd "$(dirname "$self")/.." && pwd)"
-    if [ -f "$root/flake.nix" ]; then
-      FLAKE_DIR="$root"
-      SOURCE_MODE="local"
-      return 0
-    fi
-  fi
+	local self root
+	self="$(script_path)"
+	if [ -n "$self" ]; then
+		root="$(cd "$(dirname "$self")/.." && pwd)"
+		if [ -f "$root/flake.nix" ]; then
+			FLAKE_DIR="$root"
+			SOURCE_MODE="local"
+			return 0
+		fi
+	fi
 
-  FLAKE_DIR="$CLONE_DIR"
-  if [ -d "$CLONE_DIR/.git" ]; then
-    SOURCE_MODE="update"
-  else
-    SOURCE_MODE="clone"
-  fi
+	FLAKE_DIR="$CLONE_DIR"
+	if [ -d "$CLONE_DIR/.git" ]; then
+		SOURCE_MODE="update"
+	else
+		SOURCE_MODE="clone"
+	fi
 }
 
 # --- steps ----------------------------------------------------------------
 
 check_requirements() {
-  local cmd missing=""
-  for cmd in curl uname; do
-    command_exists "$cmd" || missing="$missing $cmd"
-  done
-  if [ "$SOURCE_MODE" != local ] && ! command_exists git; then
-    missing="$missing git"
-  fi
-  if [ -n "$missing" ]; then
-    log_error "required command(s) not found:$missing"
-    exit 1
-  fi
+	local cmd missing=""
+	for cmd in curl uname; do
+		command_exists "$cmd" || missing="$missing $cmd"
+	done
+	if [ "$SOURCE_MODE" != local ] && ! command_exists git; then
+		missing="$missing git"
+	fi
+	if [ -n "$missing" ]; then
+		log_error "required command(s) not found:$missing"
+		exit 1
+	fi
 }
 
 # Creating a directory that did not exist is the one repo action safe to take
 # before the user has answered anything, and every branch below needs it.
 sync_repo_clone() {
-  case "$SOURCE_MODE" in
-  clone)
-    if [ -e "$CLONE_DIR" ]; then
-      log_error "$CLONE_DIR exists but is not a git checkout"
-      exit 1
-    fi
-    log_step "Cloning $REPO_URL into $CLONE_DIR"
-    git clone --branch "$REPO_REF" "$REPO_URL" "$CLONE_DIR"
-    ;;
-  esac
+	case "$SOURCE_MODE" in
+	clone)
+		if [ -e "$CLONE_DIR" ]; then
+			log_error "$CLONE_DIR exists but is not a git checkout"
+			exit 1
+		fi
+		log_step "Cloning $REPO_URL into $CLONE_DIR"
+		git clone --branch "$REPO_REF" "$REPO_URL" "$CLONE_DIR"
+		;;
+	esac
 }
 
 # Runs only after the user has chosen, because checkout and merge move an
 # existing tree: a clean feature branch would otherwise be silently left on
 # $REPO_REF by a run that was declined.
 sync_repo_update() {
-  case "$SOURCE_MODE" in
-  update)
-    log_step "Updating existing checkout at $CLONE_DIR"
-    if [ -n "$opt_repo" ]; then
-      local origin
-      origin="$(git -C "$CLONE_DIR" remote get-url origin 2>/dev/null || true)"
-      if [ -n "$origin" ] && [ "$origin" != "$REPO_URL" ]; then
-        log_warn "--repo is ignored for an existing checkout; it tracks $origin"
-      fi
-    fi
-    # Probe first: inside [ -n "$(...)" ] a git failure reads as an empty, and
-    # therefore clean, tree, which would skip the guard below.
-    if ! git -C "$CLONE_DIR" status --porcelain >/dev/null 2>&1; then
-      log_error "cannot read git status in $CLONE_DIR"
-      log_error "if it is owned by another user, see git's safe.directory"
-      exit 1
-    fi
-    if [ -n "$(git -C "$CLONE_DIR" status --porcelain)" ]; then
-      log_warn "uncommitted changes in $CLONE_DIR, leaving it untouched"
-      return 0
-    fi
-    git -C "$CLONE_DIR" fetch --quiet origin "$REPO_REF"
-    git -C "$CLONE_DIR" checkout --quiet "$REPO_REF"
-    git -C "$CLONE_DIR" merge --ff-only --quiet "origin/$REPO_REF"
-    ;;
-  esac
+	case "$SOURCE_MODE" in
+	update)
+		log_step "Updating existing checkout at $CLONE_DIR"
+		if [ -n "$opt_repo" ]; then
+			local origin
+			origin="$(git -C "$CLONE_DIR" remote get-url origin 2>/dev/null || true)"
+			if [ -n "$origin" ] && [ "$origin" != "$REPO_URL" ]; then
+				log_warn "--repo is ignored for an existing checkout; it tracks $origin"
+			fi
+		fi
+		# Probe first: inside [ -n "$(...)" ] a git failure reads as an empty, and
+		# therefore clean, tree, which would skip the guard below.
+		if ! git -C "$CLONE_DIR" status --porcelain >/dev/null 2>&1; then
+			log_error "cannot read git status in $CLONE_DIR"
+			log_error "if it is owned by another user, see git's safe.directory"
+			exit 1
+		fi
+		if [ -n "$(git -C "$CLONE_DIR" status --porcelain)" ]; then
+			log_warn "uncommitted changes in $CLONE_DIR, leaving it untouched"
+			return 0
+		fi
+		git -C "$CLONE_DIR" fetch --quiet origin "$REPO_REF"
+		git -C "$CLONE_DIR" checkout --quiet "$REPO_REF"
+		git -C "$CLONE_DIR" merge --ff-only --quiet "origin/$REPO_REF"
+		;;
+	esac
 }
 
 # Put nix on PATH if it is installed but the shell predates the install.
 load_nix_env() {
-  command_exists nix && return 0
+	command_exists nix && return 0
 
-  local profile
-  for profile in \
-    /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
-    /nix/var/nix/profiles/default/etc/profile.d/nix.sh; do
-    if [ -e "$profile" ]; then
-      relax_strict
-      # shellcheck disable=SC1090
-      . "$profile"
-      restore_strict
-      break
-    fi
-  done
+	local profile
+	for profile in \
+		/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
+		/nix/var/nix/profiles/default/etc/profile.d/nix.sh; do
+		if [ -e "$profile" ]; then
+			relax_strict
+			# shellcheck disable=SC1090
+			. "$profile"
+			restore_strict
+			break
+		fi
+	done
 
-  if ! command_exists nix; then
-    local nix_bin
-    nix_bin="$(resolve_cmd nix)"
-    if [ -n "$nix_bin" ]; then
-      PATH="$(dirname "$nix_bin"):$PATH"
-      export PATH
-    fi
-  fi
-  command_exists nix
+	if ! command_exists nix; then
+		local nix_bin
+		nix_bin="$(resolve_cmd nix)"
+		if [ -n "$nix_bin" ]; then
+			PATH="$(dirname "$nix_bin"):$PATH"
+			export PATH
+		fi
+	fi
+	command_exists nix
 }
 
 install_nix() {
-  if load_nix_env; then
-    log_info "Nix already installed ($(nix --version))"
-    # A distro or single-user Nix without these enabled gets much further and
-    # then fails inside nix build, several steps from the real cause.
-    if ! nix eval --impure --expr 1 >/dev/null 2>&1; then
-      log_error "this nix cannot evaluate: nix-command and flakes look disabled"
-      log_error "enable them in nix.conf, or install Determinate Nix"
-      exit 1
-    fi
-    return 0
-  fi
+	if load_nix_env; then
+		log_info "Nix already installed ($(nix --version))"
+		# A distro or single-user Nix without these enabled gets much further and
+		# then fails inside nix build, several steps from the real cause.
+		if ! nix eval --impure --expr 1 >/dev/null 2>&1; then
+			log_error "this nix cannot evaluate: nix-command and flakes look disabled"
+			log_error "enable them in nix.conf, or install Determinate Nix"
+			exit 1
+		fi
+		return 0
+	fi
 
-  log_step "Installing Determinate Nix"
-  # --no-confirm because stdin belongs to the curl pipe when this script is
-  # itself piped; the confirmation happened in print_plan/confirm instead.
-  curl --proto '=https' --tlsv1.2 -fsSL "$NIX_INSTALLER_URL" | sh -s -- install --no-confirm
+	log_step "Installing Determinate Nix"
+	# --no-confirm because stdin belongs to the curl pipe when this script is
+	# itself piped; the confirmation happened in print_plan/confirm instead.
+	curl --proto '=https' --tlsv1.2 -fsSL "$NIX_INSTALLER_URL" | sh -s -- install --no-confirm
 
-  if ! load_nix_env; then
-    log_error "Nix installed but 'nix' is still not on PATH"
-    log_error "open a new shell and re-run this script"
-    exit 1
-  fi
-  BOOTSTRAPPED=true
-  log_info "Nix installed ($(nix --version))"
+	if ! load_nix_env; then
+		log_error "Nix installed but 'nix' is still not on PATH"
+		log_error "open a new shell and re-run this script"
+		exit 1
+	fi
+	BOOTSTRAPPED=true
+	log_info "Nix installed ($(nix --version))"
 }
 
 sudo_preflight() {
-  [ "$(id -u)" -eq 0 ] && return 0
-  if ! command_exists sudo; then
-    log_error "sudo is required to switch the system configuration"
-    exit 1
-  fi
-  sudo -n true 2>/dev/null && return 0
-  log_step "Requesting sudo up front so the build is not interrupted"
-  sudo -v
+	[ "$(id -u)" -eq 0 ] && return 0
+	if ! command_exists sudo; then
+		log_error "sudo is required to switch the system configuration"
+		exit 1
+	fi
+	sudo -n true 2>/dev/null && return 0
+	log_step "Requesting sudo up front so the build is not interrupted"
+	sudo -v
 }
 
 current_system() {
-  nix eval --raw --impure --expr builtins.currentSystem 2>/dev/null || true
+	nix eval --raw --impure --expr builtins.currentSystem 2>/dev/null || true
 }
 
 # Newline-separated attribute names of a flake output set, empty on failure.
 flake_attr_names() {
-  nix eval --raw "${FLAKE_DIR}#${1}" \
-    --apply 'set: builtins.concatStringsSep "\n" (builtins.attrNames set)' 2>/dev/null || true
+	nix eval --raw "${FLAKE_DIR}#${1}" \
+		--apply 'set: builtins.concatStringsSep "\n" (builtins.attrNames set)' 2>/dev/null || true
 }
 
 target_output() {
-  case "$opt_mode" in
-  darwin) printf 'darwinConfigurations\n' ;;
-  nixos) printf 'nixosConfigurations\n' ;;
-  home) printf 'homeConfigurations\n' ;;
-  esac
+	case "$opt_mode" in
+	darwin) printf 'darwinConfigurations\n' ;;
+	nixos) printf 'nixosConfigurations\n' ;;
+	home) printf 'homeConfigurations\n' ;;
+	esac
 }
 
 # Catch a missing configuration here rather than several minutes into nix
 # evaluation. Someone running this against a flake whose machines are not
 # theirs gets offered the template instead of a dead end.
 resolve_flake_target() {
-  local output target names
-  output="$(target_output)"
-  target="$opt_host"
-  if [ "$opt_mode" = home ]; then
-    target="${opt_host:-$USER}"
-  fi
+	local output target names
+	output="$(target_output)"
+	target="$opt_host"
+	if [ "$opt_mode" = home ]; then
+		target="${opt_host:-$USER}"
+	fi
 
-  names="$(flake_attr_names "$output")"
-  if [ -z "$names" ]; then
-    return 0
-  fi
-  if printf '%s\n' "$names" | grep -Fxq "$target"; then
-    return 0
-  fi
+	names="$(flake_attr_names "$output")"
+	if [ -z "$names" ]; then
+		return 0
+	fi
+	if printf '%s\n' "$names" | grep -Fxq "$target"; then
+		return 0
+	fi
 
-  log_warn "no ${output}.${target} in this flake"
-  log_warn "available: $(printf '%s' "$names" | tr '\n' ' ')"
+	log_warn "no ${output}.${target} in this flake"
+	log_warn "available: $(printf '%s' "$names" | tr '\n' ' ')"
 
-  if [ "$opt_assume_yes" = true ] || ! have_tty; then
-    log_error "nothing here matches this machine"
-    log_error "pass --host with one of the names above, or run interactively to"
-    log_error "scaffold your own configuration from this flake's template"
-    exit 1
-  fi
+	if [ "$opt_assume_yes" = true ] || ! have_tty; then
+		log_error "nothing here matches this machine"
+		log_error "pass --host with one of the names above, or run interactively to"
+		log_error "scaffold your own configuration from this flake's template"
+		exit 1
+	fi
 
-  offer_template "$names"
+	offer_template "$names"
 }
 
 offer_template() {
-  local names="$1" choice
-  cat >/dev/tty <<'EOF'
+	local names="$1" choice
+	cat >/dev/tty <<'EOF'
 
 These machines belong to the flake's author. You can start your own
 configuration from the template it ships, or switch to one of its hosts.
@@ -473,111 +473,111 @@ configuration from the template it ships, or switch to one of its hosts.
   3) Quit
 
 EOF
-  choice="$(prompt_value "Choice" "1")"
-  case "$choice" in
-  1) scaffold_template ;;
-  2) pick_existing_target "$names" ;;
-  *)
-    log_info "aborted"
-    exit 0
-    ;;
-  esac
+	choice="$(prompt_value "Choice" "1")"
+	case "$choice" in
+	1) scaffold_template ;;
+	2) pick_existing_target "$names" ;;
+	*)
+		log_info "aborted"
+		exit 0
+		;;
+	esac
 }
 
 pick_existing_target() {
-  local names="$1" first pick
-  first="$(printf '%s\n' "$names" | head -1)"
-  pick="$(prompt_value "Name" "$first")"
-  if ! printf '%s\n' "$names" | grep -Fxq "$pick"; then
-    log_error "not one of: $(printf '%s' "$names" | tr '\n' ' ')"
-    exit 1
-  fi
-  opt_host="$pick"
+	local names="$1" first pick
+	first="$(printf '%s\n' "$names" | head -1)"
+	pick="$(prompt_value "Name" "$first")"
+	if ! printf '%s\n' "$names" | grep -Fxq "$pick"; then
+		log_error "not one of: $(printf '%s' "$names" | tr '\n' ' ')"
+		exit 1
+	fi
+	opt_host="$pick"
 }
 
 template_platform() {
-  case "${OS}-$(uname -m)" in
-  darwin-arm64) printf 'aarch64-darwin\n' ;;
-  darwin-x86_64) printf 'x86_64-darwin\n' ;;
-  linux-x86_64) printf 'x86_64-linux\n' ;;
-  linux-aarch64 | linux-arm64) printf 'aarch64-linux\n' ;;
-  esac
+	case "${OS}-$(uname -m)" in
+	darwin-arm64) printf 'aarch64-darwin\n' ;;
+	darwin-x86_64) printf 'x86_64-darwin\n' ;;
+	linux-x86_64) printf 'x86_64-linux\n' ;;
+	linux-aarch64 | linux-arm64) printf 'aarch64-linux\n' ;;
+	esac
 }
 
 # The template's `example` user is referenced from seven places. A blanket
 # substitution would also rewrite the illustrative comments in lib/ and
 # overlays/, so each site is handled by name.
 template_rename_user() {
-  local dir="$1" user="$2" kind="${3:-dendritic}" cfg
-  if [ "$user" = example ]; then
-    return 0
-  fi
+	local dir="$1" user="$2" kind="${3:-dendritic}" cfg
+	if [ "$user" = example ]; then
+		return 0
+	fi
 
-  mv "$dir/modules/users/example.nix" "$dir/modules/users/${user}.nix"
-  mv "$dir/home-profiles/example" "$dir/home-profiles/${user}"
+	mv "$dir/modules/users/example.nix" "$dir/modules/users/${user}.nix"
+	mv "$dir/home-profiles/example" "$dir/home-profiles/${user}"
 
-  local module="$dir/modules/users/${user}.nix"
-  # The rename checklist at the top of the module is what we just carried out.
-  sed_inplace '/^# Rename checklist when you make this your own:/,/^#   4\./d' "$module"
-  sed_inplace "s|username = \"example\";|username = \"${user}\";|" "$module"
-  sed_inplace "s|home-profiles/example|home-profiles/${user}|g" "$module"
+	local module="$dir/modules/users/${user}.nix"
+	# The rename checklist at the top of the module is what we just carried out.
+	sed_inplace '/^# Rename checklist when you make this your own:/,/^#   4\./d' "$module"
+	sed_inplace "s|username = \"example\";|username = \"${user}\";|" "$module"
+	sed_inplace "s|home-profiles/example|home-profiles/${user}|g" "$module"
 
-  local profile="$dir/home-profiles/${user}/default.nix"
-  sed_inplace "s|home.username = \"example\";|home.username = \"${user}\";|" "$profile"
-  sed_inplace "s|homeConfigurations.example|homeConfigurations.${user}|" "$profile"
-  sed_inplace "s|home-manager.users.example|home-manager.users.${user}|" "$profile"
-  sed_inplace "s|modules/users/example.nix|modules/users/${user}.nix|" "$profile"
+	local profile="$dir/home-profiles/${user}/default.nix"
+	sed_inplace "s|home.username = \"example\";|home.username = \"${user}\";|" "$profile"
+	sed_inplace "s|homeConfigurations.example|homeConfigurations.${user}|" "$profile"
+	sed_inplace "s|home-manager.users.example|home-manager.users.${user}|" "$profile"
+	sed_inplace "s|modules/users/example.nix|modules/users/${user}.nix|" "$profile"
 
-  sed_inplace "s|^  example: |  ${user}: |" "$dir/sops/secrets.yaml"
+	sed_inplace "s|^  example: |  ${user}: |" "$dir/sops/secrets.yaml"
 
-  # Files only the dendritic template has: it owns a sops module and standalone
-  # homeConfigurations, where the private template inherits both.
-  if [ "$kind" = private ]; then
-    # The rename it asks for is the one just carried out
-    sed_inplace "/Rename .example. to match/d" "$dir/sops/secrets.yaml"
-  fi
+	# Files only the dendritic template has: it owns a sops module and standalone
+	# homeConfigurations, where the private template inherits both.
+	if [ "$kind" = private ]; then
+		# The rename it asks for is the one just carried out
+		sed_inplace "/Rename .example. to match/d" "$dir/sops/secrets.yaml"
+	fi
 
-  if [ "$kind" = dendritic ]; then
-    sed_inplace "s|for the example user|for the ${user} user|" "$dir/sops/secrets.yaml"
-    sed_inplace "s|\.#example|.#${user}|" "$dir/modules/flake-parts/home.nix"
-    sed_inplace "s|modules/users/example.nix|modules/users/${user}.nix|" \
-      "$dir/modules/system/sops.nix"
-  fi
+	if [ "$kind" = dendritic ]; then
+		sed_inplace "s|for the example user|for the ${user} user|" "$dir/sops/secrets.yaml"
+		sed_inplace "s|\.#example|.#${user}|" "$dir/modules/flake-parts/home.nix"
+		sed_inplace "s|modules/users/example.nix|modules/users/${user}.nix|" \
+			"$dir/modules/system/sops.nix"
+	fi
 
-  for cfg in "$dir"/machines/*/*/configuration.nix; do
-    if [ -e "$cfg" ]; then
-      sed_inplace "s|^    example$|    ${user}|" "$cfg"
-      # The private template's darwin host decrypts with this user's own key
-      sed_inplace "s|/Users/example/|/Users/${user}/|" "$cfg"
-    fi
-  done
+	for cfg in "$dir"/machines/*/*/configuration.nix; do
+		if [ -e "$cfg" ]; then
+			sed_inplace "s|^    example$|    ${user}|" "$cfg"
+			# The private template's darwin host decrypts with this user's own key
+			sed_inplace "s|/Users/example/|/Users/${user}/|" "$cfg"
+		fi
+	done
 }
 
 template_rename_machine() {
-  local dir="$1" class="$2" host="$3" platform="$4" kind="${5:-dendritic}" other=darwin
-  if [ "$class" = darwin ]; then
-    other=nixos
-  fi
+	local dir="$1" class="$2" host="$3" platform="$4" kind="${5:-dendritic}" other=darwin
+	if [ "$class" = darwin ]; then
+		other=nixos
+	fi
 
-  mv "$dir/machines/${class}/example-${class}" "$dir/machines/${class}/${host}"
-  rm -rf "$dir/machines/${other}"
+	mv "$dir/machines/${class}/example-${class}" "$dir/machines/${class}/${host}"
+	rm -rf "$dir/machines/${other}"
 
-  local cfg="$dir/machines/${class}/${host}/configuration.nix"
-  sed_inplace "s|networking.hostName = \"example-${class}\";|networking.hostName = \"${host}\";|" "$cfg"
-  sed_inplace "s|nixpkgs.hostPlatform = \".*\";|nixpkgs.hostPlatform = \"${platform}\";|" "$cfg"
+	local cfg="$dir/machines/${class}/${host}/configuration.nix"
+	sed_inplace "s|networking.hostName = \"example-${class}\";|networking.hostName = \"${host}\";|" "$cfg"
+	sed_inplace "s|nixpkgs.hostPlatform = \".*\";|nixpkgs.hostPlatform = \"${platform}\";|" "$cfg"
 
-  # Keep this host's age recipient placeholder, drop the other class's.
-  sed_inplace "s|&example-${class}|\\&${host}|" "$dir/sops/.sops.yaml"
-  sed_inplace "s|\\*example-${class}|*${host}|" "$dir/sops/.sops.yaml"
-  sed_inplace "/example-${other}/d" "$dir/sops/.sops.yaml"
+	# Keep this host's age recipient placeholder, drop the other class's.
+	sed_inplace "s|&example-${class}|\\&${host}|" "$dir/sops/.sops.yaml"
+	sed_inplace "s|\\*example-${class}|*${host}|" "$dir/sops/.sops.yaml"
+	sed_inplace "/example-${other}/d" "$dir/sops/.sops.yaml"
 
-  # homeConfigurations are not per-system, so the template pins one. Point it
-  # at this machine, or standalone home-manager builds for the wrong platform.
-  # The private template has no standalone homeConfigurations.
-  if [ "$kind" = dendritic ]; then
-    sed_inplace "s|withSystem \"x86_64-linux\"|withSystem \"${platform}\"|" \
-      "$dir/modules/flake-parts/home.nix"
-  fi
+	# homeConfigurations are not per-system, so the template pins one. Point it
+	# at this machine, or standalone home-manager builds for the wrong platform.
+	# The private template has no standalone homeConfigurations.
+	if [ "$kind" = dendritic ]; then
+		sed_inplace "s|withSystem \"x86_64-linux\"|withSystem \"${platform}\"|" \
+			"$dir/modules/flake-parts/home.nix"
+	fi
 }
 
 # --- secrets bootstrap ----------------------------------------------------
@@ -591,255 +591,255 @@ SECRET_PASSWORD_GENERATED=false
 # `nix build --print-out-paths` lists every output of a package and -man can
 # sort first, so pick whichever one actually carries the binary.
 nix_bin() {
-  local pkg="$1" bin="$2" paths path
-  paths="$(nix build --no-link --print-out-paths "nixpkgs#${pkg}" 2>/dev/null || true)"
-  while IFS= read -r path; do
-    if [ -n "$path" ] && [ -x "$path/bin/$bin" ]; then
-      printf '%s/bin/%s\n' "$path" "$bin"
-      return 0
-    fi
-  done <<EOF
+	local pkg="$1" bin="$2" paths path
+	paths="$(nix build --no-link --print-out-paths "nixpkgs#${pkg}" 2>/dev/null || true)"
+	while IFS= read -r path; do
+		if [ -n "$path" ] && [ -x "$path/bin/$bin" ]; then
+			printf '%s/bin/%s\n' "$path" "$bin"
+			return 0
+		fi
+	done <<EOF
 $paths
 EOF
 }
 
 fetch_secret_tools() {
-  log_step "Building sops, ssh-to-age and mkpasswd"
-  SOPS_BIN="$(nix_bin sops sops)"
-  SSH_TO_AGE_BIN="$(nix_bin ssh-to-age ssh-to-age)"
-  MKPASSWD_BIN="$(nix_bin mkpasswd mkpasswd)"
-  if [ -z "$SOPS_BIN" ] || [ -z "$SSH_TO_AGE_BIN" ] || [ -z "$MKPASSWD_BIN" ]; then
-    log_error "could not build sops, ssh-to-age and mkpasswd from nixpkgs"
-    return 1
-  fi
+	log_step "Building sops, ssh-to-age and mkpasswd"
+	SOPS_BIN="$(nix_bin sops sops)"
+	SSH_TO_AGE_BIN="$(nix_bin ssh-to-age ssh-to-age)"
+	MKPASSWD_BIN="$(nix_bin mkpasswd mkpasswd)"
+	if [ -z "$SOPS_BIN" ] || [ -z "$SSH_TO_AGE_BIN" ] || [ -z "$MKPASSWD_BIN" ]; then
+		log_error "could not build sops, ssh-to-age and mkpasswd from nixpkgs"
+		return 1
+	fi
 }
 
 # sops-nix reads the user's key unattended at activation, so a passphrase makes
 # it unusable. -P '' fails immediately instead of prompting.
 key_is_usable() {
-  ssh-keygen -y -P '' -f "$1" >/dev/null 2>&1
+	ssh-keygen -y -P '' -f "$1" >/dev/null 2>&1
 }
 
 list_ed25519_keys() {
-  local pub priv
-  for pub in "$HOME"/.ssh/*.pub; do
-    [ -e "$pub" ] || continue
-    priv="${pub%.pub}"
-    [ -f "$priv" ] || continue
-    if grep -q '^ssh-ed25519 ' "$pub"; then
-      printf '%s\n' "$priv"
-    fi
-  done
+	local pub priv
+	for pub in "$HOME"/.ssh/*.pub; do
+		[ -e "$pub" ] || continue
+		priv="${pub%.pub}"
+		[ -f "$priv" ] || continue
+		if grep -q '^ssh-ed25519 ' "$pub"; then
+			printf '%s\n' "$priv"
+		fi
+	done
 }
 
 # Echo the chosen private key path; prompts and progress go elsewhere so this
 # stays usable inside $(...).
 choose_ssh_key() {
-  local keys priv pick n=0 total label default_new
-  keys="$(list_ed25519_keys)"
+	local keys priv pick n=0 total label default_new
+	keys="$(list_ed25519_keys)"
 
-  {
-    printf '\n'
-    if [ -n "$keys" ]; then
-      printf 'ed25519 keys in ~/.ssh:\n\n'
-      while IFS= read -r priv; do
-        [ -n "$priv" ] || continue
-        n=$((n + 1))
-        if key_is_usable "$priv"; then
-          label="no passphrase"
-        else
-          label="passphrase-protected, cannot be used unattended"
-        fi
-        printf '  %d) %s  (%s)\n' "$n" "$priv" "$label"
-      done <<KEYS
+	{
+		printf '\n'
+		if [ -n "$keys" ]; then
+			printf 'ed25519 keys in ~/.ssh:\n\n'
+			while IFS= read -r priv; do
+				[ -n "$priv" ] || continue
+				n=$((n + 1))
+				if key_is_usable "$priv"; then
+					label="no passphrase"
+				else
+					label="passphrase-protected, cannot be used unattended"
+				fi
+				printf '  %d) %s  (%s)\n' "$n" "$priv" "$label"
+			done <<KEYS
 $keys
 KEYS
-    fi
-    n=$((n + 1))
-    printf '  %d) generate a new key for this configuration\n\n' "$n"
-    printf 'Picking an existing key copies its private half into\n'
-    printf 'sops/secrets.yaml (encrypted, committed) and deploys it to every\n'
-    printf 'host importing the user module.\n\n'
-  } >/dev/tty
-  total="$n"
+		fi
+		n=$((n + 1))
+		printf '  %d) generate a new key for this configuration\n\n' "$n"
+		printf 'Picking an existing key copies its private half into\n'
+		printf 'sops/secrets.yaml (encrypted, committed) and deploys it to every\n'
+		printf 'host importing the user module.\n\n'
+	} >/dev/tty
+	total="$n"
 
-  pick="$(prompt_value "Key" "$total")"
-  case "$pick" in
-  '' | *[!0-9]* | ????*)
-    log_error "not a number in range: $pick"
-    return 0
-    ;;
-  esac
-  if [ "$pick" -lt 1 ] || [ "$pick" -gt "$total" ]; then
-    log_error "choice out of range: $pick"
-    return 0
-  fi
+	pick="$(prompt_value "Key" "$total")"
+	case "$pick" in
+	'' | *[!0-9]* | ????*)
+		log_error "not a number in range: $pick"
+		return 0
+		;;
+	esac
+	if [ "$pick" -lt 1 ] || [ "$pick" -gt "$total" ]; then
+		log_error "choice out of range: $pick"
+		return 0
+	fi
 
-  if [ "$pick" -eq "$total" ]; then
-    default_new="$HOME/.ssh/id_ed25519"
-    if [ -e "$default_new" ]; then
-      default_new="$HOME/.ssh/id_ed25519_nixcfg"
-    fi
-    priv="$(expand_tilde "$(prompt_value "New key path" "$default_new")")"
-    if [ -e "$priv" ]; then
-      log_error "$priv already exists"
-      return 0
-    fi
-    local keydir
-    keydir="$(dirname "$priv")"
-    # Only lock down a directory we create; the path is user-supplied and may
-    # be somewhere with deliberate permissions.
-    if [ ! -d "$keydir" ]; then
-      mkdir -p "$keydir"
-      chmod 700 "$keydir"
-    fi
-    # ssh-keygen chatters on stdout, which this function reserves for the path.
-    ssh-keygen -t ed25519 -N '' -C "${USER}@$(uname -n)" -f "$priv" -q 1>&2
-    printf '%s\n' "$priv"
-    return 0
-  fi
+	if [ "$pick" -eq "$total" ]; then
+		default_new="$HOME/.ssh/id_ed25519"
+		if [ -e "$default_new" ]; then
+			default_new="$HOME/.ssh/id_ed25519_nixcfg"
+		fi
+		priv="$(expand_tilde "$(prompt_value "New key path" "$default_new")")"
+		if [ -e "$priv" ]; then
+			log_error "$priv already exists"
+			return 0
+		fi
+		local keydir
+		keydir="$(dirname "$priv")"
+		# Only lock down a directory we create; the path is user-supplied and may
+		# be somewhere with deliberate permissions.
+		if [ ! -d "$keydir" ]; then
+			mkdir -p "$keydir"
+			chmod 700 "$keydir"
+		fi
+		# ssh-keygen chatters on stdout, which this function reserves for the path.
+		ssh-keygen -t ed25519 -N '' -C "${USER}@$(uname -n)" -f "$priv" -q 1>&2
+		printf '%s\n' "$priv"
+		return 0
+	fi
 
-  priv="$(printf '%s\n' "$keys" | sed -n "${pick}p")"
-  if [ -z "$priv" ]; then
-    log_error "no key at choice $pick"
-    return 0
-  fi
-  if ! key_is_usable "$priv"; then
-    log_error "$priv is passphrase-protected, so sops-nix cannot read it"
-    log_error "pick another key or generate a new one"
-    return 0
-  fi
-  printf '%s\n' "$priv"
+	priv="$(printf '%s\n' "$keys" | sed -n "${pick}p")"
+	if [ -z "$priv" ]; then
+		log_error "no key at choice $pick"
+		return 0
+	fi
+	if ! key_is_usable "$priv"; then
+		log_error "$priv is passphrase-protected, so sops-nix cannot read it"
+		log_error "pick another key or generate a new one"
+		return 0
+	fi
+	printf '%s\n' "$priv"
 }
 
 random_password() {
-  LC_ALL=C dd if=/dev/urandom bs=1 count=256 2>/dev/null |
-    LC_ALL=C tr -dc 'A-Za-z0-9' | cut -c1-24
+	LC_ALL=C dd if=/dev/urandom bs=1 count=256 2>/dev/null |
+		LC_ALL=C tr -dc 'A-Za-z0-9' | cut -c1-24
 }
 
 # Sets SECRET_PASSWORD and SECRET_PASSWORD_GENERATED.
 choose_password() {
-  local p1 p2
-  printf '%sLogin password%s (blank generates one): ' "$C_BOLD" "$C_RESET" >/dev/tty
-  read -rs p1 </dev/tty || p1=""
-  printf '\n' >/dev/tty
+	local p1 p2
+	printf '%sLogin password%s (blank generates one): ' "$C_BOLD" "$C_RESET" >/dev/tty
+	read -rs p1 </dev/tty || p1=""
+	printf '\n' >/dev/tty
 
-  if [ -z "$p1" ]; then
-    SECRET_PASSWORD="$(random_password)"
-    SECRET_PASSWORD_GENERATED=true
-    if [ -z "$SECRET_PASSWORD" ]; then
-      log_error "could not generate a password"
-      return 1
-    fi
-    return 0
-  fi
+	if [ -z "$p1" ]; then
+		SECRET_PASSWORD="$(random_password)"
+		SECRET_PASSWORD_GENERATED=true
+		if [ -z "$SECRET_PASSWORD" ]; then
+			log_error "could not generate a password"
+			return 1
+		fi
+		return 0
+	fi
 
-  printf '%sConfirm%s: ' "$C_BOLD" "$C_RESET" >/dev/tty
-  read -rs p2 </dev/tty || p2=""
-  printf '\n' >/dev/tty
-  if [ "$p1" != "$p2" ]; then
-    log_error "passwords did not match"
-    return 1
-  fi
-  SECRET_PASSWORD="$p1"
-  SECRET_PASSWORD_GENERATED=false
+	printf '%sConfirm%s: ' "$C_BOLD" "$C_RESET" >/dev/tty
+	read -rs p2 </dev/tty || p2=""
+	printf '\n' >/dev/tty
+	if [ "$p1" != "$p2" ]; then
+		log_error "passwords did not match"
+		return 1
+	fi
+	SECRET_PASSWORD="$p1"
+	SECRET_PASSWORD_GENERATED=false
 }
 
 # Kept apart from host_age_recipient because that one is read through $(...),
 # where a prompt is invisible and sudo_preflight's exit would end only the
 # subshell.
 ensure_host_key() {
-  local pub=/etc/ssh/ssh_host_ed25519_key.pub
-  [ -e "$pub" ] && return 0
+	local pub=/etc/ssh/ssh_host_ed25519_key.pub
+	[ -e "$pub" ] && return 0
 
-  log_warn "no $pub, so this machine has no SSH host key yet"
-  log_warn "without it sops-nix cannot decrypt system secrets at activation"
-  if ! ask_yes_no "Generate a host key now (needs sudo)?"; then
-    return 1
-  fi
-  if ! command_exists sudo; then
-    log_error "sudo is required to write /etc/ssh"
-    return 1
-  fi
-  if ! sudo -v; then
-    return 1
-  fi
-  sudo ssh-keygen -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key -q 1>&2
+	log_warn "no $pub, so this machine has no SSH host key yet"
+	log_warn "without it sops-nix cannot decrypt system secrets at activation"
+	if ! ask_yes_no "Generate a host key now (needs sudo)?"; then
+		return 1
+	fi
+	if ! command_exists sudo; then
+		log_error "sudo is required to write /etc/ssh"
+		return 1
+	fi
+	if ! sudo -v; then
+		return 1
+	fi
+	sudo ssh-keygen -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key -q 1>&2
 }
 
 # Pure reader: safe inside $(...).
 host_age_recipient() {
-  local pub=/etc/ssh/ssh_host_ed25519_key.pub
-  if [ -e "$pub" ]; then
-    "$SSH_TO_AGE_BIN" -i "$pub" 2>/dev/null || true
-  fi
+	local pub=/etc/ssh/ssh_host_ed25519_key.pub
+	if [ -e "$pub" ]; then
+		"$SSH_TO_AGE_BIN" -i "$pub" 2>/dev/null || true
+	fi
 }
 
 # Prepare an ephemeral --extra-files tree containing /etc/ssh/ssh_host_ed25519_key
 # (0600) for nixos-anywhere bare-metal bootstrapping, and print its age1...
 # recipient to stdout.
 prepare_nixos_anywhere_extra_files() {
-  local raw_dir="$1" target ssh_dir key comment ssh_to_age recipient
-  target="$(expand_tilde "$raw_dir")"
+	local raw_dir="$1" target ssh_dir key comment ssh_to_age recipient
+	target="$(expand_tilde "$raw_dir")"
 
-  if ! command_exists ssh-keygen; then
-    log_error "ssh-keygen not found; cannot generate SSH host key"
-    exit 1
-  fi
+	if ! command_exists ssh-keygen; then
+		log_error "ssh-keygen not found; cannot generate SSH host key"
+		exit 1
+	fi
 
-  ssh_to_age="$(resolve_cmd ssh-to-age)"
-  if [ -z "$ssh_to_age" ]; then
-    if load_nix_env; then
-      log_step "Building ssh-to-age from nixpkgs"
-      ssh_to_age="$(nix_bin ssh-to-age ssh-to-age)"
-    fi
-  fi
-  if [ -z "$ssh_to_age" ]; then
-    log_error "ssh-to-age not found (run inside 'nix develop' or install Nix)"
-    exit 1
-  fi
+	ssh_to_age="$(resolve_cmd ssh-to-age)"
+	if [ -z "$ssh_to_age" ]; then
+		if load_nix_env; then
+			log_step "Building ssh-to-age from nixpkgs"
+			ssh_to_age="$(nix_bin ssh-to-age ssh-to-age)"
+		fi
+	fi
+	if [ -z "$ssh_to_age" ]; then
+		log_error "ssh-to-age not found (run inside 'nix develop' or install Nix)"
+		exit 1
+	fi
 
-  ssh_dir="$target/etc/ssh"
-  key="$ssh_dir/ssh_host_ed25519_key"
-  comment="root@${opt_host:-nixos}"
+	ssh_dir="$target/etc/ssh"
+	key="$ssh_dir/ssh_host_ed25519_key"
+	comment="root@${opt_host:-nixos}"
 
-  if [ "$opt_dry_run" = true ]; then
-    log_info "dry run: would create $key (0600) and derive age1 recipient"
-    exit 0
-  fi
+	if [ "$opt_dry_run" = true ]; then
+		log_info "dry run: would create $key (0600) and derive age1 recipient"
+		exit 0
+	fi
 
-  mkdir -p "$ssh_dir"
-  chmod 755 "$target/etc" "$ssh_dir"
+	mkdir -p "$ssh_dir"
+	chmod 755 "$target/etc" "$ssh_dir"
 
-  if [ -e "$key" ]; then
-    log_info "reusing existing host key at $key"
-  else
-    log_step "Generating ephemeral SSH host key at $key"
-    (
-      umask 077
-      ssh-keygen -t ed25519 -N '' -C "$comment" -f "$key" -q 1>&2
-    )
-  fi
-  chmod 600 "$key"
-  chmod 644 "${key}.pub"
+	if [ -e "$key" ]; then
+		log_info "reusing existing host key at $key"
+	else
+		log_step "Generating ephemeral SSH host key at $key"
+		(
+			umask 077
+			ssh-keygen -t ed25519 -N '' -C "$comment" -f "$key" -q 1>&2
+		)
+	fi
+	chmod 600 "$key"
+	chmod 644 "${key}.pub"
 
-  recipient="$("$ssh_to_age" -i "${key}.pub" 2>/dev/null || true)"
-  case "$recipient" in
-  age1*) ;;
-  *)
-    log_error "could not derive an age recipient from ${key}.pub"
-    exit 1
-    ;;
-  esac
+	recipient="$("$ssh_to_age" -i "${key}.pub" 2>/dev/null || true)"
+	case "$recipient" in
+	age1*) ;;
+	*)
+		log_error "could not derive an age recipient from ${key}.pub"
+		exit 1
+		;;
+	esac
 
-  log_info "SSH public key: $(cat "${key}.pub")"
-  log_info "Age recipient:  $recipient"
-  log_info "Next steps for nixos-anywhere:"
-  log_info "  1. Add '&${opt_host:-<host>} $recipient' to sops/.sops.yaml"
-  log_info "  2. sops --config sops/.sops.yaml updatekeys sops/machines/${opt_host:-<host>}.yaml"
-  log_info "  3. nix run github:nix-community/nixos-anywhere -- --extra-files \"$target\" --flake .#${opt_host:-<host>} root@<target-ip>"
-  log_info "  4. shred -u \"$key\" && rm -rf \"$target\"  (or rm -rf \"$target\" on APFS/tmpfs)"
-  printf '%s\n' "$recipient"
+	log_info "SSH public key: $(cat "${key}.pub")"
+	log_info "Age recipient:  $recipient"
+	log_info "Next steps for nixos-anywhere:"
+	log_info "  1. Add '&${opt_host:-<host>} $recipient' to sops/.sops.yaml"
+	log_info "  2. sops --config sops/.sops.yaml updatekeys sops/machines/${opt_host:-<host>}.yaml"
+	log_info "  3. nix run github:nix-community/nixos-anywhere -- --extra-files \"$target\" --flake .#${opt_host:-<host>} root@<target-ip>"
+	log_info "  4. shred -u \"$key\" && rm -rf \"$target\"  (or rm -rf \"$target\" on APFS/tmpfs)"
+	printf '%s\n' "$recipient"
 }
 
 # Fills in real age recipients, a password hash and the user's private key,
@@ -848,214 +848,214 @@ prepare_nixos_anywhere_extra_files() {
 # `kind` is dendritic or private: the two templates want different api_keys
 # names, and only the dendritic one owns a sops module to flip.
 bootstrap_secrets() {
-  local dir="$1" user="$2" host="$3" kind="${4:-dendritic}"
-  local key admin_age host_age hash secrets identity age_dir age_file
+	local dir="$1" user="$2" host="$3" kind="${4:-dendritic}"
+	local key admin_age host_age hash secrets identity age_dir age_file
 
-  if ! command_exists ssh-keygen; then
-    log_error "ssh-keygen not found; cannot inspect or create an SSH key"
-    return 1
-  fi
-  fetch_secret_tools || return 1
+	if ! command_exists ssh-keygen; then
+		log_error "ssh-keygen not found; cannot inspect or create an SSH key"
+		return 1
+	fi
+	fetch_secret_tools || return 1
 
-  key="$(choose_ssh_key)"
-  if [ -z "$key" ]; then
-    return 1
-  fi
-  log_info "using $key"
+	key="$(choose_ssh_key)"
+	if [ -z "$key" ]; then
+		return 1
+	fi
+	log_info "using $key"
 
-  admin_age="$("$SSH_TO_AGE_BIN" -i "${key}.pub" 2>/dev/null || true)"
-  case "$admin_age" in
-  age1*) ;;
-  *)
-    log_error "could not derive an age recipient from ${key}.pub"
-    return 1
-    ;;
-  esac
+	admin_age="$("$SSH_TO_AGE_BIN" -i "${key}.pub" 2>/dev/null || true)"
+	case "$admin_age" in
+	age1*) ;;
+	*)
+		log_error "could not derive an age recipient from ${key}.pub"
+		return 1
+		;;
+	esac
 
-  ensure_host_key || true
-  host_age="$(host_age_recipient)"
+	ensure_host_key || true
+	host_age="$(host_age_recipient)"
 
-  choose_password || return 1
-  hash="$(printf '%s\n' "$SECRET_PASSWORD" | "$MKPASSWD_BIN" -m sha-512 -s 2>/dev/null || true)"
-  # A sha-512 crypt hash starts with a literal $6$
-  if [ "${hash#\$6\$}" = "$hash" ]; then
-    log_error "mkpasswd did not return a sha-512 hash"
-    return 1
-  fi
+	choose_password || return 1
+	hash="$(printf '%s\n' "$SECRET_PASSWORD" | "$MKPASSWD_BIN" -m sha-512 -s 2>/dev/null || true)"
+	# A sha-512 crypt hash starts with a literal $6$
+	if [ "${hash#\$6\$}" = "$hash" ]; then
+		log_error "mkpasswd did not return a sha-512 hash"
+		return 1
+	fi
 
-  log_step "Writing age recipients into sops/.sops.yaml"
-  sed_inplace "s|^  - &admin age1REPLACEME.*|  - \\&admin ${admin_age}|" "$dir/sops/.sops.yaml"
-  if [ -n "$host_age" ]; then
-    sed_inplace "s|^  - &${host} age1REPLACEME.*|  - \\&${host} ${host_age}|" "$dir/sops/.sops.yaml"
-  else
-    # A leftover placeholder is not valid bech32, and sops refuses the whole
-    # file over it. Drop the host recipient so admin-only encryption succeeds.
-    sed_inplace "/- &${host} age1REPLACEME/d" "$dir/sops/.sops.yaml"
-    sed_inplace "/- \\*${host}\$/d" "$dir/sops/.sops.yaml"
-    log_warn "encrypting to your key only; this machine cannot decrypt yet"
-  fi
+	log_step "Writing age recipients into sops/.sops.yaml"
+	sed_inplace "s|^  - &admin age1REPLACEME.*|  - \\&admin ${admin_age}|" "$dir/sops/.sops.yaml"
+	if [ -n "$host_age" ]; then
+		sed_inplace "s|^  - &${host} age1REPLACEME.*|  - \\&${host} ${host_age}|" "$dir/sops/.sops.yaml"
+	else
+		# A leftover placeholder is not valid bech32, and sops refuses the whole
+		# file over it. Drop the host recipient so admin-only encryption succeeds.
+		sed_inplace "/- &${host} age1REPLACEME/d" "$dir/sops/.sops.yaml"
+		sed_inplace "/- \\*${host}\$/d" "$dir/sops/.sops.yaml"
+		log_warn "encrypting to your key only; this machine cannot decrypt yet"
+	fi
 
-  secrets="$dir/sops/secrets.yaml"
-  : >"$secrets"
-  chmod 600 "$secrets"
-  PLAINTEXT_SECRETS="$secrets"
-  {
-    printf 'passwords:\n'
-    printf '  %s: "%s"\n' "$user" "$hash"
-    # The private template's profile declares no api keys, and a key nothing
-    # asks for is one more thing to keep encrypted for no reason.
-    if [ "$kind" != private ]; then
-      printf 'api_keys:\n'
-      printf '  openai: REPLACE_ME\n'
-    fi
-  } >"$secrets"
+	secrets="$dir/sops/secrets.yaml"
+	: >"$secrets"
+	chmod 600 "$secrets"
+	PLAINTEXT_SECRETS="$secrets"
+	{
+		printf 'passwords:\n'
+		printf '  %s: "%s"\n' "$user" "$hash"
+		# The private template's profile declares no api keys, and a key nothing
+		# asks for is one more thing to keep encrypted for no reason.
+		if [ "$kind" != private ]; then
+			printf 'api_keys:\n'
+			printf '  openai: REPLACE_ME\n'
+		fi
+	} >"$secrets"
 
-  # An inherited SOPS_CONFIG or SOPS_AGE_RECIPIENTS silently redirects the
-  # encryption at another repo's keys, so name the config and clear both.
-  log_step "Encrypting sops/secrets.yaml"
-  if ! (
-    cd "$dir" &&
-      env -u SOPS_CONFIG -u SOPS_AGE_RECIPIENTS -u SOPS_AGE_KEY_CMD \
-        -u SOPS_PGP_FP -u SOPS_KMS_ARN \
-        "$SOPS_BIN" --config sops/.sops.yaml -e -i sops/secrets.yaml
-  ); then
-    rm -f "$secrets"
-    SECRET_PASSWORD_GENERATED=false
-    log_error "sops failed to encrypt; removed the plaintext secrets file"
-    return 1
-  fi
-  if ! grep -q 'ENC\[' "$secrets"; then
-    rm -f "$secrets"
-    SECRET_PASSWORD_GENERATED=false
-    log_error "sops reported success but wrote no ciphertext; removed the file"
-    return 1
-  fi
-  if ! grep -q "recipient: ${admin_age}" "$secrets"; then
-    rm -f "$secrets"
-    SECRET_PASSWORD_GENERATED=false
-    log_error "encrypted to unexpected recipients; removed the file"
-    return 1
-  fi
-  if [ -n "$host_age" ] && ! grep -q "recipient: ${host_age}" "$secrets"; then
-    rm -f "$secrets"
-    SECRET_PASSWORD_GENERATED=false
-    log_error "the host recipient is missing from the result; removed the file"
-    return 1
-  fi
-  PLAINTEXT_SECRETS=""
-  chmod 644 "$secrets"
+	# An inherited SOPS_CONFIG or SOPS_AGE_RECIPIENTS silently redirects the
+	# encryption at another repo's keys, so name the config and clear both.
+	log_step "Encrypting sops/secrets.yaml"
+	if ! (
+		cd "$dir" &&
+			env -u SOPS_CONFIG -u SOPS_AGE_RECIPIENTS -u SOPS_AGE_KEY_CMD \
+				-u SOPS_PGP_FP -u SOPS_KMS_ARN \
+				"$SOPS_BIN" --config sops/.sops.yaml -e -i sops/secrets.yaml
+	); then
+		rm -f "$secrets"
+		SECRET_PASSWORD_GENERATED=false
+		log_error "sops failed to encrypt; removed the plaintext secrets file"
+		return 1
+	fi
+	if ! grep -q 'ENC\[' "$secrets"; then
+		rm -f "$secrets"
+		SECRET_PASSWORD_GENERATED=false
+		log_error "sops reported success but wrote no ciphertext; removed the file"
+		return 1
+	fi
+	if ! grep -q "recipient: ${admin_age}" "$secrets"; then
+		rm -f "$secrets"
+		SECRET_PASSWORD_GENERATED=false
+		log_error "encrypted to unexpected recipients; removed the file"
+		return 1
+	fi
+	if [ -n "$host_age" ] && ! grep -q "recipient: ${host_age}" "$secrets"; then
+		rm -f "$secrets"
+		SECRET_PASSWORD_GENERATED=false
+		log_error "the host recipient is missing from the result; removed the file"
+		return 1
+	fi
+	PLAINTEXT_SECRETS=""
+	chmod 644 "$secrets"
 
-  # So `sops sops/secrets.yaml` works outside `nix develop` too. Append rather
-  # than overwrite: this file may already hold other identities.
-  identity="$("$SSH_TO_AGE_BIN" -private-key -i "$key" 2>/dev/null || true)"
-  if [ -n "$identity" ]; then
-    age_dir="$HOME/.config/sops/age"
-    age_file="$age_dir/keys.txt"
-    mkdir -p "$age_dir"
-    chmod 700 "$age_dir"
-    # Create empty and lock it down before the key is written: a plain
-    # redirect lands at 0644 under the default umask, and an existing file
-    # may already be readable by others.
-    if [ ! -e "$age_file" ]; then
-      : >"$age_file"
-    fi
-    chmod 600 "$age_file"
-    if ! grep -qF "$identity" "$age_file"; then
-      if ! printf '%s\n' "$identity" >>"$age_file"; then
-        log_error "could not write $age_file"
-        return 1
-      fi
-    fi
-    log_info "age identity available in $age_file"
-  fi
+	# So `sops sops/secrets.yaml` works outside `nix develop` too. Append rather
+	# than overwrite: this file may already hold other identities.
+	identity="$("$SSH_TO_AGE_BIN" -private-key -i "$key" 2>/dev/null || true)"
+	if [ -n "$identity" ]; then
+		age_dir="$HOME/.config/sops/age"
+		age_file="$age_dir/keys.txt"
+		mkdir -p "$age_dir"
+		chmod 700 "$age_dir"
+		# Create empty and lock it down before the key is written: a plain
+		# redirect lands at 0644 under the default umask, and an existing file
+		# may already be readable by others.
+		if [ ! -e "$age_file" ]; then
+			: >"$age_file"
+		fi
+		chmod 600 "$age_file"
+		if ! grep -qF "$identity" "$age_file"; then
+			if ! printf '%s\n' "$identity" >>"$age_file"; then
+				log_error "could not write $age_file"
+				return 1
+			fi
+		fi
+		log_info "age identity available in $age_file"
+	fi
 
-  # The private template has no sops module of its own: it inherits the
-  # upstream's, where validateSopsFiles is already on.
-  if [ "$kind" = private ]; then
-    if [ -z "$host_age" ]; then
-      log_warn "this host has no age recipient yet, so it cannot decrypt:"
-      log_warn "add one to sops/.sops.yaml and run 'sops updatekeys sops/secrets.yaml'"
-    fi
-    return 0
-  fi
+	# The private template has no sops module of its own: it inherits the
+	# upstream's, where validateSopsFiles is already on.
+	if [ "$kind" = private ]; then
+		if [ -z "$host_age" ]; then
+			log_warn "this host has no age recipient yet, so it cannot decrypt:"
+			log_warn "add one to sops/.sops.yaml and run 'sops updatekeys sops/secrets.yaml'"
+		fi
+		return 0
+	fi
 
-  if [ -n "$host_age" ]; then
-    sed_inplace "s|validateSopsFiles = lib.mkDefault false;|validateSopsFiles = lib.mkDefault true;|" \
-      "$dir/modules/system/sops.nix"
-  else
-    log_warn "left validateSopsFiles = false: add this host's recipient to"
-    log_warn "sops/.sops.yaml, run 'sops updatekeys sops/secrets.yaml', then enable it"
-  fi
+	if [ -n "$host_age" ]; then
+		sed_inplace "s|validateSopsFiles = lib.mkDefault false;|validateSopsFiles = lib.mkDefault true;|" \
+			"$dir/modules/system/sops.nix"
+	else
+		log_warn "left validateSopsFiles = false: add this host's recipient to"
+		log_warn "sops/.sops.yaml, run 'sops updatekeys sops/secrets.yaml', then enable it"
+	fi
 }
 
 template_next_steps() {
-  local dir="$1" class="$2" host="$3" user="$4" secrets_ready="$5" n=1
-  printf '\n'
-  printf "Scaffolded into %s, with machine '%s' and user '%s'.\n\n" "$dir" "$host" "$user"
+	local dir="$1" class="$2" host="$3" user="$4" secrets_ready="$5" n=1
+	printf '\n'
+	printf "Scaffolded into %s, with machine '%s' and user '%s'.\n\n" "$dir" "$host" "$user"
 
-  if [ "$secrets_ready" != true ]; then
-    cat <<EOF
+	if [ "$secrets_ready" != true ]; then
+		cat <<EOF
 sops/secrets.yaml is not usable yet, so nothing can be switched: activation
 fails until real, encrypted secrets exist.
 
 EOF
-  fi
+	fi
 
-  printf 'Remaining steps:\n'
-  printf '  %d. cd %s && nix develop && nix flake check\n' "$n" "$dir"
-  n=$((n + 1))
-  if [ "$class" = nixos ]; then
-    printf '  %d. nixos-generate-config --show-hardware-config \\\n' "$n"
-    printf '       > machines/%s/%s/hardware-configuration.nix\n' "$class" "$host"
-    n=$((n + 1))
-  fi
-  if [ "$secrets_ready" != true ]; then
-    printf '  %d. follow docs/sops.md, then set validateSopsFiles = true\n' "$n"
-    n=$((n + 1))
-  fi
-  if [ "$class" = nixos ]; then
-    printf '  %d. sudo nixos-rebuild switch --flake .#%s\n' "$n" "$host"
-  else
-    printf '  %d. darwin-rebuild switch --flake .#%s\n' "$n" "$host"
-  fi
-  printf '\n'
+	printf 'Remaining steps:\n'
+	printf '  %d. cd %s && nix develop && nix flake check\n' "$n" "$dir"
+	n=$((n + 1))
+	if [ "$class" = nixos ]; then
+		printf '  %d. nixos-generate-config --show-hardware-config \\\n' "$n"
+		printf '       > machines/%s/%s/hardware-configuration.nix\n' "$class" "$host"
+		n=$((n + 1))
+	fi
+	if [ "$secrets_ready" != true ]; then
+		printf '  %d. follow docs/sops.md, then set validateSopsFiles = true\n' "$n"
+		n=$((n + 1))
+	fi
+	if [ "$class" = nixos ]; then
+		printf '  %d. sudo nixos-rebuild switch --flake .#%s\n' "$n" "$host"
+	else
+		printf '  %d. darwin-rebuild switch --flake .#%s\n' "$n" "$host"
+	fi
+	printf '\n'
 
-  if [ "$SECRET_PASSWORD_GENERATED" = true ] && [ -n "$SECRET_PASSWORD" ]; then
-    # stderr, like every other message: stdout may be redirected to a file.
-    printf '  %sGenerated login password: %s%s\n' "$C_BOLD" "$SECRET_PASSWORD" "$C_RESET" >&2
-    printf '  Record it now. Only the hash is stored, so it cannot be recovered.\n\n' >&2
-  fi
+	if [ "$SECRET_PASSWORD_GENERATED" = true ] && [ -n "$SECRET_PASSWORD" ]; then
+		# stderr, like every other message: stdout may be redirected to a file.
+		printf '  %sGenerated login password: %s%s\n' "$C_BOLD" "$SECRET_PASSWORD" "$C_RESET" >&2
+		printf '  Record it now. Only the hash is stored, so it cannot be recovered.\n\n' >&2
+	fi
 }
 
 # Is there a configuration here for this machine? Checked on disk rather than
 # through nix, because this runs before Nix is installed. machines/<host>/ is
 # this layout; machines/<class>/<host>/ is the dendritic template's.
 local_target_exists() {
-  local dir
-  if [ "$opt_mode" = home ]; then
-    [ -d "$FLAKE_DIR/home-profiles/${opt_host:-$USER}" ] && return 0
-    return 1
-  fi
-  [ -n "$opt_host" ] || return 1
-  for dir in "$FLAKE_DIR/machines/$opt_host" "$FLAKE_DIR"/machines/*/"$opt_host"; do
-    [ -d "$dir" ] && return 0
-  done
-  return 1
+	local dir
+	if [ "$opt_mode" = home ]; then
+		[ -d "$FLAKE_DIR/home-profiles/${opt_host:-$USER}" ] && return 0
+		return 1
+	fi
+	[ -n "$opt_host" ] || return 1
+	for dir in "$FLAKE_DIR/machines/$opt_host" "$FLAKE_DIR"/machines/*/"$opt_host"; do
+		[ -d "$dir" ] && return 0
+	done
+	return 1
 }
 
 # Echo switch, dendritic, private or quit. Defaults to switching when this
 # machine has a configuration here, and to scaffolding one when it does not.
 main_choice() {
-  local default=2 pick
-  if [ "$opt_assume_yes" = true ]; then
-    printf 'switch\n'
-    return 0
-  fi
-  if local_target_exists; then
-    default=1
-  fi
+	local default=2 pick
+	if [ "$opt_assume_yes" = true ]; then
+		printf 'switch\n'
+		return 0
+	fi
+	if local_target_exists; then
+		default=1
+	fi
 
-  cat >/dev/tty <<EOF
+	cat >/dev/tty <<EOF
 
   1) Switch this machine, using ${opt_host:-$USER}
   2) Scaffold a configuration of my own, from the dendritic template
@@ -1063,19 +1063,19 @@ main_choice() {
   4) Quit
 
 EOF
-  pick="$(prompt_value "Choice" "$default")"
-  case "$pick" in
-  1 | switch) printf 'switch\n' ;;
-  2 | dendritic) printf 'dendritic\n' ;;
-  3 | private) printf 'private\n' ;;
-  *) printf 'quit\n' ;;
-  esac
+	pick="$(prompt_value "Choice" "$default")"
+	case "$pick" in
+	1 | switch) printf 'switch\n' ;;
+	2 | dendritic) printf 'dendritic\n' ;;
+	3 | private) printf 'private\n' ;;
+	*) printf 'quit\n' ;;
+	esac
 }
 
 # Echo the chosen template name; prompts go to the tty.
 choose_template() {
-  local pick
-  cat >/dev/tty <<'EOF'
+	local pick
+	cat >/dev/tty <<'EOF'
 
   1) dendritic  A configuration of your own: NixOS, nix-darwin and
                 home-manager in one flake, sops-nix wiring, and a machine
@@ -1087,344 +1087,344 @@ choose_template() {
                 darwin-rebuild or nh, same as any other machine.
 
 EOF
-  pick="$(prompt_value "Template" "1")"
-  case "$pick" in
-  1 | dendritic) printf 'dendritic\n' ;;
-  2 | private) printf 'private\n' ;;
-  *) log_error "not a template: $pick" ;;
-  esac
+	pick="$(prompt_value "Template" "1")"
+	case "$pick" in
+	1 | dendritic) printf 'dendritic\n' ;;
+	2 | private) printf 'private\n' ;;
+	*) log_error "not a template: $pick" ;;
+	esac
 }
 
 scaffold_template() {
-  case "$(choose_template)" in
-  dendritic) scaffold_dendritic ;;
-  private) scaffold_private ;;
-  *) exit 1 ;;
-  esac
+	case "$(choose_template)" in
+	dendritic) scaffold_dendritic ;;
+	private) scaffold_private ;;
+	*) exit 1 ;;
+	esac
 }
 
 # The private template uses the dendritic layout, so the machine and user
 # renames are the shared ones. Only the upstream URL is specific to it.
 private_rename() {
-  local dir="$1" upstream="$2"
-  sed_inplace "s|github:you/your-config|$(sed_escape "$upstream")|" "$dir/flake.nix"
+	local dir="$1" upstream="$2"
+	sed_inplace "s|github:you/your-config|$(sed_escape "$upstream")|" "$dir/flake.nix"
 }
 
 private_next_steps() {
-  local dir="$1" class="$2" host="$3" upstream="$4" secrets_ready="$5" n=1
-  printf '\n'
-  printf "Scaffolded into %s: machine '%s', built from %s.\n\n" "$dir" "$host" "$upstream"
+	local dir="$1" class="$2" host="$3" upstream="$4" secrets_ready="$5" n=1
+	printf '\n'
+	printf "Scaffolded into %s: machine '%s', built from %s.\n\n" "$dir" "$host" "$upstream"
 
-  if [ "$secrets_ready" != true ]; then
-    printf 'sops/secrets.yaml is not usable yet, so nothing can be switched:\n'
-    printf 'activation fails until real, encrypted secrets exist.\n\n'
-  fi
+	if [ "$secrets_ready" != true ]; then
+		printf 'sops/secrets.yaml is not usable yet, so nothing can be switched:\n'
+		printf 'activation fails until real, encrypted secrets exist.\n\n'
+	fi
 
-  printf 'Remaining steps:\n'
-  printf '  %d. cd %s && nix develop\n' "$n" "$dir"
-  n=$((n + 1))
-  if [ "$class" = nixos ]; then
-    printf '  %d. nixos-generate-config --show-hardware-config \\\n' "$n"
-    printf '       > machines/nixos/%s/hardware-configuration.nix\n' "$host"
-    n=$((n + 1))
-  fi
-  if [ "$secrets_ready" != true ]; then
-    printf '  %d. put age recipients in sops/.sops.yaml, then sops sops/secrets.yaml\n' "$n"
-    n=$((n + 1))
-  fi
-  if [ "$class" = nixos ]; then
-    printf '  %d. nh os switch .\n' "$n"
-    printf '       or: sudo nixos-rebuild switch --flake .#%s\n' "$host"
-  else
-    printf '  %d. nh darwin switch .\n' "$n"
-    printf '       or: darwin-rebuild switch --flake .#%s\n' "$host"
-  fi
-  printf '\n'
-  # %s, not a bare format string: printf reads a leading -n as its own flag.
-  printf '%s\n' 'nh picks the configuration matching the local hostname; -H names' \
-    'another, -n is a dry run, and --target-host deploys to a different machine.' ''
-  printf 'docs/upstream-contract.md covers which secret keys the upstream modules\n'
-  printf 'demand, and what the single input buys and costs.\n\n'
+	printf 'Remaining steps:\n'
+	printf '  %d. cd %s && nix develop\n' "$n" "$dir"
+	n=$((n + 1))
+	if [ "$class" = nixos ]; then
+		printf '  %d. nixos-generate-config --show-hardware-config \\\n' "$n"
+		printf '       > machines/nixos/%s/hardware-configuration.nix\n' "$host"
+		n=$((n + 1))
+	fi
+	if [ "$secrets_ready" != true ]; then
+		printf '  %d. put age recipients in sops/.sops.yaml, then sops sops/secrets.yaml\n' "$n"
+		n=$((n + 1))
+	fi
+	if [ "$class" = nixos ]; then
+		printf '  %d. nh os switch .\n' "$n"
+		printf '       or: sudo nixos-rebuild switch --flake .#%s\n' "$host"
+	else
+		printf '  %d. nh darwin switch .\n' "$n"
+		printf '       or: darwin-rebuild switch --flake .#%s\n' "$host"
+	fi
+	printf '\n'
+	# %s, not a bare format string: printf reads a leading -n as its own flag.
+	printf '%s\n' 'nh picks the configuration matching the local hostname; -H names' \
+		'another, -n is a dry run, and --target-host deploys to a different machine.' ''
+	printf 'docs/upstream-contract.md covers which secret keys the upstream modules\n'
+	printf 'demand, and what the single input buys and costs.\n\n'
 
-  if [ "$SECRET_PASSWORD_GENERATED" = true ] && [ -n "$SECRET_PASSWORD" ]; then
-    # stderr, like every other message: stdout may be redirected to a file.
-    printf '  %sGenerated login password: %s%s\n' "$C_BOLD" "$SECRET_PASSWORD" "$C_RESET" >&2
-    printf '  Record it now. Only the hash is stored, so it cannot be recovered.\n\n' >&2
-  fi
+	if [ "$SECRET_PASSWORD_GENERATED" = true ] && [ -n "$SECRET_PASSWORD" ]; then
+		# stderr, like every other message: stdout may be redirected to a file.
+		printf '  %sGenerated login password: %s%s\n' "$C_BOLD" "$SECRET_PASSWORD" "$C_RESET" >&2
+		printf '  Record it now. Only the hash is stored, so it cannot be recovered.\n\n' >&2
+	fi
 }
 
 scaffold_private() {
-  local dir upstream user host class platform
+	local dir upstream user host class platform
 
-  class=darwin
-  if [ "$OS" = linux ]; then
-    class=nixos
-  fi
-  platform="$(template_platform)"
-  if [ -z "$platform" ]; then
-    log_error "no template platform for $(uname -s) $(uname -m)"
-    exit 1
-  fi
+	class=darwin
+	if [ "$OS" = linux ]; then
+		class=nixos
+	fi
+	platform="$(template_platform)"
+	if [ -z "$platform" ]; then
+		log_error "no template platform for $(uname -s) $(uname -m)"
+		exit 1
+	fi
 
-  dir="$(expand_tilde "$(prompt_value "New configuration directory" "$HOME/nix-private")")"
-  upstream="$(prompt_value "Upstream config flake" "github:${USER}/dotfiles")"
-  user="$(prompt_value "Primary username" "$USER")"
-  host="$(prompt_value "Name for this machine" "${HOSTNAME_DETECTED:-my-${class}}")"
-  # Before anything is written: these reach sed replacements and paths.
-  require_valid_names "$user" "$host"
+	dir="$(expand_tilde "$(prompt_value "New configuration directory" "$HOME/nix-private")")"
+	upstream="$(prompt_value "Upstream config flake" "github:${USER}/dotfiles")"
+	user="$(prompt_value "Primary username" "$USER")"
+	host="$(prompt_value "Name for this machine" "${HOSTNAME_DETECTED:-my-${class}}")"
+	# Before anything is written: these reach sed replacements and paths.
+	require_valid_names "$user" "$host"
 
-  if [ -e "$dir/flake.nix" ]; then
-    log_error "$dir already contains a flake.nix"
-    exit 1
-  fi
+	if [ -e "$dir/flake.nix" ]; then
+		log_error "$dir already contains a flake.nix"
+		exit 1
+	fi
 
-  printf '\n'
-  printf '  %-10s %s\n' "Directory" "$dir"
-  printf '  %-10s %s\n' "Upstream" "$upstream"
-  printf '  %-10s %s\n' "User" "$user"
-  printf '  %-10s %s (%s)\n' "Machine" "$host" "$platform"
-  printf '  %-10s %s\n' "Template" "${FLAKE_DIR}#private"
-  printf '\n'
-  confirm "Scaffold this configuration?"
+	printf '\n'
+	printf '  %-10s %s\n' "Directory" "$dir"
+	printf '  %-10s %s\n' "Upstream" "$upstream"
+	printf '  %-10s %s\n' "User" "$user"
+	printf '  %-10s %s (%s)\n' "Machine" "$host" "$platform"
+	printf '  %-10s %s\n' "Template" "${FLAKE_DIR}#private"
+	printf '\n'
+	confirm "Scaffold this configuration?"
 
-  log_step "Writing the template into $dir"
-  local out
-  ensure_tmp_dir
-  out="$TMP_DIR/flake-new.log"
-  if ! nix flake new -t "${FLAKE_DIR}#private" "$dir" >"$out" 2>&1; then
-    cat "$out" >&2
-    log_error "nix flake new failed"
-    exit 1
-  fi
+	log_step "Writing the template into $dir"
+	local out
+	ensure_tmp_dir
+	out="$TMP_DIR/flake-new.log"
+	if ! nix flake new -t "${FLAKE_DIR}#private" "$dir" >"$out" 2>&1; then
+		cat "$out" >&2
+		log_error "nix flake new failed"
+		exit 1
+	fi
 
-  log_step "Pointing it at $upstream and renaming the example user and machine"
-  private_rename "$dir" "$upstream"
-  template_rename_user "$dir" "$user" private
-  template_rename_machine "$dir" "$class" "$host" "$platform" private
+	log_step "Pointing it at $upstream and renaming the example user and machine"
+	private_rename "$dir" "$upstream"
+	template_rename_user "$dir" "$user" private
+	template_rename_machine "$dir" "$class" "$host" "$platform" private
 
-  local secrets_ready=false
-  printf '\n'
-  printf 'Secrets can be bootstrapped now: an age recipient from an ed25519 SSH\n'
-  printf 'key, a password hash, and an encrypted sops/secrets.yaml.\n'
-  if ask_yes_no "Bootstrap secrets?"; then
-    if bootstrap_secrets "$dir" "$user" "$host" private; then
-      secrets_ready=true
-    else
-      log_warn "secrets bootstrap did not complete; nothing encrypted was written"
-    fi
-  fi
+	local secrets_ready=false
+	printf '\n'
+	printf 'Secrets can be bootstrapped now: an age recipient from an ed25519 SSH\n'
+	printf 'key, a password hash, and an encrypted sops/secrets.yaml.\n'
+	if ask_yes_no "Bootstrap secrets?"; then
+		if bootstrap_secrets "$dir" "$user" "$host" private; then
+			secrets_ready=true
+		else
+			log_warn "secrets bootstrap did not complete; nothing encrypted was written"
+		fi
+	fi
 
-  # After the secrets step, so a plaintext secrets.yaml can never be staged.
-  log_step "Initialising git, since flakes only see tracked files"
-  git -C "$dir" init --quiet
-  git -C "$dir" add -A
-  git_commit "$dir" "Scaffold ${host} from the private template"
+	# After the secrets step, so a plaintext secrets.yaml can never be staged.
+	log_step "Initialising git, since flakes only see tracked files"
+	git -C "$dir" init --quiet
+	git -C "$dir" add -A
+	git_commit "$dir" "Scaffold ${host} from the private template"
 
-  private_next_steps "$dir" "$class" "$host" "$upstream" "$secrets_ready"
-  unset SECRET_PASSWORD
-  exit 0
+	private_next_steps "$dir" "$class" "$host" "$upstream" "$secrets_ready"
+	unset SECRET_PASSWORD
+	exit 0
 }
 
 # A machine that has never used git has no user.name, and the scaffold is not
 # the place to make the user go and set one.
 git_commit() {
-  local dir="$1" msg="$2"
-  if git -C "$dir" diff --cached --quiet; then
-    return 0
-  fi
-  if git -C "$dir" commit --quiet -m "$msg" 2>/dev/null; then
-    return 0
-  fi
-  git -C "$dir" \
-    -c user.name="$USER" -c "user.email=${USER}@$(uname -n)" \
-    commit --quiet -m "$msg"
+	local dir="$1" msg="$2"
+	if git -C "$dir" diff --cached --quiet; then
+		return 0
+	fi
+	if git -C "$dir" commit --quiet -m "$msg" 2>/dev/null; then
+		return 0
+	fi
+	git -C "$dir" \
+		-c user.name="$USER" -c "user.email=${USER}@$(uname -n)" \
+		commit --quiet -m "$msg"
 }
 
 scaffold_dendritic() {
-  local dir user host class platform
-  class=darwin
-  if [ "$OS" = linux ]; then
-    class=nixos
-  fi
-  platform="$(template_platform)"
-  if [ -z "$platform" ]; then
-    log_error "no template platform for $(uname -s) $(uname -m)"
-    exit 1
-  fi
+	local dir user host class platform
+	class=darwin
+	if [ "$OS" = linux ]; then
+		class=nixos
+	fi
+	platform="$(template_platform)"
+	if [ -z "$platform" ]; then
+		log_error "no template platform for $(uname -s) $(uname -m)"
+		exit 1
+	fi
 
-  dir="$(expand_tilde "$(prompt_value "New configuration directory" "$HOME/nix-config")")"
-  user="$(prompt_value "Primary username" "$USER")"
-  host="$(prompt_value "Name for this machine" "${HOSTNAME_DETECTED:-my-${class}}")"
-  # Before anything is written: these reach sed replacements and paths.
-  require_valid_names "$user" "$host"
+	dir="$(expand_tilde "$(prompt_value "New configuration directory" "$HOME/nix-config")")"
+	user="$(prompt_value "Primary username" "$USER")"
+	host="$(prompt_value "Name for this machine" "${HOSTNAME_DETECTED:-my-${class}}")"
+	# Before anything is written: these reach sed replacements and paths.
+	require_valid_names "$user" "$host"
 
-  if [ -e "$dir/flake.nix" ]; then
-    log_error "$dir already contains a flake.nix"
-    exit 1
-  fi
+	if [ -e "$dir/flake.nix" ]; then
+		log_error "$dir already contains a flake.nix"
+		exit 1
+	fi
 
-  printf '\n'
-  printf '  %-10s %s\n' "Directory" "$dir"
-  printf '  %-10s %s\n' "User" "$user"
-  printf '  %-10s %s (%s)\n' "Machine" "$host" "$platform"
-  printf '  %-10s %s\n' "Template" "${FLAKE_DIR}#dendritic"
-  printf '\n'
-  confirm "Scaffold this configuration?"
+	printf '\n'
+	printf '  %-10s %s\n' "Directory" "$dir"
+	printf '  %-10s %s\n' "User" "$user"
+	printf '  %-10s %s (%s)\n' "Machine" "$host" "$platform"
+	printf '  %-10s %s\n' "Template" "${FLAKE_DIR}#dendritic"
+	printf '\n'
+	confirm "Scaffold this configuration?"
 
-  # Swallow the template's own welcome text: it lists steps this script then
-  # performs. Keep the output for the failure case.
-  log_step "Writing the template into $dir"
-  local out
-  ensure_tmp_dir
-  out="$TMP_DIR/flake-new.log"
-  if ! nix flake new -t "${FLAKE_DIR}#dendritic" "$dir" >"$out" 2>&1; then
-    cat "$out" >&2
-    log_error "nix flake new failed"
-    exit 1
-  fi
+	# Swallow the template's own welcome text: it lists steps this script then
+	# performs. Keep the output for the failure case.
+	log_step "Writing the template into $dir"
+	local out
+	ensure_tmp_dir
+	out="$TMP_DIR/flake-new.log"
+	if ! nix flake new -t "${FLAKE_DIR}#dendritic" "$dir" >"$out" 2>&1; then
+		cat "$out" >&2
+		log_error "nix flake new failed"
+		exit 1
+	fi
 
-  log_step "Renaming the example user and machine"
-  template_rename_user "$dir" "$user"
-  template_rename_machine "$dir" "$class" "$host" "$platform"
+	log_step "Renaming the example user and machine"
+	template_rename_user "$dir" "$user"
+	template_rename_machine "$dir" "$class" "$host" "$platform"
 
-  local secrets_ready=false
-  printf '\n'
-  printf 'Secrets can be bootstrapped now: an age recipient from an ed25519 SSH\n'
-  printf 'key, a password hash, and an encrypted sops/secrets.yaml.\n'
-  if ask_yes_no "Bootstrap secrets?"; then
-    if bootstrap_secrets "$dir" "$user" "$host"; then
-      secrets_ready=true
-    else
-      log_warn "secrets bootstrap did not complete; nothing encrypted was written"
-    fi
-  fi
+	local secrets_ready=false
+	printf '\n'
+	printf 'Secrets can be bootstrapped now: an age recipient from an ed25519 SSH\n'
+	printf 'key, a password hash, and an encrypted sops/secrets.yaml.\n'
+	if ask_yes_no "Bootstrap secrets?"; then
+		if bootstrap_secrets "$dir" "$user" "$host"; then
+			secrets_ready=true
+		else
+			log_warn "secrets bootstrap did not complete; nothing encrypted was written"
+		fi
+	fi
 
-  # After the secrets step, so a plaintext secrets.yaml can never be staged.
-  log_step "Initialising git, since flakes only see tracked files"
-  git -C "$dir" init --quiet
-  git -C "$dir" add -A
+	# After the secrets step, so a plaintext secrets.yaml can never be staged.
+	log_step "Initialising git, since flakes only see tracked files"
+	git -C "$dir" init --quiet
+	git -C "$dir" add -A
 
-  template_next_steps "$dir" "$class" "$host" "$user" "$secrets_ready"
-  unset SECRET_PASSWORD
-  exit 0
+	template_next_steps "$dir" "$class" "$host" "$user" "$secrets_ready"
+	unset SECRET_PASSWORD
+	exit 0
 }
 
 switch_darwin() {
-  local host="$1"
+	local host="$1"
 
-  local rebuild
-  rebuild="$(resolve_cmd darwin-rebuild)"
-  if [ -n "$rebuild" ]; then
-    log_step "Switching nix-darwin for $host"
-    "$rebuild" switch --flake "${FLAKE_DIR}#${host}"
-    return 0
-  fi
+	local rebuild
+	rebuild="$(resolve_cmd darwin-rebuild)"
+	if [ -n "$rebuild" ]; then
+		log_step "Switching nix-darwin for $host"
+		"$rebuild" switch --flake "${FLAKE_DIR}#${host}"
+		return 0
+	fi
 
-  # First run: build this flake's own darwin-rebuild rather than `nix run
-  # nix-darwin`, which resolves to master and asserts on the nixpkgs release.
-  BOOTSTRAPPED=true
-  log_step "Bootstrapping nix-darwin for $host (first run)"
-  local out
-  ensure_tmp_dir
-  out="$TMP_DIR/darwin-system"
-  nix build --out-link "$out" "${FLAKE_DIR}#darwinConfigurations.${host}.system"
-  "$out/sw/bin/darwin-rebuild" switch --flake "${FLAKE_DIR}#${host}"
+	# First run: build this flake's own darwin-rebuild rather than `nix run
+	# nix-darwin`, which resolves to master and asserts on the nixpkgs release.
+	BOOTSTRAPPED=true
+	log_step "Bootstrapping nix-darwin for $host (first run)"
+	local out
+	ensure_tmp_dir
+	out="$TMP_DIR/darwin-system"
+	nix build --out-link "$out" "${FLAKE_DIR}#darwinConfigurations.${host}.system"
+	"$out/sw/bin/darwin-rebuild" switch --flake "${FLAKE_DIR}#${host}"
 }
 
 switch_nixos() {
-  local host="$1"
+	local host="$1"
 
-  local rebuild
-  rebuild="$(resolve_cmd nixos-rebuild)"
-  if [ -z "$rebuild" ]; then
-    log_error "nixos-rebuild not found; this does not look like a NixOS system"
-    log_error "use --home-only for standalone home-manager instead"
-    exit 1
-  fi
+	local rebuild
+	rebuild="$(resolve_cmd nixos-rebuild)"
+	if [ -z "$rebuild" ]; then
+		log_error "nixos-rebuild not found; this does not look like a NixOS system"
+		log_error "use --home-only for standalone home-manager instead"
+		exit 1
+	fi
 
-  log_step "Switching NixOS for $host"
-  if [ "$(id -u)" -eq 0 ]; then
-    "$rebuild" switch --flake "${FLAKE_DIR}#${host}"
-  else
-    sudo "$rebuild" switch --flake "${FLAKE_DIR}#${host}"
-  fi
+	log_step "Switching NixOS for $host"
+	if [ "$(id -u)" -eq 0 ]; then
+		"$rebuild" switch --flake "${FLAKE_DIR}#${host}"
+	else
+		sudo "$rebuild" switch --flake "${FLAKE_DIR}#${host}"
+	fi
 }
 
 switch_home_manager() {
-  local user="$1"
+	local user="$1"
 
-  # This flake pins homeConfigurations to a single system; refuse early rather
-  # than fail deep in the build on a mismatched host.
-  local want have
-  want="$(nix eval --raw \
-    "${FLAKE_DIR}#homeConfigurations.${user}.pkgs.stdenv.hostPlatform.system" 2>/dev/null || true)"
-  have="$(current_system)"
-  if [ -n "$want" ] && [ -n "$have" ] && [ "$want" != "$have" ]; then
-    log_error "homeConfigurations.${user} is built for $want, this machine is $have"
-    log_error "adjust the pinned system in modules/flake-parts/home.nix"
-    exit 1
-  fi
+	# This flake pins homeConfigurations to a single system; refuse early rather
+	# than fail deep in the build on a mismatched host.
+	local want have
+	want="$(nix eval --raw \
+		"${FLAKE_DIR}#homeConfigurations.${user}.pkgs.stdenv.hostPlatform.system" 2>/dev/null || true)"
+	have="$(current_system)"
+	if [ -n "$want" ] && [ -n "$have" ] && [ "$want" != "$have" ]; then
+		log_error "homeConfigurations.${user} is built for $want, this machine is $have"
+		log_error "adjust the pinned system in modules/flake-parts/home.nix"
+		exit 1
+	fi
 
-  local hm
-  hm="$(resolve_cmd home-manager)"
-  if [ -n "$hm" ]; then
-    log_step "Switching home-manager for $user"
-    "$hm" switch --flake "${FLAKE_DIR}#${user}"
-    return 0
-  fi
+	local hm
+	hm="$(resolve_cmd home-manager)"
+	if [ -n "$hm" ]; then
+		log_step "Switching home-manager for $user"
+		"$hm" switch --flake "${FLAKE_DIR}#${user}"
+		return 0
+	fi
 
-  # Activate the flake's own home-manager rather than `nix run home-manager`,
-  # which resolves to master and can disagree with the locked release.
-  BOOTSTRAPPED=true
-  log_step "Bootstrapping home-manager for $user (first run)"
-  local out
-  ensure_tmp_dir
-  out="$TMP_DIR/home-manager"
-  nix build --out-link "$out" "${FLAKE_DIR}#homeConfigurations.${user}.activationPackage"
-  "$out/activate"
+	# Activate the flake's own home-manager rather than `nix run home-manager`,
+	# which resolves to master and can disagree with the locked release.
+	BOOTSTRAPPED=true
+	log_step "Bootstrapping home-manager for $user (first run)"
+	local out
+	ensure_tmp_dir
+	out="$TMP_DIR/home-manager"
+	nix build --out-link "$out" "${FLAKE_DIR}#homeConfigurations.${user}.activationPackage"
+	"$out/activate"
 }
 
 # --- plan -----------------------------------------------------------------
 
 plan_action() {
-  case "$opt_mode" in
-  home) printf 'home-manager switch  ->  %s#%s\n' "$FLAKE_DIR" "${opt_host:-$USER}" ;;
-  darwin) printf 'darwin-rebuild switch  ->  %s#%s\n' "$FLAKE_DIR" "$opt_host" ;;
-  nixos) printf 'nixos-rebuild switch  ->  %s#%s\n' "$FLAKE_DIR" "$opt_host" ;;
-  esac
+	case "$opt_mode" in
+	home) printf 'home-manager switch  ->  %s#%s\n' "$FLAKE_DIR" "${opt_host:-$USER}" ;;
+	darwin) printf 'darwin-rebuild switch  ->  %s#%s\n' "$FLAKE_DIR" "$opt_host" ;;
+	nixos) printf 'nixos-rebuild switch  ->  %s#%s\n' "$FLAKE_DIR" "$opt_host" ;;
+	esac
 }
 
 plan_source() {
-  case "$SOURCE_MODE" in
-  local) printf '%s (existing checkout)\n' "$FLAKE_DIR" ;;
-  clone) printf '%s (clone %s @ %s)\n' "$FLAKE_DIR" "$REPO_URL" "$REPO_REF" ;;
-  update) printf '%s (update to %s)\n' "$FLAKE_DIR" "$REPO_REF" ;;
-  esac
+	case "$SOURCE_MODE" in
+	local) printf '%s (existing checkout)\n' "$FLAKE_DIR" ;;
+	clone) printf '%s (clone %s @ %s)\n' "$FLAKE_DIR" "$REPO_URL" "$REPO_REF" ;;
+	update) printf '%s (update to %s)\n' "$FLAKE_DIR" "$REPO_REF" ;;
+	esac
 }
 
 plan_nix() {
-  if load_nix_env; then
-    nix --version
-  else
-    printf 'not installed (will install Determinate Nix)\n'
-  fi
+	if load_nix_env; then
+		nix --version
+	else
+		printf 'not installed (will install Determinate Nix)\n'
+	fi
 }
 
 print_plan() {
-  printf '\n%sdotfiles installer%s\n\n' "$C_BOLD" "$C_RESET"
-  printf '  %-10s %s\n' "Source" "$(plan_source)"
-  printf '  %-10s %s (%s)\n' "System" "$OS" "$(uname -m)"
-  if [ "$opt_mode" != home ]; then
-    printf '  %-10s %s\n' "Host" "$opt_host"
-  fi
-  printf '  %-10s %s\n' "User" "$USER"
-  printf '  %-10s %s\n' "Nix" "$(plan_nix)"
-  printf '  %-10s %s\n' "Action" "$(plan_action)"
-  printf '\n'
+	printf '\n%sdotfiles installer%s\n\n' "$C_BOLD" "$C_RESET"
+	printf '  %-10s %s\n' "Source" "$(plan_source)"
+	printf '  %-10s %s (%s)\n' "System" "$OS" "$(uname -m)"
+	if [ "$opt_mode" != home ]; then
+		printf '  %-10s %s\n' "Host" "$opt_host"
+	fi
+	printf '  %-10s %s\n' "User" "$USER"
+	printf '  %-10s %s\n' "Nix" "$(plan_nix)"
+	printf '  %-10s %s\n' "Action" "$(plan_action)"
+	printf '\n'
 }
 
 usage() {
-  cat <<'EOF'
+	cat <<'EOF'
 Bootstrap a Nix-based system configuration from this dotfiles flake.
 
 Usage:
@@ -1478,169 +1478,169 @@ EOF
 }
 
 parse_args() {
-  while [ $# -gt 0 ]; do
-    case "$1" in
-    --host)
-      opt_host="${2:-}"
-      [ -n "$opt_host" ] || {
-        log_error "--host requires a value"
-        exit 1
-      }
-      shift 2
-      ;;
-    --dir)
-      opt_dir="${2:-}"
-      [ -n "$opt_dir" ] || {
-        log_error "--dir requires a value"
-        exit 1
-      }
-      shift 2
-      ;;
-    --ref)
-      REPO_REF="${2:-}"
-      [ -n "$REPO_REF" ] || {
-        log_error "--ref requires a value"
-        exit 1
-      }
-      shift 2
-      ;;
-    --repo)
-      REPO_URL="${2:-}"
-      opt_repo="${2:-}"
-      [ -n "$REPO_URL" ] || {
-        log_error "--repo requires a value"
-        exit 1
-      }
-      shift 2
-      ;;
-    --home-only)
-      opt_mode="home"
-      shift
-      ;;
-    --prepare-extra-files | --extra-files-dir)
-      opt_extra_files_dir="${2:-}"
-      [ -n "$opt_extra_files_dir" ] || {
-        log_error "$1 requires a directory path"
-        exit 1
-      }
-      shift 2
-      ;;
-    --dry-run)
-      opt_dry_run=true
-      shift
-      ;;
-    -y | --yes)
-      opt_assume_yes=true
-      shift
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      log_error "unknown option: $1"
-      printf '\n'
-      usage >&2
-      exit 1
-      ;;
-    esac
-  done
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		--host)
+			opt_host="${2:-}"
+			[ -n "$opt_host" ] || {
+				log_error "--host requires a value"
+				exit 1
+			}
+			shift 2
+			;;
+		--dir)
+			opt_dir="${2:-}"
+			[ -n "$opt_dir" ] || {
+				log_error "--dir requires a value"
+				exit 1
+			}
+			shift 2
+			;;
+		--ref)
+			REPO_REF="${2:-}"
+			[ -n "$REPO_REF" ] || {
+				log_error "--ref requires a value"
+				exit 1
+			}
+			shift 2
+			;;
+		--repo)
+			REPO_URL="${2:-}"
+			opt_repo="${2:-}"
+			[ -n "$REPO_URL" ] || {
+				log_error "--repo requires a value"
+				exit 1
+			}
+			shift 2
+			;;
+		--home-only)
+			opt_mode="home"
+			shift
+			;;
+		--prepare-extra-files | --extra-files-dir)
+			opt_extra_files_dir="${2:-}"
+			[ -n "$opt_extra_files_dir" ] || {
+				log_error "$1 requires a directory path"
+				exit 1
+			}
+			shift 2
+			;;
+		--dry-run)
+			opt_dry_run=true
+			shift
+			;;
+		-y | --yes)
+			opt_assume_yes=true
+			shift
+			;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		*)
+			log_error "unknown option: $1"
+			printf '\n'
+			usage >&2
+			exit 1
+			;;
+		esac
+	done
 }
 
 main() {
-  parse_args "$@"
+	parse_args "$@"
 
-  if [ -n "$opt_extra_files_dir" ]; then
-    prepare_nixos_anywhere_extra_files "$opt_extra_files_dir"
-    exit 0
-  fi
+	if [ -n "$opt_extra_files_dir" ]; then
+		prepare_nixos_anywhere_extra_files "$opt_extra_files_dir"
+		exit 0
+	fi
 
-  OS="$(detect_os)"
-  if [ -z "$OS" ]; then
-    log_error "unsupported operating system: $(uname -s)"
-    exit 1
-  fi
-  if [ -e /etc/NIXOS ]; then
-    IS_NIXOS=true
-  fi
+	OS="$(detect_os)"
+	if [ -z "$OS" ]; then
+		log_error "unsupported operating system: $(uname -s)"
+		exit 1
+	fi
+	if [ -e /etc/NIXOS ]; then
+		IS_NIXOS=true
+	fi
 
-  resolve_source
-  check_requirements
+	resolve_source
+	check_requirements
 
-  HOSTNAME_DETECTED="$(detect_hostname 2>/dev/null || true)"
-  if [ -z "$opt_mode" ]; then
-    if [ "$OS" = darwin ]; then
-      opt_mode="darwin"
-    elif [ "$IS_NIXOS" = true ]; then
-      opt_mode="nixos"
-    else
-      log_info "not a NixOS system, falling back to standalone home-manager"
-      opt_mode="home"
-    fi
-  fi
-  if [ -z "$opt_host" ] && [ "$opt_mode" != home ]; then
-    opt_host="$HOSTNAME_DETECTED"
-    [ -n "$opt_host" ] || {
-      log_error "could not determine hostname; pass --host"
-      exit 1
-    }
-  fi
+	HOSTNAME_DETECTED="$(detect_hostname 2>/dev/null || true)"
+	if [ -z "$opt_mode" ]; then
+		if [ "$OS" = darwin ]; then
+			opt_mode="darwin"
+		elif [ "$IS_NIXOS" = true ]; then
+			opt_mode="nixos"
+		else
+			log_info "not a NixOS system, falling back to standalone home-manager"
+			opt_mode="home"
+		fi
+	fi
+	if [ -z "$opt_host" ] && [ "$opt_mode" != home ]; then
+		opt_host="$HOSTNAME_DETECTED"
+		[ -n "$opt_host" ] || {
+			log_error "could not determine hostname; pass --host"
+			exit 1
+		}
+	fi
 
-  print_plan
-  if [ "$opt_dry_run" = true ]; then
-    log_info "dry run, nothing to do"
-    exit 0
-  fi
+	print_plan
+	if [ "$opt_dry_run" = true ]; then
+		log_info "dry run, nothing to do"
+		exit 0
+	fi
 
-  # Before the prompt, so the menu can tell whether this machine has a
-  # configuration here. Cloning or fast-forwarding is announced in the plan and
-  # is what every branch below needs; installing Nix is the change that waits
-  # for an answer.
-  sync_repo_clone
+	# Before the prompt, so the menu can tell whether this machine has a
+	# configuration here. Cloning or fast-forwarding is announced in the plan and
+	# is what every branch below needs; installing Nix is the change that waits
+	# for an answer.
+	sync_repo_clone
 
-  # Not inside main_choice: it runs in a command substitution, where exit would
-  # only leave the subshell and the caller would read an empty choice.
-  if [ "$opt_assume_yes" != true ] && ! have_tty; then
-    log_error "no terminal available to choose; re-run with --yes to switch"
-    exit 1
-  fi
+	# Not inside main_choice: it runs in a command substitution, where exit would
+	# only leave the subshell and the caller would read an empty choice.
+	if [ "$opt_assume_yes" != true ] && ! have_tty; then
+		log_error "no terminal available to choose; re-run with --yes to switch"
+		exit 1
+	fi
 
-  case "$(main_choice)" in
-  switch) sync_repo_update ;;
-  dendritic)
-    sync_repo_update
-    install_nix
-    scaffold_dendritic
-    ;;
-  private)
-    sync_repo_update
-    install_nix
-    scaffold_private
-    ;;
-  *)
-    log_info "aborted"
-    exit 0
-    ;;
-  esac
+	case "$(main_choice)" in
+	switch) sync_repo_update ;;
+	dendritic)
+		sync_repo_update
+		install_nix
+		scaffold_dendritic
+		;;
+	private)
+		sync_repo_update
+		install_nix
+		scaffold_private
+		;;
+	*)
+		log_info "aborted"
+		exit 0
+		;;
+	esac
 
-  install_nix
-  resolve_flake_target
+	install_nix
+	resolve_flake_target
 
-  if [ "$opt_mode" = nixos ]; then
-    sudo_preflight
-  fi
+	if [ "$opt_mode" = nixos ]; then
+		sudo_preflight
+	fi
 
-  case "$opt_mode" in
-  darwin) switch_darwin "$opt_host" ;;
-  nixos) switch_nixos "$opt_host" ;;
-  home) switch_home_manager "${opt_host:-$USER}" ;;
-  esac
+	case "$opt_mode" in
+	darwin) switch_darwin "$opt_host" ;;
+	nixos) switch_nixos "$opt_host" ;;
+	home) switch_home_manager "${opt_host:-$USER}" ;;
+	esac
 
-  printf '\n'
-  log_info "done"
-  if [ "$BOOTSTRAPPED" = true ]; then
-    log_info "open a new shell to pick up the new PATH"
-  fi
+	printf '\n'
+	log_info "done"
+	if [ "$BOOTSTRAPPED" = true ]; then
+		log_info "open a new shell to pick up the new PATH"
+	fi
 }
 
 main "$@"

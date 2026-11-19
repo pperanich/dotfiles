@@ -15,17 +15,17 @@ cd "$(git rev-parse --show-toplevel)"
 
 local_only=false
 if [[ ${1:-} == --local ]]; then
-  local_only=true
-  shift
+	local_only=true
+	shift
 fi
 
 if (($# > 0)); then
-  hosts=("$@")
+	hosts=("$@")
 else
-  mapfile -t hosts < <(
-    nix eval --json .#darwinConfigurations --apply builtins.attrNames | jq -r '.[]'
-    nix eval --json .#deploy.nodes --apply builtins.attrNames | jq -r '.[]'
-  )
+	mapfile -t hosts < <(
+		nix eval --json .#darwinConfigurations --apply builtins.attrNames | jq -r '.[]'
+		nix eval --json .#deploy.nodes --apply builtins.attrNames | jq -r '.[]'
+	)
 fi
 
 darwin_hosts=$(nix eval --json .#darwinConfigurations --apply builtins.attrNames)
@@ -34,47 +34,47 @@ trap 'rm -rf "$tmp"' EXIT
 export NIX_SSHOPTS="${NIX_SSHOPTS:-} -o ConnectTimeout=10 -o BatchMode=yes"
 
 for host in "${hosts[@]}"; do
-  darwin=false
-  if jq -e --arg h "$host" 'index($h)' <<<"$darwin_hosts" >/dev/null; then
-    darwin=true
-    attr=".#darwinConfigurations.$host.system"
-  else
-    attr=".#nixosConfigurations.$host.config.system.build.toplevel"
-  fi
+	darwin=false
+	if jq -e --arg h "$host" 'index($h)' <<<"$darwin_hosts" >/dev/null; then
+		darwin=true
+		attr=".#darwinConfigurations.$host.system"
+	else
+		attr=".#nixosConfigurations.$host.config.system.build.toplevel"
+	fi
 
-  if ! nix build --dry-run --no-link "$attr" >"$tmp/out" 2>&1; then
-    echo "== $host: evaluation failed"
-    grep -m3 'error' "$tmp/out" | sed 's/^/   /'
-    continue
-  fi
+	if ! nix build --dry-run --no-link "$attr" >"$tmp/out" 2>&1; then
+		echo "== $host: evaluation failed"
+		grep -m3 'error' "$tmp/out" | sed 's/^/   /'
+		continue
+	fi
 
-  sed -n '/will be built/,/will be fetched/p' "$tmp/out" |
-    grep -oE '/nix/store/[a-z0-9]{32}-[^ ]+\.drv' | sort -u >"$tmp/drvs" || true
-  if [[ ! -s $tmp/drvs ]]; then
-    echo "== $host: nothing to build"
-    continue
-  fi
+	sed -n '/will be built/,/will be fetched/p' "$tmp/out" |
+		grep -oE '/nix/store/[a-z0-9]{32}-[^ ]+\.drv' | sort -u >"$tmp/drvs" || true
+	if [[ ! -s $tmp/drvs ]]; then
+		echo "== $host: nothing to build"
+		continue
+	fi
 
-  xargs nix derivation show <"$tmp/drvs" 2>/dev/null | jq -s 'map(.derivations) | add' >"$tmp/show.json"
-  top=$(nix eval --raw "$attr.drvPath")
+	xargs nix derivation show <"$tmp/drvs" 2>/dev/null | jq -s 'map(.derivations) | add' >"$tmp/show.json"
+	top=$(nix eval --raw "$attr.drvPath")
 
-  # Outputs the host already holds; an empty list means "this machine's view".
-  view="this machine's store"
-  : >"$tmp/held"
-  if ! $darwin && ! $local_only; then
-    jq -r '.[].outputs[].path // empty | "/nix/store/" + .' "$tmp/show.json" | sort -u >"$tmp/outs"
-    if xargs nix-store --store "ssh-ng://root@$host.pp-ts" --check-validity --print-invalid \
-      <"$tmp/outs" >"$tmp/missing" 2>"$tmp/err"; then
-      comm -23 "$tmp/outs" <(sort -u "$tmp/missing") >"$tmp/held"
-      view="$host's store"
-    else
-      view="this machine's store ($host unreachable: $(head -c 120 "$tmp/err" | tr '\n' ' '))"
-    fi
-  fi
+	# Outputs the host already holds; an empty list means "this machine's view".
+	view="this machine's store"
+	: >"$tmp/held"
+	if ! $darwin && ! $local_only; then
+		jq -r '.[].outputs[].path // empty | "/nix/store/" + .' "$tmp/show.json" | sort -u >"$tmp/outs"
+		if xargs nix-store --store "ssh-ng://root@$host.pp-ts" --check-validity --print-invalid \
+			<"$tmp/outs" >"$tmp/missing" 2>"$tmp/err"; then
+			comm -23 "$tmp/outs" <(sort -u "$tmp/missing") >"$tmp/held"
+			view="$host's store"
+		else
+			view="this machine's store ($host unreachable: $(head -c 120 "$tmp/err" | tr '\n' ' '))"
+		fi
+	fi
 
-  # Walk from the system derivation, only into outputs the host lacks, so the build inputs of
-  # something already present (boost under mongodb) drop out.
-  jq -r --arg top "${top##*/}" --rawfile held "$tmp/held" '
+	# Walk from the system derivation, only into outputs the host lacks, so the build inputs of
+	# something already present (boost under mongodb) drop out.
+	jq -r --arg top "${top##*/}" --rawfile held "$tmp/held" '
     . as $d
     | ($held | split("\n") | map(select(. != "") | ltrimstr("/nix/store/") | {(.): true}) | add // {}) as $have
     | def deps($n): ($d[$n].inputs.drvs // $d[$n].inputDrvs // {}) | to_entries[]
@@ -96,6 +96,6 @@ for host in "${hosts[@]}"; do
           and ((attr("src") // attr("srcs")) | . != null and . != "" and . != []))
       | .name' "$tmp/show.json" | grep -v '^bun-pkg--' | sort -u >"$tmp/compiles" || true
 
-  echo "== $host: $(wc -l <"$tmp/drvs" | tr -d ' ') to build here, $(wc -l <"$tmp/compiles" | tr -d ' ') compile on $view"
-  sed 's/^/   /' "$tmp/compiles"
+	echo "== $host: $(wc -l <"$tmp/drvs" | tr -d ' ') to build here, $(wc -l <"$tmp/compiles" | tr -d ' ') compile on $view"
+	sed 's/^/   /' "$tmp/compiles"
 done

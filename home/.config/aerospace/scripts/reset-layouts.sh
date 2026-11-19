@@ -10,14 +10,14 @@ current=$($aerospace list-workspaces --focused)
 
 # Apply tiles layout
 for ws in 1 2 4; do
-  $aerospace workspace "$ws"
-  $aerospace layout tiles
+	$aerospace workspace "$ws"
+	$aerospace layout tiles
 done
 
 # Apply accordion layout
 for ws in 3 5 6 7 8; do
-  $aerospace workspace "$ws"
-  $aerospace layout accordion
+	$aerospace workspace "$ws"
+	$aerospace layout accordion
 done
 
 # Return to original workspace

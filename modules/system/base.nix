@@ -152,7 +152,7 @@
                 launchanim = false;
                 persistent-apps = [
                   # Workspace 1: Term
-                  "/Applications/Rex Beta.app"
+                  "/Applications/Rex.app"
                   # Workspace 2: Web
                   "/Applications/Brave Browser.app"
                   # Workspace 3: Notes

@@ -66,6 +66,8 @@ _: {
             INVITATIONS_ALLOWED = true;
             SHOW_PASSWORD_HINT = false;
             IP_HEADER = cfg.ipHeader;
+            EXTENDED_LOGGING = true;
+            LOG_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%3f%z";
             LOGIN_RATELIMIT_SECONDS = 60;
             LOGIN_RATELIMIT_MAX_BURST = 5;
             SMTP_HOST = "127.0.0.1";

@@ -16,6 +16,12 @@ let
   routerIp = config.my.router.lan.address;
   nasHost = "pp-nas1.${config.my.router.dhcp.domainName}";
   inherit (lib.my.homelab) publicDomain mkSub;
+  caddyCrowdsecEnabled = config.my.router.ids.enable && config.my.router.ids.caddyBouncer.enable;
+  mkPublicLogFormat = name: ''
+    output file /var/log/caddy/public-${name}.log {
+      mode 0640
+    }
+  '';
 
   # AAAA-only records pointing subdomains at the router's tailnet ULA; LAN
   # clients get split-horizon A answers from Unbound instead.
@@ -226,7 +232,9 @@ in
     # :443 vhosts above remain strictly bound to LAN + Tailscale IPs.
     # Cloudflare Tunnel cannot carry Tailscale's TS2021 `Upgrade: tailscale-control-protocol`.
     "https://${config.my.headscale.domain}:${toString config.my.headscale.publicPort}" = {
+      logFormat = mkPublicLogFormat "headscale";
       extraConfig = ''
+        ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
         reverse_proxy 127.0.0.1:${toString config.my.headscale.listenPort} {
           flush_interval -1
         }
@@ -237,7 +245,9 @@ in
     # Personal site (public via tunnel)
     "http://:8224" = {
       listenAddresses = [ "127.0.0.1" ];
+      logFormat = mkPublicLogFormat "site";
       extraConfig = ''
+        ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
         root * ${pkgs.personal-site}
         file_server
       '';
@@ -246,7 +256,9 @@ in
     # Vaultwarden (public via tunnel, blocks /admin)
     "http://:8223" = {
       listenAddresses = [ "127.0.0.1" ];
+      logFormat = mkPublicLogFormat "vaultwarden";
       extraConfig = ''
+        ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
         # Block /admin from public access (Cloudflare Tunnel)
         handle /admin* {
           respond "Forbidden" 403

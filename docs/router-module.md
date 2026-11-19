@@ -14,6 +14,7 @@ The router module (`modules/router/`) provides a complete home router solution b
 - **DNS**: Unbound recursive resolver with DNS-over-TLS
 - **Traffic Shaping**: CAKE qdisc for bufferbloat reduction (SQM)
 - **Monitoring**: ntopng traffic analysis
+- **Intrusion Detection**: CrowdSec engine, nftables firewall bouncer, optional Caddy HTTP bouncer, and Grafana dashboard (21419)
 - **mDNS**: Avahi for `.local` device discovery
 - **SSDP Relay**: Cross-VLAN device discovery (Chromecast, DIAL)
 - **Unifi Controller**: Ubiquiti AP management
@@ -301,6 +302,25 @@ Access at `http://router-ip:3000` from LAN.
 
 ---
 
+### Intrusion Detection (`ids.nix`)
+
+CrowdSec security engine with nftables firewall bouncer, optional Caddy HTTP bouncer (for Cloudflare Tunnel and HTTP vhosts), and Prometheus/Grafana dashboard 21419 integration.
+
+| Option                       | Type | Default                       | Description                                                |
+| ---------------------------- | ---- | ----------------------------- | ---------------------------------------------------------- |
+| `ids.enable`                 | bool | false                         | Enable CrowdSec IDS/IPS                                    |
+| `ids.lapiPort`               | port | 8089                          | Loopback LAPI port (avoids UniFi inform on 8080)           |
+| `ids.metricsPort`            | port | 6060                          | Loopback CrowdSec Prometheus metrics port                  |
+| `ids.bouncerMetricsPort`     | port | 60601                         | Loopback firewall bouncer Prometheus metrics port          |
+| `ids.enableCapi`             | bool | true                          | Auto-register for the CrowdSec Community Blocklist         |
+| `ids.simulation`             | bool | false                         | Detect and graph alerts without enforcing bans             |
+| `ids.firewallBouncer.*`      | set  | `input`+`forward`, prio `-10` | nftables bouncer hooks, priority, and action               |
+| `ids.caddyBouncer.enable`    | bool | false                         | Enforce CrowdSec decisions in Caddy (`crowdsec` plugin)    |
+| `ids.caddyLogs.enable`       | bool | false                         | Parse Caddy JSON access logs (`crowdsecurity/caddy`)       |
+| `ids.vaultwardenLogs.enable` | bool | false                         | Parse Vaultwarden auth logs (`Dominic-Wagner/vaultwarden`) |
+
+---
+
 ### mDNS (`mdns.nix`)
 
 Avahi for `.local` device discovery.
@@ -393,6 +413,7 @@ modules/router/
 ├── ddns.nix         # Dynamic DNS (DHCP lease → DNS record sync)
 ├── sqm.nix          # Traffic shaping (CAKE)
 ├── monitoring.nix   # ntopng traffic analysis
+├── ids.nix          # CrowdSec intrusion detection and bouncers
 ├── mdns.nix         # Avahi mDNS reflector
 ├── ssdp-relay.nix   # Cross-VLAN SSDP relay (Chromecast, DIAL)
 └── unifi.nix        # Ubiquiti Unifi AP controller

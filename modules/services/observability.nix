@@ -59,7 +59,56 @@ _: {
         "wan-remote-access.json" = ./observability-assets/dashboards/wan-remote-access.json;
         "fleet-health.json" = ./observability-assets/dashboards/fleet-health.json;
         "web-ingress.json" = ./observability-assets/dashboards/web-ingress.json;
-      };
+      }
+      // cfg.extraDashboards;
+
+      monitoredTargetJobs = lib.concatStringsSep "|" (
+        [
+          "prometheus"
+          "grafana"
+          "loki"
+          "blocky"
+          "node"
+          "unbound"
+          "kea"
+          "unpoller"
+          "caddy"
+          "headscale"
+          "alertmanager"
+          "blackbox-.*"
+        ]
+        ++ map (t: lib.escapeRegex t.job) cfg.extraLocalTargets
+      );
+
+      journalUnitRegex = lib.concatStringsSep "|" (
+        [
+          "systemd-networkd"
+          "nftables"
+          "unbound"
+          "blocky"
+          "kea-dhcp4-server"
+          "kea-unbound-sync"
+          "caddy"
+          "cloudflared"
+          "cloudflare-dyndns"
+          "headscale"
+          "tailscaled"
+          "prometheus"
+          "grafana"
+          "loki"
+          "alloy"
+          "homepage-dashboard"
+          "sshd"
+          "alertmanager"
+          "vaultwarden"
+          "gitea"
+          "stalwart"
+          "unifi"
+          "smartd"
+          "trunk-link-watchdog"
+        ]
+        ++ map lib.escapeRegex cfg.extraJournalUnits
+      );
 
       # Render alert email timestamps in the host timezone (UTC if unset)
       alertTimezone = if config.time.timeZone != null then config.time.timeZone else "Etc/UTC";
@@ -350,6 +399,48 @@ _: {
             description = "Path to file containing the unpoller user's password";
           };
         };
+
+        extraLocalTargets = lib.mkOption {
+          type = lib.types.listOf (
+            lib.types.submodule {
+              options = {
+                job = lib.mkOption {
+                  type = lib.types.str;
+                  description = "Prometheus job name (must be unique on this host)";
+                };
+                port = lib.mkOption {
+                  type = lib.types.port;
+                  description = "Loopback TCP port exposing Prometheus metrics";
+                };
+                path = lib.mkOption {
+                  type = lib.types.str;
+                  default = "/metrics";
+                  description = "HTTP metrics path to scrape";
+                };
+              };
+            }
+          );
+          default = [ ];
+          description = "Additional loopback Prometheus targets scraped with friendlyInstance and monitored by ObservabilityTargetDown";
+        };
+
+        extraDashboards = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          description = "Additional Grafana dashboards (filename -> JSON path) provisioned alongside built-in dashboards";
+        };
+
+        extraAlertRules = lib.mkOption {
+          type = lib.types.listOf lib.types.attrs;
+          default = [ ];
+          description = "Additional Prometheus alert rules merged into the observability rule group";
+        };
+
+        extraJournalUnits = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Additional systemd unit base names (without .service) shipped by Alloy to Loki";
+        };
       };
 
       config = lib.mkIf enabled {
@@ -451,6 +542,12 @@ _: {
                 static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ];
               }
             ]
+            ++ map (t: {
+              job_name = t.job;
+              relabel_configs = friendlyInstance;
+              metrics_path = t.path;
+              static_configs = [ { targets = [ "127.0.0.1:${toString t.port}" ]; } ];
+            }) cfg.extraLocalTargets
             ++ [
               {
                 job_name = "blackbox-icmp";
@@ -528,9 +625,7 @@ _: {
                       # blackbox-.* matters most here: if the blackbox exporter
                       # dies, every probe_success series goes absent and all
                       # probe/cert alerts stop evaluating without this rule.
-                      (mkPromRule
-                        "up{job=~\"prometheus|grafana|loki|blocky|node|unbound|kea|unpoller|caddy|headscale|alertmanager|blackbox-.*\"} == 0"
-                        "ObservabilityTargetDown"
+                      (mkPromRule "up{job=~\"${monitoredTargetJobs}\"} == 0" "ObservabilityTargetDown"
                         "An observability target has been down for 5 minutes."
                       )
                       (mkPromRule "probe_success{job=\"blackbox-icmp\"} == 0" "RouterIcmpProbeFailing"
@@ -726,7 +821,8 @@ _: {
                         labels.severity = "warning";
                         annotations.description = "Interface ${iface} carrier changed more than 4 times in 15 minutes.";
                       }
-                    ]) cfg.alerts.carrierInterfaces;
+                    ]) cfg.alerts.carrierInterfaces
+                    ++ cfg.extraAlertRules;
                   }
                 ];
               })
@@ -1098,7 +1194,7 @@ _: {
 
             rule {
               source_labels = ["__journal__systemd_unit"]
-              regex = "(systemd-networkd|nftables|unbound|blocky|kea-dhcp4-server|kea-unbound-sync|caddy|cloudflared|cloudflare-dyndns|headscale|tailscaled|prometheus|grafana|loki|alloy|homepage-dashboard|sshd|alertmanager|vaultwarden|gitea|stalwart|unifi|smartd|trunk-link-watchdog)\\.service"
+              regex = "(${journalUnitRegex})\\.service"
               action = "keep"
             }
             rule {

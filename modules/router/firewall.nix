@@ -147,6 +147,16 @@ _: {
           default = "";
           description = "Additional nftables rules injected into the IPv6 input chain";
         };
+        wanDropLogRate = lib.mkOption {
+          type = lib.types.str;
+          default = "30/minute";
+          description = "Rate limit for kernel logging of dropped WAN input packets (nftables format)";
+        };
+        wanDropLogBurst = lib.mkOption {
+          type = lib.types.int;
+          default = 20;
+          description = "Burst limit for kernel logging of dropped WAN input packets";
+        };
         hairpinNat = {
           enable = lib.mkOption {
             type = lib.types.bool;
@@ -342,7 +352,7 @@ _: {
                   # WAN drop accounting: count everything, log with a higher
                   # budget than LAN so scan sources are visible in Loki
                   iifname "${wan}" counter name wan_input_drop comment "Count WAN input drops"
-                  iifname "${wan}" limit rate 30/minute burst 20 packets log prefix "nft-drop-wan: " level info
+                  iifname "${wan}" limit rate ${fwCfg.wanDropLogRate} burst ${toString fwCfg.wanDropLogBurst} packets log prefix "nft-drop-wan: " level info
                   # Log dropped packets for forensics (rate limited to prevent log flooding)
                   iifname != "${wan}" limit rate 5/minute burst 10 packets log prefix "nft-drop-input: " level info
                 }
@@ -528,7 +538,7 @@ _: {
 
                   # WAN drop accounting (see filterV4 for rationale)
                   iifname "${wan}" counter name wan_input_drop comment "Count WAN input drops"
-                  iifname "${wan}" limit rate 30/minute burst 20 packets log prefix "nft6-drop-wan: " level info
+                  iifname "${wan}" limit rate ${fwCfg.wanDropLogRate} burst ${toString fwCfg.wanDropLogBurst} packets log prefix "nft6-drop-wan: " level info
                   # Log dropped packets for forensics (rate limited)
                   iifname != "${wan}" limit rate 5/minute burst 10 packets log prefix "nft6-drop-input: " level info
                 }

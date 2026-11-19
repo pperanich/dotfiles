@@ -16,6 +16,7 @@ _: {
         routerMdns
         routerSqm
         routerMonitoring
+        routerIds # Intrusion detection and prevention (CrowdSec)
         routerVlans # VLAN network segmentation
         routerUnifi # Ubiquiti Unifi controller
         routerSsdpRelay # SSDP relay for cross-VLAN device discovery

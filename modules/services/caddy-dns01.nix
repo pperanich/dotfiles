@@ -15,6 +15,7 @@ _: {
     {
       options.my.caddyDns01 = {
         enable = lib.mkEnableOption "Caddy with Cloudflare DNS-01 certificates";
+        crowdsecBouncer = lib.mkEnableOption "CrowdSec HTTP bouncer plugin compiled into Caddy";
       };
 
       config = lib.mkIf cfg.enable {
@@ -36,8 +37,16 @@ _: {
 
           package = pkgs.caddy.withPlugins {
             # v0.2.4 is the first release that accepts Cloudflare's `cfut_` token format.
-            plugins = [ "github.com/caddy-dns/cloudflare@v0.2.4" ];
-            hash = "sha256-QSiwKqKvSxhksWBF4/MlBOpyXba5xOQ2sRwA0R7399E="; # caddy 2.11.9; on a bump, set lib.fakeHash and build on a Linux host to get the new one
+            plugins = [
+              "github.com/caddy-dns/cloudflare@v0.2.4"
+            ]
+            ++ lib.optional cfg.crowdsecBouncer "github.com/hslatman/caddy-crowdsec-bouncer@v0.15.0";
+            # caddy 2.11.9; on a bump, set lib.fakeHash and build to get the new hashes
+            hash =
+              if cfg.crowdsecBouncer then
+                "sha256-xxeXdWnwFkR9L2OZE16G9jSndUW3LumPBnGLSx/CNBI="
+              else
+                "sha256-QSiwKqKvSxhksWBF4/MlBOpyXba5xOQ2sRwA0R7399E=";
           };
 
           environmentFile = config.my.cloudflare.envFile;

@@ -386,6 +386,17 @@ in
       # Access at http://10.0.0.1:3000 (default: admin/admin)
       monitoring.enable = true;
 
+      # Intrusion detection and prevention (CrowdSec + nftables & Caddy bouncers)
+      ids = {
+        enable = true;
+        caddyLogs = {
+          enable = true;
+          files = [ "/var/log/caddy/public-*.log" ];
+        };
+        caddyBouncer.enable = true;
+        vaultwardenLogs.enable = true;
+      };
+
       # Unifi controller for managing Ubiquiti access points
       # Access at https://10.0.0.1:8443
       unifi.enable = true;

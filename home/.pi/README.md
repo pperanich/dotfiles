@@ -31,9 +31,12 @@ and run `/reload` to re-enable it. If its dependencies are missing, run
 extension's dependencies. It is a copy of the one in the private work profile
 and is maintained separately.
 
-In Pi, `/feature-loop` expands the starter prompt. You can also ask Pi to plan
-and implement a feature with subagents and it can load the skill from the
-request.
+In Pi, `/feature-loop <request>` passes the request to the feature skill. A
+bounded change can run directly with its existing check. Ask for planning only,
+an independent review, or a saved ledger when you need one. With no arguments,
+the command uses the agreed task from the conversation. Use
+`/skill:feature-loop` for examples with literal quotes or significant newlines.
+Pi's prompt-template arguments use shell-style quoting.
 
 `firstmate/` is intentionally plain. `pi-firstmate` selects that profile while
 still allowing a checked-out FirstMate repository to load its own project-local

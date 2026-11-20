@@ -21,9 +21,12 @@ secrets/**/*.yaml
 
 /home/Library/Developer/
 
-# Codex writes runtime state into ~/.codex; only AGENTS.md is managed here.
+# Codex runtime state shares this directory with the managed instructions and skill link.
 /home/.codex/*
 !/home/.codex/AGENTS.md
+!/home/.codex/skills/
+/home/.codex/skills/*
+!/home/.codex/skills/dotfiles
 
 # OpenCode writes runtime state into ~/.config/opencode; AGENTS.md is managed here.
 home/.config/opencode/*

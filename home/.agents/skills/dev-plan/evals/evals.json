@@ -1,0 +1,11 @@
+{
+  "skill_name": "dev-plan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Plan this in chat using the supplied project excerpt. At shift change I export the West team's waiting tickets for the next person. They need the rows I see in the same order. Our overnight archive still needs every ticket. In desk.mjs the view command calls currentView(team, status), which filters and sorts newest first. The archive command writes csv(tickets). desk.test.mjs checks the view order and the archive row count. The four stored tickets, in file order, are T17 (West, waiting, Oct 1), T23 (East, waiting, Oct 4), T31 (West, resolved, Oct 9), and T29 (West, waiting, Oct 13).",
+      "expected_output": "Propose an export through the user-facing entry point and a check that its ordered rows are T29 and T17. The check detects a leak from another status or team and a change of order. Verify that the overnight archive still contains all four rows. Leave implementation for a later request.",
+      "files": []
+    }
+  ]
+}

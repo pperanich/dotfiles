@@ -17,10 +17,9 @@ AGENTS.md or equivalent project instructions. Do not edit files.
 
 Return:
 
-1. Current behavior and concrete evidence, including file paths.
+1. A user's or caller's concrete action, the result today, and the requested outcome. Cite the source and the entry point in the repo.
 2. Open questions or risky assumptions that could change the implementation.
-3. A small ordered task plan, with acceptance criteria and verification for
-   each task.
+3. A small ordered task plan. Pair each promised outcome with a check and an expected result. Where a partial fix could pass existing tests, specify a case that would expose it.
 4. Tasks that can safely run in parallel, if any.
 
 Do not inflate the plan with unrelated cleanup.

@@ -1,0 +1,17 @@
+{
+  "skill_name": "dev-wrap",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Please review this local handoff from the supplied command output. Our shift lead asked for Export view to hand off exactly the visible rows in their on-screen order. The overnight archive needs all four tickets. The approved plan checked the CSV header, team and archive count. All three tests passed. The West/waiting view printed T29, T17. The exported CSV rows were T17/West/waiting, T31/West/resolved, T29/West/waiting, in that order. The archive contained T17, T23, T31 and T29. Is the handoff ready?",
+      "expected_output": "Hold the handoff. Identify the extra resolved ticket T31 and the reversed order of the two waiting tickets. State the effect on the next shift. Recognize the verified archive behavior and explain which comparison the current checks missed.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Review the same kind of shift handoff using only these results. The request is for Export view to match the visible West/waiting rows and their order while the overnight archive includes every ticket. The view printed T29, T17. The CSV has the expected header followed by T29/West/waiting then T17/West/waiting. The four source IDs are T17, T23, T31 and T29. The archive contains those four IDs. All required local checks passed for this candidate. Is this verified for the requested handoff?",
+      "expected_output": "Confirm that the supplied evidence covers the requested handoff. Report the matching order and complete archive. Attribute verification to the supplied results and avoid inventing a defect, claiming to have run commands, or publishing anything.",
+      "files": []
+    }
+  ]
+}

@@ -23,6 +23,12 @@ Do what was asked and no more. Before opening a PR, pushing a branch, building a
 
 Before writing a script, skill, command or config of your own, check whether one already exists: the skills and commands available in this session, the MCP servers it exposes, and the repo. Say what you found and why it does not fit before building a replacement.
 
+## Corrections
+
+When I correct you, or you catch yourself repeating a mistake, propose a deterministic fix before a prose one: a lint rule, a type, a test, a hook, a permission rule, or an API that makes the wrong thing impossible. Propose a new line in AGENTS.md, CLAUDE.md or memory only when the rule needs judgment, and say in one line why no check fits. Adding the check still follows the Scope rules: propose it and wait for my answer.
+
+Apply a correction at the scope I gave it. A fix to one case is not a rule for every case, and a preference is not a ban. If you can't tell how far a correction reaches, ask before writing it into memory or an instruction file.
+
 ## Git Commits
 
 **Never include AI attribution signatures in commit messages.** This includes but is not limited to:
@@ -86,6 +92,10 @@ A multi-edit call matches against the file as it was before the call, so keep ev
 
 Never wait with `sleep N` in a loop. Run long commands in the background and poll on a condition under a timeout. If a step will take more than about two minutes, say so before starting. After five minutes with no state change, report what is running, what it is waiting on, and what happens next.
 
+## Verification
+
+Claim a behavior change only with evidence from running it: the command and its result, the test that now passes and failed before, or a screenshot or recording for anything visual. Prefer driving the real program (a CLI, the browser via devtools, the API) over reading code and inferring. When you write the same verification steps a second time, propose turning them into a reusable script or skill.
+
 ## Writing Tells to Avoid
 
 Heuristics for spotting generic, hollow AI output. A single tell means nothing; what flags AI output is the _density_ and _clustering_ of these patterns. Treat as a self-editing guide, not a detection algorithm.
@@ -122,6 +132,7 @@ AI code is usually syntactically perfect. The tells live in structure, judgment,
 - Happy-path bias: a beautiful function that "forgets" the null checks, input sanitization, and edge cases a working developer adds by reflex.
 - Redundant over-defense (the opposite failure): the same guard repeated needlessly where it can't fail. Signals the model isn't confident about the control flow.
 - No awareness of the real system: correct in isolation but ignores that the table has 50 million rows, or that the endpoint gets hit thousands of times a second.
+- Copying the weeds: reusing the nearest pattern in the codebase without checking that it isn't deprecated, a workaround, or something a linter or type already forbids elsewhere. When the nearest example is an anti-pattern, follow the sanctioned pattern and mention the bad one in one line. Do not clean it up unless asked.
 
 **Fingerprints of stitched-together training data**:
 
@@ -135,6 +146,7 @@ AI code is usually syntactically perfect. The tells live in structure, judgment,
 - Placeholder logic left in: `// TODO: handle this case` inside otherwise complete-looking code.
 - Empty classes, stub methods, and dead code: generated as part of a broader pattern, never populated or cleaned up.
 - Logical bloat: redundant variables and unnecessary abstraction. Where human code errs by omission, AI code errs by commission.
+- Justification comments: a comment explaining why a workaround is acceptable (a timer, a sleep, a retry loop, a broad catch, a cast, a `# type: ignore`, an `eslint-disable`). It excuses the patch, nothing enforces it, and the next agent copies the patch as the pattern. Fix the root cause, or stop and tell me what's in the way. A suppression directive needs the specific reason on the same line and my OK in the session.
 
 The core risk: syntactically correct but logically flawed code creates a false sense of security. It runs, it reads well, and the subtle bug or invented API surfaces later. Review AI-generated code with the same rigor as any other code, arguably more.
 
@@ -154,7 +166,7 @@ The core risk: syntactically correct but logically flawed code creates a false s
 - Add the error handling and edge cases the happy path skipped; remove redundant guards.
 - Verify every imported library and API call actually exists and has that signature.
 - Make naming consistent within each scope; match the surrounding codebase's conventions.
-- Delete comments that restate obvious code; keep the ones that explain _why_.
+- Delete comments that restate obvious code or excuse a workaround; keep the ones that explain _why_.
 - Resolve every `TODO`, stub, and empty method before shipping.
 - Check the code against real system constraints (data scale, traffic, config, existing structure).
 

@@ -68,21 +68,56 @@ def test_pi_entry_is_rewritten_in_tilde_form(home):
     assert settings.read_text() == '{\n  "theme": "x",\n  "packages": ["npm:a@1", ' + json.dumps(want) + "]\n}\n"
 
 
-def test_codex_skill_link_is_idempotent_and_removable(home, monkeypatch):
+def test_skill_link_is_idempotent_and_removable(home, monkeypatch):
     monkeypatch.delenv("CODEX_HOME", raising=False)
-    (home / ".codex").mkdir()
-    install.codex_skill("install", install.Report())
-    install.codex_skill("install", install.Report())
-    link = home / ".codex" / "skills" / "write-agent-check"
+    (home / ".agents" / "skills").mkdir(parents=True)
+    install.skill("install", install.Report())
+    install.skill("install", install.Report())
+    link = home / ".agents" / "skills" / "write-agent-check"
     assert link.is_symlink() and (link / "SKILL.md").exists()
-    install.codex_skill("uninstall", install.Report())
+    install.skill("uninstall", install.Report())
     assert not link.exists()
 
 
-def test_codex_skill_leaves_a_foreign_directory_alone(home, monkeypatch):
+def test_skill_leaves_a_foreign_directory_alone(home, monkeypatch):
     monkeypatch.delenv("CODEX_HOME", raising=False)
-    foreign = home / ".codex" / "skills" / "write-agent-check"
+    foreign = home / ".agents" / "skills" / "write-agent-check"
     foreign.mkdir(parents=True)
     report = install.Report()
-    install.codex_skill("install", report)
+    install.skill("install", report)
     assert report.problems == 1 and not foreign.is_symlink()
+
+
+def test_skill_refuses_a_folded_skills_directory(home, monkeypatch, tmp_path):
+    monkeypatch.delenv("CODEX_HOME", raising=False)
+    checkout = tmp_path / "checkout-skills"
+    checkout.mkdir()
+    (home / ".agents").mkdir()
+    (home / ".agents" / "skills").symlink_to(checkout)
+    report = install.Report()
+    install.skill("install", report)
+    assert report.problems == 1 and list(checkout.iterdir()) == []
+
+
+def test_skill_install_removes_the_old_codex_link(home, monkeypatch):
+    monkeypatch.delenv("CODEX_HOME", raising=False)
+    old = home / ".codex" / "skills" / "write-agent-check"
+    old.parent.mkdir(parents=True)
+    old.symlink_to(install.SKILL_DIR)
+    install.skill("install", install.Report())
+    assert not old.is_symlink()
+    assert (home / ".agents" / "skills" / "write-agent-check").is_symlink()
+
+
+def test_plugin_cache_with_a_dropped_file_is_stale(tmp_path, monkeypatch):
+    source = tmp_path / "plugin"
+    (source / "hooks").mkdir(parents=True)
+    (source / "hooks" / "hooks.json").write_text("{}")
+    monkeypatch.setattr(install, "PLUGIN_ROOT", source)
+    cache = tmp_path / "cache"
+    (cache / "hooks").mkdir(parents=True)
+    (cache / "hooks" / "hooks.json").write_text("{}")
+    assert not install._cache_stale(str(cache))
+    (cache / "skills").mkdir()
+    (cache / "skills" / "SKILL.md").write_text("old")
+    assert install._cache_stale(str(cache))

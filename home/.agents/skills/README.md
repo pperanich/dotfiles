@@ -9,6 +9,7 @@ from whatever owns it:
 | `docshare`              | copy `skills/docshare` from the internal skills repo                                |
 | `no-mistakes`           | `make skill` in kunchenguid/no-mistakes, then copy `skills/no-mistakes`             |
 | `rex`                   | `rex skill setup`                                                                   |
+| `write-agent-check`     | `agent-kit install` links it from `agent-kit/skills/`                               |
 | `web-artifacts-builder` | `npx skills add https://github.com/anthropics/skills --skill web-artifacts-builder` |
 | `synced/*`              | claude.ai organisation sync, not installed by hand                                  |
 

@@ -22,7 +22,7 @@ PI_PACKAGE = KIT / "pi"
 SKILL_DIR = KIT / "skills" / "write-agent-check"
 SCRIPTS = ("agent-guard", "agent-kit", "agent-kit-run")
 PLUGIN = "agent-kit@agent-kit"
-HARNESSES = ("tool", "claude", "codex", "pi", "git")
+HARNESSES = ("tool", "skill", "claude", "codex", "pi", "git")
 
 
 class Report:
@@ -115,15 +115,18 @@ def _claude_installed(profile: Path) -> dict | None:
 
 
 def _cache_stale(install_path: str) -> bool:
-    """True when Claude's cached copy of the plugin manifests differs from dotfiles."""
+    """True when Claude's cached copy of the plugin differs from dotfiles, including files dotfiles dropped."""
     cache = Path(install_path)
-    for dirpath, _, filenames in os.walk(PLUGIN_ROOT, followlinks=True):
-        for name in filenames:
-            src = Path(dirpath) / name
-            copy = cache / src.relative_to(PLUGIN_ROOT)
-            if not copy.is_file() or copy.read_bytes() != src.read_bytes():
-                return True
-    return False
+
+    def files(root: Path) -> dict[Path, bytes]:
+        found = {}
+        for dirpath, _, names in os.walk(root, followlinks=True):
+            for name in names:
+                path = Path(dirpath) / name
+                found[path.relative_to(root)] = path.read_bytes()
+        return found
+
+    return not cache.is_dir() or files(cache) != files(PLUGIN_ROOT)
 
 
 def claude(action: str, profile: Path, r: Report) -> None:
@@ -225,30 +228,44 @@ def codex(action: str, r: Report) -> None:
         r.todo("Codex: open codex and approve the new hook in /hooks; until then Codex does not run it")
 
 
-def codex_skill(action: str, r: Report) -> None:
-    """The write-agent-check skill, linked into Codex's skills directory."""
-    if not codex_home().is_dir():
-        return
-    link = codex_home() / "skills" / SKILL_DIR.name
+# skill: one link in ~/.agents/skills, which Claude Code (through ~/.claude/skills), pi and Codex all read
+
+
+def agents_skills_dir() -> Path:
+    return _home() / ".agents" / "skills"
+
+
+def skill(action: str, r: Report) -> None:
+    """Link write-agent-check into ~/.agents/skills, the convention in dotfiles' home/.agents/skills/README.md."""
+    skills = agents_skills_dir()
+    link = skills / SKILL_DIR.name
     ours = link.is_symlink() and link.resolve() == SKILL_DIR.resolve()
+    old_codex = codex_home() / "skills" / SKILL_DIR.name  # earlier installs linked it here; Codex reads both
+    if action != "doctor" and old_codex.is_symlink() and old_codex.resolve() == SKILL_DIR.resolve() and not r.dry_run:
+        old_codex.unlink()
+        r.ok(f"skill: removed the old link {_short(old_codex)}")
     if action == "install":
         if ours:
-            r.ok(f"Codex: skill {SKILL_DIR.name} already linked")
+            r.ok(f"skill: {SKILL_DIR.name} already linked in {_short(skills)}")
+        elif skills.is_symlink():
+            r.bad(
+                f"skill: {_short(skills)} is itself a link (a folded stow directory); unfold it before linking into it"
+            )
         elif link.exists() or link.is_symlink():
-            r.bad(f"Codex: {_short(link)} exists and is not agent-kit's skill; left alone")
+            r.bad(f"skill: {_short(link)} exists and is not agent-kit's skill; left alone")
         elif r.dry_run:
             print(f"  would link {_short(link)} -> {_short(SKILL_DIR)}")
         else:
-            link.parent.mkdir(parents=True, exist_ok=True)
+            skills.mkdir(parents=True, exist_ok=True)
             link.symlink_to(SKILL_DIR)
-            r.ok(f"Codex: linked skill {_short(link)}")
+            r.ok(f"skill: linked {_short(link)}")
     elif action == "uninstall":
         if ours and not r.dry_run:
             link.unlink()
     elif ours:
-        r.ok(f"Codex: skill {SKILL_DIR.name} linked")
+        r.ok(f"skill: {SKILL_DIR.name} linked in {_short(skills)}")
     else:
-        r.bad(f"Codex: skill {SKILL_DIR.name} is not linked in {_short(link.parent)}")
+        r.bad(f"skill: {SKILL_DIR.name} is not linked in {_short(skills)}")
 
 
 # pi: a package entry in each profile's settings.json
@@ -435,6 +452,9 @@ def _harnesses(args, parser) -> int:
     if "tool" in only:
         print("uv tool")
         tool(args.cmd, r)
+    if "skill" in only:
+        print("skill")
+        skill(args.cmd, r)
     if "claude" in only:
         print("Claude Code")
         for profile in claude_dirs(args.claude_dir):
@@ -442,7 +462,6 @@ def _harnesses(args, parser) -> int:
     if "codex" in only:
         print("Codex")
         codex(args.cmd, r)
-        codex_skill(args.cmd, r)
     if "pi" in only:
         print("pi")
         for profile in pi_dirs(args.pi_dir):

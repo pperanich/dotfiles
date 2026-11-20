@@ -7,9 +7,9 @@ agent-kit is a Python package (`src/agent_kit`, standard library only) with thre
 | Path                        | What it is                                                                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `src/agent_kit/`            | The guard, the built-in rules (`rules.py`), the public API for kits (`api.py`, `testing.py`), kit discovery and trust (`kits.py`), the installer |
-| `claude/`                   | The Claude Code plugin: a manifest, a `PreToolUse` hook, and the skill. `.claude-plugin/marketplace.json` at the root serves it                  |
-| `pi/`                       | The pi package: `package.json` is pi's manifest, `agent-kit.ts` forwards each tool call to `agent-guard`, and the skill                          |
-| `skills/write-agent-check/` | The skill that teaches an agent to turn a correction into a check. `claude/skills` and `pi/skills` link here                                     |
+| `claude/`                   | The Claude Code plugin: a manifest and a `PreToolUse` hook. `.claude-plugin/marketplace.json` at the root serves it                              |
+| `pi/`                       | The pi package: `package.json` is pi's manifest, and `agent-kit.ts` forwards each tool call to `agent-guard`                                     |
+| `skills/write-agent-check/` | The skill that teaches an agent to turn a correction into a check. `install` links it into `~/.agents/skills`                                    |
 | `template/`                 | The Copier template for project kits. `copier.yml` sits at the dotfiles root, because Copier versions a template only from a repository root     |
 | `git-hooks/`                | The global hooks path: `_dispatch` and a link per hook name                                                                                      |
 | `tests/`                    | pytest suite, with real payloads captured from each harness in `tests/fixtures/`                                                                 |
@@ -52,7 +52,7 @@ Kits import only from `agent_kit.api`. `API_VERSION` there changes when a kit wr
 
 ## The write-agent-check skill
 
-The skill sends a correction where it belongs: the repository's own linter or tests for rules about code, agent-kit's `rules.py` for agent behavior everywhere, or the project's kit for agent behavior in one project. Then it writes the check with blocked and allowed cases and proves it with `agent-kit check`. It ships in the Claude plugin and the pi package, and `install` links it into `$CODEX_HOME/skills`.
+The skill sends a correction where it belongs: the repository's own linter or tests for rules about code, agent-kit's `rules.py` for agent behavior everywhere, or the project's kit for agent behavior in one project. Then it writes the check with blocked and allowed cases and proves it with `agent-kit check`. `install` links it into `~/.agents/skills`, which dotfiles' `home/.agents/skills/README.md` names as the place an owner installs its skills. Claude Code reads that directory through the `~/.claude/skills` link, and pi and Codex read it natively, so one link covers all three.
 
 ## Install
 
@@ -62,13 +62,14 @@ agent-kit doctor                                          # afterwards, from PAT
 agent-kit uninstall
 ```
 
-`--only tool,claude,codex,pi,git`, `--claude-dir` and `--pi-dir` narrow it; `--dry-run` prints what it would do.
+`--only tool,skill,claude,codex,pi,git`, `--claude-dir` and `--pi-dir` narrow it; `--dry-run` prints what it would do.
 
 | Step        | Mechanism                                                                                                                     | Notes                                                                                                                                                                                                      |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | tool        | `uv tool install --editable` of this directory                                                                                | Puts the three scripts in `uv tool dir --bin` (`~/.local/bin`). Editable, so edits here take effect at the next call. Every adapter calls `$HOME/.local/bin/agent-guard`; `AGENT_GUARD` overrides the path |
-| Claude Code | plugin `agent-kit@agent-kit` from `claude/`                                                                                   | Claude caches the plugin (manifests and skill); rerun `install` after editing them. Profiles that share a plugins directory install once                                                                   |
-| Codex       | a `PreToolUse` entry merged into `$CODEX_HOME/hooks.json` (backup beside it), and the skill linked into `$CODEX_HOME/skills`  | Codex runs a new or changed hook only after you approve it in `/hooks`                                                                                                                                     |
+| skill       | a link from `~/.agents/skills/write-agent-check` to `skills/write-agent-check`                                                | Refuses when `~/.agents/skills` is itself a link, since a folded stow directory would put the link inside the checkout                                                                                     |
+| Claude Code | plugin `agent-kit@agent-kit` from `claude/`                                                                                   | Claude caches the plugin's two manifests; rerun `install` after editing them. Profiles that share a plugins directory install once                                                                         |
+| Codex       | a `PreToolUse` entry merged into `$CODEX_HOME/hooks.json` (backup beside it)                                                  | Codex runs a new or changed hook only after you approve it in `/hooks`                                                                                                                                     |
 | pi          | `pi install` of `pi/` into each profile (`~/.pi/agent`, `$PI_CODING_AGENT_DIR`), entry rewritten as `~/dotfiles/agent-kit/pi` | Loaded in place                                                                                                                                                                                            |
 | git         | `core.hooksPath` in the global config file, written to the file the symlink points at                                         | `_dispatch` runs agent-kit's check and the project kits' commit checks, then the repo's own `.git/hooks/<name>`. A repo that sets its own `core.hooksPath` skips these hooks                               |
 

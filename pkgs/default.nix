@@ -12,4 +12,5 @@
   rexpick = pkgs.callPackage ./rexpick { };
   sketchybar-helpers = pkgs.callPackage ./sketchybar-helpers { };
   sqlite-snapshot = pkgs.callPackage ./sqlite-snapshot { };
+  dotfiles-sync = pkgs.callPackage ./dotfiles-sync { };
 }

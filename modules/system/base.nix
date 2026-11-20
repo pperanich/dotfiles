@@ -295,6 +295,9 @@
       }:
       let
         homePrefix = if pkgs.stdenv.hostPlatform.isDarwin then "Users" else "home";
+        dotfilesSync = pkgs.callPackage ../../pkgs/dotfiles-sync { };
+        # Absent when the flake was built from a dirty tree; the sync then skips.
+        deployedRev = inputs.self.rev or "";
       in
       {
         imports = [
@@ -360,6 +363,8 @@
                 echo "Cloning dotfiles repo to $DOTFILES_DIR..."
                 ${pkgs.git}/bin/git clone https://github.com/pperanich/dotfiles.git "$DOTFILES_DIR"
               fi
+              run ${lib.getExe dotfilesSync} "$DOTFILES_DIR" "${deployedRev}" \
+                || echo "dotfiles-sync failed; stowing the checkout as it is"
               pushd "$DOTFILES_DIR" >/dev/null
               ${pkgs.stow}/bin/stow home
               popd >/dev/null

@@ -2,13 +2,15 @@
 
 ## Project picker
 
-**Cmd+Shift+K** opens `rex-project-picker`. Roots, discovery depths, and popup
-bounds are configured in `init.lua` via `picker.setup`; that table can also be
-loaded from a separate Lua file with `dofile`.
+**Cmd+Shift+K** opens `rex-project-picker` in the command palette. Roots,
+discovery depths, and display names are configured in `init.lua` via
+`picker.setup`; that table can also be loaded from a separate Lua file with
+`dofile`.
 
 The adjacent Stow-managed `rex-project-picker` source link loads the Lua module
-and shell helper from `pkgs/rex-project-picker`. Lua runs inside Rex; discovery
-and filtering use the installed `fd` and `fzf`. No extra Lua runtime is needed.
+and shell helper from `pkgs/rex-project-picker`. Lua runs inside Rex and shows
+the list with `rex.ui.pick`; discovery uses the installed `fd`. No extra Lua
+runtime is needed.
 After editing settings, run `rex config check` followed by `rex config reload`.
 See [the picker README](../../../pkgs/rex-project-picker/README.md) for behavior,
 configuration examples, and prototype limits. The legacy Go picker is still

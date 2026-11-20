@@ -1,8 +1,8 @@
 # rex-project-picker
 
-A project-only picker using Rex's embedded Lua engine, a native floating terminal,
-and a Bash helper running `fd` and `fzf`. No Go application, additional Lua runtime,
-agent-status subscription, or background service.
+A project-only picker using Rex's embedded Lua engine, the native command palette
+(`rex.ui.pick`), and a Bash helper running `fd`. No Go application, additional Lua
+runtime, terminal popup, agent-status subscription, or background service.
 
 ## Configuration and launch
 
@@ -19,7 +19,6 @@ picker.setup({
     { path = home .. "/Documents/repos", depth = 2 },
     { path = home .. "/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault", project = true },
   },
-  bounds = { 0.1, 0.2, 0.8, 0.6 },
   names = {
     [home .. "/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault"] = "iCloud vault",
   },
@@ -28,21 +27,19 @@ rex.bind("cmd+shift+k", "rex_project_picker")
 ```
 
 Roots must be absolute paths. Depth 0 checks only the root; depth 2 also checks
-two levels of subdirectories. Missing roots are skipped. `bounds` contains the
-popup's x, y, width, and height as fractions of its window.
+two levels of subdirectories. Missing roots are skipped.
 
 `project = true` lists that directory itself as a project, with no `.git` marker
 and no walk, for a directory that is not a repository. It takes no depth, since
 the declaration is about that one folder.
 
-`names` maps an absolute project path to the text the popup shows for it and the
-label its new session gets. An existing session found for that path is renamed to
-match, so the configured name wins over a label the session already had. An
-unnamed project shows its full path and keeps whatever label its session has. A
-name does not add a project: the path still has to be listed by a root, through a
-`.git` marker or through `project = true`. Keys are canonical paths, so a name
-still matches under a symlinked root. Once a name is set, `fzf` filters on the
-name rather than the path, because it searches what it displays.
+`names` maps an absolute project path to the title the palette shows for it and
+the label its new session gets. An existing session found for that path is
+renamed to match, so the configured name wins over a label the session already
+had. An unnamed project shows its folder name and keeps whatever label its
+session has. A name does not add a project: the path still has to be listed by a
+root, through a `.git` marker or through `project = true`. Keys are canonical
+paths, so a name still matches under a symlinked root.
 
 To keep settings separately, put the setup table in a Lua file that returns it:
 
@@ -56,11 +53,11 @@ exists, so a machine-only path never reaches the repository. `setup` replaces it
 options rather than merging them, so a second `setup` call would drop the tracked
 roots.
 
-The module resolves `rex`, `bash`, `fd`, `fzf`, and `pwd` through stable Nix profile
-paths, then system paths. Override an executable with an absolute path in
-`tools = { fzf = "/path/to/fzf" }` inside the setup table. `fd` and `fzf` are already
-installed by this repository's shell tools module. This prototype's source and
-settings deploy through Stow; there is no new Nix package to activate.
+The module resolves `bash`, `fd`, and `pwd` through stable Nix profile paths, then
+system paths. Override an executable with an absolute path in
+`tools = { fd = "/path/to/fd" }` inside the setup table. `fd` is already installed
+by this repository's shell tools module. The source and settings deploy through
+Stow; there is no Nix package to activate.
 
 After editing configuration:
 
@@ -70,42 +67,75 @@ rex --autostart=false config reload
 ```
 
 Press **Cmd+Shift+K**, or search for **rex-project-picker: Open Project** in the
-command palette. From a Rex terminal, the helper can also launch the loaded action:
+command palette. Type to filter, Enter opens, Esc cancels. The CLI can run the
+same action; with no `path` it asks in every connected Rex app and waits for an
+answer, and with a `path` it opens that project without asking:
 
 ```sh
-~/.config/rex/rex-project-picker/rex-project-picker
-# From outside Rex, choose an existing session and connected app:
-~/.config/rex/rex-project-picker/rex-project-picker popup SESSION APP_CLIENT
+rex do rex_project_picker
+rex do rex_project_picker path="$HOME/dotfiles"
 ```
 
-Type to filter; Up/Down or Ctrl-P/Ctrl-N move; Enter opens; Esc/Ctrl-C cancel.
-The floating layer closes on normal exit. Errors stay visible until Enter.
+`rex.client.queue` needs an app to switch to the session, so a CLI run needs
+`-C CLIENT` and the app's Remote Control setting.
 
 ## Behavior and scope
 
+Each row shows the project's name (or folder name) as its title, the parent
+folder (or, for a named project, its full path) as its subtitle, a `branch` icon
+for a repository or a `folder` icon for a declared project, and `open` when a
+session already has a terminal in it. Open projects come first, then the rest by
+title.
+
 Discovery recognizes `.git` directories and worktree `.git` files, stays within
-the configured depths, skips discovered symlinks, and sorts/deduplicates paths by
-their displayed name. The list streams into `fzf` through a FIFO, so the popup
-paints before discovery finishes; records stay NUL-separated through `fd`, `sort`,
-and `fzf`, and each record is `NAME<TAB>PATH` so `fzf` can display the name and
-accept the path. No selected path is interpolated into shell code.
+the configured depths, and skips discovered symlinks. The helper prints
+NUL-terminated `NAME<TAB>PATH` records; no selected path is interpolated into
+shell code. The whole list is read before the palette opens, and `rex.ui.pick`
+accepts at most 2,000 rows.
 
-Selection inspects tiled terminal blocks on demand. A unique exact canonical cwd
-match reuses the session and matching tab; otherwise it creates a shell session
-at the selected path. Multiple matching sessions produce an error rather than
-choosing arbitrarily. With multiple matching tabs, the active matching tab wins.
-If the shell changes into a subdirectory, that terminal no longer exactly matches
-the project root. There is no persistent project-to-session registry or concurrent
-creation lock.
+Selection inspects tiled terminal blocks on demand. An exact canonical cwd match
+reuses that project's tab: with one matching session, the active matching tab
+wins, and any other ambiguity (several sessions, or several tabs with none
+active) asks a second question listing the matching tabs. Otherwise it creates
+a shell session at the selected path. The session scan runs again after the
+choice, so a tab opened or closed while the palette was up is accounted for. If the shell changes into a subdirectory,
+that terminal no longer exactly matches the project root. There is no persistent
+project-to-session registry or concurrent creation lock.
 
-This is a local-server prototype tested on macOS. It does not provide remote
-project discovery or agent status. Rex's Cmd+K session switcher and Activity sidebar
-provide those respective native navigation/status surfaces.
+A cancelled or timed-out prompt, or one refused because another prompt is open,
+does nothing. A prompt no app can show (`no_client`, `unsupported`, `failed`)
+fails the action with that reason.
 
-The launcher retains the earlier Beta workaround: create the floating layer
-through `rex api call session.new_layer` from Lua instead of the direct Lua call.
-The legacy `pkgs/rexpick` source and installed Go package remain untouched; only
-the configured shortcut and associated configuration check now use this picker.
+Prompts only work in actions the server loaded from `init.lua`. An action run
+from a file with `rex do FILE --action` gets `unsupported`.
+
+## Remote hosts
+
+Shortcuts come from your home server (`rex home`), so Cmd+Shift+K pressed in a
+session on `pp-nas1` runs the home server's `rex_project_picker` with
+`ctx.server` naming that host. The action then asks that host, through
+`rex.server(ctx.server)`, to run `rex_project_picker_host`:
+
+- `op=list` discovers projects under the host's own roots and marks the ones
+  with a session there.
+- `op=open path=... [session_id=... window_id=...]` finds or creates the
+  project's session on the host. When the tab is ambiguous it returns the
+  candidates as `choose` instead of asking.
+
+Every prompt is shown by the home server's action, and it queues
+`session.select` for the session the host returned. `rex_project_picker_host`
+never prompts or queues client actions, so it also works from the CLI:
+
+```sh
+rex -S pp-nas1 do rex_project_picker_host op=list
+```
+
+The same `init.lua` deploys to every host with the `rex` home-manager module,
+but each host's `~/.config/rex` links into that host's own `~/dotfiles`
+checkout. A host only answers after its checkout has this version and
+`rex -S HOST config reload` has run; until then the picker reports the error
+from that host. Rex's Cmd+K session switcher and Activity sidebar cover
+navigation and status for running sessions.
 
 ## Checks
 
@@ -113,19 +143,19 @@ the configured shortcut and associated configuration check now use this picker.
 bash -n pkgs/rex-project-picker/rex-project-picker
 shellcheck pkgs/rex-project-picker/rex-project-picker
 rex --autostart=false config check
-pkgs/rex-project-picker/rex-project-picker list "$HOME/repos" 2 | tr '\0' '\n'
+PROJECT_PICKER_FD=$(command -v fd) \
+  pkgs/rex-project-picker/rex-project-picker list "$HOME/repos" 2 | tr '\0' '\n'
 ```
 
 `list` prints one `NAME<TAB>PATH` record per project, with the name defaulting to
-the path, and accepts the same `--project PATH` and `--name PATH NAME` arguments
-the picker passes.
+the path, and accepts `--project PATH` and `--name PATH NAME` arguments.
 
 The `rex-project-picker-config` flake check checks that a missing Stow source link
 fails clearly and the deployed source loads without a running Rex server.
 
-Live checks on 2026-11-03 verified session creation, exact-cwd reuse through the
-loaded config action, native popup rendering, filtering 76 projects to `dotfiles`,
-and Escape closing the layer with original terminal focus restored. Fixture checks
-covered depth limits, worktree markers, symlink policy, duplicate roots, missing
-roots, and names containing spaces, quotes, shell characters, and newlines. These
-checks used block-addressed input; physical shortcut input is not claimed.
+Checks on 2026-11-20 covered `config check`, path mode reusing an existing
+session through the loaded action, the palette on the local server, both
+`rex_project_picker_host` ops (including an ambiguous match returning `choose`
+and a chosen tab being honored), and the remote branch with `rex.server`
+stubbed to call this server's host action over the CLI. A real remote host and
+the app's relay of `rex.server` calls were not exercised.

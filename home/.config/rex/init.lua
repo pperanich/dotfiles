@@ -16,7 +16,6 @@ local settings = {
 		{ path = home .. "/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault", project = true },
 		{ path = home .. "/repos", depth = 2 },
 	},
-	bounds = { 0.1, 0.2, 0.8, 0.6 }, -- x, y, width, height as window fractions
 	-- Text the picker shows for a project, and the label its session gets.
 	-- Naming does not add a project: the path still has to be listed by a root,
 	-- through a .git marker or through project = true.

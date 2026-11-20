@@ -1,0 +1,27 @@
+"""Each rule gets commands it blocks and commands it allows. Add both when you add a rule."""
+
+import pytest
+from agent_kit.kitrun import load_kits
+from agent_kit.testing import rules, shell
+
+from {{ package }}.checks import kit
+
+# (command, rule that blocks it)
+BLOCKED: list[tuple[str, str]] = []
+
+# Commands no rule in this kit may block.
+ALLOWED: list[str] = ["ls -la", "git status"]
+
+
+@pytest.mark.parametrize(("command", "rule"), BLOCKED)
+def test_blocks(command, rule):
+    assert rule in rules(kit, shell(command))
+
+
+@pytest.mark.parametrize("command", ALLOWED)
+def test_allows(command):
+    assert rules(kit, shell(command)) == []
+
+
+def test_kit_is_registered_for_the_guard():
+    assert "{{ kit_name }}" in load_kits()

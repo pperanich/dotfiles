@@ -1,6 +1,6 @@
 [project]
 name = "agent-kit"
-version = "0.1.0"
+version = "0.2.0"
 description = "Guards and git hooks that enforce the user-wide agent rules for Claude Code, Codex and pi."
 requires-python = ">=3.11"
 dependencies = []
@@ -8,6 +8,7 @@ dependencies = []
 [project.scripts]
 agent-guard = "agent_kit.guard:main"
 agent-kit = "agent_kit.install:main"
+agent-kit-run = "agent_kit.kitrun:main"
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6"]

@@ -19,6 +19,8 @@ KIT = Path(__file__).resolve().parents[2]
 HOOKS_DIR = KIT / "git-hooks"
 PLUGIN_ROOT = KIT / "claude"
 PI_PACKAGE = KIT / "pi"
+SKILL_DIR = KIT / "skills" / "write-agent-check"
+SCRIPTS = ("agent-guard", "agent-kit", "agent-kit-run")
 PLUGIN = "agent-kit@agent-kit"
 HARNESSES = ("tool", "claude", "codex", "pi", "git")
 
@@ -115,8 +117,9 @@ def _claude_installed(profile: Path) -> dict | None:
 def _cache_stale(install_path: str) -> bool:
     """True when Claude's cached copy of the plugin manifests differs from dotfiles."""
     cache = Path(install_path)
-    for src in PLUGIN_ROOT.rglob("*"):
-        if src.is_file():
+    for dirpath, _, filenames in os.walk(PLUGIN_ROOT, followlinks=True):
+        for name in filenames:
+            src = Path(dirpath) / name
             copy = cache / src.relative_to(PLUGIN_ROOT)
             if not copy.is_file() or copy.read_bytes() != src.read_bytes():
                 return True
@@ -222,6 +225,32 @@ def codex(action: str, r: Report) -> None:
         r.todo("Codex: open codex and approve the new hook in /hooks; until then Codex does not run it")
 
 
+def codex_skill(action: str, r: Report) -> None:
+    """The write-agent-check skill, linked into Codex's skills directory."""
+    if not codex_home().is_dir():
+        return
+    link = codex_home() / "skills" / SKILL_DIR.name
+    ours = link.is_symlink() and link.resolve() == SKILL_DIR.resolve()
+    if action == "install":
+        if ours:
+            r.ok(f"Codex: skill {SKILL_DIR.name} already linked")
+        elif link.exists() or link.is_symlink():
+            r.bad(f"Codex: {_short(link)} exists and is not agent-kit's skill; left alone")
+        elif r.dry_run:
+            print(f"  would link {_short(link)} -> {_short(SKILL_DIR)}")
+        else:
+            link.parent.mkdir(parents=True, exist_ok=True)
+            link.symlink_to(SKILL_DIR)
+            r.ok(f"Codex: linked skill {_short(link)}")
+    elif action == "uninstall":
+        if ours and not r.dry_run:
+            link.unlink()
+    elif ours:
+        r.ok(f"Codex: skill {SKILL_DIR.name} linked")
+    else:
+        r.bad(f"Codex: skill {SKILL_DIR.name} is not linked in {_short(link.parent)}")
+
+
 # pi: a package entry in each profile's settings.json
 
 
@@ -234,7 +263,8 @@ def pi_dirs(explicit: list[str]) -> list[Path]:
     return list(dict.fromkeys(d for d in found if d.is_dir()))
 
 
-def _pi_has_kit(profile: Path) -> bool:
+def _pi_entry(profile: Path) -> str | None:
+    """The package entry in this profile that resolves to agent-kit's pi package."""
     settings = _read_json(profile / "settings.json", {})
     for entry in settings.get("packages", []):
         source = entry.get("source") if isinstance(entry, dict) else entry
@@ -242,9 +272,26 @@ def _pi_has_kit(profile: Path) -> bool:
             target = Path(os.path.expanduser(source))
             if not target.is_absolute():
                 target = profile / target
-            if target.resolve() == PI_PACKAGE:
-                return True
-    return False
+            if target.resolve() == PI_PACKAGE.resolve():
+                return source
+    return None
+
+
+def _pi_has_kit(profile: Path) -> bool:
+    return _pi_entry(profile) is not None
+
+
+def _pi_tilde_entry(profile: Path, r: Report) -> None:
+    """pi install stores a path relative to the settings file; rewrite it as ~/..., which works from any profile."""
+    entry, want = _pi_entry(profile), _short(PI_PACKAGE)
+    if entry is None or entry == want or r.dry_run:
+        return
+    settings = profile / "settings.json"
+    text = settings.read_text()
+    old = json.dumps(entry)
+    if text.count(old) == 1:
+        settings.write_text(text.replace(old, json.dumps(want)))  # writes through a symlinked settings file
+        r.ok(f"pi {_short(profile)}: entry written as {want}")
 
 
 def pi(action: str, profile: Path, r: Report) -> None:
@@ -255,11 +302,16 @@ def pi(action: str, profile: Path, r: Report) -> None:
             r.ok(f"pi {_short(profile)}: package already listed")
         elif r.run(["pi", "install", str(PI_PACKAGE)], env) and not r.dry_run:
             r.ok(f"pi {_short(profile)}: package added")
+        _pi_tilde_entry(profile, r)
     elif action == "uninstall":
         if present:
             r.run(["pi", "remove", str(PI_PACKAGE)], env)
+    elif present and _pi_entry(profile) != _short(PI_PACKAGE):
+        r.todo(
+            f"pi {_short(profile)}: listed as {_pi_entry(profile)}; rerun install to write it as {_short(PI_PACKAGE)}"
+        )
     elif present:
-        r.ok(f"pi {_short(profile)}: package listed in settings.json")
+        r.ok(f"pi {_short(profile)}: package listed as {_short(PI_PACKAGE)}")
     else:
         r.bad(f"pi {_short(profile)}: package not listed in settings.json")
 
@@ -327,7 +379,8 @@ def _tool_source() -> str | None:
 
 def tool(action: str, r: Report) -> None:
     source = _tool_source()
-    current = bool(source) and Path(source).resolve() == KIT
+    scripts = all((tool_bin() / name).exists() for name in SCRIPTS)
+    current = bool(source) and Path(source).resolve() == KIT and scripts
     if action == "install":
         if current:
             r.ok(f"uv tool: agent-kit already installed editable from {_short(KIT)}")
@@ -365,50 +418,103 @@ def _self_test(r: Report) -> None:
         r.bad(f"guard self-test exited {result.returncode}: {result.stderr.strip()[:200]}")
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="agent-kit", description=__doc__.splitlines()[0])
-    parser.add_argument("action", choices=["install", "uninstall", "doctor", "fixtures"])
-    parser.add_argument("logs", nargs="*", type=Path, help="fixtures: AGENT_KIT_LOG_DIR *.jsonl files to import")
-    parser.add_argument(
-        "--only", default=",".join(HARNESSES), help="comma-separated subset of: " + ", ".join(HARNESSES)
-    )
-    parser.add_argument("--claude-dir", action="append", default=[], help="Claude profile directory (repeatable)")
-    parser.add_argument("--pi-dir", action="append", default=[], help="pi profile directory (repeatable)")
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--force", action="store_true", help="replace an existing core.hooksPath")
-    args = parser.parse_args(argv)
+def _harness_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--only", default=",".join(HARNESSES), help="comma-separated subset of: " + ", ".join(HARNESSES))
+    p.add_argument("--claude-dir", action="append", default=[], help="Claude profile directory (repeatable)")
+    p.add_argument("--pi-dir", action="append", default=[], help="pi profile directory (repeatable)")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--force", action="store_true", help="replace an existing core.hooksPath")
+
+
+def _harnesses(args, parser) -> int:
     only = {h.strip() for h in args.only.split(",") if h.strip()}
     unknown = only - set(HARNESSES)
     if unknown:
-        parser.error(f"unknown harness: {', '.join(sorted(unknown))}")
-    if args.action == "fixtures":
+        parser.error(f"unknown step: {', '.join(sorted(unknown))}")
+    r = Report(dry_run=args.dry_run)
+    if "tool" in only:
+        print("uv tool")
+        tool(args.cmd, r)
+    if "claude" in only:
+        print("Claude Code")
+        for profile in claude_dirs(args.claude_dir):
+            claude(args.cmd, profile, r)
+    if "codex" in only:
+        print("Codex")
+        codex(args.cmd, r)
+        codex_skill(args.cmd, r)
+    if "pi" in only:
+        print("pi")
+        for profile in pi_dirs(args.pi_dir):
+            pi(args.cmd, profile, r)
+    if "git" in only:
+        print("git")
+        git(args.cmd, r, args.force)
+    if args.cmd == "doctor":
+        from . import kitcmd
+
+        print("kits")
+        kitcmd.doctor(r)
+        print("guard")
+        _self_test(r)
+    return 1 if r.problems else 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="agent-kit", description=__doc__.splitlines()[0])
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    for name, text in (
+        ("install", "wire agent-guard into every harness"),
+        ("uninstall", "remove it again"),
+        ("doctor", "report what is live"),
+    ):
+        _harness_args(sub.add_parser(name, help=text))
+    fixtures = sub.add_parser("fixtures", help="turn AGENT_KIT_LOG_DIR logs into fixtures for the built-in rules")
+    fixtures.add_argument("logs", nargs="+", type=Path)
+    new = sub.add_parser("new", help="create a project kit from the Copier template")
+    new.add_argument(
+        "--repo", action="store_true", help="create .agent-kit/ inside the repository instead of a user-side kit"
+    )
+    new.add_argument("--name", help="kit name (default: the repository's directory name)")
+    new.add_argument(
+        "--source",
+        choices=["git", "local"],
+        help="where the kit gets agent-kit (default: local for user-side, git for --repo)",
+    )
+    sub.add_parser("update-kits", help="bring template changes into every kit with copier update")
+    trust = sub.add_parser("trust", help="approve an in-repo kit to run (needs a terminal)")
+    trust.add_argument("path", nargs="?")
+    sub.add_parser("kits", help="list the kits that run here")
+    check = sub.add_parser("check", help="run a shell command through the guard without running it")
+    check.add_argument("command")
+    check.add_argument("--cwd", default=".")
+    check.add_argument("--harness", default="claude", choices=["claude", "codex", "pi"])
+    args = parser.parse_args(argv)
+
+    if args.cmd in ("install", "uninstall", "doctor"):
+        return _harnesses(args, parser)
+    if args.cmd == "fixtures":
         from .fixtures import import_logs
 
         for path in import_logs(args.logs):
             print(f"  wrote {path.relative_to(KIT)}")
         return 0
-    r = Report(dry_run=args.dry_run)
-    if "tool" in only:
-        print("uv tool")
-        tool(args.action, r)
-    if "claude" in only:
-        print("Claude Code")
-        for profile in claude_dirs(args.claude_dir):
-            claude(args.action, profile, r)
-    if "codex" in only:
-        print("Codex")
-        codex(args.action, r)
-    if "pi" in only:
-        print("pi")
-        for profile in pi_dirs(args.pi_dir):
-            pi(args.action, profile, r)
-    if "git" in only:
-        print("git")
-        git(args.action, r, args.force)
-    if args.action == "doctor":
-        print("guard")
-        _self_test(r)
-    return 1 if r.problems else 0
+    if args.cmd == "check":
+        from .guard import evaluate
+
+        payload = {"tool_name": "Bash", "tool_input": {"command": args.command}, "cwd": str(Path(args.cwd).resolve())}
+        lines = evaluate(payload, args.harness)
+        print("\n".join(lines) if lines else "allowed")
+        return 2 if lines else 0
+    from . import kitcmd
+
+    if args.cmd == "new":
+        return kitcmd.new("repo" if args.repo else "user", args.name, args.source, os.getcwd())
+    if args.cmd == "update-kits":
+        return kitcmd.update_kits(os.getcwd())
+    if args.cmd == "trust":
+        return kitcmd.trust(args.path, os.getcwd())
+    return kitcmd.list_kits(os.getcwd())
 
 
 if __name__ == "__main__":

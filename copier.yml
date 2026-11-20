@@ -1,0 +1,26 @@
+# Copier template for agent-kit project kits (see agent-kit/README.md). It sits at the
+# repository root because Copier versions a template, and so can update kits made from
+# it, only when the template source is the root of a git repository.
+_subdirectory: agent-kit/template
+_min_copier_version: "9.0"
+_answers_file: .copier-answers.yml
+_templates_suffix: .jinja
+_tasks:
+  - command: [uv, sync, --quiet]
+  - command: [uv, run, pytest, -q]
+kit_name:
+  type: str
+  help: Kit name, used as the project name and the entry point (lowercase letters, digits, hyphens)
+  validator: "{% if kit_name != kit_name | lower or ' ' in kit_name or '_' in kit_name %}use lowercase letters, digits and hyphens{% endif %}"
+package:
+  type: str
+  help: Python package name for the checks
+  default: "{{ kit_name | replace('-', '_') }}_kit"
+description:
+  type: str
+  help: One line on what the kit guards
+  default: "Agent checks for {{ kit_name }}"
+agent_kit_source:
+  type: str
+  help: '"git" to depend on agent-kit from GitHub, or a local agent-kit path for an editable dependency'
+  default: git

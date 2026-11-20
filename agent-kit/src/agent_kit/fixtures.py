@@ -6,9 +6,11 @@ changes its payload shape shows up as a failing test instead of a silent pass.
 
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
 
-from .events import normalize
+from .events import Event, normalize
+from .kit import Violation
 from .rules import check
 
 FIXTURES = Path(__file__).resolve().parents[2] / "tests" / "fixtures"
@@ -27,7 +29,9 @@ def _redact(value, swaps: list[tuple[str, str]]):
     return value
 
 
-def import_logs(paths: list[Path], out: Path = FIXTURES) -> list[Path]:
+def import_logs(
+    paths: list[Path], out: Path = FIXTURES, verdict: Callable[[Event], list[Violation]] = check
+) -> list[Path]:
     out.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for log in paths:
@@ -40,7 +44,7 @@ def import_logs(paths: list[Path], out: Path = FIXTURES) -> list[Path]:
             if "transcript_path" in payload:
                 payload["transcript_path"] = "/home/user/.claude/transcript.jsonl"
             event = normalize(payload, harness)
-            expect = {"kind": event.kind, "rules": sorted({v.rule for v in check(event)})}
+            expect = {"kind": event.kind, "rules": sorted({v.rule for v in verdict(event)})}
             tool = str(payload.get("tool_name") or "tool").lower().replace("/", "_")
             path = out / f"{harness}-{n:02d}-{tool}.json"
             path.write_text(json.dumps({"harness": harness, "payload": payload, "expect": expect}, indent=2) + "\n")

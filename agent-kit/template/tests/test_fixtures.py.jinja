@@ -1,0 +1,16 @@
+"""Real payloads captured with AGENT_KIT_LOG_DIR and imported by `agent-kit-run fixtures`, replayed."""
+
+from pathlib import Path
+
+import pytest
+from agent_kit.testing import fixture_files, replay
+
+from {{ package }}.checks import kit
+
+FIXTURES = fixture_files(Path(__file__).parent / "fixtures")
+
+
+@pytest.mark.parametrize("path", FIXTURES, ids=[p.stem for p in FIXTURES])
+def test_fixture_verdict_holds(path):
+    expected, actual = replay(kit, path)
+    assert actual == expected

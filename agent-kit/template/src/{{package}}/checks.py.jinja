@@ -1,0 +1,23 @@
+"""{{ description }}.
+
+Register each rule on `kit`. A tool check takes an Event and returns the message
+the agent reads, naming the fix, or None to allow the call. Most rules fit one of
+three shapes, all from agent_kit.api:
+
+    block_command(kit, "prod-kubectl", command="kubectl", args=r"--context[= ]prod",
+                  message="Use the staging context; prod changes go through the deploy pipeline.")
+
+    block_paths(kit, "generated-code", patterns=["src/gen/*"],
+                message="src/gen is generated. Edit the .proto and run `make gen`.")
+
+    @kit.check("terraform-workspace")
+    def terraform_workspace(event: Event) -> str | None:
+        ...  # anything Python can decide: read files, parse config, inspect event.commands
+
+Commit message rules use @kit.commit_check(rule) with fn(text) -> error or None.
+Every rule gets blocked and allowed cases in tests/test_checks.py.
+"""
+
+from agent_kit.api import Kit
+
+kit = Kit("{{ kit_name }}")

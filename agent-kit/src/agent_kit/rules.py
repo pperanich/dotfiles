@@ -1,23 +1,19 @@
-"""Checks that turn the user-wide agent rules into blocks.
+"""agent-kit's built-in kit: the user-wide agent rules as checks.
 
-Each check takes an Event and returns Violations. A rule's message is the
-instruction the agent reads, so it names the fix, not only the fault.
+Each check returns the message the agent reads, so it names the fix, not only
+the fault. Project kits use the same Kit API from agent_kit.api.
 """
 
 import os
 import re
-from dataclasses import dataclass
 from pathlib import Path
 
 from . import attribution
 from .events import Event
-from .shell import Command, simple_commands
+from .kit import Kit, Violation, config_dir, resolve_path, show_path, write_targets
+from .shell import Command
 
-
-@dataclass
-class Violation:
-    rule: str
-    message: str
+kit = Kit("agent-kit")
 
 
 _PYTHON = re.compile(r"^python(\d+(\.\d+)?)?$")
@@ -45,9 +41,6 @@ _GIT_CONFIG_WRITES = {
     "--edit",
     "-e",
 }
-_LAST_ARG_WRITERS = {"cp", "mv", "ln", "install", "rsync"}
-_ANY_ARG_WRITERS = {"tee", "rm", "touch", "truncate", "chmod", "chown"}
-_IN_PLACE = {"sed", "perl"}
 _FORGE_CLIS = {"gh", "gh-axi"}
 _FORGE_FILE_FLAGS = {"-F", "--body-file", "--input"}
 
@@ -73,34 +66,17 @@ def protected_paths() -> list[Path]:
         ".npmrc",
         ".pypirc",
     ]
-    return [home / n for n in names] + [config / "git"]
-
-
-def _resolve(word: str, cwd: str) -> Path | None:
-    if not word or word.startswith("-"):
-        return None
-    home = str(_home())
-    word = re.sub(r"^(\$HOME|\$\{HOME\})(?=/|$)", home, word)
-    path = Path(os.path.expanduser(word))
-    if not path.is_absolute():
-        path = Path(cwd or os.getcwd()) / path
-    return Path(os.path.normpath(path))
+    return [home / n for n in names] + [config / "git", config_dir() / "trusted.json"]
 
 
 def _protected(word: str, cwd: str) -> Path | None:
-    path = _resolve(word, cwd)
+    path = resolve_path(word, cwd)
     if path is None:
         return None
     for root in protected_paths():
         if path == root or root in path.parents:
             return path
     return None
-
-
-def _show(path: Path) -> str:
-    home = str(_home())
-    text = str(path)
-    return "~" + text[len(home) :] if text.startswith(home + "/") else text
 
 
 # gnu-tools
@@ -180,18 +156,6 @@ def _git_config_write(argv: list[str], cwd: str) -> str | None:
     return f"`git config {scope}` writes user-level git config"
 
 
-def _write_targets(cmd: Command) -> list[str]:
-    targets = list(cmd.redirects)
-    args = [a for a in cmd.argv[1:] if not a.startswith("-")]
-    if cmd.name in _LAST_ARG_WRITERS and args:
-        targets.append(args[-1])
-    elif cmd.name in _ANY_ARG_WRITERS:
-        targets += args
-    elif cmd.name in _IN_PLACE and any(a.startswith("-") and "i" in a.lstrip("-")[:3] for a in cmd.argv[1:]):
-        targets += args
-    return targets
-
-
 _MACHINE_CONFIG_FIX = (
     "Never change user-level config to make a task work. For a git identity pass "
     "`-c user.name=... -c user.email=...` or set GIT_CONFIG_GLOBAL=<tmpfile>. "
@@ -205,14 +169,14 @@ def _machine_config(event: Event, commands: list[Command]) -> list[str]:
         reason = _git_config_write(cmd.argv, event.cwd) if cmd.argv else None
         if reason:
             found.append(reason)
-        for target in _write_targets(cmd):
+        for target in write_targets(cmd):
             path = _protected(target, event.cwd)
             if path:
-                found.append(f"this command writes {_show(path)}, which is user-level config")
+                found.append(f"this command writes {show_path(path)}, which is user-level config")
     for target in event.paths:
         path = _protected(target, event.cwd)
         if path:
-            found.append(f"{_show(path)} is user-level config")
+            found.append(f"{show_path(path)} is user-level config")
     return found
 
 
@@ -233,7 +197,7 @@ def _forge_texts(event: Event, commands: list[Command]) -> list[str]:
             if arg in _FORGE_FILE_FLAGS or (is_commit and arg in ("-F", "--file")):
                 value = argv[i + 1]
                 value = value.split("=@", 1)[1] if "=@" in value else value
-                path = _resolve(value, event.cwd)
+                path = resolve_path(value, event.cwd)
                 if path and path.is_file() and path.stat().st_size < 1_000_000:
                     texts.append(path.read_text(errors="replace"))
     return texts
@@ -266,22 +230,31 @@ def _sleep_loop(commands: list[Command]) -> str | None:
     return None
 
 
+@kit.check("gnu-tools")
+def gnu_tools(event: Event) -> str | None:
+    return next((m for cmd in event.commands if (m := _gnu_tools(cmd))), None)
+
+
+@kit.check("uv-python")
+def uv_python(event: Event) -> str | None:
+    return next((m for cmd in event.commands if (m := _uv_python(cmd))), None)
+
+
+@kit.check("machine-config")
+def machine_config(event: Event) -> str | None:
+    reasons = _machine_config(event, event.commands)
+    return "; ".join(dict.fromkeys(reasons)) + ". " + _MACHINE_CONFIG_FIX if reasons else None
+
+
+@kit.check("forge-attribution")
+def forge_attribution(event: Event) -> str | None:
+    return _forge_attribution(event, event.commands)
+
+
+@kit.check("sleep-loop")
+def sleep_loop(event: Event) -> str | None:
+    return _sleep_loop(event.commands)
+
+
 def check(event: Event) -> list[Violation]:
-    allowed = {r.strip() for r in os.environ.get("AGENT_KIT_ALLOW", "").split(",") if r.strip()}
-    commands = (simple_commands(event.command) or []) if event.kind == "shell" else []
-    out: list[Violation] = []
-
-    def add(rule: str, message: str | None) -> None:
-        if message and rule not in allowed:
-            out.append(Violation(rule, message))
-
-    for cmd in commands:
-        add("gnu-tools", _gnu_tools(cmd))
-        add("uv-python", _uv_python(cmd))
-    reasons = _machine_config(event, commands)
-    if reasons:
-        add("machine-config", "; ".join(dict.fromkeys(reasons)) + ". " + _MACHINE_CONFIG_FIX)
-    add("forge-attribution", _forge_attribution(event, commands))
-    add("sleep-loop", _sleep_loop(commands))
-    unique: dict[tuple[str, str], Violation] = {(v.rule, v.message): v for v in out}
-    return list(unique.values())
+    return kit.run(event)

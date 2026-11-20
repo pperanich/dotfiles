@@ -1,0 +1,9 @@
+# {{ kit_name }}
+
+{{ description }}. An agent-kit project kit: agent-kit's global guard runs these checks before every shell, write and edit call that Claude Code, Codex or pi makes in this project, after its own user-wide rules.
+
+- Rules: `src/{{ package }}/checks.py`. Its docstring shows the three shapes a rule takes.
+- Tests: `tests/test_checks.py`, with blocked and allowed cases for every rule. `tests/fixtures/` holds real payloads, imported with `uv run agent-kit-run fixtures <log>.jsonl --out tests/fixtures`.
+- Run them: `uv run pytest`.
+
+The guard calls `.venv/bin/agent-kit-run`, so run `uv sync` after changing dependencies. A kit inside a repository runs only after `agent-kit trust` in a terminal; `agent-kit kits` shows what runs here. `agent-kit update-kits` brings in changes to the template this kit came from.

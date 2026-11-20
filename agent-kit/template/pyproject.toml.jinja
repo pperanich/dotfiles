@@ -1,0 +1,38 @@
+[project]
+name = "{{ kit_name }}"
+version = "0.1.0"
+description = "{{ description }}"
+requires-python = ">=3.11"
+dependencies = ["agent-kit"]
+
+# agent-kit's global guard runs every kit registered here through agent-kit-run.
+[project.entry-points."agent_kit.kits"]
+{{ kit_name }} = "{{ package }}.checks:kit"
+
+[tool.uv.sources]
+{%- if agent_kit_source == "git" %}
+agent-kit = { git = "https://github.com/pperanich/dotfiles", subdirectory = "agent-kit" }
+{%- else %}
+agent-kit = { path = "{{ agent_kit_source }}", editable = true }
+{%- endif %}
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "{{ package }}"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]

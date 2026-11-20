@@ -1,13 +1,16 @@
 {
   "name": "agent-kit-pi",
   "private": true,
-  "description": "agent-kit for pi: sends tool calls through the agent-guard tool shared with Claude Code and Codex.",
+  "description": "agent-kit for pi: sends tool calls through the agent-guard tool shared with Claude Code and Codex, and the write-agent-check skill.",
   "keywords": [
     "pi-package"
   ],
   "pi": {
     "extensions": [
       "./agent-kit.ts"
+    ],
+    "skills": [
+      "./skills"
     ]
   },
   "peerDependencies": {

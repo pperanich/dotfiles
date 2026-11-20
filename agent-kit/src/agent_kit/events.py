@@ -3,6 +3,9 @@
 import re
 import shlex
 from dataclasses import dataclass, field
+from functools import cached_property
+
+from .shell import Command, simple_commands
 
 _SHELL_TOOLS = {"bash", "shell", "exec_command", "local_shell", "unified_exec", "container.exec"}
 _WRITE_TOOLS = {"write", "create_file"}
@@ -20,6 +23,11 @@ class Event:
     paths: list[str] = field(default_factory=list)
     new_text: str = ""
     strings: list[str] = field(default_factory=list)  # every string field, for "other" tools
+
+    @cached_property
+    def commands(self) -> list[Command]:
+        """The shell command split into simple commands; empty for other tools or an unparseable script."""
+        return (simple_commands(self.command) or []) if self.kind == "shell" else []
 
 
 def _command_text(value) -> str:

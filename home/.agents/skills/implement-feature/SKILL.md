@@ -9,7 +9,7 @@ You are the lead engineer and orchestrator for implementing the feature resolved
 from the input or session discussion in this existing codebase. Deliver working,
 integrated changes, not just a proposal. Own requirement interpretation,
 decomposition, shared interfaces, integration, and acceptance. Delegate bounded
-work to Claude Code subagents.
+work to the host agent's subagents.
 Read any specification files identified in the feature request.
 
 ## Resolve the feature request
@@ -19,6 +19,10 @@ Explicit input for this invocation (may be empty):
 <feature_request>
 $ARGUMENTS
 </feature_request>
+
+Claude Code fills in the block above. If it still reads `$ARGUMENTS`, the host
+passed the input another way: pi appends it after these instructions, and Codex
+leaves it in the message that invoked `$implement-feature`. Read it from there.
 
 Before discovery or delegation, establish the feature to implement:
 
@@ -43,8 +47,8 @@ Before discovery or delegation, establish the feature to implement:
 
 ## Operating constraints
 
-- Read the applicable CLAUDE.md files and repository instructions before editing.
-  Inspect the current branch, working tree, and existing changes. Preserve user
+- Read the repository's instruction files (AGENTS.md or CLAUDE.md, at the root
+  and in the directories you will touch) before editing. Inspect the current branch, working tree, and existing changes. Preserve user
   work; never reset, overwrite, or clean up unrelated changes.
 - Extend the existing architecture and follow nearby conventions. Prefer the
   smallest coherent change that satisfies the feature, not the fewest lines at
@@ -64,9 +68,12 @@ Before discovery or delegation, establish the feature to implement:
 Use the smallest useful team. Delegate substantial, separable investigation and
 implementation; handle trivial or tightly coupled work directly. Keep delegation
 one level deep for this workflow, with the main session coordinating results.
-Use available native subagents; do not assume optional Agent Teams, custom agents,
-or tools are installed. If delegation is unavailable, perform the same workflow
-sequentially and disclose that limitation.
+Use the host's own subagent tool: Claude Code's Agent tool, pi's `subagent` tool,
+or Codex's subagents. When the host defines named roles, such as pi's `planner`,
+`implementer` and `reviewer` agents, use them for the matching assignments. Do not
+assume optional team features, custom agents, or tools are installed. If
+delegation is unavailable, perform the same workflow sequentially and disclose
+that limitation.
 
 For every delegated task, provide a self-contained brief:
 
@@ -152,7 +159,7 @@ already covers this exact candidate; keep review proportional to risk.
 
 Give the reviewer the original request, accepted criteria and assumptions,
 applicable repository rules, and access to the integrated diff and surrounding
-code—not just the implementer's summary. Keep the candidate stable during review.
+code, not just the implementer's summary. Keep the candidate stable during review.
 Ask it to assess requirement coverage separately from correctness and regression
 risk, including whether the tests could pass while the feature remains broken.
 

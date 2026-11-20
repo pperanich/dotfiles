@@ -366,7 +366,8 @@
               run ${lib.getExe dotfilesSync} "$DOTFILES_DIR" "${deployedRev}" \
                 || echo "dotfiles-sync failed; stowing the checkout as it is"
               pushd "$DOTFILES_DIR" >/dev/null
-              ${pkgs.stow}/bin/stow home
+              # A folded directory sends every file an app writes there into the repo.
+              ${pkgs.stow}/bin/stow --no-folding home
               popd >/dev/null
               DOTFILES_REAL=$(${pkgs.coreutils}/bin/realpath -m -- "$DOTFILES_DIR")
 

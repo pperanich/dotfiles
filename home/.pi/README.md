@@ -13,6 +13,12 @@ Pi installs into the ignored `agent/npm/` directory:
   `pi-memory`, the rpiv `advisor`, `ask_user_question` and `todo` tools, and
   the Catppuccin theme.
 
+`/goal` is maintained in `agent/extensions/goal.ts`, which the normal profile
+loads directly from the dotfiles checkout. It stores one objective on the current
+Pi session branch. Use `/goal pause` and `/goal resume` on that branch. Older
+`pi-goal-x` records stay in each project's `.pi/goals/` directory.
+[Original extension at `0865c84`](https://github.com/mitsuhiko/agent-stuff/blob/0865c849befd2021490679f96a8dee58c84ac857/extensions/goal.ts)
+
 `extensions/debate/` is a local extension, disabled in `agent/settings.json`
 with `-extensions/debate/index.ts`. Its source is retained; remove that exclusion
 and run `/reload` to re-enable it. If its dependencies are missing, run

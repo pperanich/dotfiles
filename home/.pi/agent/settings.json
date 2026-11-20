@@ -8,7 +8,10 @@
   "enabledModels": ["openai/*", "antigravity-acp/*"],
   "hideThinkingBlock": true,
   "defaultTools": ["read", "bash", "edit", "write", "grep", "find", "ls"],
-  "extensions": ["-extensions/debate/index.ts"],
+  "extensions": [
+    "-extensions/debate/index.ts",
+    "~/dotfiles/home/.pi/agent/extensions/goal.ts"
+  ],
   "packages": [
     "npm:pi-subagents@0.84.0",
     "npm:pi-web-access@0.46.0",
@@ -16,7 +19,6 @@
     "npm:@juicesharp/rpiv-ask-user-question@2.15.0",
     "npm:@juicesharp/rpiv-todo@2.15.0",
     "npm:pi-memory@0.4.2",
-    "npm:pi-goal-x@0.34.1",
     "npm:catppuccin-pi-theme@0.1.6",
     {
       "source": "npm:pi-extensible-workflows@6.3.0",

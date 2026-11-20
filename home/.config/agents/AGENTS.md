@@ -27,6 +27,8 @@ Before writing a script, skill, command or config of your own, check whether one
 
 When I correct you, or you catch yourself repeating a mistake, propose a deterministic fix before a prose one: a lint rule, a type, a test, a hook, a permission rule, or an API that makes the wrong thing impossible. Propose a new line in AGENTS.md, CLAUDE.md or memory only when the rule needs judgment, and say in one line why no check fits. Adding the check still follows the Scope rules: propose it and wait for my answer.
 
+To write the check, use the `write-agent-check` skill. agent-kit (`~/dotfiles/agent-kit`) holds the checks that apply to every project, and a project kit holds the checks for one project.
+
 Apply a correction at the scope I gave it. A fix to one case is not a rule for every case, and a preference is not a ban. If you can't tell how far a correction reaches, ask before writing it into memory or an instruction file.
 
 ## Git Commits

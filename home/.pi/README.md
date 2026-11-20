@@ -19,6 +19,11 @@ Pi session branch. Use `/goal pause` and `/goal resume` on that branch. Older
 `pi-goal-x` records stay in each project's `.pi/goals/` directory.
 [Original extension at `0865c84`](https://github.com/mitsuhiko/agent-stuff/blob/0865c849befd2021490679f96a8dee58c84ac857/extensions/goal.ts)
 
+`~/dotfiles/agent-kit/pi` is agent-kit's pi package, listed in both this profile and the work
+profile. Its extension sends each bash, write and edit call through `agent-guard`, the
+same check Claude Code and Codex run as a hook. `agent-kit install` adds the entry; see
+`agent-kit/README.md`.
+
 `extensions/debate/` is a local extension, disabled in `agent/settings.json`
 with `-extensions/debate/index.ts`. Its source is retained; remove that exclusion
 and run `/reload` to re-enable it. If its dependencies are missing, run

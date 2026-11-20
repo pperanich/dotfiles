@@ -1,0 +1,16 @@
+{
+  "harness": "pi",
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "write",
+    "tool_input": {
+      "path": "probe.txt",
+      "content": "hi"
+    },
+    "cwd": "/work"
+  },
+  "expect": {
+    "kind": "write",
+    "rules": []
+  }
+}

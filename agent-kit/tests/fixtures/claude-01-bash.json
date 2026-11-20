@@ -1,0 +1,24 @@
+{
+  "harness": "claude",
+  "payload": {
+    "session_id": "redacted",
+    "transcript_path": "/home/user/.claude/transcript.jsonl",
+    "cwd": "/work",
+    "prompt_id": "redacted",
+    "permission_mode": "acceptEdits",
+    "effort": {
+      "level": "medium"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo agent-kit-probe",
+      "description": "Print probe marker"
+    },
+    "tool_use_id": "redacted"
+  },
+  "expect": {
+    "kind": "shell",
+    "rules": []
+  }
+}

@@ -1,0 +1,14 @@
+#!/bin/sh
+# core.hooksPath makes git skip .git/hooks, so every hook name lands here:
+# run agent-kit's check for this hook, then the repository's own hook.
+hook=$(basename "$0")
+if [ "$hook" = commit-msg ]; then
+	"${AGENT_GUARD:-$HOME/.local/bin/agent-guard}" commit-msg "$1"
+	[ $? -eq 1 ] && exit 1
+fi
+common=$(git rev-parse --git-common-dir 2>/dev/null) || exit 0
+own="$common/hooks/$hook"
+if [ -x "$own" ]; then
+	exec "$own" "$@"
+fi
+exit 0

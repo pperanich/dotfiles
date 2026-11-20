@@ -1,0 +1,7 @@
+{
+  "name": "agent-kit",
+  "description": "PreToolUse guard that blocks shell and file actions breaking the user-wide agent rules, with the fix in the block message.",
+  "author": {
+    "name": "Preston Peranich"
+  }
+}

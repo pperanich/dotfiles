@@ -29,6 +29,7 @@ email = pperanich@gmail.com
 [core]
     pager = delta
     excludesFile = "~/.config/git/ignore"
+    hooksPath = ~/dotfiles/agent-kit/git-hooks
 
 [interactive]
     diffFilter = delta --color-only

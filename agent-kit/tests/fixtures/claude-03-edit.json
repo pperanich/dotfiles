@@ -1,0 +1,26 @@
+{
+  "harness": "claude",
+  "payload": {
+    "session_id": "redacted",
+    "transcript_path": "/home/user/.claude/transcript.jsonl",
+    "cwd": "/work",
+    "prompt_id": "redacted",
+    "permission_mode": "acceptEdits",
+    "effort": {
+      "level": "medium"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/work/probe.txt",
+      "old_string": "hi",
+      "new_string": "hello",
+      "replace_all": false
+    },
+    "tool_use_id": "redacted"
+  },
+  "expect": {
+    "kind": "edit",
+    "rules": []
+  }
+}

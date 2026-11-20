@@ -1,0 +1,17 @@
+{
+  "description": "agent-kit guard: blocks tool calls that break the user-wide agent rules. agent-guard comes from `uv tool install --editable` of agent-kit.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|mcp__.*github.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${AGENT_GUARD:-$HOME/.local/bin/agent-guard}\" pre-tool --harness claude",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

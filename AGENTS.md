@@ -163,6 +163,7 @@ imports = with modules.darwin; [ base rust ];
 /lib/               # Custom library functions (lib.my.*)
 /overlays/          # Nixpkgs overlays
 /pkgs/              # Custom package definitions
+/agent-kit/         # Guards and hooks for Claude Code, Codex and pi (see agent-kit/README.md)
 /bin/               # Install and helper scripts
 /templates/         # Flake templates (dendritic, private)
 /sops/              # Encrypted secrets (machines/<host>.yaml, users/, cloudflared-tunnel.json, .sops.yaml)

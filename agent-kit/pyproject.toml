@@ -1,0 +1,29 @@
+[project]
+name = "agent-kit"
+version = "0.1.0"
+description = "Guards and git hooks that enforce the user-wide agent rules for Claude Code, Codex and pi."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+agent-guard = "agent_kit.guard:main"
+agent-kit = "agent_kit.install:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# Block messages are long sentences the agent reads whole; the formatter keeps code within the limit.
+ignore = ["E501"]

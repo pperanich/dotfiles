@@ -27,7 +27,8 @@
     },
     "npm:@piewf/cli@6.3.0",
     "npm:@piewf/herdr@6.3.0",
-    "npm:pi-antigravity-acp-provider@0.1.19"
+    "npm:pi-antigravity-acp-provider@0.1.19",
+    "../../dotfiles/agent-kit/pi"
   ],
   "deviceId": "19d16dea-e171-40d4-bead-75cb55a2356c",
   "extensionChangelogVersions": {

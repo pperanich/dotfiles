@@ -1,0 +1,14 @@
+{
+  "name": "agent-kit",
+  "description": "agent-kit from dotfiles: guards that turn the user-wide agent rules into blocks.",
+  "owner": {
+    "name": "Preston Peranich"
+  },
+  "plugins": [
+    {
+      "name": "agent-kit",
+      "source": "./claude",
+      "description": "PreToolUse hook that runs the agent-guard tool on shell, file and GitHub tool calls."
+    }
+  ]
+}

@@ -610,6 +610,11 @@ in
         adminPasswordSecret = "feedme-grafana-admin-password";
         secretKeySecret = "feedme-grafana-secret-key";
       };
+      alertmanager = {
+        enable = true;
+        emailTo = "pperanich+feedme@gmail.com";
+        smtpPasswordSecret = "feedme-resend-api-key";
+      };
     };
   };
 }

@@ -79,6 +79,19 @@ def test_skill_link_is_idempotent_and_removable(home, monkeypatch):
     assert not link.exists()
 
 
+def test_skill_is_linked_for_claude_code_when_it_is_installed(home, monkeypatch):
+    monkeypatch.delenv("CODEX_HOME", raising=False)
+    (home / ".claude").mkdir()
+    install.skill("install", install.Report())
+    for skills in (home / ".agents" / "skills", home / ".claude" / "skills"):
+        assert (skills / "write-agent-check" / "SKILL.md").exists()
+    report = install.Report()
+    install.skill("doctor", report)
+    assert report.problems == 0
+    install.skill("uninstall", install.Report())
+    assert not (home / ".claude" / "skills" / "write-agent-check").exists()
+
+
 def test_skill_leaves_a_foreign_directory_alone(home, monkeypatch):
     monkeypatch.delenv("CODEX_HOME", raising=False)
     foreign = home / ".agents" / "skills" / "write-agent-check"

@@ -228,22 +228,30 @@ def codex(action: str, r: Report) -> None:
         r.todo("Codex: open codex and approve the new hook in /hooks; until then Codex does not run it")
 
 
-# skill: one link in ~/.agents/skills, which Claude Code (through ~/.claude/skills), pi and Codex all read
+# skill: a link in ~/.agents/skills, which pi and Codex read, and one in ~/.claude/skills, since Claude Code
+# does not read ~/.agents/skills
 
 
-def agents_skills_dir() -> Path:
-    return _home() / ".agents" / "skills"
+def skills_dirs() -> list[Path]:
+    dirs = [_home() / ".agents" / "skills"]
+    if (_home() / ".claude").is_dir():
+        dirs.append(_home() / ".claude" / "skills")
+    return dirs
 
 
 def skill(action: str, r: Report) -> None:
-    """Link write-agent-check into ~/.agents/skills, the convention in dotfiles' home/.agents/skills/README.md."""
-    skills = agents_skills_dir()
-    link = skills / SKILL_DIR.name
-    ours = link.is_symlink() and link.resolve() == SKILL_DIR.resolve()
+    """Link write-agent-check into each skills directory, the convention in dotfiles' home/.agents/skills/README.md."""
     old_codex = codex_home() / "skills" / SKILL_DIR.name  # earlier installs linked it here; Codex reads both
     if action != "doctor" and old_codex.is_symlink() and old_codex.resolve() == SKILL_DIR.resolve() and not r.dry_run:
         old_codex.unlink()
         r.ok(f"skill: removed the old link {_short(old_codex)}")
+    for skills in skills_dirs():
+        _skill_link(action, skills, r)
+
+
+def _skill_link(action: str, skills: Path, r: Report) -> None:
+    link = skills / SKILL_DIR.name
+    ours = link.is_symlink() and link.resolve() == SKILL_DIR.resolve()
     if action == "install":
         if ours:
             r.ok(f"skill: {SKILL_DIR.name} already linked in {_short(skills)}")

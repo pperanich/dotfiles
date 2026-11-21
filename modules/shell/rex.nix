@@ -84,8 +84,9 @@ in
         # rule against it in AGENTS.md, overwriting the project label the picker
         # sets. The stub and hooks live in ~/.agents, ~/.claude and ~/.codex
         # outside any repo, so setup reruns on every switch; it leaves matching
-        # files alone. Runs after both stows so it writes through the
-        # ~/.claude/skills link that nix-private owns instead of shadowing it.
+        # files alone. Runs after both stows, which lay out ~/.agents/skills and
+        # ~/.claude/skills as real directories, so its skill lands beside the
+        # stowed links and never inside a checkout.
         #
         # Rex is in closed beta and may be missing (package = null, or a machine
         # without the download), so a missing CLI or a failed setup only warns.

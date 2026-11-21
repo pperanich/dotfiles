@@ -14,6 +14,9 @@ not read it: link each new non-`dev-*` skill from `home/.claude/skills/`.
 New personal handoffs use `~/.agents/plans/`. Existing handoffs in
 `~/.claude/plans/` can be resumed in place.
 
+`ai-tells` is the catalog of generic AI prose and code patterns that the global
+`AGENTS.md` points to for a last pass over a document or diff.
+
 The [planning examples](dev-plan/evals/evals.json) and [review examples](dev-wrap/evals/evals.json)
 are replayable. Give a fresh agent the `prompt` and compare its answer with
 `expected_output` afterward.

@@ -13,6 +13,7 @@ in
   imports = [
     ./disko.nix
     inputs.nixos-facter-modules.nixosModules.facter
+    inputs.feed-me.nixosModules.feedmeOps
   ]
   ++ (with modules.nixos; [
     # Core system configuration
@@ -207,7 +208,8 @@ in
         # Databases behind the services above — likelier to fail than the apps
         "postgresql"
         "redis-.*"
-      ];
+      ]
+      ++ config.services.feedmeOps.systemdUnits;
     };
 
     # Disk health monitoring — scraped only by the router's Prometheus
@@ -570,5 +572,29 @@ in
     location = "/tank/backups/postgres";
     startAt = "*-*-* 01:15:00";
     compression = "zstd";
+  };
+
+  # Flip enable to true after gcp:apply writes the feedme-* keys into sops/machines/pp-nas1.yaml.
+  services.feedmeOps = {
+    enable = false;
+    dataDir = "/tank/appdata/feedme";
+    backupDir = "/tank/backups/feedme-glitchtip";
+    tunnel = {
+      enable = true;
+      tokenSecret = "feedme-nas-tunnel-token";
+    };
+    glitchtip = {
+      enable = true;
+      secretKeySecret = "feedme-glitchtip-secret-key";
+      postgresPasswordSecret = "feedme-glitchtip-pg-password";
+    };
+    monitoring = {
+      enable = true;
+      prodMetricsTokenSecret = "feedme-prod-metrics-token";
+      grafana = {
+        adminPasswordSecret = "feedme-grafana-admin-password";
+        secretKeySecret = "feedme-grafana-secret-key";
+      };
+    };
   };
 }

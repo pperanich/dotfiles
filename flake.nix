@@ -111,6 +111,7 @@
 
     nix-apple-fonts.url = "github:pperanich/nix-apple-fonts";
     llm-agents.url = "github:numtide/llm-agents.nix";
+    feed-me.url = "git+ssh://git@gitea.prestonperanich.com/pperanich/feed-me.git?ref=main";
 
   };
 }

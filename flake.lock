@@ -203,6 +203,22 @@
         "type": "github"
       }
     },
+    "feed-me": {
+      "locked": {
+        "lastModified": 1795276607,
+        "narHash": "sha256-brH6mEWE5tDv7SfmLCLyFKzYsKKSTRSBY8O30N0B0jQ=",
+        "ref": "main",
+        "rev": "ef1377b5306075d41a8e12fdd57b07351d800806",
+        "revCount": 6903,
+        "type": "git",
+        "url": "ssh://git@gitea.prestonperanich.com/pperanich/feed-me.git"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "ssh://git@gitea.prestonperanich.com/pperanich/feed-me.git"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -772,6 +788,7 @@
         "deploy-rs": "deploy-rs",
         "determinate": "determinate",
         "disko": "disko",
+        "feed-me": "feed-me",
         "flake-compat": "flake-compat_2",
         "flake-parts": "flake-parts_2",
         "flake-schemas": "flake-schemas",

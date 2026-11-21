@@ -574,9 +574,9 @@ in
     compression = "zstd";
   };
 
-  # Flip enable to true after gcp:apply writes the feedme-* keys into sops/machines/pp-nas1.yaml.
+  # FeedMe self-hosted GlitchTip + Prometheus/Loki/Grafana ops stack.
   services.feedmeOps = {
-    enable = false;
+    enable = true;
     dataDir = "/tank/appdata/feedme";
     backupDir = "/tank/backups/feedme-glitchtip";
     tunnel = {

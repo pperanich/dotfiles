@@ -77,7 +77,17 @@ in
       ];
     };
 
-    headscale.enable = true;
+    headscale = {
+      enable = true;
+      extraAcls = [
+        {
+          action = "accept";
+          proto = "tcp";
+          src = [ "100.64.0.3" ]; # pp-nas1
+          dst = [ "${lib.my.homelab.rexWorker.address}:${toString lib.my.homelab.rexWorker.port}" ];
+        }
+      ];
+    };
 
     # Headscale web UI (LAN + tailnet via Caddy, API-key login)
     headplane = {
@@ -132,6 +142,7 @@ in
         "https://${config.my.observability.grafana.hostname}"
         "https://${mkSub "home"}"
         "https://${config.my.vaultwarden.domain}"
+        "https://${mkSub "hermes"}/api/status"
         # End-to-end probe of the public site through the Cloudflare tunnel
         "https://${publicDomain}"
         # Self-hosted Headscale control plane (:9443 TLS + /health)
@@ -308,6 +319,7 @@ in
           "scan"
           "paperless"
           "docuseal"
+          "hermes"
           "dav"
           "hass"
         ]

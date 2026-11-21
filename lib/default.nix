@@ -39,6 +39,11 @@ in
   homelab = rec {
     publicDomain = "prestonperanich.com";
     mkSub = sub: "${sub}.${publicDomain}";
+    rexWorker = {
+      address = "100.64.0.4"; # pp-wsl1 on Headscale
+      port = 7297;
+      user = "hermes-worker";
+    };
   };
 
   # Get all home-manager directories that contain a default.nix file

@@ -290,6 +290,8 @@ The ACL lives in `modules/services/headscale.nix` (`defaultPolicy`):
 
 SSH from `tag:dev`, `tag:mobile`, `tag:iot` and `tag:server` is blocked. To add a tag, add it to `tagOwners` and write an `acls` entry for it in that file, then deploy the router.
 
+The Hermes coordinator has a separate IPv4 rule from `pp-nas1` to the Rex login server on `pp-wsl1:7297`. Recheck that rule when re-enrolling either node.
+
 To change the tag of an enrolled node: `sudo headscale nodes tag -i <id> -t tag:<tag>` (find the ID with `headscale nodes list`).
 
 ## Checklist

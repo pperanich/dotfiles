@@ -82,7 +82,8 @@ _: {
               "tag:nas:443"
             ];
           }
-        ];
+        ]
+        ++ cfg.extraAcls;
       };
 
       policyFile = pkgs.writeText "headscale-policy.json" (builtins.toJSON cfg.policy);
@@ -151,6 +152,12 @@ _: {
           # Empty: home.arpa is the LAN and is not resolved over the tailnet.
           default = { };
           description = "Split-DNS domain to nameserver map forwarded over Tailscale (`dns.nameservers.split`).";
+        };
+
+        extraAcls = lib.mkOption {
+          type = lib.types.listOf lib.types.attrs;
+          default = [ ];
+          description = "Host-specific ACLs appended to the default Headscale policy.";
         };
 
         policy = lib.mkOption {

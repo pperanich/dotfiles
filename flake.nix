@@ -108,6 +108,10 @@
       url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent/v0.23.3";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nix-apple-fonts.url = "github:pperanich/nix-apple-fonts";
     llm-agents.url = "github:numtide/llm-agents.nix";

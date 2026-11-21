@@ -107,6 +107,7 @@ in
         "scan" # scanservjs web UI (pp-nas1)
         "paperless" # document archive (pp-nas1)
         "docuseal" # document signing (pp-nas1)
+        "hermes" # coding coordinator (pp-nas1)
         "dav" # radicale caldav/carddav (pp-nas1)
         "hass" # home assistant (pp-nas1)
         "home" # dashboard (pp-router1)
@@ -225,6 +226,7 @@ in
     "${mkSub "hass"}" = mkNasProxy (mkSub "hass") "";
     # Media servers
     "${mkSub "jellyfin"}" = mkNasProxy (mkSub "jellyfin") "";
+    "${mkSub "hermes"}" = mkNasProxy (mkSub "hermes") "";
     "${mkSub "navidrome"}" = mkNasProxy (mkSub "navidrome") "";
 
     # --- Headscale control plane (public WAN :9443 via gray-cloud DDNS) ---

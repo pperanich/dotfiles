@@ -7,7 +7,7 @@
   ...
 }:
 let
-  inherit (lib.my.homelab) mkSub;
+  inherit (lib.my.homelab) mkSub rexWorker;
 in
 {
   imports = [
@@ -36,6 +36,7 @@ in
     navidrome
     audiobookshelf
     docuseal
+    hermesCoordinator
 
     # Disk health + host metrics (scraped by pp-router1's Prometheus)
     smartMonitoring
@@ -68,6 +69,16 @@ in
         "tailscale:tag:admin"
         "tailscale:tag:mobile"
       ];
+    };
+
+    hermesCoordinator = {
+      enable = true;
+      model = "gpt-6-sol";
+      publicUrl = "https://${mkSub "hermes"}";
+      username = "operator";
+      passwordHashSecret = "hermes/web-password-hash";
+      signingKeySecret = "hermes/web-signing-key";
+      workerEndpoint = "http://${rexWorker.user}@${rexWorker.address}:${toString rexWorker.port}";
     };
 
     # Nextcloud — file sync, calendar, contacts
@@ -478,6 +489,10 @@ in
         "${mkSub "audiobookshelf"}" = mkLocalProxy config.my.audiobookshelf.port (mkUpload "10G");
         "${mkSub "paperless"}" = mkLocalProxy config.my.paperless.port (mkUpload "1G");
         "${mkSub "docuseal"}" = mkLocalProxy config.my.docuseal.port (mkUpload "1G");
+        # Hermes uses the proxy prefix for login redirects and cookie paths. This vhost serves it at /.
+        "${mkSub "hermes"}" = mkLocalProxy config.services.hermes-agent.settings.webapp.port ''
+          request_header -X-Forwarded-Prefix
+        '';
         # Radicale: Caddy owns authentication; header_up overrides any
         # client-supplied X-Remote-User, which Radicale trusts blindly
         "${mkSub "dav"}" = {

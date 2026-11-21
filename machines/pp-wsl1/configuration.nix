@@ -1,9 +1,13 @@
 {
   inputs,
+  lib,
   modules,
   pkgs,
   ...
 }:
+let
+  inherit (lib.my.homelab) rexWorker;
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -20,6 +24,7 @@
 
     # Development environment (minimal for WSL)
     rust
+    aiTools
 
     # Offsite Google Drive Restic backup (docs/backups.md)
     backup
@@ -43,11 +48,20 @@
   # Rex sessions over the tailnet, for admin workstations and the phone
   my.rex.loginServer = {
     enable = true;
+    inherit (rexWorker) port;
     principals = [
       "tailscale:tag:admin"
       "tailscale:tag:mobile"
     ];
   };
+
+  users.users.${rexWorker.user} = {
+    isNormalUser = true;
+    homeMode = "0700";
+    linger = true;
+    packages = [ inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex ];
+  };
+  services.rex.loginServer.accounts.${rexWorker.user}.principals = [ "tailscale:tag:nas" ];
 
   # No node exporter here, so Healthchecks.io is what notices a failed or missing run.
   my.backup.googleDrive = {

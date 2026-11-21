@@ -159,6 +159,12 @@ in
             desc = "Self-hosted git";
           }
           {
+            name = "Hermes";
+            icon = "sh-hermes-agent";
+            sub = "hermes";
+            desc = "Coding coordinator";
+          }
+          {
             name = "Headplane";
             icon = "headscale";
             sub = "headplane";

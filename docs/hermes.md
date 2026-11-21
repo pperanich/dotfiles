@@ -41,7 +41,7 @@ sudo -Hu hermes "$rex_cli" --autostart=false -S "$worker" new --json --keep-open
 
 Capture the returned session and block with `rex capture -s SESSION -b BLOCK --trim` using the same account and server. Expect `hermes-worker` and `pp-wsl1`. From the NAS, requesting `http://pperanich@100.64.0.4:7297` should be denied. Then give Hermes a small task in a disposable checkout owned by the worker. Restart the gateway mid-task and ask the same chat to return the commit and test result from the original worker pane. [Rex login server](https://www.superlogical.com/rex/docs/linux/login-server)
 
-Headscale permits TCP 7297 from the NAS address `100.64.0.3` to the WSL address `100.64.0.4`. Rex verifies `tag:nas` before admitting the caller to the worker account. This permission belongs to the NAS node. To inspect that worker yourself, use the same service-account Rex command from a NAS terminal. Recheck the addresses and the account mapping after either node is re-enrolled.
+Headscale permits TCP 7297 from `tag:nas` to the WSL address `100.64.0.4`. Rex verifies `tag:nas` before admitting the caller to the worker account. This permission belongs to the NAS node. To inspect that worker yourself, use the same service-account Rex command from a NAS terminal. Recheck the WSL address and the account mapping after pp-wsl1 is re-enrolled.
 
 The worker has a private Linux home and no additional Unix groups. WSL still exposes Windows interoperability and automounted drives subject to their existing permissions. The WSL restic job covers `/home/pperanich` only. Keep accepted commits in the project’s usual durable repository. Recovering NAS chat history does not restore uncommitted worker edits or its Codex login.
 

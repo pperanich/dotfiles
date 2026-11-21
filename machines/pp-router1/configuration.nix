@@ -83,7 +83,7 @@ in
         {
           action = "accept";
           proto = "tcp";
-          src = [ "100.64.0.3" ]; # pp-nas1
+          src = [ "tag:nas" ];
           dst = [ "${lib.my.homelab.rexWorker.address}:${toString lib.my.homelab.rexWorker.port}" ];
         }
       ];

@@ -19,7 +19,7 @@ kit = Kit("agent-kit")
 _PYTHON = re.compile(r"^python(\d+(\.\d+)?)?$")
 _PIP = re.compile(r"^pip(\d+(\.\d+)?)?$")
 _DATE_ADJUST = re.compile(r"^-v[+-]?\d")
-_GIT_GLOBAL_VALUE_FLAGS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+_GIT_GLOBAL_VALUE_FLAGS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env"}
 _GIT_CONFIG_VALUE_FLAGS = {"--file", "-f", "--blob", "--type", "--default", "--comment", "--value"}
 _GIT_CONFIG_READS = {
     "--get",
@@ -116,15 +116,23 @@ def _uv_python(cmd: Command) -> str | None:
 # machine-config
 
 
-def _git_config_write(argv: list[str], cwd: str) -> str | None:
-    if os.path.basename(argv[0]) != "git":
+def _git_split(argv: list[str]) -> tuple[list[str], str, list[str]] | None:
+    """A git command as (options before the subcommand, subcommand, its arguments)."""
+    if not argv or os.path.basename(argv[0]) != "git":
         return None
     i = 1
     while i < len(argv) and argv[i].startswith("-"):
         i += 2 if argv[i] in _GIT_GLOBAL_VALUE_FLAGS else 1
-    if i >= len(argv) or argv[i] != "config":
+    if i >= len(argv):
         return None
-    rest = argv[i + 1 :]
+    return argv[1:i], argv[i], argv[i + 1 :]
+
+
+def _git_config_write(argv: list[str], cwd: str) -> str | None:
+    parts = _git_split(argv)
+    if parts is None or parts[1] != "config":
+        return None
+    rest = parts[2]
     scope = None
     positionals: list[str] = []
     flags: set[str] = set()
@@ -293,6 +301,145 @@ def _source_text_test(event: Event) -> str | None:
     )
 
 
+# hook-bypass
+
+_HOOKS_PATH = re.compile(r"core\.hookspath(=|$)", re.I)
+_COMMIT_VALUE_FLAGS = {
+    "-m",
+    "--message",
+    "-F",
+    "--file",
+    "-C",
+    "--reuse-message",
+    "-c",
+    "--reedit-message",
+    "-t",
+    "--template",
+    "--fixup",
+    "--squash",
+    "--author",
+    "--date",
+    "--cleanup",
+    "--trailer",
+    "--pathspec-from-file",
+}
+
+
+def _before_dashes(args: list[str]) -> list[str]:
+    return args[: args.index("--")] if "--" in args else args
+
+
+def _short(arg: str) -> bool:
+    return arg.startswith("-") and not arg.startswith("--")
+
+
+def _commit_no_verify(args: list[str]) -> bool:
+    """--no-verify or its short form -n, which may sit in a cluster such as -anm."""
+    value_next = False
+    for arg in _before_dashes(args):
+        if value_next:
+            value_next = False
+        elif arg == "--no-verify":
+            return True
+        elif arg in _COMMIT_VALUE_FLAGS:
+            value_next = True
+        elif _short(arg):
+            for pos, flag in enumerate(arg[1:], 1):
+                if flag == "n":
+                    return True
+                if flag in "mFCctSu":
+                    value_next = flag in "mFCct" and pos == len(arg) - 1
+                    break
+    return False
+
+
+def _hooks_path_override(options: list[str]) -> bool:
+    for i, opt in enumerate(options):
+        value = ""
+        if opt.startswith("--config-env="):
+            value = opt.removeprefix("--config-env=")
+        elif opt in ("-c", "--config-env") and i + 1 < len(options):
+            value = options[i + 1]
+        if _HOOKS_PATH.match(value):
+            return True
+    return False
+
+
+def _hook_bypass(cmd: Command) -> str | None:
+    parts = _git_split(cmd.argv)
+    if parts is None:
+        return None
+    options, sub, args = parts
+    if _hooks_path_override(options):
+        how = "core.hooksPath is overridden on the command line"
+    elif _commit_no_verify(args) if sub == "commit" else "--no-verify" in _before_dashes(args):
+        how = "--no-verify"
+    else:
+        return None
+    return (
+        f"This runs git with its hooks switched off ({how}). The hooks carry the user's commit-message and "
+        "formatting checks. Run the command without that option and fix what the hook reports. If the hook "
+        "itself is broken, stop and say so; the user can fix it or relaunch with AGENT_KIT_ALLOW=hook-bypass."
+    )
+
+
+# destructive-git
+
+
+def _destructive_git(cmd: Command) -> str | None:
+    parts = _git_split(cmd.argv)
+    if parts is None:
+        return None
+    _, sub, args = parts
+    opts = _before_dashes(args)
+    paths = [a for a in args if not a.startswith("-")]
+    reason = None
+    if sub == "reset" and "--hard" in opts:
+        reason = (
+            "`git reset --hard` throws away every uncommitted change in the worktree. To move HEAD and keep "
+            "the work, use `git reset --soft <commit>` or plain `git reset <commit>`."
+        )
+    elif sub == "clean":
+        force = any(a == "--force" or (_short(a) and "f" in a) for a in opts)
+        dry_run = any(a == "--dry-run" or (_short(a) and "n" in a) for a in opts)
+        if force and not dry_run:
+            reason = (
+                "`git clean -f` deletes untracked files for good. List them with `git clean -n`, then remove "
+                "the ones you created by name."
+            )
+    elif sub == "checkout" and ("." in opts or ("--" in args and args[args.index("--") + 1 :])):
+        reason = (
+            "`git checkout -- <path>` overwrites the uncommitted changes in those files. Undo your own edit "
+            "with the edit tool instead."
+        )
+    elif sub == "restore":
+        staged = any(a == "--staged" or (_short(a) and "S" in a) for a in opts)
+        worktree = any(a == "--worktree" or (_short(a) and "W" in a) for a in opts)
+        if worktree or not staged:
+            reason = (
+                "`git restore <path>` overwrites the uncommitted changes in those files. Undo your own edit "
+                "with the edit tool instead; `git restore --staged <path>` only unstages."
+            )
+    elif sub == "push" and any(a == "--force" or (_short(a) and "f" in a) or a.startswith("+") for a in args):
+        reason = (
+            "A forced push overwrites commits on the remote that you have not seen. Use "
+            "`git push --force-with-lease`, and only on a branch you created."
+        )
+    elif sub == "add":
+        stage_all = any(a == "--all" or (_short(a) and "A" in a) for a in opts)
+        if (stage_all and not paths) or any(p in (".", "./", ":/") for p in paths):
+            reason = (
+                "`git add -A` and `git add .` stage every change in the tree, including ones you did not "
+                "make. Stage files by name: `git add path/to/file`."
+            )
+    if reason is None:
+        return None
+    return (
+        reason + " If the user asked for exactly this, stop and say so; they can run it or relaunch with "
+        "AGENT_KIT_ALLOW=destructive-git."
+    )
+
+
 @kit.check("gnu-tools")
 def gnu_tools(event: Event) -> str | None:
     return next((m for cmd in event.commands if (m := _gnu_tools(cmd))), None)
@@ -322,6 +469,16 @@ def source_text_test(event: Event) -> str | None:
 @kit.check("sleep-loop")
 def sleep_loop(event: Event) -> str | None:
     return _sleep_loop(event.commands)
+
+
+@kit.check("hook-bypass")
+def hook_bypass(event: Event) -> str | None:
+    return next((m for cmd in event.commands if (m := _hook_bypass(cmd))), None)
+
+
+@kit.check("destructive-git")
+def destructive_git(event: Event) -> str | None:
+    return next((m for cmd in event.commands if (m := _destructive_git(cmd))), None)
 
 
 def check(event: Event) -> list[Violation]:

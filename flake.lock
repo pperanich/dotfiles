@@ -205,11 +205,11 @@
     },
     "feed-me": {
       "locked": {
-        "lastModified": 1795289926,
-        "narHash": "sha256-bHADhQQvVFmLr0KVkUe0pV8PkZNw2PMXB74/V5cW7vY=",
+        "lastModified": 1795293916,
+        "narHash": "sha256-DaqON5ql5K/Qq1feOZLbZbBASsjQX6az9LwvAioH8Hs=",
         "ref": "main",
-        "rev": "e4bfd9873f5f24f619591bbdd27cddf4f314716d",
-        "revCount": 6912,
+        "rev": "099ead8fb6b6c6bb629b3a17607794ddc046072e",
+        "revCount": 6914,
         "type": "git",
         "url": "ssh://git@gitea.prestonperanich.com/pperanich/feed-me.git"
       },

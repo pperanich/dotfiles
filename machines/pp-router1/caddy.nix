@@ -108,6 +108,7 @@ in
         "paperless" # document archive (pp-nas1)
         "docuseal" # document signing (pp-nas1)
         "hermes" # coding coordinator (pp-nas1)
+        "openclaw" # agent gateway (pp-nas1)
         "dav" # radicale caldav/carddav (pp-nas1)
         "hass" # home assistant (pp-nas1)
         "home" # dashboard (pp-router1)
@@ -227,6 +228,7 @@ in
     # Media servers
     "${mkSub "jellyfin"}" = mkNasProxy (mkSub "jellyfin") "";
     "${mkSub "hermes"}" = mkNasProxy (mkSub "hermes") "";
+    "${mkSub "openclaw"}" = mkNasProxy (mkSub "openclaw") "";
     "${mkSub "navidrome"}" = mkNasProxy (mkSub "navidrome") "";
 
     # --- Headscale control plane (public WAN :9443 via gray-cloud DDNS) ---

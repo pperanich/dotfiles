@@ -110,6 +110,11 @@
     };
     # Own nixpkgs: its patchelf patch targets 0.19.2 and fails on ours (docs/decisions/0009).
     hermes-agent.url = "github:NousResearch/hermes-agent/v0.23.3";
+    nix-openclaw = {
+      url = "github:openclaw/nix-openclaw";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
 
     nix-apple-fonts.url = "github:pperanich/nix-apple-fonts";
     llm-agents.url = "github:numtide/llm-agents.nix";

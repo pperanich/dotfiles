@@ -165,6 +165,12 @@ in
             desc = "Coding coordinator";
           }
           {
+            name = "OpenClaw";
+            icon = "sh-openclaw";
+            sub = "openclaw";
+            desc = "Agent gateway";
+          }
+          {
             name = "Headplane";
             icon = "headscale";
             sub = "headplane";

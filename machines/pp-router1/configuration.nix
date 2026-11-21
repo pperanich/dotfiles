@@ -143,6 +143,7 @@ in
         "https://${mkSub "home"}"
         "https://${config.my.vaultwarden.domain}"
         "https://${mkSub "hermes"}/api/status"
+        "https://${mkSub "openclaw"}/healthz"
         # End-to-end probe of the public site through the Cloudflare tunnel
         "https://${publicDomain}"
         # Self-hosted Headscale control plane (:9443 TLS + /health)
@@ -320,6 +321,7 @@ in
           "paperless"
           "docuseal"
           "hermes"
+          "openclaw"
           "dav"
           "hass"
         ]

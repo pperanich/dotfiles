@@ -38,6 +38,7 @@ in
     audiobookshelf
     docuseal
     hermesCoordinator
+    openclaw
 
     # Disk health + host metrics (scraped by pp-router1's Prometheus)
     smartMonitoring
@@ -80,6 +81,14 @@ in
       passwordHashSecret = "hermes/web-password-hash";
       signingKeySecret = "hermes/web-signing-key";
       workerEndpoint = mkWorkerEndpoint rexWorker.users.hermes;
+    };
+
+    openclaw = {
+      enable = true;
+      publicUrl = "https://${mkSub "openclaw"}";
+      model = "openai/gpt-6-sol";
+      gatewayTokenSecret = "openclaw-gateway-token";
+      workerEndpoint = mkWorkerEndpoint rexWorker.users.openclaw;
     };
 
     # Nextcloud — file sync, calendar, contacts
@@ -494,6 +503,7 @@ in
         "${mkSub "hermes"}" = mkLocalProxy config.services.hermes-agent.settings.webapp.port ''
           request_header -X-Forwarded-Prefix
         '';
+        "${mkSub "openclaw"}" = mkLocalProxy config.my.openclaw.port "";
         # Radicale: Caddy owns authentication; header_up overrides any
         # client-supplied X-Remote-User, which Radicale trusts blindly
         "${mkSub "dav"}" = {

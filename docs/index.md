@@ -24,6 +24,7 @@ Nix-based system configuration using the dendritic pattern with flake-parts. Hos
 ### Services
 
 - [Hermes coordinator](hermes.md) - Phone login, ChatGPT authentication and the first Rex worker on WSL
+- [OpenClaw](openclaw.md) - Gateway next to Hermes: Control UI token and pairing, ChatGPT login, its own WSL worker
 - [Service Exposure Pathways](service-exposure.md) - Private (Caddy over LAN and tailnet) and public (Cloudflare Tunnel) service access
 - [Split-Horizon TLS](split-horizon-tls.md) - How service names route over the best path for each client
 - [Web Hosting Setup](web-hosting-setup.md) - Self-hosting websites via DDNS + reverse proxy (in progress)

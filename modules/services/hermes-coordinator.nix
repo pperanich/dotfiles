@@ -64,7 +64,8 @@
               webapp = {
                 enabled = true;
                 host = "127.0.0.1";
-                port = 9120;
+                # OpenCloud holds most of 9100-9282 on the NAS, 9120 included.
+                port = 9480;
                 public_url = cfg.publicUrl;
               };
             };

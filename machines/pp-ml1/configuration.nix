@@ -22,8 +22,6 @@
 
     # Container runtime
     colima
-
-    aiTools
   ];
 
   # cf share: expose a local port via an ephemeral Cloudflare Tunnel + Access.

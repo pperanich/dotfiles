@@ -24,7 +24,6 @@ in
 
     # Development environment (minimal for WSL)
     rust
-    aiTools
 
     # Offsite Google Drive Restic backup (docs/backups.md)
     backup

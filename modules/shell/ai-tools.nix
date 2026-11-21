@@ -1,24 +1,8 @@
 # CLI coding agents from numtide's llm-agents.nix.
+# Their binary cache is configured for every host in modules/system/base.nix.
 { inputs, ... }:
-let
-  substituters = [ "https://cache.numtide.com" ];
-  trusted-public-keys = [
-    "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-  ];
-in
 {
   flake.modules = {
-    # extra-* so this appends to Determinate's managed nix.conf rather than
-    # replacing cache.nixos.org.
-    darwin.aiTools.determinateNix.customSettings = {
-      extra-substituters = substituters;
-      extra-trusted-public-keys = trusted-public-keys;
-    };
-    nixos.aiTools.nix.settings = {
-      extra-substituters = substituters;
-      extra-trusted-public-keys = trusted-public-keys;
-    };
-
     homeManager.aiTools =
       { pkgs, lib, ... }:
       let

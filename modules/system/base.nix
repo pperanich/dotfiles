@@ -78,10 +78,16 @@
             };
           };
 
+          # Every host gets every cache, so a package that first lands with a deploy is
+          # downloaded rather than compiled under the previous generation's settings.
           nix.settings = {
-            extra-substituters = [ "https://nix-community.cachix.org" ];
+            extra-substituters = [
+              "https://nix-community.cachix.org"
+              "https://cache.numtide.com"
+            ];
             extra-trusted-public-keys = [
               "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+              "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
             ];
           };
 
@@ -129,7 +135,14 @@
         config = {
           # Determinate's NixOS module substitutes from here already; on darwin it is only
           # trusted, so Determinate Nix itself compiled locally. Its keys are already trusted.
-          determinateNix.customSettings.extra-substituters = [ "https://install.determinate.systems" ];
+          determinateNix.customSettings = {
+            extra-substituters = [
+              "https://install.determinate.systems"
+              # llm-agents' cache, here rather than with the tools so it is configured first.
+              "https://cache.numtide.com"
+            ];
+            extra-trusted-public-keys = [ "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=" ];
+          };
 
           system = {
             stateVersion = 6;

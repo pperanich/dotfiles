@@ -450,6 +450,8 @@ _: {
             listenAddress = "127.0.0.1";
             port = 9090;
             inherit (cfg.prometheus) retentionTime;
+            # Default 1m resend delay with 30s evaluation aligns resends with Alertmanager's 90s idle timeout.
+            extraFlags = [ "--rules.alert.resend-delay=45s" ];
             globalConfig = {
               scrape_interval = "30s";
               evaluation_interval = "30s";

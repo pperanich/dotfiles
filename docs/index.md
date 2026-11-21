@@ -38,6 +38,7 @@ Nix-based system configuration using the dendritic pattern with flake-parts. Hos
 - [0006: Credentials left unrotated](decisions/0006-credentials-left-unrotated.md)
 - [0007: Accepted root-equivalent access](decisions/0007-accepted-root-equivalents.md)
 - [0008: Deploys log in as root with the admin key](decisions/0008-deploys-log-in-as-root.md)
+- [0009: hermes-agent keeps its own nixpkgs](decisions/0009-hermes-agent-keeps-its-own-nixpkgs.md)
 
 ## Quick Start
 

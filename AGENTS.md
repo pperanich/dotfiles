@@ -32,7 +32,7 @@ bin/check-private-input.sh feed-me pp-nas1
 ### Flake inputs
 
 - Every host follows `nixpkgs` on `nixpkgs-unstable` ([decision 0005](docs/decisions/0005-nixpkgs-unstable-for-every-host.md)); home-manager, nix-darwin and nixos-wsl follow their main branches. Run `bin/build-report.sh` before deploying an update, and snapshot the NAS before one that upgrades a service with a database.
-- Inputs that provide modules or `lib` (home-manager, nix-darwin, sops-nix, disko, deploy-rs) follow `nixpkgs`. Package inputs with their own binary cache (llm-agents) do not, or their cache never matches. Other package inputs follow `nixpkgs`; they compile either way.
+- Inputs that provide modules or `lib` (home-manager, nix-darwin, sops-nix, disko, deploy-rs) follow `nixpkgs`. Package inputs with their own binary cache (llm-agents) do not, or their cache never matches. Other package inputs follow `nixpkgs`; they compile either way. `hermes-agent` keeps its own nixpkgs ([decision 0009](docs/decisions/0009-hermes-agent-keeps-its-own-nixpkgs.md)).
 - Pinned in `bin/update-inputs.sh`: `nix-apple-fonts` (a bump rebuilds every font) and `nixpkgs-mongodb` (UniFi's MongoDB compiles for hours on the router). The personal site keeps its own nixpkgs, whose flake still evaluates `x86_64-darwin`.
 
 ### System Build Commands

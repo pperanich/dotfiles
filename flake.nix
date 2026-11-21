@@ -108,10 +108,8 @@
       url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    hermes-agent = {
-      url = "github:NousResearch/hermes-agent/v0.23.3";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Own nixpkgs: its patchelf patch targets 0.19.2 and fails on ours (docs/decisions/0009).
+    hermes-agent.url = "github:NousResearch/hermes-agent/v0.23.3";
 
     nix-apple-fonts.url = "github:pperanich/nix-apple-fonts";
     llm-agents.url = "github:numtide/llm-agents.nix";

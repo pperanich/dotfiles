@@ -8,7 +8,9 @@ handle GitHub issues. You can use any phase on its own.
 For example, invoke `$dev-plan` in Codex, `/skill:dev-plan` in Pi, or
 `/dev:plan` in Claude Code. The five Claude commands link to these same files.
 Stow links individual files. The `~/.codex/skills/dotfiles` directory link lets
-Codex discover the original skill folders.
+Codex discover the original skill folders. Pi reads `~/.agents/skills` natively.
+Antigravity reads it through `~/.gemini/config/skills.json`. Claude Code does
+not read it: link each new non-`dev-*` skill from `home/.claude/skills/`.
 New personal handoffs use `~/.agents/plans/`. Existing handoffs in
 `~/.claude/plans/` can be resumed in place.
 

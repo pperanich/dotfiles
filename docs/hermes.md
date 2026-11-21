@@ -43,7 +43,17 @@ Capture the returned session and block with `rex capture -s SESSION -b BLOCK --t
 
 Headscale permits TCP 7297 from `tag:nas` to the WSL address `100.64.0.4`. Rex verifies `tag:nas` before admitting the caller to the worker account. This permission belongs to the NAS node. To inspect that worker yourself, use the same service-account Rex command from a NAS terminal. Recheck the WSL address and the account mapping after pp-wsl1 is re-enrolled.
 
-The worker has a private Linux home and no additional Unix groups. WSL still exposes Windows interoperability and automounted drives subject to their existing permissions. The WSL restic job covers `/home/pperanich` only. Keep accepted commits in the project’s usual durable repository. Recovering NAS chat history does not restore uncommitted worker edits or its Codex login.
+The worker has a private Linux home and no additional Unix groups. WSL lets every Linux user run Windows programs as the Windows user through the interop sockets in `/run/WSL`, and the drives under `/mnt` are readable by everyone unless the mount sets a umask. pp-wsl1 therefore denies the worker both directories with ACLs (`systemd.tmpfiles.rules`) and mounts the drives with `umask=077`. WSLg's X server accepts any local client and shares the clipboard with Windows, so the tracked `home/.wslconfig` turns WSLg off. Check from a pperanich shell on pp-wsl1 after each deploy and `wsl --shutdown`. The binary is copied off `/mnt` so the second check tests the socket, not the drive:
+
+```sh
+sudo -u hermes-worker ls /mnt/c          # Permission denied
+d=$(mktemp -d) && chmod 755 "$d" && cp /mnt/c/Windows/System32/whoami.exe "$d"/ && chmod 755 "$d/whoami.exe"
+sudo -u hermes-worker env WSL_INTEROP="$(ls /run/WSL/*_interop | head -1)" "$d/whoami.exe"   # connect failed 13
+"$d/whoami.exe"                          # pp-wd1\prest
+rm -r "$d"
+```
+
+The worker still shares the kernel, the network (mirrored, so Windows `localhost` services are reachable) and the WSL plumbing with Windows. The WSL restic job covers `/home/pperanich` only. Keep accepted commits in the project’s usual durable repository. Recovering NAS chat history does not restore uncommitted worker edits or its Codex login.
 
 ## Credentials and recovery
 

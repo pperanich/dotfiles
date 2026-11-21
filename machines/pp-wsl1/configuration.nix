@@ -62,6 +62,11 @@ in
     packages = [ inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex ];
   };
   services.rex.loginServer.accounts.${rexWorker.user}.principals = [ "tailscale:tag:nas" ];
+  # Interop sockets and drive mounts reach the Windows user; deny the worker both (docs/hermes.md).
+  systemd.tmpfiles.rules = [
+    "a+ /run/WSL - - - - u:${rexWorker.user}:---"
+    "a+ /mnt - - - - u:${rexWorker.user}:---"
+  ];
 
   # No node exporter here, so Healthchecks.io is what notices a failed or missing run.
   my.backup.googleDrive = {
@@ -129,6 +134,8 @@ in
     usbip.enable = true;
     wslConf.network.generateHosts = false;
     wslConf.network.generateResolvConf = true;
+    # Without a umask, drvfs shows every Windows file to every Linux user.
+    wslConf.automount.options = "metadata,uid=1000,gid=100,umask=077";
   };
 
   networking = {

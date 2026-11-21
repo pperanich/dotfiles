@@ -1,0 +1,11 @@
+[wsl2]
+vmIdleTimeout=-1
+dnsTunneling=true
+networkingMode=mirrored
+localhostForwarding=true
+# WSLg's X server accepts any local client and syncs the Windows clipboard (docs/hermes.md).
+guiApplications=false
+
+[experimental]
+hostAddressLoopback=true
+# bestEffortDnsParsing=true

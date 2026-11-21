@@ -227,12 +227,14 @@ function Deploy-Configs {
     $komorebiBarCfg = Join-Path $dotfilesPath "home\.config\komorebi\komorebi.bar.json"
     $whkdCfg = Join-Path $dotfilesPath "home\.config\whkd\whkdrc"
     $alacrittyCfg = Join-Path $dotfilesPath "home\.config\alacritty\alacritty.toml"
+    $wslCfg = Join-Path $dotfilesPath "home\.wslconfig"
 
     # Config destination paths
     $komorebiDest = "$env:USERPROFILE\.config\komorebi\komorebi.json"
     $komorebiBarDest = "$env:USERPROFILE\.config\komorebi\komorebi.bar.json"
     $whkdDest = "$env:USERPROFILE\.config\whkdrc"
     $alacrittyDest = "$env:USERPROFILE\.config\alacritty\alacritty.toml"
+    $wslDest = "$env:USERPROFILE\.wslconfig"
 
     # Check if source files exist
     if (-not (Test-Path $komorebiFCfg)) {
@@ -251,6 +253,10 @@ function Deploy-Configs {
         Write-ErrorLog "Alacritty config not found at: $alacrittyCfg"
         return $false
     }
+    if (-not (Test-Path $wslCfg)) {
+        Write-ErrorLog "WSL config not found at: $wslCfg"
+        return $false
+    }
 
     try {
         # Try to create symlinks if admin, otherwise copy
@@ -262,12 +268,14 @@ function Deploy-Configs {
             if (Test-Path $komorebiBarDest) { Remove-Item $komorebiBarDest -Force }
             if (Test-Path $whkdDest) { Remove-Item $whkdDest -Force }
             if (Test-Path $alacrittyDest) { Remove-Item $alacrittyDest -Force }
+            if (Test-Path $wslDest) { Remove-Item $wslDest -Force }
 
             # Create symlinks
             New-Item -ItemType SymbolicLink -Path $komorebiDest -Target $komorebiFCfg -Force | Out-Null
             New-Item -ItemType SymbolicLink -Path $komorebiBarDest -Target $komorebiBarCfg -Force | Out-Null
             New-Item -ItemType SymbolicLink -Path $whkdDest -Target $whkdCfg -Force | Out-Null
             New-Item -ItemType SymbolicLink -Path $alacrittyDest -Target $alacrittyCfg -Force | Out-Null
+            New-Item -ItemType SymbolicLink -Path $wslDest -Target $wslCfg -Force | Out-Null
 
             Write-InfoLog "Configuration symlinks created successfully"
         }
@@ -278,6 +286,7 @@ function Deploy-Configs {
             Copy-Item -Path $komorebiBarCfg -Destination $komorebiBarDest -Force
             Copy-Item -Path $whkdCfg -Destination $whkdDest -Force
             Copy-Item -Path $alacrittyCfg -Destination $alacrittyDest -Force
+            Copy-Item -Path $wslCfg -Destination $wslDest -Force
 
             Write-InfoLog "Configuration files copied successfully"
             Write-WarnLog "Note: Changes to dotfiles won't auto-sync. Re-run this script or run as admin for symlinks."

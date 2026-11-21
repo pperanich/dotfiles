@@ -24,6 +24,9 @@ bin/update-inputs.sh nixpkgs home-manager
 
 # Before deploying an update: what each host would compile instead of download
 bin/build-report.sh
+
+# After adding a private input: only the named hosts may fetch it (tests committed HEAD)
+bin/check-private-input.sh feed-me pp-nas1
 ```
 
 ### Flake inputs

@@ -1,0 +1,93 @@
+{
+  "blocked": [
+    {
+      "name": "python getsource",
+      "tool": "Write",
+      "path": "tests/test_app.py",
+      "text": "from app import handler\nimport inspect\n\ndef test_retries():\n    src = inspect.getsource(handler)\n    assert 'retry' in src\n"
+    },
+    {
+      "name": "python getsourcelines in an edit",
+      "tool": "Edit",
+      "path": "tests/test_cli.py",
+      "text": "    lines, _ = inspect.getsourcelines(cli.main)"
+    },
+    {
+      "name": "python reads its own source file",
+      "tool": "Write",
+      "path": "tests/test_config.py",
+      "text": "def test_max_retries():\n    assert 'MAX_RETRIES = 3' in (ROOT / 'src' / 'app.py').read_text()\n"
+    },
+    {
+      "name": "typescript readFileSync then toContain",
+      "tool": "Write",
+      "path": "src/app.test.ts",
+      "text": "const src = readFileSync(join(__dirname, 'app.ts'), 'utf8');\nexpect(src).toContain('export function retry');\n"
+    },
+    {
+      "name": "go reads a source file",
+      "tool": "Write",
+      "path": "handler_test.go",
+      "text": "b, _ := os.ReadFile(\"handler.go\")\nif !strings.Contains(string(b), \"func Retry\") { t.Fatal() }\n"
+    },
+    {
+      "name": "shell heredoc into a test file",
+      "tool": "Bash",
+      "command": "cat > tests/test_app.py <<'EOF'\nimport inspect\nfrom app import handler\n\ndef test_retries():\n    assert 'retry' in inspect.getsource(handler)\nEOF"
+    },
+    {
+      "name": "codex patch adds to a test file",
+      "tool": "apply_patch",
+      "patch": "*** Begin Patch\n*** Update File: tests/test_app.py\n@@\n+def test_retries():\n+    assert 'retry' in inspect.getsource(handler)\n*** End Patch"
+    }
+  ],
+  "allowed": [
+    {
+      "name": "a behavioral test",
+      "tool": "Write",
+      "path": "tests/test_app.py",
+      "text": "def test_retries():\n    assert handler(fail_times=2) == 'ok'\n"
+    },
+    {
+      "name": "getsource in production code",
+      "tool": "Write",
+      "path": "src/app/docs.py",
+      "text": "def describe(fn):\n    return inspect.getsource(fn)\n"
+    },
+    {
+      "name": "generator output read from tmp_path",
+      "tool": "Write",
+      "path": "tests/test_codegen.py",
+      "text": "def test_codegen(tmp_path):\n    generate(tmp_path)\n    assert 'def main' in (tmp_path / 'out.py').read_text()\n"
+    },
+    {
+      "name": "golden file comparison",
+      "tool": "Write",
+      "path": "tests/test_format.py",
+      "text": "assert format_code(src) == Path('tests/golden/expected.py').read_text()\n"
+    },
+    {
+      "name": "a comment that mentions the pattern",
+      "tool": "Edit",
+      "path": "tests/test_app.py",
+      "text": "    # don't: assert 'retry' in inspect.getsource(handler)"
+    },
+    {
+      "name": "reading a non-source data file",
+      "tool": "Write",
+      "path": "tests/test_settings.py",
+      "text": "cfg = json.loads(Path('config.json').read_text())\nassert load(cfg).retries == 3\n"
+    },
+    {
+      "name": "patch adding to a clean test, then production code that reads source",
+      "tool": "apply_patch",
+      "patch": "*** Begin Patch\n*** Update File: tests/test_docs.py\n@@\n+    assert describe(sample) == expected_doc\n*** Update File: src/app/docs.py\n@@\n+    return inspect.getsource(fn)\n*** End Patch"
+    },
+    {
+      "name": "shell heredoc into a source file",
+      "tool": "Bash",
+      "command": "cat > src/app/docs.py <<'EOF'\ndef describe(fn):\n    return inspect.getsource(fn)\nEOF"
+    }
+  ],
+  "preexisting_line": "    src = inspect.getsource(handler)"
+}

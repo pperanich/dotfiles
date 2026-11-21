@@ -12,11 +12,15 @@ def shell(command: str, cwd: str = "/work", harness: str = "claude") -> Event:
 
 
 def write(path: str, content: str = "", cwd: str = "/work", harness: str = "claude") -> Event:
-    return Event(harness=harness, tool="Write", kind="write", cwd=cwd, paths=[path], new_text=content)
+    return Event(
+        harness=harness, tool="Write", kind="write", cwd=cwd, paths=[path], new_text=content, added={path: content}
+    )
 
 
 def edit(path: str, new_text: str = "", cwd: str = "/work", harness: str = "claude") -> Event:
-    return Event(harness=harness, tool="Edit", kind="edit", cwd=cwd, paths=[path], new_text=new_text)
+    return Event(
+        harness=harness, tool="Edit", kind="edit", cwd=cwd, paths=[path], new_text=new_text, added={path: new_text}
+    )
 
 
 def rules(kit: Kit, event: Event) -> list[str]:

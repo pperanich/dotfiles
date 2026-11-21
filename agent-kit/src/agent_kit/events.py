@@ -23,6 +23,7 @@ class Event:
     paths: list[str] = field(default_factory=list)
     new_text: str = ""
     strings: list[str] = field(default_factory=list)  # every string field, for "other" tools
+    added: dict[str, str] = field(default_factory=dict)  # path -> text a write, edit or patch adds there
 
     @cached_property
     def commands(self) -> list[Command]:
@@ -53,10 +54,19 @@ def _strings(value) -> list[str]:
     return []
 
 
-def _patch(text: str) -> tuple[list[str], str]:
-    paths = [m.strip() for m in _PATCH_FILE.findall(text)]
-    added = "\n".join(line[1:] for line in text.splitlines() if line.startswith("+"))
-    return paths, added
+def _patch(text: str) -> tuple[list[str], dict[str, str]]:
+    """Paths a patch touches, and the lines it adds to each one."""
+    paths: list[str] = []
+    added: dict[str, list[str]] = {}
+    current = None
+    for line in text.splitlines():
+        match = _PATCH_FILE.match(line)
+        if match:
+            current = match.group(1).strip()
+            paths.append(current)
+        elif line.startswith("+") and current is not None:
+            added.setdefault(current, []).append(line[1:])
+    return paths, {path: "\n".join(lines) for path, lines in added.items()}
 
 
 def normalize(payload: dict, harness: str) -> Event:
@@ -69,7 +79,8 @@ def normalize(payload: dict, harness: str) -> Event:
 
     if patch is not None:
         event.kind = "edit"
-        event.paths, event.new_text = _patch(patch)
+        event.paths, event.added = _patch(patch)
+        event.new_text = "\n".join(event.added.values())
     elif name in _SHELL_TOOLS:
         event.kind = "shell"
         event.command = _command_text(tool_input.get("command", tool_input.get("cmd", "")))
@@ -87,4 +98,6 @@ def normalize(payload: dict, harness: str) -> Event:
     else:
         event.strings = _strings(raw_input)
     event.paths = [p for p in event.paths if p]
+    if event.kind in ("write", "edit") and not event.added and len(event.paths) == 1:
+        event.added = {event.paths[0]: event.new_text}
     return event

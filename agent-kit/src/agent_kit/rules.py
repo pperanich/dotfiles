@@ -230,6 +230,69 @@ def _sleep_loop(commands: list[Command]) -> str | None:
     return None
 
 
+# source-text-test
+
+_TEST_FILE = re.compile(
+    r"(^|/)(test_[^/]*\.py|[^/]*_test\.(py|go|rb)|conftest\.py|[^/]*\.(test|spec)\.[cm]?[jt]sx?|[^/]*_spec\.rb)$"
+    r"|(^|/)(tests?|__tests__|spec)/.*\.(py|[cm]?[jt]sx?|go|rb|rs)$"
+)
+_GETSOURCE = re.compile(r"\bgetsource(lines)?\(")
+_READ_CALL = re.compile(
+    r"\.read_text\(|\.read_bytes\(|\.read\(\)|readFileSync\(|readFile\(|Deno\.readTextFile\(|Bun\.file\("
+    r"|os\.ReadFile\(|ioutil\.ReadFile\(|File\.read\(|read_to_string\("
+)
+_SOURCE_LITERAL = re.compile(
+    r"""["'][^"'\s]*\.(py|pyi|[cm]?[jt]sx?|go|rs|rb|java|kt|swift|c|cc|cpp|h|hpp|cs|php|lua|sh)["']"""
+)
+_OUTPUT_HINT = re.compile(r"tmp|fixture|golden|expected|snapshot|testdata", re.I)
+_COMMENT = re.compile(r"^\s*(#|//|/\*|\*)")
+
+
+def is_test_file(path: str) -> bool:
+    return bool(_TEST_FILE.search(path.replace("\\", "/")))
+
+
+def _source_text_line(line: str) -> bool:
+    """A line that reads code as text: inspect.getsource, or reading a source file by its path."""
+    if _COMMENT.match(line):
+        return False
+    if _GETSOURCE.search(line):
+        return True
+    return bool(_READ_CALL.search(line) and _SOURCE_LITERAL.search(line) and not _OUTPUT_HINT.search(line))
+
+
+def _new_lines(path: str, text: str, cwd: str, whole_file: bool) -> list[str]:
+    """Lines this call adds; for a whole-file write, lines the file does not already have."""
+    lines = text.splitlines()
+    target = resolve_path(path, cwd)
+    if whole_file and target and target.is_file():
+        existing = set(target.read_text(errors="replace").splitlines())
+        lines = [line for line in lines if line not in existing]
+    return lines
+
+
+def _source_text_test(event: Event) -> str | None:
+    texts = event.added or {p: event.new_text for p in event.paths}
+    found: list[str] = []
+    if event.kind in ("write", "edit"):
+        for path, text in texts.items():
+            if is_test_file(path):
+                found += [
+                    ln for ln in _new_lines(path, text, event.cwd, event.kind == "write") if _source_text_line(ln)
+                ]
+    elif event.kind == "shell" and any(is_test_file(t) for c in event.commands for t in write_targets(c)):
+        found = [ln for ln in event.command.splitlines() if _source_text_line(ln)]
+    if not found:
+        return None
+    return (
+        f"this test reads code as text instead of running it: `{found[0].strip()[:120]}`. "
+        "A test that matches source text fails on a rename and still passes when the behavior breaks. "
+        "Call the function, command or endpoint and assert its result. If the file is output of the code "
+        "under test (a generator or formatter), write and read it under tmp_path or a fixtures directory. "
+        "If the user wants this test anyway, stop and say so; they can relaunch with AGENT_KIT_ALLOW=source-text-test."
+    )
+
+
 @kit.check("gnu-tools")
 def gnu_tools(event: Event) -> str | None:
     return next((m for cmd in event.commands if (m := _gnu_tools(cmd))), None)
@@ -249,6 +312,11 @@ def machine_config(event: Event) -> str | None:
 @kit.check("forge-attribution")
 def forge_attribution(event: Event) -> str | None:
     return _forge_attribution(event, event.commands)
+
+
+@kit.check("source-text-test")
+def source_text_test(event: Event) -> str | None:
+    return _source_text_test(event)
 
 
 @kit.check("sleep-loop")

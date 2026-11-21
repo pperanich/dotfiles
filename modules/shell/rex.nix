@@ -49,6 +49,11 @@ in
               extraListen = [ "tailnet://:${toString cfg.port}" ];
             };
 
+            # A deploy that restarts tailscaled starts this before tailnet addresses return, and the
+            # failed first bind fails the activation. Upstream gates its Serve unit the same way.
+            systemd.services.rex-login-server.serviceConfig.ExecStartPre =
+              "${lib.getExe config.services.tailscale.package} wait";
+
             networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts = [
               cfg.port
             ];

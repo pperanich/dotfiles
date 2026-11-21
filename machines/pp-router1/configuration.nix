@@ -551,6 +551,12 @@ in
   services = {
     irqbalance.enable = true;
 
+    # The 10G trunk drops bursts as rx_missed_errors at the 512-descriptor default. udev also
+    # re-applies this after trunk-link-watchdog rebinds the PCI function.
+    udev.extraRules = ''
+      ACTION=="add", SUBSYSTEM=="net", DRIVERS=="i40e", RUN+="${pkgs.ethtool}/bin/ethtool -G $name rx 4096"
+    '';
+
     # The pinned build already on the router (flake.nix, nixpkgs-mongodb): nixpkgs' MongoDB is
     # unfree, never cached, and takes hours to compile on this N150.
     unifi.mongodbPackage =

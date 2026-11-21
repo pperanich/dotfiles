@@ -145,7 +145,6 @@ _: {
               }) cfg.extraApps
             );
             extraAppsEnable = true;
-            autoUpdateApps.enable = true;
 
             # PHP tuning for a small home server
             phpOptions = {

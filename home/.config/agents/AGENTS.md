@@ -98,6 +98,18 @@ Never wait with `sleep N` in a loop. Run long commands in the background and pol
 
 Claim a behavior change only with evidence from running it: the command and its result, the test that now passes and failed before, or a screenshot or recording for anything visual. Prefer driving the real program (a CLI, the browser via devtools, the API) over reading code and inferring. When you write the same verification steps a second time, propose turning them into a reusable script or skill.
 
+## Tests
+
+A test earns its place by failing when the behavior it covers breaks. A test that mirrors the code it was written from fails on a harmless rename and passes when the feature is broken, so it costs upkeep and proves nothing.
+
+- Run the code. A test that reads source text (`inspect.getsource`, `readFileSync(...)` then `toContain`), checks that a name, file or attribute exists, or restates a constant is not coverage. Test through the entry point a caller uses: the function, command, endpoint or screen.
+- Take expected values from the requirement or from what I asked for, not from running the current code and pasting its output. A snapshot or golden file counts only after you have checked each value against the requirement.
+- For each new test, name the plausible wrong implementation it rejects. Then break the line it protects, watch the test fail, and put the line back. If you can't name one, delete the test.
+- Assert outcomes: return values, output, stored state, the response a caller gets. Assert that a mock was called only when the call is the behavior, such as "sends one email". Prefer the real dependency, then a fake, then a stub, and never mock the unit under test.
+- More tests is not progress. Write the few that reject wrong implementations, and none for cases that can't happen.
+- Never get to green by deleting a test, skipping or xfailing it, loosening an assertion or tolerance, or changing the test command or config so it stops running. If an existing test looks wrong, say which requirement it contradicts and ask.
+- When you report, name the tests that execute the changed code. If none do, say so.
+
 ## Writing Tells to Avoid
 
 Heuristics for spotting generic, hollow AI output. A single tell means nothing; what flags AI output is the _density_ and _clustering_ of these patterns. Treat as a self-editing guide, not a detection algorithm.

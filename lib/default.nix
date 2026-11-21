@@ -42,7 +42,11 @@ in
     rexWorker = {
       address = "100.64.0.4"; # pp-wsl1 on Headscale
       port = 7297;
-      user = "hermes-worker";
+      # One isolated account per coordinator on the NAS, so their checkouts never mix.
+      users = {
+        hermes = "hermes-worker";
+        openclaw = "openclaw-worker";
+      };
     };
   };
 

@@ -8,6 +8,7 @@
 }:
 let
   inherit (lib.my.homelab) mkSub rexWorker;
+  mkWorkerEndpoint = user: "http://${user}@${rexWorker.address}:${toString rexWorker.port}";
 in
 {
   imports = [
@@ -78,7 +79,7 @@ in
       username = "operator";
       passwordHashSecret = "hermes/web-password-hash";
       signingKeySecret = "hermes/web-signing-key";
-      workerEndpoint = "http://${rexWorker.user}@${rexWorker.address}:${toString rexWorker.port}";
+      workerEndpoint = mkWorkerEndpoint rexWorker.users.hermes;
     };
 
     # Nextcloud — file sync, calendar, contacts

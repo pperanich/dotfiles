@@ -7,6 +7,7 @@
 }:
 let
   inherit (lib.my.homelab) rexWorker;
+  workers = lib.attrValues rexWorker.users;
 in
 {
   imports = [
@@ -54,18 +55,20 @@ in
     ];
   };
 
-  users.users.${rexWorker.user} = {
+  users.users = lib.genAttrs workers (_: {
     isNormalUser = true;
     homeMode = "0700";
     linger = true;
     packages = [ inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex ];
-  };
-  services.rex.loginServer.accounts.${rexWorker.user}.principals = [ "tailscale:tag:nas" ];
-  # Interop sockets and drive mounts reach the Windows user; deny the worker both (docs/hermes.md).
-  systemd.tmpfiles.rules = [
-    "a+ /run/WSL - - - - u:${rexWorker.user}:---"
-    "a+ /mnt - - - - u:${rexWorker.user}:---"
-  ];
+  });
+  services.rex.loginServer.accounts = lib.genAttrs workers (_: {
+    principals = [ "tailscale:tag:nas" ];
+  });
+  # Interop sockets and drive mounts reach the Windows user; deny every worker both (docs/hermes.md).
+  systemd.tmpfiles.rules = lib.concatMap (user: [
+    "a+ /run/WSL - - - - u:${user}:---"
+    "a+ /mnt - - - - u:${user}:---"
+  ]) workers;
 
   # No node exporter here, so Healthchecks.io is what notices a failed or missing run.
   my.backup.googleDrive = {

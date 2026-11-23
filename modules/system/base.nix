@@ -91,7 +91,14 @@
             ];
           };
 
-          programs.nh.enable = true;
+          programs.nh = {
+            enable = true;
+            clean = {
+              enable = true;
+              dates = "weekly";
+              extraArgs = "--keep 5 --keep-since 7d --keep-one";
+            };
+          };
 
           # sudo prints its "usual lecture" the first time an account is asked for a password.
           security.sudo.extraConfig = "Defaults lecture = never";
@@ -142,6 +149,28 @@
               "https://cache.numtide.com"
             ];
             extra-trusted-public-keys = [ "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=" ];
+          };
+
+          determinateNix.determinateNixd.garbageCollector.strategy = "automatic";
+
+          # programs.nh.clean.enable asserts nix.enable, which Determinate disables.
+          launchd.daemons.nh-clean = {
+            command = "${lib.getExe pkgs.nh} clean all --keep 5 --keep-since 7d --keep-one";
+            environment.PATH = "/nix/var/nix/profiles/default/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+            serviceConfig = {
+              RunAtLoad = false;
+              StartCalendarInterval = [
+                {
+                  Weekday = 7;
+                  Hour = 3;
+                  Minute = 15;
+                }
+              ];
+              WorkingDirectory = "/var/root";
+              LowPriorityIO = true;
+              LowPriorityBackgroundIO = true;
+              ProcessType = "Background";
+            };
           };
 
           system = {

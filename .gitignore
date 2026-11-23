@@ -20,7 +20,12 @@ secrets/**/*.yaml
 /.pi/goals/
 /.pi/.goals-pool-snapshot.json
 
-/home/Library/Developer/
+/home/Library/Developer/*
+!/home/Library/Developer/Xcode/
+/home/Library/Developer/Xcode/*
+!/home/Library/Developer/Xcode/UserData/
+/home/Library/Developer/Xcode/UserData/*
+!/home/Library/Developer/Xcode/UserData/FontAndColorThemes/
 
 # Codex runtime state shares this directory with the managed instructions and skill link.
 /home/.codex/*

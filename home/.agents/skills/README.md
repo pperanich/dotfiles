@@ -9,10 +9,13 @@ For example, invoke `$dev-plan` in Codex, `/skill:dev-plan` in Pi, or
 `/dev:plan` in Claude Code. The five Claude commands link to these same files.
 Stow links individual files. The `~/.codex/skills/dotfiles` directory link lets
 Codex discover the original skill folders. Pi reads `~/.agents/skills` natively.
-Antigravity reads it through `~/.gemini/config/skills.json`. Claude Code does
-not read it: link each new non-`dev-*` skill from `home/.claude/skills/` (a
-flake check fails until you do), and have an installer link into
-`~/.claude/skills` as well.
+Claude Code and Antigravity do not read it. Link each new skill from
+`home/.gemini/config/skills/` and each new non-`dev-*` skill from
+`home/.claude/skills/` (a flake check fails until you do). Installed skills
+need a link in `~/.claude/skills` and `~/.gemini/config/skills` by hand or from
+their installer. Antigravity's `skills.json` cannot point at the hub, because
+agy 1.5.13 rejects `~/` paths, and a directory link would put skills written
+for Antigravity into the hub.
 New personal handoffs use `~/.agents/plans/`. Existing handoffs in
 `~/.claude/plans/` can be resumed in place.
 

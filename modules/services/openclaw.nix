@@ -4,6 +4,7 @@
     {
       config,
       lib,
+      options,
       pkgs,
       ...
     }:
@@ -17,6 +18,7 @@
         Run coding tasks in a dedicated worker pane in the requested checkout. Record the checkout,
         Rex session and block IDs with the task so you can reconnect before starting another worker.
         Report the tested revision and result to the originating chat.
+        The worker has no push credentials: clone over HTTPS into ~/src and report diffs instead of pushing.
       '';
       # Root reads the token; exporting it keeps it out of argv, where every user could see it.
       openclawCtl = pkgs.writeShellScriptBin "openclaw-ctl" ''
@@ -56,58 +58,73 @@
         };
       };
 
-      config = lib.mkIf cfg.enable {
-        services.openclaw-gateway = {
-          enable = true;
-          package = inputs.nix-openclaw.packages.${pkgs.stdenv.hostPlatform.system}.openclaw;
-          inherit (cfg) port;
-          servicePath = [ inputs.rex.packages.${pkgs.stdenv.hostPlatform.system}.rex ];
-          environmentFiles = [ config.sops.templates."openclaw.env".path ];
-          config = {
-            gateway = {
-              mode = "local";
-              bind = "loopback";
-              inherit (cfg) port;
-              publicOrigin = cfg.publicUrl;
-              # Caddy adds X-Forwarded-For, so proxied browsers never get silent local pairing.
-              auth.mode = "token";
-              controlUi.enabled = true;
-            };
-            agents.defaults = {
-              inherit workspace;
-              model.primary = cfg.model;
+      config = lib.mkIf cfg.enable (
+        {
+          services.openclaw-gateway = {
+            enable = true;
+            package = inputs.nix-openclaw.packages.${pkgs.stdenv.hostPlatform.system}.openclaw;
+            inherit (cfg) port;
+            servicePath = [ inputs.rex.packages.${pkgs.stdenv.hostPlatform.system}.rex ];
+            environmentFiles = [ config.sops.templates."openclaw.env".path ];
+            config = {
+              gateway = {
+                mode = "local";
+                bind = "loopback";
+                inherit (cfg) port;
+                publicOrigin = cfg.publicUrl;
+                # Local Caddy is the only proxy; it overwrites X-Forwarded-For with the real client.
+                trustedProxies = [ "127.0.0.1" ];
+                # Caddy adds X-Forwarded-For, so proxied browsers never get silent local pairing.
+                auth.mode = "token";
+                controlUi.enabled = true;
+              };
+              agents.defaults = {
+                inherit workspace;
+                model.primary = cfg.model;
+              };
+              # The default runs any command on the NAS unasked; Rex dispatch is approved once with "allow always".
+              tools.exec.mode = "ask";
             };
           };
-        };
-        users.users.${service.user}.packages = [
-          service.package
-          inputs.rex.packages.${pkgs.stdenv.hostPlatform.system}.rex
-        ];
-        environment.systemPackages = [ openclawCtl ];
+          users.users.${service.user}.packages = [
+            service.package
+            inputs.rex.packages.${pkgs.stdenv.hostPlatform.system}.rex
+          ];
+          environment.systemPackages = [ openclawCtl ];
 
-        sops.secrets.${cfg.gatewayTokenSecret} = { };
-        sops.templates."openclaw.env" = {
-          owner = "root";
-          mode = "0400";
-          restartUnits = [ "${service.unitName}.service" ];
-          content = "OPENCLAW_GATEWAY_TOKEN=${config.sops.placeholder.${cfg.gatewayTokenSecret}}";
-        };
+          sops.secrets.${cfg.gatewayTokenSecret} = { };
+          sops.templates."openclaw.env" = {
+            owner = "root";
+            mode = "0400";
+            restartUnits = [ "${service.unitName}.service" ];
+            content = "OPENCLAW_GATEWAY_TOKEN=${config.sops.placeholder.${cfg.gatewayTokenSecret}}";
+          };
 
-        # Seeded once; the agent may edit its own AGENTS.md afterwards.
-        systemd.tmpfiles.rules = [
-          "d ${workspace} 0750 ${service.user} ${service.group} - -"
-          "C ${workspace}/AGENTS.md - - - - ${workerInstructions}"
-          "z ${workspace}/AGENTS.md 0640 ${service.user} ${service.group} - -"
-        ];
+          systemd.tmpfiles.rules = [ "d ${workspace} 0750 ${service.user} ${service.group} - -" ];
+          # Nix owns AGENTS.md, as in upstream's home-manager module; linked as the service user
+          # because tmpfiles refuses to write through the openclaw-owned state directory.
+          services.openclaw-gateway.execStartPre = [
+            "${pkgs.coreutils}/bin/ln -sfn ${workerInstructions} ${workspace}/AGENTS.md"
+          ];
 
-        # Upstream's unit has no sandboxing; the gateway runs agent tool calls as this user.
-        systemd.services.${service.unitName}.serviceConfig = {
-          NoNewPrivileges = true;
-          ProtectSystem = "strict";
-          ProtectHome = true;
-          PrivateTmp = true;
-          ReadWritePaths = [ service.stateDir ];
-        };
-      };
+          # Upstream's unit has no sandboxing; the gateway runs agent tool calls as this user.
+          systemd.services.${service.unitName}.serviceConfig = {
+            NoNewPrivileges = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            PrivateTmp = true;
+            ReadWritePaths = [ service.stateDir ];
+            # Hide NAS data (media, phone backups, other services' state) that is world-readable.
+            InaccessiblePaths = [ "-/tank" ];
+            TemporaryFileSystem = "/var/lib:ro";
+            BindPaths = [ service.stateDir ];
+          };
+        }
+        // lib.optionalAttrs (options ? my.backup.sqliteDatabases) {
+          my.backup.sqliteDatabases = lib.mkIf config.my.backup.autoDetectSqlite {
+            openclaw = "${service.stateDir}/state/openclaw.sqlite";
+          };
+        }
+      );
     };
 }

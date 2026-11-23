@@ -226,6 +226,8 @@ in
         "immich-server"
         "immich-machine-learning"
         "paperless-.*"
+        "hermes-agent"
+        "openclaw-gateway"
         # Databases behind the services above — likelier to fail than the apps
         "postgresql"
         "redis-.*"

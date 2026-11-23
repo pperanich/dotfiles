@@ -55,6 +55,7 @@
               Run coding tasks in a dedicated worker pane in the requested checkout. Record the checkout,
               Rex session and block IDs with the task so you can reconnect before starting another worker.
               Report the tested revision and result to the originating chat.
+              The worker has no push credentials: clone over HTTPS into ~/src and report diffs instead of pushing.
             '';
             settings = {
               model = {
@@ -88,6 +89,12 @@
             # The upstream environmentFiles option copies its inputs into the backed-up Hermes home.
             serviceConfig.EnvironmentFile = config.sops.templates."hermes-web.env".path;
             restartTriggers = [ (pkgs.writeText "hermes-settings.json" (builtins.toJSON service.settings)) ];
+            # The terminal tool runs as this user; hide NAS data (media, phone backups, other services' state).
+            serviceConfig = {
+              InaccessiblePaths = [ "-/tank" ];
+              TemporaryFileSystem = "/var/lib:ro";
+              BindPaths = [ service.stateDir ];
+            };
           };
         }
         // lib.optionalAttrs (options ? my.backup.sqliteDatabases) {

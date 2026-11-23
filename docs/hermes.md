@@ -53,6 +53,8 @@ sudo -u hermes-worker env WSL_INTEROP="$(ls /run/WSL/*_interop | head -1)" "$d/w
 rm -r "$d"
 ```
 
+On the NAS, the gateway unit hides `/tank` and every other service's `/var/lib` directory, so the terminal tool cannot read media, phone backups or other services' databases. Workers have no push credentials: they clone over HTTPS into `~/src` and report diffs instead of pushing.
+
 The worker still shares the kernel, the network (mirrored, so Windows `localhost` services are reachable) and the WSL plumbing with Windows. The WSL restic job covers `/home/pperanich` only. Keep accepted commits in the project’s usual durable repository. Recovering NAS chat history does not restore uncommitted worker edits or its Codex login.
 
 ## Credentials and recovery

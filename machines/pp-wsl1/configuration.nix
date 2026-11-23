@@ -59,7 +59,11 @@ in
     isNormalUser = true;
     homeMode = "0700";
     linger = true;
-    packages = [ inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex ];
+    packages = [
+      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex
+      pkgs.git
+      pkgs.ripgrep
+    ];
   });
   services.rex.loginServer.accounts = lib.genAttrs workers (_: {
     principals = [ "tailscale:tag:nas" ];

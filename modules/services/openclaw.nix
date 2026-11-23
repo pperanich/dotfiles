@@ -118,6 +118,9 @@
             InaccessiblePaths = [ "-/tank" ];
             TemporaryFileSystem = "/var/lib:ro";
             BindPaths = [ service.stateDir ];
+            # Idle is about 1.4 GiB and startup peaks near 1.9 GiB; agent commands share this cgroup.
+            MemoryHigh = "2560M";
+            MemoryMax = "3G";
           };
         }
         // lib.optionalAttrs (options ? my.backup.sqliteDatabases) {

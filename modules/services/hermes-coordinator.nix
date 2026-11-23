@@ -94,6 +94,9 @@
               InaccessiblePaths = [ "-/tank" ];
               TemporaryFileSystem = "/var/lib:ro";
               BindPaths = [ service.stateDir ];
+              # Idle is about 300 MiB; a runaway session is killed here rather than by the NAS OOM killer.
+              MemoryHigh = "768M";
+              MemoryMax = "1G";
             };
           };
         }

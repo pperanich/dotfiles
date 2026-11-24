@@ -1,0 +1,28 @@
+name: Docs
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "zensical.toml"
+      - ".gitea/workflows/docs.yml"
+  workflow_dispatch:
+concurrency:
+  group: docs-pages
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: native:host
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and publish docs to git-pages
+        env:
+          GIT_PAGES_TOKEN: ${{ secrets.GIT_PAGES_TOKEN || github.token }}
+        run: |
+          nix shell --inputs-from . nixpkgs#zensical nixpkgs#git-pages-cli -c bash -euo pipefail -c '
+            zensical build --clean
+            git-pages-cli \
+              "https://${{ github.repository_owner }}.pages.prestonperanich.com/${{ github.event.repository.name }}/" \
+              --upload-dir site \
+              --comment "${{ github.sha }}"
+          '

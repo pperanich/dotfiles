@@ -93,6 +93,12 @@ _: {
           description = "Maximum size of a published site or uploaded archive.";
         };
 
+        maxManifestSize = lib.mkOption {
+          type = lib.types.str;
+          default = "8MB";
+          description = "Maximum serialized site manifest size (Rustdoc workspaces easily exceed git-pages's 1MB default).";
+        };
+
         memoryMax = lib.mkOption {
           type = lib.types.str;
           default = "512M";
@@ -154,6 +160,7 @@ _: {
                 ];
                 limits = {
                   max-site-size = cfg.maxSiteSize;
+                  max-manifest-size = cfg.maxManifestSize;
                   allowed-repository-url-prefixes = [
                     (if singleOwner then "${forgeBase}/${cfg.owner}/" else "${forgeBase}/")
                   ];

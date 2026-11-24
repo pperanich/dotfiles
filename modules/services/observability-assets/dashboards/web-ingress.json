@@ -19,13 +19,51 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Site Traffic",
+      "type": "link",
+      "url": "/d/site_traffic"
+    }
+  ],
   "refresh": "30s",
   "schemaVersion": 39,
   "style": "dark",
   "tags": ["observability", "caddy"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": ["All"],
+          "value": ["$__all"]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(caddy_http_request_duration_seconds_count, instance)",
+        "includeAll": true,
+        "label": "Host",
+        "multi": true,
+        "name": "instance",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(caddy_http_request_duration_seconds_count, instance)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",
@@ -35,7 +73,7 @@
   "timezone": "",
   "title": "Web Ingress",
   "uid": "web_ingress",
-  "version": 1,
+  "version": 2,
   "weekStart": "",
   "panels": [
     {
@@ -78,8 +116,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (host) (rate(caddy_http_request_duration_seconds_count[5m]))",
-          "legendFormat": "{{host}}",
+          "expr": "sum by (instance, host) (rate(caddy_http_request_duration_seconds_count{instance=~\"$instance\"}[5m]))",
+          "legendFormat": "{{host}} ({{instance}})",
           "refId": "A"
         }
       ],
@@ -126,8 +164,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (class) (label_replace(rate(caddy_http_request_duration_seconds_count[5m]), \"class\", \"${1}xx\", \"code\", \"([0-9]).*\"))",
-          "legendFormat": "{{class}}",
+          "expr": "sum by (instance, class) (label_replace(rate(caddy_http_request_duration_seconds_count{instance=~\"$instance\"}[5m]), \"class\", \"${1}xx\", \"code\", \"([0-9]).*\"))",
+          "legendFormat": "{{class}} ({{instance}})",
           "refId": "A"
         }
       ],
@@ -167,8 +205,8 @@
       },
       "targets": [
         {
-          "expr": "(sum by (host) (rate(caddy_http_request_duration_seconds_count{code=~\"5..\"}[15m])) or 0 * sum by (host) (rate(caddy_http_request_duration_seconds_count[15m]))) / sum by (host) (rate(caddy_http_request_duration_seconds_count[15m]))",
-          "legendFormat": "{{host}}",
+          "expr": "(sum by (instance, host) (rate(caddy_http_request_duration_seconds_count{instance=~\"$instance\", code=~\"5..\"}[15m])) or 0 * sum by (instance, host) (rate(caddy_http_request_duration_seconds_count{instance=~\"$instance\"}[15m]))) / sum by (instance, host) (rate(caddy_http_request_duration_seconds_count{instance=~\"$instance\"}[15m]))",
+          "legendFormat": "{{host}} ({{instance}})",
           "refId": "A"
         }
       ],
@@ -209,8 +247,8 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (host, le) (rate(caddy_http_request_duration_seconds_bucket{code!=\"101\"}[15m])))",
-          "legendFormat": "{{host}}",
+          "expr": "histogram_quantile(0.95, sum by (instance, host, le) (rate(caddy_http_request_duration_seconds_bucket{instance=~\"$instance\", code!=\"101\"}[15m])))",
+          "legendFormat": "{{host}} ({{instance}})",
           "refId": "A"
         }
       ],
@@ -250,8 +288,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (server) (caddy_http_requests_in_flight)",
-          "legendFormat": "{{server}}",
+          "expr": "sum by (instance, server) (caddy_http_requests_in_flight{instance=~\"$instance\"})",
+          "legendFormat": "{{instance}} {{server}}",
           "refId": "A"
         }
       ],
@@ -298,8 +336,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (host) (rate(caddy_http_response_size_bytes_sum[5m]))",
-          "legendFormat": "{{host}}",
+          "expr": "sum by (instance, host) (rate(caddy_http_response_size_bytes_sum{instance=~\"$instance\"}[5m]))",
+          "legendFormat": "{{host}} ({{instance}})",
           "refId": "A"
         }
       ],

@@ -17,8 +17,8 @@ let
   nasHost = "pp-nas1.${config.my.router.dhcp.domainName}";
   inherit (lib.my.homelab) publicDomain mkSub;
   caddyCrowdsecEnabled = config.my.router.ids.enable && config.my.router.ids.caddyBouncer.enable;
-  mkPublicLogFormat = name: ''
-    output file /var/log/caddy/public-${name}.log {
+  mkLogFile = filename: ''
+    output file /var/log/caddy/${filename}.log {
       mode 0640
     }
   '';
@@ -67,7 +67,11 @@ let
         }
       }
       ${extra}
-    '';
+    ''
+    // {
+      # Separate from access-*.log so tailnet NAS requests are not double-counted with pp-nas1.
+      logFormat = mkLogFile "reproxy-${fqdn}";
+    };
 in
 {
   my.caddyDns01.enable = true;
@@ -142,153 +146,155 @@ in
       ];
   };
 
-  services.caddy.virtualHosts = {
-    # --- Personal site (static, built by bun2nix) ---
-    "${publicDomain}" = mkVhost ''
-      root * ${pkgs.personal-site}
-      file_server
-    '';
-    "${mkSub "www"}" = mkVhost ''
-      redir https://${publicDomain}{uri} permanent
-    '';
+  services.caddy.virtualHosts =
+    lib.mapAttrs (name: vhost: { logFormat = mkLogFile "access-${name}"; } // vhost)
+      {
+        # --- Personal site (static, built by bun2nix) ---
+        "${publicDomain}" = mkVhost ''
+          root * ${pkgs.personal-site}
+          file_server
+        '';
+        "${mkSub "www"}" = mkVhost ''
+          redir https://${publicDomain}{uri} permanent
+        '';
 
-    # --- Simple reverse proxies (router-local services) ---
-    "${mkSub "home"}" = mkProxy "localhost:8082";
-    "${mkSub "grafana"}" = mkProxy "localhost:3010";
-    "${mkSub "ntopng"}" = mkProxy "localhost:3000";
-    "${mkSub "vault"}" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
-    "${mkSub "vault-admin"}" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
+        # --- Simple reverse proxies (router-local services) ---
+        "${mkSub "home"}" = mkProxy "localhost:8082";
+        "${mkSub "grafana"}" = mkProxy "localhost:3010";
+        "${mkSub "ntopng"}" = mkProxy "localhost:3000";
+        "${mkSub "vault"}" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
+        "${mkSub "vault-admin"}" = mkProxy "localhost:${toString config.my.vaultwarden.port}";
 
-    # Gitea web UI + HTTPS clone. LFS uploads benefit from a high body cap.
-    "${mkSub "gitea"}" = mkVhost ''
-      reverse_proxy http://localhost:${toString config.my.gitea.port} {
-        header_up X-Forwarded-Proto {scheme}
-      }
-      request_body {
-        max_size 5G
-      }
-    '';
-
-    # git-pages static site hosting (LAN + Tailscale; pages.<domain>/<repo>/).
-    # Health path lets Blackbox verify DNS and CertExpiringSoon without an index site.
-    "${config.my.gitPages.domain}" = mkVhost ''
-      @health path /.well-known/git-pages-health
-      handle @health {
-        respond "ok" 200
-      }
-      handle {
-        reverse_proxy http://${config.my.gitPages.address}:${toString config.my.gitPages.port}
-      }
-      request_body {
-        max_size ${config.my.gitPages.maxSiteSize}
-      }
-    '';
-
-    # Headplane serves its UI under /admin only.
-    "${config.my.headplane.domain}" = mkVhost ''
-      redir / /admin 302
-      reverse_proxy localhost:${toString config.my.headplane.port}
-    '';
-
-    # Unifi controller (self-signed cert, requires origin header rewrite for CSRF)
-    "${mkSub "unifi"}" = mkVhost ''
-      reverse_proxy https://localhost:8443 {
-        transport http {
-          tls_insecure_skip_verify
-        }
-        header_up X-Forwarded-Proto {scheme}
-        header_up Origin https://localhost:8443
-        header_up Referer https://localhost:8443
-      }
-    '';
-
-    # --- NAS services (pp-nas1) ---
-    # TLS re-proxy to the NAS's local Caddy; body caps live NAS-side.
-    # LAN clients bypass these vhosts entirely via split-horizon DNS.
-    "${mkSub "immich"}" = mkNasProxy (mkSub "immich") ''
-      request_body {
-        max_size 50G
-      }
-    '';
-    "${mkSub "nextcloud"}" = mkNasProxy (mkSub "nextcloud") ''
-      request_body {
-        max_size 16G
-      }
-    '';
-    "${mkSub "opencloud"}" = mkNasProxy (mkSub "opencloud") ''
-      request_body {
-        max_size 16G
-      }
-    '';
-    "${mkSub "audiobookshelf"}" = mkNasProxy (mkSub "audiobookshelf") ''
-      request_body {
-        max_size 10G
-      }
-    '';
-    "${mkSub "paperless"}" = mkNasProxy (mkSub "paperless") ''
-      request_body {
-        max_size 1G
-      }
-    '';
-    "${mkSub "docuseal"}" = mkNasProxy (mkSub "docuseal") ''
-      request_body {
-        max_size 1G
-      }
-    '';
-    # Radicale CalDAV/CardDAV — auth happens at the NAS Caddy (basic auth)
-    "${mkSub "dav"}" = mkNasProxy (mkSub "dav") "";
-    # scanservjs — Canon TR4500 web scan UI
-    "${mkSub "scan"}" = mkNasProxy (mkSub "scan") "";
-    # Home Assistant (websockets proxied automatically)
-    "${mkSub "hass"}" = mkNasProxy (mkSub "hass") "";
-    # Media servers
-    "${mkSub "jellyfin"}" = mkNasProxy (mkSub "jellyfin") "";
-    "${mkSub "hermes"}" = mkNasProxy (mkSub "hermes") "";
-    "${mkSub "openclaw"}" = mkNasProxy (mkSub "openclaw") "";
-    "${mkSub "navidrome"}" = mkNasProxy (mkSub "navidrome") "";
-
-    # --- Headscale control plane (public WAN :9443 via gray-cloud DDNS) ---
-    # Unbound listenAddresses so WAN clients reach :9443 directly while all
-    # :443 vhosts above remain strictly bound to LAN + Tailscale IPs.
-    # Cloudflare Tunnel cannot carry Tailscale's TS2021 `Upgrade: tailscale-control-protocol`.
-    "https://${config.my.headscale.domain}:${toString config.my.headscale.publicPort}" = {
-      logFormat = mkPublicLogFormat "headscale";
-      extraConfig = ''
-        ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
-        reverse_proxy 127.0.0.1:${toString config.my.headscale.listenPort} {
-          flush_interval -1
-        }
-      '';
-    };
-
-    # --- Cloudflare Tunnel listeners (localhost only) ---
-    # Personal site (public via tunnel)
-    "http://:8224" = {
-      listenAddresses = [ "127.0.0.1" ];
-      logFormat = mkPublicLogFormat "site";
-      extraConfig = ''
-        ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
-        root * ${pkgs.personal-site}
-        file_server
-      '';
-    };
-
-    # Vaultwarden (public via tunnel, blocks /admin)
-    "http://:8223" = {
-      listenAddresses = [ "127.0.0.1" ];
-      logFormat = mkPublicLogFormat "vaultwarden";
-      extraConfig = ''
-        ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
-        # Block /admin from public access (Cloudflare Tunnel)
-        handle /admin* {
-          respond "Forbidden" 403
-        }
-        handle {
-          reverse_proxy localhost:${toString config.my.vaultwarden.port} {
-            header_up X-Forwarded-For {client_ip}
+        # Gitea web UI + HTTPS clone. LFS uploads benefit from a high body cap.
+        "${mkSub "gitea"}" = mkVhost ''
+          reverse_proxy http://localhost:${toString config.my.gitea.port} {
+            header_up X-Forwarded-Proto {scheme}
           }
-        }
-      '';
-    };
-  };
+          request_body {
+            max_size 5G
+          }
+        '';
+
+        # git-pages static site hosting (LAN + Tailscale; pages.<domain>/<repo>/).
+        # Health path lets Blackbox verify DNS and CertExpiringSoon without an index site.
+        "${config.my.gitPages.domain}" = mkVhost ''
+          @health path /.well-known/git-pages-health
+          handle @health {
+            respond "ok" 200
+          }
+          handle {
+            reverse_proxy http://${config.my.gitPages.address}:${toString config.my.gitPages.port}
+          }
+          request_body {
+            max_size ${config.my.gitPages.maxSiteSize}
+          }
+        '';
+
+        # Headplane serves its UI under /admin only.
+        "${config.my.headplane.domain}" = mkVhost ''
+          redir / /admin 302
+          reverse_proxy localhost:${toString config.my.headplane.port}
+        '';
+
+        # Unifi controller (self-signed cert, requires origin header rewrite for CSRF)
+        "${mkSub "unifi"}" = mkVhost ''
+          reverse_proxy https://localhost:8443 {
+            transport http {
+              tls_insecure_skip_verify
+            }
+            header_up X-Forwarded-Proto {scheme}
+            header_up Origin https://localhost:8443
+            header_up Referer https://localhost:8443
+          }
+        '';
+
+        # --- NAS services (pp-nas1) ---
+        # TLS re-proxy to the NAS's local Caddy; body caps live NAS-side.
+        # LAN clients bypass these vhosts entirely via split-horizon DNS.
+        "${mkSub "immich"}" = mkNasProxy (mkSub "immich") ''
+          request_body {
+            max_size 50G
+          }
+        '';
+        "${mkSub "nextcloud"}" = mkNasProxy (mkSub "nextcloud") ''
+          request_body {
+            max_size 16G
+          }
+        '';
+        "${mkSub "opencloud"}" = mkNasProxy (mkSub "opencloud") ''
+          request_body {
+            max_size 16G
+          }
+        '';
+        "${mkSub "audiobookshelf"}" = mkNasProxy (mkSub "audiobookshelf") ''
+          request_body {
+            max_size 10G
+          }
+        '';
+        "${mkSub "paperless"}" = mkNasProxy (mkSub "paperless") ''
+          request_body {
+            max_size 1G
+          }
+        '';
+        "${mkSub "docuseal"}" = mkNasProxy (mkSub "docuseal") ''
+          request_body {
+            max_size 1G
+          }
+        '';
+        # Radicale CalDAV/CardDAV — auth happens at the NAS Caddy (basic auth)
+        "${mkSub "dav"}" = mkNasProxy (mkSub "dav") "";
+        # scanservjs — Canon TR4500 web scan UI
+        "${mkSub "scan"}" = mkNasProxy (mkSub "scan") "";
+        # Home Assistant (websockets proxied automatically)
+        "${mkSub "hass"}" = mkNasProxy (mkSub "hass") "";
+        # Media servers
+        "${mkSub "jellyfin"}" = mkNasProxy (mkSub "jellyfin") "";
+        "${mkSub "hermes"}" = mkNasProxy (mkSub "hermes") "";
+        "${mkSub "openclaw"}" = mkNasProxy (mkSub "openclaw") "";
+        "${mkSub "navidrome"}" = mkNasProxy (mkSub "navidrome") "";
+
+        # --- Headscale control plane (public WAN :9443 via gray-cloud DDNS) ---
+        # Unbound listenAddresses so WAN clients reach :9443 directly while all
+        # :443 vhosts above remain strictly bound to LAN + Tailscale IPs.
+        # Cloudflare Tunnel cannot carry Tailscale's TS2021 `Upgrade: tailscale-control-protocol`.
+        "https://${config.my.headscale.domain}:${toString config.my.headscale.publicPort}" = {
+          logFormat = mkLogFile "public-headscale";
+          extraConfig = ''
+            ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
+            reverse_proxy 127.0.0.1:${toString config.my.headscale.listenPort} {
+              flush_interval -1
+            }
+          '';
+        };
+
+        # --- Cloudflare Tunnel listeners (localhost only) ---
+        # Personal site (public via tunnel)
+        "http://:8224" = {
+          listenAddresses = [ "127.0.0.1" ];
+          logFormat = mkLogFile "public-site";
+          extraConfig = ''
+            ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
+            root * ${pkgs.personal-site}
+            file_server
+          '';
+        };
+
+        # Vaultwarden (public via tunnel, blocks /admin)
+        "http://:8223" = {
+          listenAddresses = [ "127.0.0.1" ];
+          logFormat = mkLogFile "public-vaultwarden";
+          extraConfig = ''
+            ${lib.optionalString caddyCrowdsecEnabled "crowdsec"}
+            # Block /admin from public access (Cloudflare Tunnel)
+            handle /admin* {
+              respond "Forbidden" 403
+            }
+            handle {
+              reverse_proxy localhost:${toString config.my.vaultwarden.port} {
+                header_up X-Forwarded-For {client_ip}
+              }
+            }
+          '';
+        };
+      };
 }

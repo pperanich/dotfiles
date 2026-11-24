@@ -42,6 +42,7 @@ in
 
     # Caddy + DNS-01 certificates (vhosts in ./caddy.nix)
     caddyDns01
+    caddyLogShipping
 
     # Public services (via Cloudflare Tunnel)
     cloudflareTunnel
@@ -212,6 +213,10 @@ in
         externalUrl = "https://${config.my.observability.grafana.hostname}/alerting/list";
         # 10G trunk to the switch — carrier loss here takes down the whole LAN
         carrierInterfaces = [ "enp1s0f1np1" ];
+        isolatedInterfaces = [
+          "br-iot"
+          "br-guest"
+        ];
         deadman.pingUrlFile = config.sops.secrets.healthchecks-ping-url.path;
       };
       smartctlTargets = [
@@ -219,6 +224,21 @@ in
         "pp-nas1:9633"
       ];
       nodeTargets = [ "pp-nas1:9640" ];
+      caddyTargets = [ "pp-nas1:9641" ];
+    };
+
+    caddyLogShipping = {
+      enable = true;
+      lokiUrl = "http://${config.my.observability.loki.listenAddress}:3100";
+      lanPrefixes = [
+        "${config.my.router.lan.subnet}."
+        "${config.my.router.ipv6.ulaPrefix}:"
+        "fe80:"
+      ];
+      isolatedPrefixes = {
+        iot = [ "${config.my.router.networks.segments.iot.subnet}." ];
+        guest = [ "${config.my.router.networks.segments.guest.subnet}." ];
+      };
     };
 
     smartMonitoring.enable = true;

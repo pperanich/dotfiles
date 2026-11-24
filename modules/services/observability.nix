@@ -59,6 +59,7 @@ _: {
         "wan-remote-access.json" = ./observability-assets/dashboards/wan-remote-access.json;
         "fleet-health.json" = ./observability-assets/dashboards/fleet-health.json;
         "web-ingress.json" = ./observability-assets/dashboards/web-ingress.json;
+        "site-traffic.json" = ./observability-assets/dashboards/site-traffic.json;
       }
       // cfg.extraDashboards;
 
@@ -112,6 +113,44 @@ _: {
 
       # Render alert email timestamps in the host timezone (UTC if unset)
       alertTimezone = if config.time.timeZone != null then config.time.timeZone else "Etc/UTC";
+
+      isolatedIfaceRegex = lib.concatStringsSep "|" (map lib.escapeRegex cfg.alerts.isolatedInterfaces);
+
+      lokiAlertRules = [
+        {
+          alert = "UnexpectedInternalSiteClient";
+          expr = ''sum by (host, site, network) (count_over_time({job="caddy", exposure="internal", probe="false", network!~"lan|tailnet|loopback|unknown"}[5m])) > 0'';
+          labels.severity = "critical";
+          annotations.description = "Unexpected {{ $labels.network }} client reached internal site {{ $labels.site }} on {{ $labels.host }} ({{ $value }} requests in 5m).";
+        }
+        {
+          alert = "InternalSiteAuthFailureBurst";
+          expr = ''sum by (host, site, client_ip, network) (count_over_time({job="caddy", exposure="internal", probe="false"} | json client_ip="request.client_ip", status="status" | status=~"401|403" [5m])) >= 20'';
+          for = "1m";
+          labels.severity = "warning";
+          annotations.description = "{{ $labels.client_ip }} ({{ $labels.network }}) triggered {{ $value }} HTTP 401/403 responses on internal site {{ $labels.site }} in 5m.";
+        }
+      ]
+      ++ lib.optional (cfg.alerts.isolatedInterfaces != [ ]) {
+        alert = "IsolatedVlanProbingInternalHttps";
+        expr = ''sum by (iface, src, dst) (count_over_time({job="kernel"} |~ "nft6?-drop-(input|forward):" |~ `IN=(${isolatedIfaceRegex})\b` |~ `DPT=443\b` | regexp `IN=(?P<iface>\S+).*SRC=(?P<src>[0-9a-fA-F.:]+)\s+DST=(?P<dst>[0-9a-fA-F.:]+)` [10m])) >= 5'';
+        for = "1m";
+        labels.severity = "warning";
+        annotations.description = "Isolated VLAN client {{ $labels.src }} on {{ $labels.iface }} hit blocked HTTPS ({{ $labels.dst }}:443) {{ $value }} times in 10m.";
+      }
+      ++ cfg.extraLokiAlertRules;
+
+      lokiRulerEnabled = cfg.alerts.email.to != null && lokiAlertRules != [ ];
+
+      lokiAlertRulesFile = (pkgs.formats.yaml { }).generate "loki-alert-rules.yaml" {
+        groups = [
+          {
+            name = "site-access-security";
+            interval = "1m";
+            rules = lokiAlertRules;
+          }
+        ];
+      };
 
       mkPromRule = expr: alert: description: {
         inherit alert expr;
@@ -349,6 +388,16 @@ _: {
             example = [ "enp1s0f1np1" ];
             description = "Interfaces to alert on for sustained carrier loss and link flapping";
           };
+
+          isolatedInterfaces = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            example = [
+              "br-iot"
+              "br-guest"
+            ];
+            description = "Isolated VLAN interfaces whose blocked internal HTTPS attempts trigger Loki alerts";
+          };
         };
 
         smartctlTargets = lib.mkOption {
@@ -363,6 +412,13 @@ _: {
           default = [ ];
           example = [ "pp-nas1.home.arpa:9100" ];
           description = "Additional node exporter targets to scrape for host metrics";
+        };
+
+        caddyTargets = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "pp-nas1:9641" ];
+          description = "Additional Caddy Prometheus metrics targets to scrape";
         };
 
         dropMonitor = {
@@ -434,6 +490,12 @@ _: {
           type = lib.types.listOf lib.types.attrs;
           default = [ ];
           description = "Additional Prometheus alert rules merged into the observability rule group";
+        };
+
+        extraLokiAlertRules = lib.mkOption {
+          type = lib.types.listOf lib.types.attrs;
+          default = [ ];
+          description = "Additional Loki ruler alert rules merged into the site-access-security rule group";
         };
 
         extraJournalUnits = lib.mkOption {
@@ -522,11 +584,19 @@ _: {
             ]
             ++ [
               {
-                # Caddy admin endpoint; per-request metrics need the `metrics`
-                # global option in the Caddyfile (set on pp-router1)
+                # Local Caddy admin endpoint plus any remote read-only Caddy metrics targets.
                 job_name = "caddy";
                 relabel_configs = friendlyInstance;
-                static_configs = [ { targets = [ "127.0.0.1:2019" ]; } ];
+                metric_relabel_configs = [
+                  {
+                    source_labels = [ "handler" ];
+                    regex = "metrics";
+                    action = "drop";
+                  }
+                ];
+                static_configs = [
+                  { targets = [ "127.0.0.1:2019" ] ++ cfg.caddyTargets; }
+                ];
               }
             ]
             ++ lib.optionals (config.my.headscale.enable or false) [
@@ -1029,6 +1099,27 @@ _: {
                 reject_old_samples = true;
                 reject_old_samples_max_age = "168h";
               };
+            }
+            // lib.optionalAttrs lokiRulerEnabled {
+              ruler = {
+                storage = {
+                  type = "local";
+                  local.directory = "/var/lib/loki/rules";
+                };
+                rule_path = "/var/lib/loki/rules-temp";
+                alertmanager_url = "http://127.0.0.1:9093";
+                enable_alertmanager_v2 = true;
+                enable_api = true;
+                evaluation_interval = "1m";
+                poll_interval = "1m";
+                ring = {
+                  kvstore.store = "inmemory";
+                  instance_addr = "127.0.0.1";
+                };
+              }
+              // lib.optionalAttrs (cfg.alerts.externalUrl != null) {
+                external_url = cfg.alerts.externalUrl;
+              };
             };
           };
           # Log shipping via Grafana Alloy (promtail was removed in NixOS 26.05).
@@ -1180,6 +1271,12 @@ _: {
           tmpfiles.rules = [
             "d ${dashboardDir} 0750 grafana grafana -"
             "d /var/lib/prometheus-node-exporter-text 0755 root root -"
+          ]
+          ++ lib.optionals lokiRulerEnabled [
+            "d /var/lib/loki/rules 0750 loki loki -"
+            "d /var/lib/loki/rules/fake 0750 loki loki -"
+            "d /var/lib/loki/rules-temp 0750 loki loki -"
+            "L+ /var/lib/loki/rules/fake/observability.yaml - - - - ${lokiAlertRulesFile}"
           ]
           ++ lib.mapAttrsToList mkDashboardLinkRule dashboardFiles;
         };

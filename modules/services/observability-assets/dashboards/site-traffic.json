@@ -1,0 +1,1124 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Web Ingress",
+      "type": "link",
+      "url": "/d/web_ingress"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "WAN & Remote Access",
+      "type": "link",
+      "url": "/d/wan_remote_access"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "CrowdSec",
+      "type": "link",
+      "url": "/d/crowdsec-engine"
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "External Sites",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Real requests across all publicly exposed sites in the selected time range (Blackbox probes excluded).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"}[$__range])) or vector(0)",
+          "instant": true,
+          "legendFormat": "requests",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "External Requests",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Distinct client IPs visiting externally exposed sites.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count(sum by (client_ip) (count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"} | json client_ip=\"request.client_ip\" [$__range]))) or vector(0)",
+          "instant": true,
+          "legendFormat": "ips",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Unique External IPs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "4xx responses on public sites (CrowdSec 403 bans, /admin blocks, and scanner 404s).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 250
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"} | json status=\"status\" | status=~\"4..\" [$__range])) or vector(0)",
+          "instant": true,
+          "legendFormat": "4xx",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "External 4xx / Blocked",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "External requests hitting /admin* on vault.prestonperanich.com (blocked 403 by Caddy).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"caddy\", exposure=\"public\", site=\"vaultwarden\", probe=\"false\"} | json uri=\"request.uri\" | uri=~\"/admin.*\" [$__range])) or vector(0)",
+          "instant": true,
+          "legendFormat": "vault_admin_probes",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Vault /admin Probes",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Request volume over time by externally exposed hostname (Blackbox probes excluded).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 20,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (req_host) (count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"} | json req_host=\"request.host\" [$__auto]))",
+          "legendFormat": "{{req_host}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "External Requests By Site",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "HTTP status classes served on externally exposed sites.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 20,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (class) (count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"} | json status=\"status\" | label_format class=`{{ if .status }}{{ substr 0 1 .status }}xx{{ else }}unknown{{ end }}` [$__auto]))",
+          "legendFormat": "{{class}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "External Responses By Status Class",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Cloudflare Cf-Ipcountry breakdown for tunneled sites (direct-WAN Headscale carries no Cloudflare header).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 7,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Requests"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(25, sum by (country, req_host) (count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"} | json req_host=\"request.host\", country=\"request.headers[\\\"Cf-Ipcountry\\\"][0]\" | country != \"\" [$__range])))",
+          "instant": true,
+          "legendFormat": "",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "External Traffic By Country",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Requests",
+              "country": "Country",
+              "req_host": "Site"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Top client IPs hitting publicly exposed sites.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 13
+      },
+      "id": 8,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Requests"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(25, sum by (client_ip, country, req_host) (count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"} | json client_ip=\"request.client_ip\", req_host=\"request.host\", country=\"request.headers[\\\"Cf-Ipcountry\\\"][0]\" [$__range])))",
+          "instant": true,
+          "legendFormat": "",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Top External Client IPs",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Requests",
+              "client_ip": "Client IP",
+              "country": "Country",
+              "req_host": "Site"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Most requested paths and status codes on publicly exposed sites.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Requests"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(25, sum by (req_host, uri, status) (count_over_time({job=\"caddy\", exposure=\"public\", probe=\"false\"} | json req_host=\"request.host\", uri=\"request.uri\", status=\"status\" [$__range])))",
+          "instant": true,
+          "legendFormat": "",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Top External Paths",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Requests",
+              "req_host": "Site",
+              "status": "Status",
+              "uri": "URI"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Recent 4xx/5xx responses on external sites (CrowdSec 403 bans, /admin probes, scanner 404s).",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 10,
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{job=\"caddy\", exposure=\"public\", probe=\"false\"} | json status=\"status\", client_ip=\"request.client_ip\", req_host=\"request.host\", method=\"request.method\", uri=\"request.uri\", country=\"request.headers[\\\"Cf-Ipcountry\\\"][0]\", ua=\"request.headers[\\\"User-Agent\\\"][0]\" | status=~\"[45]..\" | line_format \"{{.status}} {{.req_host}} {{.method}} {{.uri}} ip={{.client_ip}} cc={{.country}} ua={{.ua}}\"",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent External 4xx / 5xx & Blocks",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 101,
+      "panels": [],
+      "title": "Internal Sites & Clients",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Real requests across all internal router and NAS sites (tailnet NAS re-proxy hops excluded to avoid double-counting; Blackbox probes excluded).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 20,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (site) (count_over_time({job=\"caddy\", exposure=\"internal\", probe=\"false\"}[$__auto]))",
+          "legendFormat": "{{site}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Internal Requests By Site",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Internal site requests split by client network (lan, tailnet, loopback, or unexpected).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 20,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (network) (count_over_time({job=\"caddy\", exposure=\"internal\", probe=\"false\"}[$__auto]))",
+          "legendFormat": "{{network}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Internal Requests By Client Network",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Every client IP and network accessing internal sites across router and NAS.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 14,
+        "x": 0,
+        "y": 38
+      },
+      "id": 13,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Requests"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(50, sum by (client_ip, network, site) (count_over_time({job=\"caddy\", exposure=\"internal\", probe=\"false\"} | json client_ip=\"request.client_ip\" [$__range])))",
+          "instant": true,
+          "legendFormat": "",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Who Is Accessing Internal Sites",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Requests",
+              "client_ip": "Client IP",
+              "network": "Network",
+              "site": "Site"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Auth failures (401/403) and missing-path probes (404) on internal sites by client IP.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 10,
+        "x": 14,
+        "y": 38
+      },
+      "id": 14,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Requests"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(25, sum by (client_ip, network, site, status) (count_over_time({job=\"caddy\", exposure=\"internal\", probe=\"false\"} | json client_ip=\"request.client_ip\", status=\"status\" | status=~\"401|403|404\" [$__range])))",
+          "instant": true,
+          "legendFormat": "",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Internal 401 / 403 / 404 By Client",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Requests",
+              "client_ip": "Client IP",
+              "network": "Network",
+              "site": "Site",
+              "status": "Status"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
+      "id": 102,
+      "panels": [],
+      "title": "Suspicious & Blocked Internal Access",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Should always be 0. Any non-zero count means an external, IoT, or Guest IP reached an internal vhost (triggers UnexpectedInternalSiteClient).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 48
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"caddy\", exposure=\"internal\", probe=\"false\", network!~\"lan|tailnet|loopback|unknown\"}[$__range])) or vector(0)",
+          "instant": true,
+          "legendFormat": "unexpected",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Unexpected-Network Internal Hits",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Firewall drops when an isolated VLAN device (IoT or Guest) tried to connect to port 443 on the router or NAS.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 48
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"kernel\"} |~ \"nft6?-drop-(input|forward):\" |~ `IN=(br-iot|br-guest)\\b` |~ `DPT=443\\b` [$__range])) or vector(0)",
+          "instant": true,
+          "legendFormat": "blocked_https",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Blocked Isolated-VLAN HTTPS Attempts",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "DNS lookups for prestonperanich.com names originating from IoT (10.0.20.x) or Guest (10.0.30.x) VLANs.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 48
+      },
+      "id": 17,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"blocky-file\"} |= \"prestonperanich.com\" |~ `(^|[,\\t ])10\\.0\\.(20|30)\\.` [$__range])) or vector(0)",
+          "instant": true,
+          "legendFormat": "vlan_dns",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "IoT / Guest DNS Lookups For Domain",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Blocked non-WAN firewall attempts (input and forward drops from IoT, Guest, LAN, or tailnet).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 52
+      },
+      "id": 18,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Drops"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(25, sum by (iface, src, dst, dpt) (count_over_time({job=\"kernel\"} |~ \"nft6?-drop-(input|forward):\" | regexp `IN=(?P<iface>\\S+).*SRC=(?P<src>[0-9a-fA-F.:]+)\\s+DST=(?P<dst>[0-9a-fA-F.:]+).*DPT=(?P<dpt>[0-9]+)` [$__range])))",
+          "instant": true,
+          "legendFormat": "",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Blocked Local / VLAN / Tailnet Connections",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Drops",
+              "dpt": "Port",
+              "dst": "Dest IP",
+              "iface": "Interface",
+              "src": "Source IP"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Unexpected-network internal hits and internal 401/403 auth failures.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "id": 19,
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{job=\"caddy\", exposure=\"internal\", probe=\"false\"} | json status=\"status\", client_ip=\"request.client_ip\", method=\"request.method\", uri=\"request.uri\", ua=\"request.headers[\\\"User-Agent\\\"][0]\" | status=~\"401|403\" or network!~\"lan|tailnet|loopback|unknown\" | line_format \"{{.status}} [{{.network}}] {{.site}} {{.method}} {{.uri}} ip={{.client_ip}} ua={{.ua}}\"",
+          "refId": "A"
+        }
+      ],
+      "title": "Suspicious Internal Activity Log",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["observability", "caddy", "security"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Site Traffic",
+  "uid": "site_traffic",
+  "version": 1,
+  "weekStart": ""
+}

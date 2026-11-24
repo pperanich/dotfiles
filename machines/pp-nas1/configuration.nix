@@ -44,8 +44,9 @@ in
     smartMonitoring
     nodeMetrics
 
-    # Journal shipping to the router's Loki (context for SystemdUnitFailed)
+    # Journal + Caddy access log shipping to the router's Loki
     logShipping
+    caddyLogShipping
 
     # Caddy + DNS-01 certificates (split-horizon TLS termination)
     cloudflareCredentials
@@ -235,6 +236,21 @@ in
       ++ config.services.feedmeOps.systemdUnits;
     };
 
+    caddyLogShipping = {
+      enable = true;
+      inherit (config.my.logShipping) lokiUrl;
+      retryForever = true;
+      lanPrefixes = [
+        "10.0.0."
+        "fd12:3456:789a:bcde:"
+        "fe80:"
+      ];
+      isolatedPrefixes = {
+        iot = [ "10.0.20." ];
+        guest = [ "10.0.30." ];
+      };
+    };
+
     # Disk health monitoring — scraped only by the router's Prometheus
     smartMonitoring = {
       enable = true;
@@ -341,7 +357,7 @@ in
     nftables.enable = true;
     firewall = {
       extraInputRules = ''
-        ip saddr 10.0.0.1 tcp dport { 9633, 9640 } accept
+        ip saddr 10.0.0.1 tcp dport { 9633, 9640, 9641 } accept
       '';
       allowedTCPPorts = [ 443 ];
     };
@@ -460,6 +476,9 @@ in
       # Trust X-Forwarded-For only from loopback and pp-router1's LAN re-proxy
       # (10.0.0.1/32), never direct LAN or Tailscale end-clients.
       servers {
+        metrics {
+          per_host
+        }
         trusted_proxies static 127.0.0.1/32 ::1/128 10.0.0.1/32
         trusted_proxies_strict
       }
@@ -470,6 +489,11 @@ in
     # see the real end-client IP rather than router re-proxy 10.0.0.1.
     virtualHosts =
       let
+        mkLogFile = filename: ''
+          output file /var/log/caddy/${filename}.log {
+            mode 0640
+          }
+        '';
         mkLocalProxy = port: extra: {
           extraConfig = ''
             reverse_proxy 127.0.0.1:${toString port} {
@@ -484,7 +508,16 @@ in
           }
         '';
       in
-      {
+      lib.mapAttrs (name: vhost: { logFormat = mkLogFile "access-${name}"; } // vhost) {
+        # Read-only Prometheus metrics endpoint (firewalled to pp-router1 only).
+        "http://:9641" = {
+          logFormat = null;
+          extraConfig = ''
+            @not_metrics not path /metrics
+            respond @not_metrics 404
+            metrics /metrics
+          '';
+        };
         "${mkSub "jellyfin"}" = mkLocalProxy 8096 "";
         "${mkSub "navidrome"}" = mkLocalProxy config.my.navidrome.port "";
         "${mkSub "scan"}" = mkLocalProxy config.my.scanservjs.port (

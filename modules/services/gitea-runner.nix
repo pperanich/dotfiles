@@ -43,6 +43,12 @@ _: {
             Changing them makes the runner re-register on next start.
           '';
         };
+
+        capacity = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 1;
+          description = "Maximum number of concurrent jobs the runner will execute.";
+        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -67,6 +73,7 @@ _: {
           enable = true;
           name = instanceName;
           inherit (cfg) url labels;
+          settings.runner.capacity = cfg.capacity;
           tokenFile = lib.mkIf (cfg.tokenSecret != null) config.sops.templates."gitea-runner.env".path;
           # Upstream defaults plus nix, so `native:host` jobs can run `nix build`.
           hostPackages = with pkgs; [

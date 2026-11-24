@@ -111,6 +111,7 @@ in
     enable = true;
     url = "https://gitea.prestonperanich.com";
     tokenSecret = "gitea-runner-token";
+    capacity = 10;
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";

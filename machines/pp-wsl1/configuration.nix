@@ -55,16 +55,24 @@ in
     ];
   };
 
-  users.users = lib.genAttrs workers (_: {
-    isNormalUser = true;
-    homeMode = "0700";
-    linger = true;
-    packages = [
-      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex
-      pkgs.git
-      pkgs.ripgrep
-    ];
-  });
+  users.users =
+    lib.genAttrs workers (_: {
+      isNormalUser = true;
+      homeMode = "0700";
+      linger = true;
+      packages = [
+        inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex
+        pkgs.git
+        pkgs.ripgrep
+      ];
+    })
+    // {
+      sccache = {
+        isSystemUser = true;
+        group = "sccache";
+      };
+    };
+  users.groups.sccache = { };
   services.rex.loginServer.accounts = lib.genAttrs workers (_: {
     principals = [ "tailscale:tag:nas" ];
   });
@@ -122,6 +130,9 @@ in
     envs = {
       CARGO_BUILD_JOBS = "6";
       RUST_MIN_STACK = "16777216";
+      # Shared host-backed WebDAV sccache endpoint on docker0 (only jobs with
+      # sccache installed opt in via RUSTC_WRAPPER=sccache).
+      SCCACHE_WEBDAV_ENDPOINT = "http://172.17.0.1:4227/";
     };
     # Expose host /dev/kvm (AMD-V via WSL2) for Android emulator tests and mount
     # a persistent host cache for the ~740 MB Google Drive seed corpus.
@@ -129,6 +140,81 @@ in
     containerPrivileged = true;
     containerOptions = "--device /dev/kvm --volume /var/cache/feedme-seed-corpus:/cache/feedme-seed-corpus";
     validVolumes = [ "/var/cache/feedme-seed-corpus" ];
+  };
+
+  # Local WebDAV cache backing sccache across concurrent CI job containers.
+  # sccache's local disk backend only supports a single server process at a time,
+  # so serving /var/cache/feedme-sccache over WebDAV bound strictly to docker0
+  # gives concurrent containers race-free NVMe-backed crate caching with low RAM.
+  systemd.services.sccache-webdav = {
+    description = "Local WebDAV server for CI sccache";
+    after = [
+      "docker.service"
+      "network.target"
+    ];
+    requires = [ "docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      User = "sccache";
+      Group = "sccache";
+      CacheDirectory = "feedme-sccache";
+      CacheDirectoryMode = "0755";
+      ExecStart = "${pkgs.dufs}/bin/dufs --bind 172.17.0.1 --port 4227 --allow-all /var/cache/feedme-sccache";
+      Restart = "on-failure";
+      RestartSec = "2s";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      ReadWritePaths = [ "/var/cache/feedme-sccache" ];
+    };
+  };
+
+  systemd.services.sccache-webdav-prune = {
+    description = "Bound /var/cache/feedme-sccache disk usage";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "sccache";
+      Group = "sccache";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      ReadWritePaths = [ "/var/cache/feedme-sccache" ];
+    };
+    path = with pkgs; [
+      coreutils
+      findutils
+    ];
+    script = ''
+      set -euo pipefail
+      dir=/var/cache/feedme-sccache
+      [ -d "$dir" ] || exit 0
+      max_bytes=$((30 * 1024 * 1024 * 1024))
+      target_bytes=$((25 * 1024 * 1024 * 1024))
+      total=$(du -sb "$dir" | cut -f1)
+      if [ "$total" -le "$max_bytes" ]; then
+        exit 0
+      fi
+      while IFS=$'\t' read -r _atime size path; do
+        [ -n "$path" ] || continue
+        rm -f -- "$path"
+        total=$((total - size))
+        if [ "$total" -le "$target_bytes" ]; then
+          break
+        fi
+      done < <(find "$dir" -type f -printf '%A@\t%s\t%p\n' | sort -n)
+      find "$dir" -mindepth 1 -type d -empty -delete
+    '';
+  };
+
+  systemd.timers.sccache-webdav-prune = {
+    description = "Daily prune of /var/cache/feedme-sccache";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "daily";
+      Persistent = true;
+    };
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";

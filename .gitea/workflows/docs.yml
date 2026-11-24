@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   publish:
-    runs-on: native:host
+    runs-on: native
     steps:
       - uses: actions/checkout@v4
       - name: Build and publish docs to git-pages

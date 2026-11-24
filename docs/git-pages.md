@@ -87,14 +87,14 @@ jobs:
             "https://${{ github.repository_owner }}.pages.prestonperanich.com/${{ github.event.repository.name }}/"
 ```
 
-### Option 2: `git-pages-cli` on `native:host`
+### Option 2: `git-pages-cli` on `native`
 
 `git-pages-cli` is pre-installed in `pp-wsl1`'s runner `hostPackages` and supports `--pretty-urls`, `--comment`, and `--dry-run`:
 
 ```yaml
 jobs:
   docs:
-    runs-on: native:host
+    runs-on: native
     steps:
       - uses: actions/checkout@v4
       - run: nix build .#docs -o dist

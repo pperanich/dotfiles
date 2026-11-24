@@ -12,6 +12,8 @@
           rexpick
           personal-site
           sqlite-snapshot
+          webos-devmode-renew
+          webos-tv
           ;
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {

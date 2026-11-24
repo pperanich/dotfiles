@@ -13,4 +13,6 @@
   sketchybar-helpers = pkgs.callPackage ./sketchybar-helpers { };
   sqlite-snapshot = pkgs.callPackage ./sqlite-snapshot { };
   dotfiles-sync = pkgs.callPackage ./dotfiles-sync { };
+  webos-devmode-renew = pkgs.callPackage ./webos-devmode-renew { };
+  webos-tv = pkgs.callPackage ./webos-tv { };
 }

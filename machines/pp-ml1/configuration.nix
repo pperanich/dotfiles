@@ -27,8 +27,10 @@
   # cf share: expose a local port via an ephemeral Cloudflare Tunnel + Access.
   # cloudflared must be on PATH; cf drives the tunnel/DNS/Access lifecycle.
   environment.systemPackages = with pkgs; [
+    ares-cli
     cf
     cloudflared
+    webos-tv
   ];
 
   # Host-specific configuration

@@ -39,6 +39,7 @@ in
     docuseal
     hermesCoordinator
     openclaw
+    webosDevmodeRenew
 
     # Disk health + host metrics (scraped by pp-router1's Prometheus)
     smartMonitoring
@@ -90,6 +91,12 @@ in
       model = "openai/gpt-6-sol";
       gatewayTokenSecret = "openclaw-gateway-token";
       workerEndpoint = mkWorkerEndpoint rexWorker.users.openclaw;
+    };
+
+    # Weekly LG webOS Developer Mode session renewal for pp-tv1
+    webosDevmodeRenew = {
+      enable = true;
+      sessionTokenSecret = "webos-devmode-token";
     };
 
     # Nextcloud — file sync, calendar, contacts

@@ -22,6 +22,7 @@ hermes:
     web-signing-key: ENC[AES256_GCM,data:dIZ2YNTJYBMTEw8NELmopR7aNtcl0DtUMex53XyvAraKAanYpu9U6iu5icrE7SeVp4kA4uBUhsAkUtUV5Acciw==,iv:Vt2zVpvbWyHnYtmyqlTjuebi59t0M55gLfmNMM7JH+s=,tag:bFSMNAJs9Xa/KwVVvrQvxg==,type:str]
 feedme-resend-api-key: ENC[AES256_GCM,data:31VQpYeFlxcY7tJY/8T48IaFCML7pCZjucxwntU4oT9qKpA9,iv:7e5e1AIvGYsxh1mubEuq3a1vlvIgZ9qIqrL6WpjtOoQ=,tag:mZCS0nMQd0X7VDvHTmJ1Eg==,type:str]
 openclaw-gateway-token: ENC[AES256_GCM,data:/Co1zujzsZdMhsdLxTB0gA4YQWY29RnPSlLL1cWQvTZMmkYm4vqwnE5L/vj83YoeKtBEcyBaZhadAc80df+REA==,iv:Q4bSiKjjWlTKGj+pUfECunwRiBUGNOfUIKs1wd01xdc=,tag:OWLExFZa9eTGyErDejyYmg==,type:str]
+webos-devmode-token: ENC[AES256_GCM,data:E5Ij1y+mxpK5BIG3obRKMpVFylHnfXN1Z9o2nqtlX6KogpHT0q0DJH/kyp4BzPnTQXmYRfrerFHxOOlgWY61eA==,iv:4RvBRH/gts5st0WDiS9LZBZPuyGN8s0qASR4IDWEsTw=,tag:VVmQ/eh5cLaoiCz6yWbFrg==,type:str]
 sops:
     age:
         - enc: |
@@ -62,7 +63,7 @@ sops:
             udt4Fafzs+w7yqmF3x2fawwnriSy+U8jB9qU9fCG/JQgPTI/hRuPnA==
             -----END AGE ENCRYPTED FILE-----
           recipient: age1vk22wnz747vrmyeft860uyazt7xa0zpj3ku0xsvn8lgn7rw7hqcqedwzd2
-    lastmodified: "2026-11-21T21:07:50Z"
-    mac: ENC[AES256_GCM,data:jgQDkdWyRvX+lh1DOM2Veq9I4agSOzSdnS4SZD1ayB0lrK0CDP8FY3MeDTZccOkJ8En4y7QreLID+A9SjL88pPIgl4hAaFIVkWdgDV5Dj5rTdBQjID2NeF7PCmR+Wzc3oJ7T1BIeXMxNtqOEnW745Kac2cqaD8lG9zhaRQc6YcM=,iv:h8MhPHUp0/wEcgQChTO5uIkFXD+EVRRFRa/C1OTlxdk=,tag:CbgDNRlGTYJN/sNXoamtVw==,type:str]
+    lastmodified: "2026-11-24T23:32:53Z"
+    mac: ENC[AES256_GCM,data:+JlfTiM4ej8N+UNVw1Nk7gSavZF+vlVSY8H7G+JdzuVwGV5boOBjgJfP2orVqQa2C73A4kRPyCSWJaJj+43BYlvuRkXWIkWtyQk1eRmMjBaz2r3LABpjyOCb/gM4E3mmU9o6WryR6aYDZh3tAjwP7TZtXhDbK5BoSd3NfqRuxqw=,iv:A31Zixx2kWFJQLi/i6Agwbac4qEZU/ck37P/qgB0Lfo=,tag:u9vCK98pl4euxf/NKuSaVg==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.13.3

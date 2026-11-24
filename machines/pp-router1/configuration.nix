@@ -485,6 +485,11 @@ in
                 mac = "b2:96:cc:f4:c8:bc";
                 ip = 105;
               }
+              {
+                hostname = "pp-tv1";
+                mac = "64:cb:e9:19:70:44";
+                ip = 100;
+              }
             ];
           };
           # IoT network - isolated with controlled access

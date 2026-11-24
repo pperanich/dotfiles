@@ -47,6 +47,7 @@ in
     cloudflareTunnel
     vaultwarden
     gitea
+    gitPages
     observability
 
     # Self-hosted Tailscale control plane (gray-cloud DDNS + Caddy :9443)
@@ -126,6 +127,13 @@ in
       };
     };
 
+    # git-pages: static repo doc sites over LAN + Tailscale (*.pages.<domain>)
+    gitPages = {
+      enable = true;
+      domain = mkSub "pages";
+      forgeUrl = "https://${config.my.gitea.domain}";
+    };
+
     # Stalwart — outbound transactional email relay via Resend
     stalwart = {
       enable = true;
@@ -157,6 +165,10 @@ in
         "ntopng"
         "unifi"
         "headplane"
+      ]
+      ++ [
+        "https://${config.my.gitPages.domain}/.well-known/git-pages-health"
+        "https://probe.${config.my.gitPages.domain}/.well-known/git-pages-health"
       ]
       # NAS vhosts: resolve to the NAS via split-horizon, exercising the NAS
       # Caddy's per-name certs and the service behind each one
@@ -299,6 +311,11 @@ in
           "fd7a:115c:a1e0::/48 allow"
         ];
         ddns.enable = true; # Auto-register DHCP client hostnames in DNS
+        # Wildcard LAN split-horizon for git-pages; keep _acme-challenge transparent for DNS-01.
+        extraLocalZones = [
+          "\"_acme-challenge.${config.my.gitPages.domain}.\" transparent"
+          "\"${config.my.gitPages.domain}.\" redirect"
+        ];
         extraLocalData = [
           # WSL mirrored networking shares the Windows host's IP
           "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."
@@ -335,6 +352,7 @@ in
           "grafana"
           "vault-admin"
           "gitea"
+          "pages"
           "ntopng"
           "unifi"
           "headplane"
@@ -502,6 +520,7 @@ in
           "/var/backups/sqlite"
           "/var/lib/vaultwarden"
           "/var/lib/gitea"
+          "/var/lib/private/git-pages"
           "/var/lib/headscale"
           "/var/lib/unifi/data/backup"
         ];

@@ -159,6 +159,12 @@ in
             desc = "Self-hosted git";
           }
           {
+            name = "Pages";
+            icon = "bookstack";
+            sub = "pages";
+            desc = "Static docs (git-pages)";
+          }
+          {
             name = "Hermes";
             icon = "sh-hermes-agent";
             sub = "hermes";

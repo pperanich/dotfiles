@@ -70,6 +70,15 @@ _: {
           example = [ "pp-wsl1.home.arpa. CNAME pperanich-wd1.home.arpa." ];
           description = "Additional local-data entries for Unbound (e.g., CNAME aliases)";
         };
+        extraLocalZones = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [
+            "\"_acme-challenge.pages.example.com.\" transparent"
+            "\"pages.example.com.\" redirect"
+          ];
+          description = "Additional local-zone entries for Unbound (e.g., wildcard redirect zones and transparent carve-outs)";
+        };
         magicDnsForwardZone = {
           enable = lib.mkOption {
             type = lib.types.bool;
@@ -191,7 +200,8 @@ _: {
                 local-zone = [
                   "\"${zoneFqdn}\" static"
                 ]
-                ++ lib.optional magicZoneEnabled "\"${magicZoneFqdn}\" transparent";
+                ++ lib.optional magicZoneEnabled "\"${magicZoneFqdn}\" transparent"
+                ++ dnsCfg.extraLocalZones;
 
                 local-data =
                   let

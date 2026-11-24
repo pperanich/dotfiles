@@ -74,6 +74,7 @@ _: {
             coreutils
             curl
             gawk
+            git-pages-cli
             gitMinimal
             gnused
             nix

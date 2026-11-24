@@ -11,6 +11,10 @@ _: {
     let
       cfg = config.my.gitPages;
       forgeBase = lib.removeSuffix "/" cfg.forgeUrl;
+      domainParts = lib.splitString "." cfg.domain;
+      hasParentDomain = builtins.length domainParts >= 2 && lib.all (p: p != "") domainParts;
+      parentDomain = lib.concatStringsSep "." (lib.drop 1 domainParts);
+      singleOwner = cfg.owner != null;
     in
     {
       options.my.gitPages = {
@@ -20,7 +24,14 @@ _: {
           type = lib.types.str;
           default = "";
           example = "pages.example.com";
-          description = "Base domain for wildcard site routing (*.<domain>).";
+          description = "Host served in single-owner mode (owner != null), or base domain for wildcard mode (*.<domain>).";
+        };
+
+        owner = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "alice";
+          description = "Pin `domain` to one forge owner (`https://<domain>/<repo>/`); null serves multi-owner wildcards (`https://<owner>.<domain>/<repo>/`).";
         };
 
         forgeUrl = lib.mkOption {
@@ -43,7 +54,7 @@ _: {
         indexRepo = lib.mkOption {
           type = lib.types.str;
           default = "pages";
-          description = "Repository name (or template) mapped to the owner index site (https://<owner>.<domain>/).";
+          description = "Repository name (or template) mapped to the root index site.";
         };
 
         indexRepoBranch = lib.mkOption {
@@ -107,6 +118,10 @@ _: {
                 assertion = cfg.forgeUrl != "";
                 message = "my.gitPages.forgeUrl must be set when my.gitPages.enable is true.";
               }
+              {
+                assertion = !singleOwner || (hasParentDomain && cfg.owner != "");
+                message = "my.gitPages.owner must be non-empty and my.gitPages.domain must have a parent zone (e.g. pages.example.com) in single-owner mode.";
+              }
             ];
 
             system.services.git-pages = {
@@ -123,17 +138,25 @@ _: {
                   type = "fs";
                   fs.root = "/var/lib/git-pages/data";
                 };
+                # Single-owner mode matches the exact host via its parent zone; the reverse proxy gates allowed hosts.
                 wildcard = [
                   {
-                    inherit (cfg) domain authorization;
-                    clone-url = "${forgeBase}/<user>/<project>.git";
+                    domain = if singleOwner then parentDomain else cfg.domain;
+                    inherit (cfg) authorization;
+                    clone-url =
+                      if singleOwner then
+                        "${forgeBase}/${cfg.owner}/<project>.git"
+                      else
+                        "${forgeBase}/<user>/<project>.git";
                     index-repo = cfg.indexRepo;
                     index-repo-branch = cfg.indexRepoBranch;
                   }
                 ];
                 limits = {
                   max-site-size = cfg.maxSiteSize;
-                  allowed-repository-url-prefixes = [ "${forgeBase}/" ];
+                  allowed-repository-url-prefixes = [
+                    (if singleOwner then "${forgeBase}/${cfg.owner}/" else "${forgeBase}/")
+                  ];
                 };
                 audit = {
                   collect = cfg.auditCollect;

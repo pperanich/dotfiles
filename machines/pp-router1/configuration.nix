@@ -127,10 +127,11 @@ in
       };
     };
 
-    # git-pages: static repo doc sites over LAN + Tailscale (*.pages.<domain>)
+    # git-pages: static repo doc sites over LAN + Tailscale (pages.<domain>/<repo>/)
     gitPages = {
       enable = true;
       domain = mkSub "pages";
+      owner = config.my.gitea.admin.username;
       forgeUrl = "https://${config.my.gitea.domain}";
     };
 
@@ -168,7 +169,6 @@ in
       ]
       ++ [
         "https://${config.my.gitPages.domain}/.well-known/git-pages-health"
-        "https://probe.${config.my.gitPages.domain}/.well-known/git-pages-health"
       ]
       # NAS vhosts: resolve to the NAS via split-horizon, exercising the NAS
       # Caddy's per-name certs and the service behind each one
@@ -311,11 +311,6 @@ in
           "fd7a:115c:a1e0::/48 allow"
         ];
         ddns.enable = true; # Auto-register DHCP client hostnames in DNS
-        # Wildcard LAN split-horizon for git-pages; keep _acme-challenge transparent for DNS-01.
-        extraLocalZones = [
-          "\"_acme-challenge.${config.my.gitPages.domain}.\" transparent"
-          "\"${config.my.gitPages.domain}.\" redirect"
-        ];
         extraLocalData = [
           # WSL mirrored networking shares the Windows host's IP
           "pp-wsl1.${domain}. CNAME pp-wd1.${domain}."

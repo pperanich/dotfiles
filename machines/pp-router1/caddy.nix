@@ -115,8 +115,7 @@ in
         "grafana" # observability dashboard
         "vault-admin" # vaultwarden admin panel (pp-router1)
         "gitea" # self-hosted git (pp-router1)
-        "pages" # git-pages apex redirect (pp-router1)
-        "*.pages" # git-pages wildcard static sites (pp-router1)
+        "pages" # git-pages static sites (pp-router1)
         "headplane" # headscale web UI (pp-router1)
       ]
       ++ [
@@ -170,9 +169,9 @@ in
       }
     '';
 
-    # git-pages static site hosting (LAN + Tailscale; DNS-01 wildcard cert).
-    # Health path lets Blackbox verify DNS and CertExpiringSoon before sites exist.
-    "*.${config.my.gitPages.domain}" = mkVhost ''
+    # git-pages static site hosting (LAN + Tailscale; pages.<domain>/<repo>/).
+    # Health path lets Blackbox verify DNS and CertExpiringSoon without an index site.
+    "${config.my.gitPages.domain}" = mkVhost ''
       @health path /.well-known/git-pages-health
       handle @health {
         respond "ok" 200
@@ -182,15 +181,6 @@ in
       }
       request_body {
         max_size ${config.my.gitPages.maxSiteSize}
-      }
-    '';
-    "${config.my.gitPages.domain}" = mkVhost ''
-      @health path /.well-known/git-pages-health
-      handle @health {
-        respond "ok" 200
-      }
-      handle {
-        redir https://${config.my.gitea.admin.username}.${config.my.gitPages.domain}{uri} 302
       }
     '';
 

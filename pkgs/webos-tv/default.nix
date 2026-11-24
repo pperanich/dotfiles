@@ -6,6 +6,7 @@
   coreutils,
   curl,
   jq,
+  nodejs,
   webos-devmode-renew,
 }:
 (writeShellApplication {
@@ -15,6 +16,7 @@
     coreutils
     curl
     jq
+    nodejs
     webos-devmode-renew
   ];
   text = builtins.readFile ./webos-tv.sh;

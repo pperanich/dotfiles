@@ -92,18 +92,30 @@ ensure_writable_webos_config() {
 	done
 }
 
+resolve_ipv4() {
+	local target="$1"
+	if [[ $target =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+		printf '%s' "$target"
+		return
+	fi
+	# ares-setup-device rejects hostnames and requires a numeric IP.
+	node -e 'require("dns").lookup(process.argv[1], { family: 4 }, (err, addr) => { if (err) { console.error(err.message); process.exit(1); } process.stdout.write(addr); });' "$target"
+}
+
 cmd_pair() {
 	local target_host="${1:-$host}"
+	local target_ip
+	target_ip=$(resolve_ipv4 "$target_host")
 	local exists=0
 	if device_exists; then
 		exists=1
 	fi
 	ensure_writable_webos_config
 	if [[ $exists -eq 1 ]]; then
-		ares-setup-device -m "$device" -i "username=prisoner" -i "host=$target_host" -i "port=9922"
+		ares-setup-device -m "$device" -i "username=prisoner" -i "host=$target_ip" -i "port=9922"
 		ares-setup-device -f "$device"
 	else
-		ares-setup-device -a "$device" -i "username=prisoner" -i "host=$target_host" -i "port=9922" -i "default=true"
+		ares-setup-device -a "$device" -i "username=prisoner" -i "host=$target_ip" -i "port=9922" -i "default=true"
 	fi
 	echo "Make sure Developer Mode and Key Server are ON in the TV app, then enter the 6-character passphrase." >&2
 	ares-novacom --getkey -d "$device"

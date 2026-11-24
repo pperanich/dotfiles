@@ -36,7 +36,7 @@ in
         };
         Media = {
           style = "row";
-          columns = 3;
+          columns = 4;
         };
         Services = {
           style = "row";
@@ -93,6 +93,12 @@ in
             icon = "audiobookshelf";
             sub = "audiobookshelf";
             desc = "Audiobooks & podcasts";
+          }
+          {
+            name = "Sunshine";
+            icon = "sunshine";
+            sub = "sunshine";
+            desc = "Game streaming host (pp-wd1)";
           }
         ];
       }

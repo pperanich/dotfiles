@@ -74,7 +74,10 @@ let
     };
 in
 {
-  my.caddyDns01.enable = true;
+  my.caddyDns01 = {
+    enable = true;
+    secrets = [ "sunshine-basic-auth" ];
+  };
 
   # Per-request metrics (latency/status per vhost) on the admin endpoint,
   # scraped by the local Prometheus as job "caddy".
@@ -121,6 +124,7 @@ in
         "gitea" # self-hosted git (pp-router1)
         "pages" # git-pages static sites (pp-router1)
         "headplane" # headscale web UI (pp-router1)
+        "sunshine" # game streaming host UI (pp-wd1)
       ]
       ++ [
         # Mail deliverability (SPF + DKIM + DMARC)
@@ -205,6 +209,17 @@ in
             header_up X-Forwarded-Proto {scheme}
             header_up Origin https://localhost:8443
             header_up Referer https://localhost:8443
+          }
+        '';
+
+        # Sunshine web UI on pp-wd1 (self-signed HTTPS, Basic Auth injected from sops)
+        "${mkSub "sunshine"}" = mkVhost ''
+          reverse_proxy https://pp-wd1.${config.my.router.dhcp.domainName}:47990 {
+            transport http {
+              tls_insecure_skip_verify
+            }
+            header_up Host {host}
+            header_up Authorization "Basic ${config.my.caddyDns01.placeholders."sunshine-basic-auth"}"
           }
         '';
 

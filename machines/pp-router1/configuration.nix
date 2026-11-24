@@ -371,6 +371,7 @@ in
           "ntopng"
           "unifi"
           "headplane"
+          "sunshine"
         ];
       };
 
@@ -489,6 +490,11 @@ in
                 hostname = "pp-tv1";
                 mac = "64:cb:e9:19:70:44";
                 ip = 100;
+              }
+              {
+                hostname = "pp-wd1";
+                mac = "18:26:49:40:7d:56";
+                ip = 117;
               }
             ];
           };

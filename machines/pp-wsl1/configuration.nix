@@ -69,10 +69,15 @@ in
     principals = [ "tailscale:tag:nas" ];
   });
   # Interop sockets and drive mounts reach the Windows user; deny every worker both (docs/hermes.md).
-  systemd.tmpfiles.rules = lib.concatMap (user: [
-    "a+ /run/WSL - - - - u:${user}:---"
-    "a+ /mnt - - - - u:${user}:---"
-  ]) workers;
+  # Also provision the persistent host cache directory bind-mounted into CI containers.
+  systemd.tmpfiles.rules =
+    lib.concatMap (user: [
+      "a+ /run/WSL - - - - u:${user}:---"
+      "a+ /mnt - - - - u:${user}:---"
+    ]) workers
+    ++ [
+      "d /var/cache/feedme-seed-corpus 0777 root root -"
+    ];
 
   # No node exporter here, so Healthchecks.io is what notices a failed or missing run.
   my.backup.googleDrive = {
@@ -111,7 +116,19 @@ in
     enable = true;
     url = "https://gitea.prestonperanich.com";
     tokenSecret = "gitea-runner-token";
-    capacity = 10;
+    # 12C/24T with 31 GiB RAM: cap concurrent jobs at 4 (with 6 Cargo jobs each)
+    # so parallel Rust/Android/Playwright builds stay within RAM and thermal budgets.
+    capacity = 4;
+    envs = {
+      CARGO_BUILD_JOBS = "6";
+      RUST_MIN_STACK = "16777216";
+    };
+    # Expose host /dev/kvm (AMD-V via WSL2) for Android emulator tests and mount
+    # a persistent host cache for the ~740 MB Google Drive seed corpus.
+    # gitea-runner ignores `--device` unless `container.privileged` is enabled.
+    containerPrivileged = true;
+    containerOptions = "--device /dev/kvm --volume /var/cache/feedme-seed-corpus:/cache/feedme-seed-corpus";
+    validVolumes = [ "/var/cache/feedme-seed-corpus" ];
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";

@@ -49,6 +49,28 @@ _: {
           default = 1;
           description = "Maximum number of concurrent jobs the runner will execute.";
         };
+
+        envs = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = { };
+          description = "Extra environment variables injected into every job.";
+        };
+
+        containerPrivileged = lib.mkEnableOption "privileged mode for Docker job containers (needed for --device /dev/kvm)";
+
+        containerOptions = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "--device /dev/kvm --volume /var/cache/ci:/cache/ci";
+          description = "Extra Docker CLI options passed when launching job containers.";
+        };
+
+        validVolumes = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "/var/cache/ci" ];
+          description = "Host paths or volume globs job containers are permitted to mount.";
+        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -73,7 +95,24 @@ _: {
           enable = true;
           name = instanceName;
           inherit (cfg) url labels;
-          settings.runner.capacity = cfg.capacity;
+          settings = {
+            runner = {
+              inherit (cfg) capacity;
+            }
+            // lib.optionalAttrs (cfg.envs != { }) {
+              inherit (cfg) envs;
+            };
+            container =
+              lib.optionalAttrs cfg.containerPrivileged {
+                privileged = true;
+              }
+              // lib.optionalAttrs (cfg.containerOptions != null) {
+                options = cfg.containerOptions;
+              }
+              // lib.optionalAttrs (cfg.validVolumes != [ ]) {
+                valid_volumes = cfg.validVolumes;
+              };
+          };
           tokenFile = lib.mkIf (cfg.tokenSecret != null) config.sops.templates."gitea-runner.env".path;
           # Upstream defaults plus nix, so `native:host` jobs can run `nix build`.
           hostPackages = with pkgs; [

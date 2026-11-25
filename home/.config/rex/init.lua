@@ -47,5 +47,9 @@ for _, host in ipairs({ "pp-nas1", "pp-router1", "pp-wsl1" }) do
 		endpoints = { "http://" .. host .. ".pp-ts:7297", "ssh://" .. host .. ".pp-ts" },
 	})
 end
+rex.host({
+	label = "pp-wd1",
+	endpoints = { "http://pp-wd1.pp-ts:7297" },
+})
 
 rex.bind("cmd+shift+k", "rex_project_picker")

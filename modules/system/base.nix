@@ -258,6 +258,11 @@
                   showInStatusBar = false;
                   ignoredApps = [ "com.1password.1password" ];
                 };
+                # Keep controller Home/Share buttons from opening macOS Games/Launchpad during streams.
+                "com.apple.GameController" = {
+                  bluetoothPrefsMenuLongPressAction = 0;
+                  bluetoothPrefsShareLongPressSystemGestureMode = -1;
+                };
               };
             };
           };

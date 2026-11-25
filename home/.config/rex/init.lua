@@ -47,9 +47,10 @@ for _, host in ipairs({ "pp-nas1", "pp-router1", "pp-wsl1" }) do
 		endpoints = { "http://" .. host .. ".pp-ts:7297", "ssh://" .. host .. ".pp-ts" },
 	})
 end
+-- pp-wd1 shares mirrored networking with pp-wsl1 (:7297), so Windows Rex uses :7298.
 rex.host({
 	label = "pp-wd1",
-	endpoints = { "http://pp-wd1.pp-ts:7297" },
+	endpoints = { "http://pp-wd1.pp-ts:7298" },
 })
 
 rex.bind("cmd+shift+k", "rex_project_picker")

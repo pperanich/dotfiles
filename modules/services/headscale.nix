@@ -48,6 +48,7 @@ _: {
               "tag:nas:443"
               "tag:nas:7297"
               "tag:dev:7297"
+              "tag:dev:7298"
             ];
           }
 
